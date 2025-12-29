@@ -1,7 +1,7 @@
-const pool = require('../db/connexion').pool; // Import the actual pool
+
 class crudcontainermodel {
-  constructor() {
-    this.db = pool;
+  constructor(db) {
+    this.db = db;
   } 
   async createcontainer(capacity, location) {
     if (!capacity || !location) {
