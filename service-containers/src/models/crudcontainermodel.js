@@ -1,6 +1,7 @@
-class crudcontainer {
-  constructor(db) {
-    this.db = db;
+const pool = require('../db/connexion').pool; // Import the actual pool
+class crudcontainermodel {
+  constructor() {
+    this.db = pool;
   } 
   async createcontainer(capacity, location) {
     if (!capacity || !location) {
@@ -74,4 +75,4 @@ class crudcontainer {
         return result.rows;
     };
 }
-module.exports = crudcontainer;
+module.exports = crudcontainermodel;
