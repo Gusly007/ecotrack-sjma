@@ -24,21 +24,54 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - username
+ *               - prenom
  *               - email
  *               - password
  *             properties:
- *               username:
+ *               prenom:
  *                 type: string
+ *                 example: "John"
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: "john.doe@example.com"
  *               password:
  *                 type: string
  *                 format: password
+ *                 example: "password123"
+ *               role:
+ *                 type: string
+ *                 enum: [CITOYEN, ORGANISATEUR, ADMIN]
+ *                 default: CITOYEN
+ *                 example: "CITOYEN"
  *     responses:
  *       201:
  *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Registration reussie"
+ *                 token:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id_utilisateur:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     prenom:
+ *                       type: string
+ *                     role_par_defaut:
+ *                       type: string
+ *                     points:
+ *                       type: integer
  *       400:
  *         description: Invalid input
  */
@@ -63,9 +96,11 @@ router.post('/register', authController.register);
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: "john.doe@example.com"
  *               password:
  *                 type: string
  *                 format: password
+ *                 example: "password123"
  *     responses:
  *       200:
  *         description: User logged in successfully
@@ -74,8 +109,24 @@ router.post('/register', authController.register);
  *             schema:
  *               type: object
  *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
  *                 token:
  *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     username:
+ *                       type: string
+ *                     role:
+ *                       type: string
  *       401:
  *         description: Unauthorized
  */
@@ -92,6 +143,24 @@ router.post('/login', authController.login);
  *     responses:
  *       200:
  *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id_utilisateur:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     prenom:
+ *                       type: string
+ *                     role_par_defaut:
+ *                       type: string
+ *                     points:
+ *                       type: integer
  *       401:
  *         description: Unauthorized
  */

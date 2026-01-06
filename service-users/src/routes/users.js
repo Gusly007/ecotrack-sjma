@@ -30,14 +30,31 @@ router.use(authenticateToken);
  *           schema:
  *             type: object
  *             properties:
- *               username:
+ *               prenom:
  *                 type: string
+ *                 example: "John"
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: "john.doe@example.com"
  *     responses:
  *       200:
  *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id_utilisateur:
+ *                   type: integer
+ *                 email:
+ *                   type: string
+ *                 prenom:
+ *                   type: string
+ *                 role_par_defaut:
+ *                   type: string
+ *                 points:
+ *                   type: integer
  *       400:
  *         description: Invalid input
  *       401:
@@ -66,9 +83,11 @@ router.put('/profile', authController.updateProfile);
  *               oldPassword:
  *                 type: string
  *                 format: password
+ *                 example: "old_password123"
  *               newPassword:
  *                 type: string
  *                 format: password
+ *                 example: "new_secure_password456"
  *     responses:
  *       200:
  *         description: Password changed successfully
@@ -90,6 +109,26 @@ router.post('/change-password', authController.changePassword);
  *     responses:
  *       200:
  *         description: User profile with stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id_utilisateur:
+ *                   type: integer
+ *                 email:
+ *                   type: string
+ *                 prenom:
+ *                   type: string
+ *                 role_par_defaut:
+ *                   type: string
+ *                 points:
+ *                   type: integer
+ *                 date_creation:
+ *                   type: string
+ *                   format: date-time
+ *                 badge_count:
+ *                   type: string # Note: COUNT returns a string in some drivers
  *       401:
  *         description: Unauthorized
  */
