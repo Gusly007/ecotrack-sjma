@@ -5,7 +5,7 @@ import { hashPassword, comparePassword } from '../utils/crypto.js';
  * Mettre à jour le profil utilisateur
  */
 export const updateProfile = async (userId, data) => {
-    const { prénom,email } = data;
+    const { prenom,email } = data;
 
     const result = await pool.query(
     `UPDATE UTILISATEUR 

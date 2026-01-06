@@ -28,17 +28,17 @@ export const registerUser = async (email, username, password, role = 'CITOYEN') 
   );
     const newUser = result.rows[0];
     // Générer les tokens JWT
-    const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
-  const refreshToken = generateRefreshToken(user.id_utilisateur);
+    const accessToken = generateToken(newUser.id_utilisateur, newUser.role_par_defaut);
+  const refreshToken = generateRefreshToken(newUser.id_utilisateur);
 
   //Stocker le refresh token dans la base de données
   await pool.query(
     'INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)',
-    [user.id_utilisateur, refreshToken]
+    [newUser.id_utilisateur, refreshToken]
   );
 
   return {
-    user,
+    user: newUser,
     accessToken,
     refreshToken
   };
