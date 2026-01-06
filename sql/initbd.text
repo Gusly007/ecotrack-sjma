@@ -1,0 +1,332 @@
+-- =====================================================
+-- ECOTRACK - Implémentation Base de Données MySQL
+-- =====================================================
+
+-- ==================== SCHEMA.SQL ====================
+-- Création de la base de données
+CREATE DATABASE IF NOT EXISTS ecotrack_prod
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
+USE ecotrack_prod;
+
+-- ==================== TABLE 1: ZONE_URBAINE ====================
+-- Représente les différentes zones géographiques de la métropole
+CREATE TABLE ZONE_URBAINE (
+  idZone INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant unique de la zone',
+  nomZone VARCHAR(100) NOT NULL COMMENT 'Nom de la zone urbaine',
+  codePostal VARCHAR(5) UNIQUE COMMENT 'Code postal de la zone',
+  nombreHabitants INT DEFAULT 0 COMMENT 'Population estimée',
+  coordLat DECIMAL(10,8) COMMENT 'Latitude GPS du centre de zone',
+  coordLon DECIMAL(10,8) COMMENT 'Longitude GPS du centre de zone',
+  dateCreation DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Date de création',
+  INDEX idx_codePostal (codePostal),
+  INDEX idx_coordGPS (coordLat, coordLon)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Zones urbaines de la métropole';
+
+-- ==================== TABLE 2: CONTENEUR ====================
+-- Conteneurs intelligents de collecte des déchets
+CREATE TABLE CONTENEUR (
+  idConteneur VARCHAR(20) PRIMARY KEY COMMENT 'Code unique du conteneur (ex: CNT-001)',
+  typeConteneur VARCHAR(30) NOT NULL COMMENT 'Type: papier, plastique, verre, général',
+  capaciteL INT NOT NULL COMMENT 'Capacité en litres',
+  dateInstallation DATE NOT NULL COMMENT 'Date de mise en place',
+  etatFonctionnement ENUM('actif', 'maintenance', 'retire') DEFAULT 'actif' COMMENT 'État du conteneur',
+  idZone INT NOT NULL COMMENT 'Zone d''appartenance',
+  dernierVidage DATETIME COMMENT 'Timestamp du dernier vidage',
+  FOREIGN KEY (idZone) REFERENCES ZONE_URBAINE(idZone),
+  INDEX idx_zone (idZone),
+  INDEX idx_etat (etatFonctionnement),
+  INDEX idx_type (typeConteneur)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Conteneurs de collecte des déchets';
+
+-- ==================== TABLE 3: CAPTEUR ====================
+-- Capteurs embarqués dans les conteneurs
+CREATE TABLE CAPTEUR (
+  idCapteur INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant du capteur',
+  idConteneur VARCHAR(20) NOT NULL COMMENT 'Conteneur porteur du capteur',
+  modele VARCHAR(50) NOT NULL COMMENT 'Modèle du capteur',
+  typeMesure VARCHAR(30) NOT NULL COMMENT 'Type: remplissage%, température, humidité, poids',
+  dateInstallation DATE NOT NULL COMMENT 'Date de pose du capteur',
+  dateEtalonnage DATE COMMENT 'Date du dernier étalonnage',
+  statut ENUM('actif', 'defaillant') DEFAULT 'actif' COMMENT 'État de fonctionnement',
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  INDEX idx_conteneur (idConteneur),
+  INDEX idx_type_mesure (typeMesure),
+  UNIQUE KEY uk_conteneur_type (idConteneur, typeMesure)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Capteurs des conteneurs';
+
+-- ==================== TABLE 4: MESURE_CAPTEUR ====================
+-- Mesures collectées par les capteurs en temps réel
+CREATE TABLE MESURE_CAPTEUR (
+  idMesure INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant de la mesure',
+  idCapteur INT NOT NULL COMMENT 'Capteur source',
+  idConteneur VARCHAR(20) NOT NULL COMMENT 'Conteneur mesuré',
+  valeur DECIMAL(8,2) NOT NULL COMMENT 'Valeur mesurée',
+  unite VARCHAR(20) COMMENT 'Unité de mesure (%, °C, kg)',
+  dateHeureMesure DATETIME NOT NULL COMMENT 'Timestamp de la mesure',
+  qualite ENUM('valide', 'suspecte') DEFAULT 'valide' COMMENT 'Contrôle qualité',
+  FOREIGN KEY (idCapteur) REFERENCES CAPTEUR(idCapteur),
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  INDEX idx_capteur_date (idCapteur, dateHeureMesure),
+  INDEX idx_conteneur_date (idConteneur, dateHeureMesure),
+  INDEX idx_date (dateHeureMesure)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Mesures en temps réel des capteurs';
+
+-- ==================== TABLE 5: AGENT_COLLECTE ====================
+-- Agents responsables de la collecte
+CREATE TABLE AGENT_COLLECTE (
+  idAgent INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant du collecteur',
+  nomAgent VARCHAR(50) NOT NULL COMMENT 'Nom de famille',
+  prenomAgent VARCHAR(50) NOT NULL COMMENT 'Prénom',
+  numeroMatricule VARCHAR(10) UNIQUE NOT NULL COMMENT 'Numéro de matricule professionnel',
+  numeroTelephone VARCHAR(15) COMMENT 'Téléphone professionnel',
+  dateEmbauche DATE NOT NULL COMMENT 'Date d''entrée en entreprise',
+  statut ENUM('actif', 'repos', 'formation', 'arret') DEFAULT 'actif' COMMENT 'Statut professionnel',
+  nombreTourneesEffectuees INT DEFAULT 0 COMMENT 'Compteur de tournées (dénormalisé)',
+  UNIQUE KEY uk_nom_prenom (nomAgent, prenomAgent),
+  INDEX idx_statut (statut)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Agents de collecte';
+
+-- ==================== TABLE 6: VEHICULE ====================
+-- Véhicules utilisés pour les tournées
+CREATE TABLE VEHICULE (
+  idVehicule VARCHAR(10) PRIMARY KEY COMMENT 'Immatriculation du véhicule',
+  typeVehicule VARCHAR(30) NOT NULL COMMENT 'Type: camion, benne, petit véhicule',
+  carburant ENUM('diesel', 'electrique', 'gnv') DEFAULT 'diesel' COMMENT 'Type de carburant',
+  capaciteConteneurs INT NOT NULL COMMENT 'Nombre de conteneurs transportables',
+  dateAcquisition DATE NOT NULL COMMENT 'Date d''achat',
+  kilometrage INT DEFAULT 0 COMMENT 'Kilométrage total',
+  dateMaintenancePrevue DATE COMMENT 'Date de maintenance programmée',
+  etat ENUM('operationnel', 'maintenance', 'retire') DEFAULT 'operationnel' COMMENT 'État actuel',
+  INDEX idx_etat (etat),
+  INDEX idx_type (typeVehicule)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Parc de véhicules de collecte';
+
+-- ==================== TABLE 7: TOURNEE ====================
+-- Tournées de collecte planifiées et exécutées
+CREATE TABLE TOURNEE (
+  idTournee INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant de la tournée',
+  dateTournee DATE NOT NULL COMMENT 'Date de la tournée',
+  heureDebut TIME COMMENT 'Heure de démarrage',
+  heureFin TIME COMMENT 'Heure de fin réelle',
+  statut ENUM('planifiee', 'en_cours', 'terminee', 'annulee') DEFAULT 'planifiee' COMMENT 'État',
+  nombreConteneursPrevus INT COMMENT 'Nombre prévisionnel',
+  nombreConteneurCollectes INT DEFAULT 0 COMMENT 'Nombre réel collecté',
+  distanceKm DECIMAL(6,2) COMMENT 'Distance parcourue',
+  idAgent INT NOT NULL COMMENT 'Agent responsable',
+  idVehicule VARCHAR(10) NOT NULL COMMENT 'Véhicule utilisé',
+  idZone INT NOT NULL COMMENT 'Zone couverte',
+  FOREIGN KEY (idAgent) REFERENCES AGENT_COLLECTE(idAgent),
+  FOREIGN KEY (idVehicule) REFERENCES VEHICULE(idVehicule),
+  FOREIGN KEY (idZone) REFERENCES ZONE_URBAINE(idZone),
+  INDEX idx_agent_date (idAgent, dateTournee),
+  INDEX idx_date (dateTournee),
+  INDEX idx_zone (idZone),
+  INDEX idx_statut (statut)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Tournées de collecte';
+
+-- ==================== TABLE 8: DETAIL_TOURNEE ====================
+-- Détails des conteneurs traités par tournée
+CREATE TABLE DETAIL_TOURNEE (
+  idDetailTournee INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant du détail',
+  idTournee INT NOT NULL COMMENT 'Tournée associée',
+  idConteneur VARCHAR(20) NOT NULL COMMENT 'Conteneur vidé',
+  heureCollecte TIME COMMENT 'Heure précise du vidage',
+  volumeCollecte INT COMMENT 'Volume réel collecté en litres',
+  ordreCollecte INT NOT NULL COMMENT 'Ordre de passage (1, 2, 3...)',
+  observations TEXT COMMENT 'Remarques du collecteur',
+  FOREIGN KEY (idTournee) REFERENCES TOURNEE(idTournee) ON DELETE CASCADE,
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  INDEX idx_tournee (idTournee),
+  INDEX idx_conteneur (idConteneur),
+  UNIQUE KEY uk_tournee_conteneur (idTournee, idConteneur)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Détails des conteneurs collectés par tournée';
+
+-- ==================== TABLE 9: CITOYEN ====================
+-- Citoyens enregistrés sur l'application mobile
+CREATE TABLE CITOYEN (
+  idCitoyen INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant du citoyen',
+  nomCitoyen VARCHAR(50) NOT NULL COMMENT 'Nom de famille',
+  prenomCitoyen VARCHAR(50) NOT NULL COMMENT 'Prénom',
+  emailCitoyen VARCHAR(100) UNIQUE COMMENT 'Adresse email unique',
+  telephoneCitoyen VARCHAR(15) COMMENT 'Numéro de téléphone',
+  adresse VARCHAR(200) COMMENT 'Adresse de résidence',
+  dateInscription DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Date d''adhésion',
+  nombreSignalements INT DEFAULT 0 COMMENT 'Total de signalements (dénormalisé)',
+  idZone INT NOT NULL COMMENT 'Zone de résidence',
+  statut ENUM('actif', 'suspendu') DEFAULT 'actif' COMMENT 'Statut du compte',
+  FOREIGN KEY (idZone) REFERENCES ZONE_URBAINE(idZone),
+  INDEX idx_zone (idZone),
+  INDEX idx_email (emailCitoyen),
+  INDEX idx_statut (statut)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Citoyens utilisateurs de l''application';
+
+-- ==================== TABLE 10: SIGNALEMENT ====================
+-- Signalements de problèmes rapportés par les citoyens
+CREATE TABLE SIGNALEMENT (
+  idSignalement INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant du signalement',
+  dateSignalement DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date du signalement',
+  description TEXT NOT NULL COMMENT 'Description du problème',
+  typeProblem VARCHAR(30) NOT NULL COMMENT 'Type: débordement, odeur, dégradation, autre',
+  coordLat DECIMAL(10,8) COMMENT 'Latitude GPS du problème',
+  coordLon DECIMAL(10,8) COMMENT 'Longitude GPS du problème',
+  urlPhoto VARCHAR(255) COMMENT 'Lien vers photo du problème',
+  statut ENUM('nouveau', 'en_traitement', 'resolu', 'cloture') DEFAULT 'nouveau' COMMENT 'État du traitement',
+  priorite ENUM('basse', 'moyenne', 'haute', 'critique') DEFAULT 'moyenne' COMMENT 'Niveau urgence',
+  idCitoyen INT NOT NULL COMMENT 'Auteur du signalement',
+  idConteneur VARCHAR(20) COMMENT 'Conteneur concerné (optionnel)',
+  dateResolution DATETIME COMMENT 'Date de fermeture',
+  noteResolution TEXT COMMENT 'Résumé de la résolution',
+  FOREIGN KEY (idCitoyen) REFERENCES CITOYEN(idCitoyen),
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  INDEX idx_date (dateSignalement),
+  INDEX idx_statut (statut),
+  INDEX idx_priorite (priorite),
+  INDEX idx_citoyen (idCitoyen),
+  INDEX idx_conteneur (idConteneur)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Signalements des citoyens';
+
+-- ==================== TABLE 11: INTERVENTION ====================
+-- Interventions de maintenance suite à signalements
+CREATE TABLE INTERVENTION (
+  idIntervention INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant intervention',
+  dateIntervention DATETIME NOT NULL COMMENT 'Date et heure d''intervention',
+  typeIntervention VARCHAR(30) NOT NULL COMMENT 'Type: maintenance, nettoyage, réparation, déplacement',
+  dureeMinutes INT COMMENT 'Durée en minutes',
+  description TEXT COMMENT 'Description des actions',
+  coutEstime DECIMAL(8,2) COMMENT 'Coût estimé en euros',
+  statut ENUM('planifiee', 'en_cours', 'completee') DEFAULT 'planifiee' COMMENT 'État',
+  idSignalement INT COMMENT 'Signalement déclencheur',
+  idConteneur VARCHAR(20) NOT NULL COMMENT 'Conteneur intervenu',
+  idAgent INT NOT NULL COMMENT 'Agent responsable',
+  idZone INT NOT NULL COMMENT 'Zone d''intervention',
+  FOREIGN KEY (idSignalement) REFERENCES SIGNALEMENT(idSignalement),
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  FOREIGN KEY (idAgent) REFERENCES AGENT_COLLECTE(idAgent),
+  FOREIGN KEY (idZone) REFERENCES ZONE_URBAINE(idZone),
+  INDEX idx_date (dateIntervention),
+  INDEX idx_conteneur (idConteneur),
+  INDEX idx_statut (statut),
+  INDEX idx_agent (idAgent)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Interventions de maintenance';
+
+-- ==================== TABLE 12: ALERTE_CAPTEUR ====================
+-- Alertes générées par anomalies détectées par les capteurs
+CREATE TABLE ALERTE_CAPTEUR (
+  idAlerte INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifiant alerte',
+  dateAlerte DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date de génération',
+  typeAlerte VARCHAR(30) NOT NULL COMMENT 'Type: remplissage_critique, température, capteur_défaillant, absence',
+  severite ENUM('info', 'avertissement', 'critique') DEFAULT 'avertissement' COMMENT 'Niveau sévérité',
+  description TEXT NOT NULL COMMENT 'Description détaillée',
+  valeurDetectee DECIMAL(8,2) COMMENT 'Valeur ayant déclenché',
+  seuilAlertante DECIMAL(8,2) COMMENT 'Seuil de déclenchement',
+  statut ENUM('active', 'traitee', 'faux_positif') DEFAULT 'active' COMMENT 'État',
+  idCapteur INT NOT NULL COMMENT 'Capteur source',
+  idConteneur VARCHAR(20) NOT NULL COMMENT 'Conteneur concerné',
+  dateTraitement DATETIME COMMENT 'Date de prise en charge',
+  noteTraitement TEXT COMMENT 'Remarques de traitement',
+  FOREIGN KEY (idCapteur) REFERENCES CAPTEUR(idCapteur),
+  FOREIGN KEY (idConteneur) REFERENCES CONTENEUR(idConteneur),
+  INDEX idx_date (dateAlerte),
+  INDEX idx_severite (severite),
+  INDEX idx_statut (statut),
+  INDEX idx_conteneur (idConteneur)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Alertes capteurs';
+
+-- =====================================================
+-- ==================== DATA.SQL ====================
+-- Données de test réalistes et cohérentes
+-- =====================================================
+
+-- Insertion dans ZONE_URBAINE (10 zones)
+INSERT INTO ZONE_URBAINE (nomZone, codePostal, nombreHabitants, coordLat, coordLon) VALUES
+('Métropole Centre', '59000', 85000, 50.62917, 3.05738),
+('Nord Industrial', '59160', 75000, 50.65000, 3.08000),
+('Est Quartier Résidentiel', '59500', 62000, 50.60000, 3.12000),
+('Sud Commerce', '59700', 95000, 50.55000, 3.07000),
+('Ouest Technopole', '59650', 58000, 50.63000, 2.98000),
+('Centre-Ville Historique', '59000', 45000, 50.62500, 3.06000),
+('Banlieue Nord', '59200', 71000, 50.68000, 3.05000),
+('Banlieue Sud', '59800', 68000, 50.52000, 3.08000),
+('Zone Portuaire', '59430', 34000, 50.64000, 3.15000),
+('Parc Vert Périphérie', '59880', 51000, 50.59000, 2.95000);
+
+-- Insertion dans CONTENEUR (120 conteneurs)
+INSERT INTO CONTENEUR (idConteneur, typeConteneur, capaciteL, dateInstallation, etatFonctionnement, idZone, dernierVidage) VALUES
+('CNT-001', 'général', 1100, '2023-01-15', 'actif', 1, '2025-12-14 14:30:00'),
+('CNT-002', 'papier', 660, '2023-02-10', 'actif', 1, '2025-12-14 15:00:00'),
+('CNT-003', 'plastique', 660, '2023-02-20', 'actif', 1, '2025-12-14 15:15:00'),
+('CNT-004', 'verre', 1100, '2023-03-01', 'actif', 1, '2025-12-13 10:00:00'),
+('CNT-005', 'général', 1100, '2023-03-15', 'maintenance', 1, NULL),
+('CNT-006', 'papier', 660, '2023-04-01', 'actif', 2, '2025-12-14 08:45:00'),
+('CNT-007', 'plastique', 660, '2023-04-10', 'actif', 2, '2025-12-14 09:15:00'),
+('CNT-008', 'général', 1100, '2023-04-20', 'actif', 2, '2025-12-13 16:30:00'),
+('CNT-009', 'verre', 1100, '2023-05-01', 'actif', 2, '2025-12-12 11:00:00'),
+('CNT-010', 'général', 1100, '2023-05-15', 'actif', 3, '2025-12-14 13:20:00'),
+('CNT-011', 'papier', 660, '2023-06-01', 'actif', 3, '2025-12-14 13:50:00'),
+('CNT-012', 'plastique', 660, '2023-06-10', 'actif', 3, '2025-12-14 14:10:00'),
+('CNT-013', 'verre', 1100, '2023-06-20', 'actif', 3, '2025-12-13 09:00:00'),
+('CNT-014', 'général', 1100, '2023-07-01', 'actif', 4, '2025-12-14 10:15:00'),
+('CNT-015', 'papier', 660, '2023-07-15', 'actif', 4, '2025-12-14 10:45:00'),
+('CNT-016', 'plastique', 660, '2023-08-01', 'actif', 4, '2025-12-14 11:15:00'),
+('CNT-017', 'verre', 1100, '2023-08-10', 'actif', 4, '2025-12-13 15:30:00'),
+('CNT-018', 'général', 1100, '2023-08-20', 'actif', 5, '2025-12-14 07:00:00'),
+('CNT-019', 'papier', 660, '2023-09-01', 'actif', 5, '2025-12-14 07:30:00'),
+('CNT-020', 'plastique', 660, '2023-09-10', 'actif', 5, '2025-12-13 17:45:00'),
+('CNT-021', 'général', 1100, '2023-09-20', 'actif', 6, '2025-12-14 16:00:00'),
+('CNT-022', 'papier', 660, '2023-10-01', 'actif', 6, '2025-12-14 16:30:00'),
+('CNT-023', 'plastique', 660, '2023-10-10', 'actif', 6, '2025-12-13 12:20:00'),
+('CNT-024', 'verre', 1100, '2023-10-20', 'actif', 6, '2025-12-12 14:15:00'),
+('CNT-025', 'général', 1100, '2023-11-01', 'actif', 7, '2025-12-14 09:45:00'),
+('CNT-026', 'papier', 660, '2023-11-15', 'actif', 7, '2025-12-14 10:15:00'),
+('CNT-027', 'plastique', 660, '2023-12-01', 'actif', 7, '2025-12-13 18:00:00'),
+('CNT-028', 'verre', 1100, '2023-12-10', 'actif', 7, '2025-12-12 13:30:00'),
+('CNT-029', 'général', 1100, '2024-01-01', 'actif', 8, '2025-12-14 12:00:00'),
+('CNT-030', 'papier', 660, '2024-01-15', 'maintenance', 8, NULL),
+('CNT-031', 'plastique', 660, '2024-02-01', 'actif', 8, '2025-12-14 12:45:00'),
+('CNT-032', 'verre', 1100, '2024-02-10', 'actif', 8, '2025-12-13 08:15:00'),
+('CNT-033', 'général', 1100, '2024-02-20', 'actif', 9, '2025-12-14 06:30:00'),
+('CNT-034', 'papier', 660, '2024-03-01', 'actif', 9, '2025-12-14 07:00:00'),
+('CNT-035', 'plastique', 660, '2024-03-10', 'actif', 9, '2025-12-13 19:30:00'),
+('CNT-036', 'verre', 1100, '2024-03-20', 'retire', 9, NULL),
+('CNT-037', 'général', 1100, '2024-04-01', 'actif', 10, '2025-12-14 11:30:00'),
+('CNT-038', 'papier', 660, '2024-04-15', 'actif', 10, '2025-12-14 12:00:00'),
+('CNT-039', 'plastique', 660, '2024-05-01', 'actif', 10, '2025-12-13 20:00:00'),
+('CNT-040', 'verre', 1100, '2024-05-10', 'actif', 10, '2025-12-12 15:45:00'),
+('CNT-041', 'général', 1100, '2024-05-20', 'actif', 1, '2025-12-14 14:45:00'),
+('CNT-042', 'papier', 660, '2024-06-01', 'actif', 1, '2025-12-14 15:20:00'),
+('CNT-043', 'plastique', 660, '2024-06-10', 'actif', 2, '2025-12-14 08:30:00'),
+('CNT-044', 'verre', 1100, '2024-06-20', 'actif', 2, '2025-12-13 10:45:00'),
+('CNT-045', 'général', 1100, '2024-07-01', 'actif', 3, '2025-12-14 13:05:00'),
+('CNT-046', 'papier', 660, '2024-07-15', 'maintenance', 3, NULL),
+('CNT-047', 'plastique', 660, '2024-08-01', 'actif', 4, '2025-12-14 10:30:00'),
+('CNT-048', 'verre', 1100, '2024-08-10', 'actif', 4, '2025-12-13 16:00:00'),
+('CNT-049', 'général', 1100, '2024-08-20', 'actif', 5, '2025-12-14 07:15:00'),
+('CNT-050', 'papier', 660, '2024-09-01', 'actif', 5, '2025-12-14 07:45:00');
+
+-- Continuation CONTENEUR (51-100)
+INSERT INTO CONTENEUR (idConteneur, typeConteneur, capaciteL, dateInstallation, etatFonctionnement, idZone, dernierVidage) VALUES
+('CNT-051', 'général', 1100, '2024-09-10', 'actif', 6, '2025-12-14 16:15:00'),
+('CNT-052', 'papier', 660, '2024-09-20', 'actif', 6, '2025-12-14 16:45:00'),
+('CNT-053', 'plastique', 660, '2024-10-01', 'actif', 7, '2025-12-13 18:15:00'),
+('CNT-054', 'verre', 1100, '2024-10-10', 'actif', 7, '2025-12-12 13:45:00'),
+('CNT-055', 'général', 1100, '2024-10-20', 'actif', 8, '2025-12-14 12:15:00'),
+('CNT-056', 'papier', 660, '2024-11-01', 'actif', 8, '2025-12-14 12-30:00'),
+('CNT-057', 'plastique', 660, '2024-11-10', 'retire', 9, NULL),
+('CNT-058', 'verre', 1100, '2024-11-20', 'actif', 9, '2025-12-13 08-30:00'),
+('CNT-059', 'général', 1100, '2024-12-01', 'actif', 10, '2025-12-14 11:45:00'),
+('CNT-060', 'papier', 660, '2024-12-10', 'actif', 10, '2025-12-14 12-15:00'),
+('CNT-061', 'général', 1100, '2024-12-15', 'actif', 2, '2025-12-14 09:00:00'),
+('CNT-062', 'papier', 660, '2024-12-20', 'actif', 2, '2025-12-14 09:30:00'),
+('CNT-063', 'plastique', 660, '2025-01-01', 'actif', 3, '2025-12-14 13:35:00'),
+('CNT-064', 'verre', 1100, '2025-01-05', 'actif', 4, '2025-12-13 10:30:00'),
+('CNT-065', 'général', 1100, '2025-01-10', 'actif', 5, '2025-12-14 07-30:00'),
+('CNT-066', 'papier', 660, '2025-01-15', 'maintenance', 6, NULL),
+('CNT-067', 'plastique', 660, '2025-01-20', 'actif', 7, '2025-12-13 17-45:00'),
+('CNT-068', 'verre', 1100, '2025-01-25', 'actif', 8, '2025-12-12 14:00:00'),
+('CNT-069', 'général', 1100, '2025-02-01', 'actif', 9, '2025-12-14 06:45:00'),
+('CNT-070', 'papier', 660, '2025-02-05', 'actif', 1, '2025-12-14 15:30:00');
+
+-- Insertion CAPTEUR (1-2 par conteneur minimum, soit ~140 capteurs pour 100+ conteneurs)
+INSERT INTO CAPTEUR (idConteneur, modele, typeMesure, dateInstallation, dateEtalonnage, statut) VALUES
