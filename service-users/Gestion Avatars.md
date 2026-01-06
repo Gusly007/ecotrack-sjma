@@ -68,3 +68,11 @@ file: (select file from computer)
 
 # En production, utiliser un NFS ou volume partagé
 docker run -v /nfs/avatars:/app/storage/avatars ecotrack-service-users
+
+## Tests unitaires
+Les scénarios critiques sont couverts par Jest afin de garantir la stabilité des flux d'upload et de persistance :
+- [__tests__/controllers/avatarController.test.js](__tests__/controllers/avatarController.test.js) : vérifie les contrôles d'uploads (absence de fichier, dimensions insuffisantes, succès complet) ainsi que la suppression des avatars en base.
+- [__tests__/services/avatarService.test.js](__tests__/services/avatarService.test.js) : contrôle le pipeline Sharp (génération des trois formats, nettoyage des fichiers temporaires), la persistance des URLs et les mutations du filesystem.
+
+Les tests se lancent via `npm test` dans `service-users/` et reposent exclusivement sur des mocks (Sharp, filesystem, base PostgreSQL) pour rester hermétiques aux dépendances externes.
+
