@@ -43,13 +43,19 @@ Swagger est disponible sur `http://localhost:3010/api-docs` et l'endpoint de san
 - \`PUT /notifications/:id/read\` - Marquer lue
 - \`DELETE /notifications/:id\` - Supprimer
 
+### Avatars (protégés)
+- \`POST /users/avatar/upload\` - Upload via multipart/form-data (Sharp + Multer, max 5 MB)
+- \`GET /users/avatar/:userId\` - Récupérer les URLs stockées
+- \`DELETE /users/avatar\` - Supprimer l'avatar courant et les fichiers
+
+> Prérequis : installer \`sharp\` et \`multer\`, puis créer les dossiers \`storage/avatars/{original,thumbnails,mini}\` et \`storage/temp\`.
+
 ### Rôles (admin)
 - \`GET /admin/roles/users/:id\` - Rôles utilisateur
 - \`POST /admin/roles/users/:id\` - Assigner rôle
 - \`DELETE /admin/roles/users/:id/:roleId\` - Retirer rôle
 
 ## Rôles
-
 - **CITOYEN** : Utilisateur standard
 - **AGENT** : Collecteur
 - **GESTIONNAIRE** : Superviseur
