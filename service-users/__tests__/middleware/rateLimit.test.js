@@ -49,7 +49,7 @@ describe('Rate limit middleware', () => {
         jest.resetModules();
         process.env.RATE_LIMIT_REQUESTS = '2';
         process.env.RATE_LIMIT_WINDOW_MS = '1000';
-        return import('../../src/middleware/rateLimit.js');
+        return import('../../src/config/rateLimit.js');
       };
     });
 
@@ -78,7 +78,7 @@ describe('Rate limit middleware', () => {
 
     beforeEach(async () => {
       jest.resetModules();
-      ({ loginLimiter } = await import('../../src/middleware/rateLimit.js'));
+      ({ loginLimiter } = await import('../../src/config/rateLimit.js'));
     });
 
     const failAttempt = () => invokeLimiter(loginLimiter, { statusAfterNext: 401 });

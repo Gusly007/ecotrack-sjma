@@ -17,7 +17,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3010', // Adaptez le port si nécessaire
+        url: 'http://localhost:3010',
         description: 'Serveur de développement'
       },
       {
@@ -26,7 +26,7 @@ const options = {
       }
     ]
   },
-  apis: ['./src/routes/*.js'], // Chemin vers les fichiers de routes
+  apis: ['./src/routes/*.js']
 };
 
 const swaggerSpec = swaggerJsdoc(options);

@@ -1,4 +1,4 @@
-import pool from "../utils/db.js";
+import pool from '../config/database.js';
 
 /**
  * Assigner un role à un utilisateur

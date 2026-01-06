@@ -1,4 +1,4 @@
-import pool from '../utils/db.js';
+import pool from '../config/database.js';
 import { hashPassword, comparePassword } from '../utils/crypto.js';
 
 const userProfileColumns = `id_utilisateur, email, prenom, role_par_defaut, points, est_active, date_creation`;

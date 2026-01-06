@@ -1,11 +1,12 @@
 import rateLimit from 'express-rate-limit';
+import env from './env.js';
 
 /**
  * Rate limiter pour les endpoints publics (100 req/min)
  */
 export const publicLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_REQUESTS) || 100,
+  windowMs: env.rateLimit.windowMs,
+  max: env.rateLimit.maxRequests,
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false
@@ -15,8 +16,8 @@ export const publicLimiter = rateLimit({
  * Rate limiter strict pour login (5 tentatives/15 min)
  */
 export const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: env.rateLimit.loginWindowMs,
+  max: env.rateLimit.loginMaxAttempts,
   message: 'Too many login attempts, please try again later',
   skipSuccessfulRequests: true
 });
@@ -25,7 +26,7 @@ export const loginLimiter = rateLimit({
  * Rate limiter pour password reset (3 tentatives/heure)
  */
 export const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 3,
+  windowMs: env.rateLimit.passwordResetWindowMs,
+  max: env.rateLimit.passwordResetMaxAttempts,
   message: 'Too many password reset attempts'
 });

@@ -1,17 +1,18 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './swaggerConfig.js';
+import swaggerSpec from './config/swagger.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
+import avatarRoutes from './routes/avatars.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { publicLimiter } from './middleware/rateLimit.js';
-import pool from './utils/db.js';
+import { publicLimiter } from './config/rateLimit.js';
+import pool from './config/database.js';
+import path from 'path';
+import env from './config/env.js';
 
-dotenv.config();
 
 const app = express();
 
@@ -26,8 +27,12 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/auth', publicLimiter, authRoutes);
 app.use('/users', userRoutes);
+app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
 app.use('/notifications', notificationRoutes);
+
+// Servir les avatars en tant que fichiers statiques
+app.use('/avatars', express.static(path.join(process.cwd(), 'storage/avatars')));
 
 // Route for Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -40,10 +45,9 @@ app.use((req, res) => {
 // Error handling (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3010;
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+const server = app.listen(env.port, () => {
+  console.log(`Server is running on port ${env.port}`);
+  console.log(`Swagger docs available at http://localhost:${env.port}/api-docs`);
 });
 
 process.on('SIGINT', async () => {

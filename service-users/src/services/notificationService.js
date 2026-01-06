@@ -1,4 +1,4 @@
-import pool from '../utils/db.js';
+import pool from '../config/database.js';
 
 /**
  * Créer une notification

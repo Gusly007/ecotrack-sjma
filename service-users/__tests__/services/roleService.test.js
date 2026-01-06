@@ -1,7 +1,7 @@
-import pool from '../../src/utils/db.js';
+import pool from '../../src/config/database.js';
 import { assignRoleToUser, removeRoleFromUser, getUserRoles } from '../../src/services/roleService.js';
 
-jest.mock('../../src/utils/db.js', () => ({
+jest.mock('../../src/config/database.js', () => ({
 	__esModule: true,
 	default: {
 		query: jest.fn(),

@@ -1,7 +1,7 @@
 import express from 'express';
 import * as authController from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { publicLimiter, loginLimiter } from '../middleware/rateLimit.js';
+import { publicLimiter, loginLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
 
 const router = express.Router();

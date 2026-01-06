@@ -1,4 +1,4 @@
-import pool from '../utils/db.js';
+import pool from '../config/database.js';
 
 /**
  * Stocker un refresh token

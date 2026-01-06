@@ -1,7 +1,7 @@
 import { logLoginAttempt, logAction, getRecentLoginAttempts } from '../../src/services/auditService.js';
-import pool from '../../src/utils/db.js';
+import pool from '../../src/config/database.js';
 
-jest.mock('../../src/utils/db.js', () => ({
+jest.mock('../../src/config/database.js', () => ({
   query: jest.fn(),
 }));
 

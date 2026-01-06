@@ -1,8 +1,8 @@
 import { updateProfile, changePassword, getProfileWithStats } from '../../src/services/userService';
-import pool from '../../src/utils/db';
+import pool from '../../src/config/database.js';
 import { hashPassword, comparePassword } from '../../src/utils/crypto';
 
-jest.mock('../../src/utils/db', () => ({
+jest.mock('../../src/config/database.js', () => ({
   query: jest.fn(),
 }));
 

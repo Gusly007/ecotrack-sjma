@@ -1,9 +1,9 @@
 import { registerUser, loginUser, getUserById } from '../../src/services/authService';
-import pool from '../../src/utils/db';
+import pool from '../../src/config/database.js';
 import { hashPassword, comparePassword } from '../../src/utils/crypto';
 import { generateToken, generateRefreshToken } from '../../src/utils/jwt';
 
-jest.mock('../../src/utils/db', () => ({
+jest.mock('../../src/config/database.js', () => ({
   query: jest.fn(),
 }));
 

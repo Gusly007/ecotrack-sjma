@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
-dotenv.config();
+import env from '../config/env.js';
 
 /**
  * Hasher un mot de passe.
@@ -9,8 +8,7 @@ dotenv.config();
  */
 
 export const hashPassword = async (password) => {
-    const saltRounds = 10; // Valeur par défaut si BCRYPT_ROUNDS n'est pas définie dans les variables d'environnement 
-    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || saltRounds);
+    const salt = await bcrypt.genSalt(env.security.bcryptRounds);
     const hashedPassword = await bcrypt.hash(password, salt);
     return hashedPassword;
 }
