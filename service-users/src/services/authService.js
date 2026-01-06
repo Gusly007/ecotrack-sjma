@@ -1,0 +1,105 @@
+import pool from "../utils/db.js";
+import { hashPassword,comparePassword } from "../utils/crypto.js";
+import{ generateToken,generateRefreshToken } from "../utils/jwt.js";
+
+/**
+ * Inscrire un nouvel utilisateur
+ */
+export const registerUser = async (email, username, password, role = 'CITOYEN') => {
+// Vérifier si l'utilisateur existe déjà
+    const existingUser = await pool.query(
+    'SELECT id_utilisateur FROM UTILISATEUR WHERE email = $1 OR prenom = $2',
+        [email, username]
+    );
+    if (existingUser.rows.length > 0) {
+        throw new Error('Utilisateur déjà existant');
+    }
+//Valider password (ajouter des règles de validation si nécessaire)
+    if (password.length < 6) {
+        throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+    }
+// Hasher le mot de passe
+    const hashedPassword = await hashPassword(password);
+// Créer l'utilisateur dans la base de données
+    const result = await pool.query(
+    `INSERT INTO UTILISATEUR (email, prenom, password_hash, role_par_defaut, est_active) 
+        VALUES ($1, $2, $3, $4, true) RETURNING id_utilisateur, email, prenom, role_par_defaut, points`,
+    [email, username, hashedPassword, role]
+  );
+    const newUser = result.rows[0];
+    // Générer les tokens JWT
+    const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
+  const refreshToken = generateRefreshToken(user.id_utilisateur);
+
+  //Stocker le refresh token dans la base de données
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)',
+    [user.id_utilisateur, refreshToken]
+  );
+
+  return {
+    user,
+    accessToken,
+    refreshToken
+  };
+};
+
+/**
+ * Connexion d'un utilisateur
+ */
+export const loginUser = async (email, password) => {
+// Récupérer l'utilisateur 
+    const result = await pool.query(
+    'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points FROM UTILISATEUR WHERE email = $1',
+    [email]
+  );
+    if (result.rows.length === 0) {
+        throw new Error('Utilisateur non trouvé');
+    }   
+    const user = result.rows[0];
+    //Vérifier si actif
+    if (!user.est_active) {
+        throw new Error('Utilisateur inactif');
+    }
+    //Vérifier le mot de passe
+    const validPassword = await comparePassword(password, user.password_hash);
+    if (!validPassword) {
+        throw new Error('Invalid credentials');
+    }
+    // Générer tokens
+  const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
+  const refreshToken = generateRefreshToken(user.id_utilisateur);
+
+  // Stocker refresh token
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)',
+    [user.id_utilisateur, refreshToken]
+  );
+
+  return {
+    user: {
+      id: user.id_utilisateur,
+      email: user.email,
+      username: user.prenom,
+      role: user.role_par_defaut
+    },
+    accessToken,
+    refreshToken
+  };
+};
+
+/**
+ * Récupérer un utilisateur par son ID
+ */
+export const getUserById = async (userId) => {
+    const result = await pool.query(
+    'SELECT id_utilisateur, email, prenom, role_par_defaut, points FROM UTILISATEUR WHERE id_utilisateur = $1',
+    [userId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('User not found');
+  }
+    return result.rows[0];
+};
+
