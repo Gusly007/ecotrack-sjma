@@ -39,3 +39,10 @@ Chaque login réussi ou échoué est loggé dans JOURNAL_AUDIT :
 -  Refresh tokens (stockés en DB)
 -  Sessions limitées
 -  Logout avec invalidation
+
+## Tests unitaires
+
+- Middleware : couverture sur `publicLimiter` et `loginLimiter` (dépassement de quotas, skip des succès)
+- Session controller : scénarios `/auth/refresh`, `logout`, `logout-all` (tokens valides/invalides)
+- Audit service : vérification des insertions JOURNAL_AUDIT et lecture des tentatives récentes
+
