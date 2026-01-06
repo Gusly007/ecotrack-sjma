@@ -1,9 +1,0 @@
-node_modules/
-.env_user/
-.env.local
-logs/
-*.log
-.DS_Store
-dist/
-build/
-
