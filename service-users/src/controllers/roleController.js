@@ -1,5 +1,5 @@
 import * as roleService from '../services/roleService.js';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const getUserRoles = asyncHandler(async (req, res) => {
   const userId = parseInt(req.params.id);
