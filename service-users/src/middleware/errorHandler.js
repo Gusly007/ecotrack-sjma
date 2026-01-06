@@ -12,7 +12,7 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ message: 'Token invalide ou expiré.' });
   }
 
-  if(err.message.includes('validation')) {
+  if(err.message.includes('Validation')) {
     return res.status(400).json({ message: 'Données invalides.' });
   }
   res.status(500).json({ message: 'Erreur interne du serveur.' });

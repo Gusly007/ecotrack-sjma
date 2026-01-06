@@ -23,10 +23,10 @@ export const authenticateToken  = (req, res, next) => {
  */
 export const authorizeRole = (roles) => {
     return (req, res, next) => {
-        const userRole = req.user.role;
         if(!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
+        const userRole = req.user.role;
         if (!roles.includes(userRole)) {
             return res.status(403).json({ error: 'Insufficient permissions' });
         }
