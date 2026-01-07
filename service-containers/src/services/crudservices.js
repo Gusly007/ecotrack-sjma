@@ -3,20 +3,109 @@ class CrudServices {
     this.model = containerModel;
   }
 
-  async createcontainer(capacity, location) {
-    return this.model.createcontainer(capacity, location);
+  /**
+   * Crée un nouveau conteneur
+   */
+  async createContainer(data) {
+    return this.model.createContainer(data);
   }
 
-  async updatecontainer(id, location) {
-    return this.model.updatecontainer(id, location);
+  /**
+   * Met à jour un conteneur
+   */
+  async updateContainer(id, data) {
+    return this.model.updateContainer(id, data);
   }
 
-  async getcontainerById(id) {
-    return this.model.getcontainerById(id);
+  /**
+   * Change le statut d'un conteneur
+   */
+  async updateStatus(id, statut) {
+    return this.model.updateStatus(id, statut);
   }
 
-  async deletecontainer(id) {
-    return this.model.deletecontainer(id);
+  /**
+   * Récupère un conteneur par ID
+   */
+  async getContainerById(id) {
+    return this.model.getContainerById(id);
+  }
+
+  /**
+   * Récupère un conteneur par UID
+   */
+  async getContainerByUid(uid) {
+    return this.model.getContainerByUid(uid);
+  }
+
+  /**
+   * Récupère tous les conteneurs
+   */
+  async getAllContainers(options = {}) {
+    return this.model.getAllContainers(options);
+  }
+
+  /**
+   * Récupère les conteneurs par statut
+   */
+  async getContainersByStatus(statut) {
+    return this.model.getContainersByStatus(statut);
+  }
+
+  /**
+   * Récupère les conteneurs par zone
+   */
+  async getContainersByZone(id_zone) {
+    return this.model.getContainersByZone(id_zone);
+  }
+
+  /**
+   * Recherche les conteneurs dans un rayon
+   */
+  async getContainersInRadius(latitude, longitude, radiusKm) {
+    return this.model.getContainersInRadius(latitude, longitude, radiusKm);
+  }
+
+  /**
+   * Supprime un conteneur
+   */
+  async deleteContainer(id) {
+    return this.model.deleteContainer(id);
+  }
+
+  /**
+   * Supprime tous les conteneurs
+   */
+  async deleteAllContainers() {
+    return this.model.deleteAllContainers();
+  }
+
+  /**
+   * Compte le nombre de conteneurs
+   */
+  async countContainers(filters = {}) {
+    return this.model.countContainers(filters);
+  }
+
+  /**
+   * Vérifie si un conteneur existe
+   */
+  async existContainer(id) {
+    return this.model.existContainer(id);
+  }
+
+  /**
+   * Vérifie si un UID existe
+   */
+  async existByUid(uid) {
+    return this.model.existByUid(uid);
+  }
+
+  /**
+   * Récupère les statistiques des conteneurs
+   */
+  async getStatistics() {
+    return this.model.getStatistics();
   }
 }
 

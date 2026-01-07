@@ -1,7 +1,7 @@
 // We recommend installing an extension to run jest tests.
-const crudcontainer = require('./crudcontainermodel');
-const pool = require('../db/connexion').pool; // Import the actual pool
-const query = require('../db/connexion').query;
+const crudcontainer = require('../src/models/crudcontainermodel');
+const pool = require('../src/db/connexion').pool; // Import the actual pool
+const query = require('../src/db/connexion').query;
 
 describe('Integration tests for crudcontainer model', () => {
   let model;
@@ -26,7 +26,7 @@ describe('Integration tests for crudcontainer model', () => {
 
   describe('createcontainer', () => {
     it('should insert a new container and return it', async () => {
-      const result = await model.createcontainer(200, 'POINT(2.3522 48.8566)');
+      const result = await model.createcontainer(200, 'POINT(2.3522 48.8566)', 'active');
       expect(result).toHaveProperty('id_conteneur');
       expect(result.capacite_l).toBe(200);
       createdIds.push(result.id_conteneur);
@@ -34,9 +34,9 @@ describe('Integration tests for crudcontainer model', () => {
     });
 
     it('should create multiple containers with unique ids', async () => {
-      const a = await model.createcontainer(100, 'POINT(1 1)');
-      const b = await model.createcontainer(200, 'POINT(2 2)');
-      const c = await model.createcontainer(300, 'POINT(3 3)');
+      const a = await model.createcontainer(100, 'POINT(1 1)', 'active');
+      const b = await model.createcontainer(200, 'POINT(2 2)', 'active');
+      const c = await model.createcontainer(300, 'POINT(3 3)', 'active');
       expect(a.id_conteneur).not.toBe(b.id_conteneur);
       expect(b.id_conteneur).not.toBe(c.id_conteneur);
       createdIds.push(a.id_conteneur, b.id_conteneur, c.id_conteneur);
@@ -49,7 +49,7 @@ describe('Integration tests for crudcontainer model', () => {
 
   describe('updatecontainer', () => {
     it('should update the container and return it', async () => {
-      const created = await model.createcontainer(300, 'POINT(2.3522 48.8566)');
+      const created = await model.createcontainer(300, 'POINT(2.3522 48.8566)', 'active');
       createdIds.push(created.id_conteneur);
       const result = await model.updatecontainer(created.id_conteneur, 'POINT(2.3822 48.8566)');
       expect(result.id_conteneur).toBe(created.id_conteneur);
@@ -63,7 +63,7 @@ describe('Integration tests for crudcontainer model', () => {
 
   describe('getcontainerById', () => {
     it('should return the container with the given id', async () => {
-      const created = await model.createcontainer(400, 'POINT(2.3522 48.8566)');
+      const created = await model.createcontainer(400, 'POINT(2.3522 48.8566)', 'active');
       createdIds.push(created.id_conteneur);
       const result = await model.getcontainerById(created.id_conteneur);
       expect(result.id_conteneur).toBe(created.id_conteneur);
@@ -78,7 +78,7 @@ describe('Integration tests for crudcontainer model', () => {
 
   describe('deletecontainer', () => {
     it('should delete the container and return it', async () => {
-      const created = await model.createcontainer(500, 'POINT(2.3522 48.8566)');
+      const created = await model.createcontainer(500, 'POINT(2.3522 48.8566)', 'active');
       const result = await model.deletecontainer(created.id_conteneur);
       expect(result.id_conteneur).toBe(created.id_conteneur);
       // Verify it's actually deleted
@@ -95,7 +95,7 @@ describe('Integration tests for crudcontainer model', () => {
   describe('validation and edge cases', () => {
     // a revoir selon contraintes BD
     it('should allow capacity = 0 if DB permits', async () => {
-      const created = await model.createcontainer(0, 'POINT(0 0)');
+      const created = await model.createcontainer(0, 'POINT(0 0)', 'active');
       // Accept either successful creation or rejection depending on DB constraints
       if (created && created.id_conteneur) {
         createdIds.push(created.id_conteneur);
@@ -106,7 +106,7 @@ describe('Integration tests for crudcontainer model', () => {
     });
 
     it('multiple create/get consistency', async () => {
-      const created = await model.createcontainer(123, 'POINT(5 5)');
+      const created = await model.createcontainer(123, 'POINT(5 5)', 'active');
       createdIds.push(created.id_conteneur);
       const fetched = await model.getcontainerById(created.id_conteneur);
       expect(fetched.id_conteneur).toBe(created.id_conteneur);
