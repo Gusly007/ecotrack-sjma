@@ -10,7 +10,7 @@ import env from '../config/env.js';
 
 export const generateToken = (userId,role) => {
     return jwt.sign(
-        { userId, role },
+        { id: userId, role, type: 'access' },
         env.jwt.secret,
         { expiresIn: env.jwt.expiresIn }
     );
@@ -23,7 +23,7 @@ export const generateToken = (userId,role) => {
  */
 export const generateRefreshToken = (userId) => {
     return jwt.sign(
-        { userId },
+        { id: userId, type: 'refresh' },
         env.jwt.refreshSecret,
         { expiresIn: env.jwt.refreshExpiresIn }
     );
@@ -35,10 +35,21 @@ export const generateRefreshToken = (userId) => {
  * @returns {object} - Le payload du token si valide.
  * @throws {Error} - Si le token est invalide ou expiré.
  */
-export const verifyToken = (token) => {
+export const verifyAccessToken = (token) => {
     try {
         return jwt.verify(token, env.jwt.secret);
     } catch (err) {
         throw new Error('Invalid or expired token');
     }
-}
+};
+
+export const verifyRefreshToken = (token) => {
+    try {
+        return jwt.verify(token, env.jwt.refreshSecret);
+    } catch (err) {
+        throw new Error('Invalid or expired token');
+    }
+};
+
+// Backward-compatible alias: in this codebase verifyToken is used for access tokens.
+export const verifyToken = verifyAccessToken;

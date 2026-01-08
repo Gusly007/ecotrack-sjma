@@ -31,7 +31,7 @@ describe('JWT Utils', () => {
       const token = generateToken(userId, role);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      expect(decoded.userId).toBe(userId);
+      expect(decoded.id).toBe(userId);
       expect(decoded.role).toBe(role);
     });
   });
@@ -50,7 +50,7 @@ describe('JWT Utils', () => {
       const token = generateRefreshToken(userId);
       const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-      expect(decoded.userId).toBe(userId);
+      expect(decoded.id).toBe(userId);
     });
   });
 
@@ -61,7 +61,7 @@ describe('JWT Utils', () => {
       const token = generateToken(userId, role);
       const decoded = verifyToken(token);
 
-      expect(decoded.userId).toBe(userId);
+      expect(decoded.id).toBe(userId);
       expect(decoded.role).toBe(role);
     });
 

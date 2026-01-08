@@ -1,7 +1,7 @@
 import * as sessionService from '../services/sessionService.js';
 import * as authService from '../services/authService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { generateToken, verifyToken } from '../utils/jwt.js';
+import { generateToken, verifyRefreshToken } from '../utils/jwt.js';
 
 /**
  * POST /auth/refresh
@@ -15,7 +15,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 
   try {
-    const decoded = verifyToken(refreshToken);
+    const decoded = verifyRefreshToken(refreshToken);
     
     if (decoded.type !== 'refresh') {
       throw new Error('Invalid refresh token');

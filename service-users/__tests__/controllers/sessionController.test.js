@@ -19,7 +19,7 @@ const createResponse = () => {
   return res;
 };
 
-const verifyTokenSpy = jest.spyOn(jwt, 'verifyToken');
+const verifyRefreshTokenSpy = jest.spyOn(jwt, 'verifyRefreshToken');
 const next = jest.fn();
 let refreshAccessToken;
 let logout;
@@ -29,16 +29,17 @@ describe('Session Controller', () => {
   beforeAll(async () => {
     ({ refreshAccessToken, logout, logoutAll } = await import('../../src/controllers/sessionController.js'));
     process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
+    process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret';
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    verifyTokenSpy.mockReset();
+    verifyRefreshTokenSpy.mockReset();
     next.mockReset();
   });
 
   afterAll(() => {
-    verifyTokenSpy.mockRestore();
+    verifyRefreshTokenSpy.mockRestore();
   });
 
   describe('refreshAccessToken', () => {
@@ -56,7 +57,7 @@ describe('Session Controller', () => {
     it('rejects non refresh tokens', async () => {
       const req = createRequest({ body: { refreshToken: 'token' } });
       const res = createResponse();
-      verifyTokenSpy.mockReturnValue({ type: 'access', id: 10 });
+      verifyRefreshTokenSpy.mockReturnValue({ type: 'access', id: 10 });
 
       await refreshAccessToken(req, res, next);
 
@@ -68,7 +69,7 @@ describe('Session Controller', () => {
     it('rejects expired or revoked refresh tokens', async () => {
       const req = createRequest({ body: { refreshToken: 'token' } });
       const res = createResponse();
-      verifyTokenSpy.mockReturnValue({ type: 'refresh', id: 7 });
+      verifyRefreshTokenSpy.mockReturnValue({ type: 'refresh', id: 7 });
       sessionService.validateRefreshToken.mockResolvedValue(false);
 
       refreshAccessToken(req, res, next);
@@ -83,14 +84,14 @@ describe('Session Controller', () => {
     it('returns a new access token when refresh token is valid', async () => {
       const req = createRequest({ body: { refreshToken: 'token' } });
       const res = createResponse();
-      verifyTokenSpy.mockReturnValue({ type: 'refresh', id: 5 });
+      verifyRefreshTokenSpy.mockReturnValue({ type: 'refresh', id: 5 });
       sessionService.validateRefreshToken.mockResolvedValue(true);
       authService.getUserById.mockResolvedValue({ id_utilisateur: 5, role_par_defaut: 'ADMIN' });
 
       refreshAccessToken(req, res, next);
       await flushPromises();
 
-      expect(verifyTokenSpy).toHaveBeenCalledWith('token');
+      expect(verifyRefreshTokenSpy).toHaveBeenCalledWith('token');
       expect(next).not.toHaveBeenCalled();
       expect(sessionService.validateRefreshToken).toHaveBeenCalledWith(5, 'token');
       expect(authService.getUserById).toHaveBeenCalledWith(5);
