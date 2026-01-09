@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import env from '../config/env.js';
+import crypto from 'crypto';
 
 /**
  * Hasher un mot de passe.
@@ -21,3 +22,7 @@ export const hashPassword = async (password) => {
 export const comparePassword = async (password, hashedPassword) => {
     return await bcrypt.compare(password, hashedPassword);
 }
+
+export const hashToken = (token) => {
+    return crypto.createHash('sha256').update(String(token)).digest('hex');
+};

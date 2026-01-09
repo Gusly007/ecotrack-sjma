@@ -2,6 +2,7 @@ import * as sessionService from '../services/sessionService.js';
 import * as authService from '../services/authService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { generateToken, verifyRefreshToken } from '../utils/jwt.js';
+import * as auditService from '../services/auditService.js';
 
 /**
  * POST /auth/refresh
@@ -34,6 +35,13 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     // Générer nouvel access token
     const newAccessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
 
+    // Audit (best-effort)
+    try {
+      await auditService.logAction(user.id_utilisateur, 'TOKEN_REFRESH', 'TOKEN', null);
+    } catch (_) {
+      // ignore audit failures
+    }
+
     res.json({
       message: 'Token refreshed',
       token: newAccessToken
@@ -55,6 +63,13 @@ export const logout = asyncHandler(async (req, res) => {
     await sessionService.invalidateRefreshToken(userId, refreshToken);
   }
 
+  // Audit (best-effort)
+  try {
+    await auditService.logAction(userId, 'LOGOUT', 'SESSION', null);
+  } catch (_) {
+    // ignore audit failures
+  }
+
   res.json({ message: 'Logged out successfully' });
 });
 
@@ -66,6 +81,13 @@ export const logoutAll = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
   await sessionService.invalidateAllTokens(userId);
+
+  // Audit (best-effort)
+  try {
+    await auditService.logAction(userId, 'LOGOUT_ALL', 'SESSION', null);
+  } catch (_) {
+    // ignore audit failures
+  }
 
   res.json({ message: 'Logged out from all devices' });
 });

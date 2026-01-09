@@ -5,7 +5,10 @@
     "main":  "src/index.js",
     "scripts":  {
                     "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1",
-                    "dev":  "node src/index.js"
+                    "dev":  "node src/index.js",
+                    "start":  "node src/index.js"
+                },
+    "devDependencies":  {
                 },
     "keywords":  [
 

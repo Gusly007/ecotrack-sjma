@@ -1,6 +1,8 @@
 import pool from '../config/database.js';
 import { hashPassword,comparePassword } from "../utils/crypto.js";
 import{ generateToken,generateRefreshToken } from "../utils/jwt.js";
+import * as auditService from './auditService.js';
+import * as sessionService from './sessionService.js';
 
 /**
  * Inscrire un nouvel utilisateur
@@ -22,20 +24,25 @@ export const registerUser = async (email, username, password, role = 'CITOYEN') 
     const hashedPassword = await hashPassword(password);
 // Créer l'utilisateur dans la base de données
     const result = await pool.query(
-    `INSERT INTO UTILISATEUR (email, prenom, password_hash, role_par_defaut, est_active) 
-        VALUES ($1, $2, $3, $4, true) RETURNING id_utilisateur, email, prenom, role_par_defaut, points`,
-    [email, username, hashedPassword, role]
+    `INSERT INTO UTILISATEUR (email, nom, prenom, password_hash, role_par_defaut, est_active)
+        VALUES ($1, $2, $3, $4, $5, true)
+        RETURNING id_utilisateur, email, nom, prenom, role_par_defaut, points`,
+    [email, username, username, hashedPassword, role]
   );
     const newUser = result.rows[0];
     // Générer les tokens JWT
     const accessToken = generateToken(newUser.id_utilisateur, newUser.role_par_defaut);
   const refreshToken = generateRefreshToken(newUser.id_utilisateur);
 
-  //Stocker le refresh token dans la base de données
-  await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)',
-    [newUser.id_utilisateur, refreshToken]
-  );
+  await sessionService.limitConcurrentSessions(newUser.id_utilisateur);
+  await sessionService.storeRefreshToken(newUser.id_utilisateur, refreshToken);
+
+  // Audit (best-effort)
+  try {
+    await auditService.logAction(newUser.id_utilisateur, 'USER_REGISTER', 'UTILISATEUR', newUser.id_utilisateur);
+  } catch (_) {
+    // ignore audit failures
+  }
 
   return {
     user: newUser,
@@ -47,10 +54,11 @@ export const registerUser = async (email, username, password, role = 'CITOYEN') 
 /**
  * Connexion d'un utilisateur
  */
-export const loginUser = async (email, password) => {
+export const loginUser = async (email, password, ipAddress = null) => {
+  try {
 // Récupérer l'utilisateur 
     const result = await pool.query(
-    'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points FROM UTILISATEUR WHERE email = $1',
+    'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points, est_active FROM UTILISATEUR WHERE email = $1',
     [email]
   );
     if (result.rows.length === 0) {
@@ -70,11 +78,15 @@ export const loginUser = async (email, password) => {
   const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
   const refreshToken = generateRefreshToken(user.id_utilisateur);
 
-  // Stocker refresh token
-  await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token) VALUES ($1, $2)',
-    [user.id_utilisateur, refreshToken]
-  );
+  await sessionService.limitConcurrentSessions(user.id_utilisateur);
+  await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);
+
+  // Audit (best-effort)
+  try {
+    await auditService.logLoginAttempt(email, true, ipAddress);
+  } catch (_) {
+    // ignore audit failures
+  }
 
   return {
     user: {
@@ -86,6 +98,14 @@ export const loginUser = async (email, password) => {
     accessToken,
     refreshToken
   };
+  } catch (err) {
+    try {
+      await auditService.logLoginAttempt(email, false, ipAddress);
+    } catch (_) {
+      // ignore audit failures
+    }
+    throw err;
+  }
 };
 
 /**

@@ -2,8 +2,26 @@ import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permissions.js';
+import { z } from 'zod';
+import { validate } from '../middleware/validate.js';
 
 const router = express.Router();
+
+const updateProfileSchema = {
+  body: z.object({
+    prenom: z.string().min(2).max(50).optional(),
+    email: z.string().email().optional()
+  }).strict().refine((v) => Object.keys(v).length > 0, {
+    message: 'At least one field must be provided'
+  })
+};
+
+const changePasswordSchema = {
+  body: z.object({
+    oldPassword: z.string().min(1),
+    newPassword: z.string().min(6)
+  }).strict()
+};
 
 /**
  * @swagger
@@ -229,7 +247,7 @@ router.get('/profile', userController.getOwnProfile);
  *                   type: string
  *                   example: "Email already in use"
  */
-router.put('/profile', userController.updateProfile);
+router.put('/profile', validate(updateProfileSchema), userController.updateProfile);
 
 /**
  * @swagger
@@ -266,7 +284,7 @@ router.put('/profile', userController.updateProfile);
  *       401:
  *         description: Authentification requise (token manquant ou invalide)
  */
-router.post('/change-password', userController.changePassword);
+router.post('/change-password', validate(changePasswordSchema), userController.changePassword);
 
 /**
  * @swagger

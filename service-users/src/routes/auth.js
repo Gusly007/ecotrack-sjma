@@ -3,8 +3,38 @@ import * as authController from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { publicLimiter, loginLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
+import { z } from 'zod';
+import { validate } from '../middleware/validate.js';
 
 const router = express.Router();
+
+const registerSchema = {
+	body: z.object({
+		email: z.string().email(),
+		username: z.string().min(2).max(50),
+		password: z.string().min(6),
+		role: z.enum(['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN']).optional()
+	}).strict()
+};
+
+const loginSchema = {
+	body: z.object({
+		email: z.string().email(),
+		password: z.string().min(1)
+	}).strict()
+};
+
+const refreshSchema = {
+	body: z.object({
+		refreshToken: z.string().min(1)
+	}).strict()
+};
+
+const logoutSchema = {
+	body: z.object({
+		refreshToken: z.string().min(1).optional()
+	}).strict().optional()
+};
 
 /**
  * @swagger
@@ -195,7 +225,7 @@ const router = express.Router();
  *             example:
  *               error: "Email already in use"
  */
-router.post('/register', publicLimiter, authController.register);
+router.post('/register', publicLimiter, validate(registerSchema), authController.register);
 
 /**
  * @swagger
@@ -240,7 +270,7 @@ router.post('/register', publicLimiter, authController.register);
  *             example:
  *               error: "Too many login attempts, please try again later"
  */
-router.post('/login', loginLimiter, authController.login);
+router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 
 /**
  * @swagger
@@ -312,7 +342,7 @@ router.get('/profile', authenticateToken, authController.getProfile);
  *       403:
  *         description: Refresh token invalide ou expiré
  */
-router.post('/refresh', sessionController.refreshAccessToken);
+router.post('/refresh', validate(refreshSchema), sessionController.refreshAccessToken);
 
 /**
  * @swagger
@@ -343,7 +373,7 @@ router.post('/refresh', sessionController.refreshAccessToken);
  *       401:
  *         description: Token manquant
  */
-router.post('/logout', authenticateToken, sessionController.logout);
+router.post('/logout', authenticateToken, validate(logoutSchema), sessionController.logout);
 
 /**
  * @swagger

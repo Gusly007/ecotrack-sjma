@@ -9,12 +9,33 @@ import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { publicLimiter } from './config/rateLimit.js';
-import pool from './config/database.js';
+import pool, { ensureAuthTables } from './config/database.js';
 import path from 'path';
 import env from './config/env.js';
+import { validateEnv } from './config/env.js';
+import helmet from 'helmet';
 
 
 const app = express();
+
+// Needed when running behind a reverse proxy / API Gateway
+app.set('trust proxy', 1);
+
+if (env.nodeEnv !== 'test') {
+  validateEnv();
+}
+
+if (env.nodeEnv !== 'test') {
+  // Ensure minimal auth tables + sequences exist before serving requests.
+  await ensureAuthTables();
+}
+
+app.use(helmet({
+  // Swagger UI can break with strict CSP in dev; keep it simple for now.
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  hsts: env.nodeEnv === 'production' ? undefined : false
+}));
 
 app.use(cors());
 app.use(express.json());

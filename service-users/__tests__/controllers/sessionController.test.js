@@ -1,9 +1,11 @@
 import * as sessionService from '../../src/services/sessionService.js';
 import * as authService from '../../src/services/authService.js';
 import * as jwt from '../../src/utils/jwt.js';
+import * as auditService from '../../src/services/auditService.js';
 
 jest.mock('../../src/services/sessionService.js');
 jest.mock('../../src/services/authService.js');
+jest.mock('../../src/services/auditService.js');
 
 const createRequest = ({ body = {}, user = { id: 1 } } = {}) => ({
   body,

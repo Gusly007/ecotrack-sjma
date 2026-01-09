@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 
 dotenv.config();
 
@@ -93,7 +93,20 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
   target,
   changeOrigin: true,
   proxyTimeout: 10_000,
-  pathRewrite,
+  pathRewrite: (path, req) => {
+    // When mounted under a path (e.g. app.use('/auth', proxy)), Express removes the
+    // mount prefix from req.url. Re-add it so upstream receives the expected paths.
+    const fullPath = `${req.baseUrl || ''}${path}`;
+
+    if (typeof pathRewrite === 'function') {
+      // Support simple (path) => string rewrites used in this gateway.
+      return pathRewrite.length >= 2 ? pathRewrite(fullPath, req) : pathRewrite(fullPath);
+    }
+
+    return fullPath;
+  },
+  // Best-effort fix for body forwarding when other middleware consumed it.
+  onProxyReq: fixRequestBody,
   onError: (err, req, res) => {
     console.error('❌ Proxy error:', err.message);
     if (!res.headersSent) {
@@ -103,7 +116,6 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
 });
 
 app.use(cors());
-app.use(express.json());
 app.use(globalRateLimit);
 
 app.get('/health', (req, res) => {

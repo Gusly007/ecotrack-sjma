@@ -10,6 +10,7 @@ jest.mock('../../src/config/database.js', () => ({
 jest.mock('../../src/utils/crypto', () => ({
   hashPassword: jest.fn(),
   comparePassword: jest.fn(),
+  hashToken: jest.fn(() => 'hashed-refresh-token'),
 }));
 
 jest.mock('../../src/utils/jwt', () => ({
@@ -34,7 +35,7 @@ describe('Auth Service', () => {
 
       expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'testuser']);
       expect(hashPassword).toHaveBeenCalledWith('password123');
-      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'testuser', 'hashedpassword', 'CITOYEN']);
+      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'testuser', 'testuser', 'hashedpassword', 'CITOYEN']);
       expect(generateToken).toHaveBeenCalled();
       expect(generateRefreshToken).toHaveBeenCalled();
       expect(result).toHaveProperty('accessToken', 'accesstoken');

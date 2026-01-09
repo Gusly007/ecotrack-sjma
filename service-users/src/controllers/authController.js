@@ -33,7 +33,7 @@ export const login = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Champs manquants' });
   }
 
-  const result = await authService.loginUser(email, password);
+  const result = await authService.loginUser(email, password, req.ip);
 
   res.json({
     message: 'Login successful',

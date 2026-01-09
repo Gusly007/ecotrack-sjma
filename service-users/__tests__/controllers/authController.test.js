@@ -50,7 +50,7 @@ describe('Auth Controller', () => {
             
             await login(req, res, mockNext);
 
-            expect(authService.loginUser).toHaveBeenCalledWith('test@example.com', 'password');
+            expect(authService.loginUser).toHaveBeenCalledWith('test@example.com', 'password', undefined);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 token: 'access',
             }));
