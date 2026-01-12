@@ -35,17 +35,20 @@ on:
 # Variables env globales pour ce workflow
 env:
   REGISTRY: ghcr.io  # GitHub Container Registry (public registry GitHub)
-  IMAGE_NAME: ecotrack-service-users
 
 jobs:
   # =========================================================================
-  # JOB 1: CODE QUALITY (LINT)
+  # JOB 1: CODE QUALITY (LINT) - TOUS LES SERVICES
   # =========================================================================
   # Vérifie que le code respecte les normes (indentation, syntax, etc.)
   
   lint:
-    name: 'Lint Code'
-    runs-on: ubuntu-latest  # Machine Linux utilisée par GitHub
+    name: 'Lint Code - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: ['service-users', 'api-gateway']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -57,27 +60,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'  # Cache npm pour accélérer les dépendances
+          cache: 'npm'
+          cache-dependency-path: 'services/${{ matrix.service }}/package-lock.json'
       
       # Étape 3: Installer dépendances
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: service-users
+        working-directory: services/${{ matrix.service }}
       
       # Étape 4: Lancer ESLint (si config existe)
-      # Si tu n'as pas ESLint, cette étape ne fait rien (continue-on-error: true)
       - name: 'Run ESLint'
         run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
-        working-directory: service-users
+        working-directory: ${{ matrix.service }}
         continue-on-error: true
 
   # =========================================================================
-  # JOB 2: UNIT TESTS
+  # JOB 2: UNIT TESTS - SERVICE-USERS SEULEMENT (a des tests)
   # =========================================================================
   # Lance Jest, collecte la couverture de code
   
   test:
-    name: 'Unit Tests'
+    name: 'Unit Tests - service-users'
     runs-on: ubuntu-latest
     
     # Dépend du lint (lint doit réussir en premier)
@@ -108,15 +111,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: 'services/service-users/package-lock.json'
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: service-users
+        working-directory: services/service-users
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
-        working-directory: service-users
+        working-directory: services/service-users
         env:
           # Base de test dans le service postgres ci-dessus
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -128,18 +132,22 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v3
         with:
-          file: ./service-users/coverage/coverage-final.json
+          file: ./services/service-users/coverage/coverage-final.json
           flags: unittests
         continue-on-error: true
 
   # =========================================================================
-  # JOB 3: SECURITY SCAN
+  # JOB 3: SECURITY SCAN - TOUS LES SERVICES
   # =========================================================================
   # Détecte les vulnérabilités dans les dépendances
   
   security:
-    name: 'Security Scan'
+    name: 'Security Scan - ${{ matrix.service }}'
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: ['service-users', 'api-gateway']
     
     steps:
       - name: 'Checkout code'
@@ -150,15 +158,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: 'services/${{ matrix.service }}/package-lock.json'
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: service-users
+        working-directory: services/${{ matrix.service }}
       
       # npm audit = audit les dépendances pour vulnérabilités
       - name: 'Run npm audit'
         run: npm audit --production
-        working-directory: service-users
+        working-directory: services/${{ matrix.service }}
         continue-on-error: true
       
       # Optionnel: Snyk scan (si tu as un compte Snyk)
@@ -169,13 +178,23 @@ jobs:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   # =========================================================================
-  # JOB 4: BUILD DOCKER
+  # JOB 4: BUILD DOCKER - TOUS LES SERVICES
   # =========================================================================
-  # Construit l'image Docker du service-users
+  # Construit les images Docker pour service-users et api-gateway
   
   build:
-    name: 'Build Docker Image'
+    name: 'Build Docker - ${{ matrix.service }}'
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - service: service-users
+            image-name: ecotrack-service-users
+            port: 3010
+          - service: api-gateway
+            image-name: ecotrack-api-gateway
+            port: 3000
     
     # Attend que les tests réussissent
     needs: test
@@ -206,7 +225,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -217,7 +236,7 @@ jobs:
       - name: 'Build and push Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./service-users
+          context: ./services/${{ matrix.service }}
           push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -225,13 +244,31 @@ jobs:
           cache-to: type=gha,mode=max
 
   # =========================================================================
-  # JOB 5: TEST DOCKER IMAGE
+  # JOB 5: TEST DOCKER IMAGE - TOUS LES SERVICES
   # =========================================================================
   # Lance le conteneur Docker construit et valide qu'il démarre
   
   test-docker:
-    name: 'Test Docker Image'
+    name: 'Test Docker - ${{ matrix.service }}'
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - service: service-users
+            image-name: ecotrack-service-users
+            port: 3010
+            env-vars: |
+              -e APP_PORT=3010 \
+              -e JWT_SECRET=test \
+              -e JWT_REFRESH_SECRET=test \
+              -e DATABASE_URL=postgresql://test:test@localhost:5432/ecotrack
+          - service: api-gateway
+            image-name: ecotrack-api-gateway
+            port: 3000
+            env-vars: |
+              -e GATEWAY_PORT=3000 \
+              -e USERS_SERVICE_URL=http://localhost:3010
     
     needs: build
     if: github.event_name == 'pull_request'  # Seulement en PR
@@ -247,27 +284,24 @@ jobs:
       - name: 'Build Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./service-users
+          context: ./services/${{ matrix.service }}
           load: true
-          tags: ${{ env.IMAGE_NAME }}:test
+          tags: ${{ matrix.image-name }}:test
       
       # Lance le conteneur et teste /health endpoint
       - name: 'Start container and test health'
         run: |
           docker run -d \
             --name test-container \
-            -p 3010:3010 \
-            -e APP_PORT=3010 \
-            -e ACCESS_TOKEN_SECRET=test \
-            -e REFRESH_TOKEN_SECRET=test \
-            -e DATABASE_URL=postgresql://test:test@localhost:5432/ecotrack \
-            ${{ env.IMAGE_NAME }}:test
+            -p ${{ matrix.port }}:${{ matrix.port }} \
+            ${{ matrix.env-vars }} \
+            ${{ matrix.image-name }}:test
           
           # Attendre que le container démarre
-          sleep 5
+          sleep 10
           
           # Tester l'endpoint /health
-          curl -f http://localhost:3010/health || exit 1
+          curl -f http://localhost:${{ matrix.port }}/health || exit 1
           
           docker logs test-container
           docker stop test-container

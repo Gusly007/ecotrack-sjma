@@ -24,7 +24,7 @@ services:
   # =========================================================================
   api-gateway:
     build:
-      context: ./api-gateway
+      context: ./services/api-gateway
       dockerfile: Dockerfile
     container_name: ecotrack-api-gateway
     environment:
@@ -64,7 +64,7 @@ services:
   # =========================================================================
   service-users:
     build:
-      context: ./service-users
+      context: ./services/service-users
       dockerfile: Dockerfile
     container_name: ecotrack-service-users
     environment:
