@@ -6,5 +6,3 @@ logs/
 dist/
 build/
 image/
-sql/EcoTrack.sql
-sql/
