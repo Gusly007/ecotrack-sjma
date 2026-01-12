@@ -6,7 +6,7 @@ infra/kubernetes/
 infra/terraform/  
 Figma/
 
-# Old folders (moved to services/)
-service-users/
-api-gateway/
+# Old folders at root (moved to services/)
+/service-users/
+/api-gateway/
 
