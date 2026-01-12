@@ -1,6 +1,5 @@
 node_modules/
-.env_user/
-.env.local
+.env
 logs/
 *.log
 .DS_Store
@@ -9,4 +8,3 @@ build/
 image/
 sql/EcoTrack.sql
 sql/
-

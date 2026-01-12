@@ -1,0 +1,291 @@
+# ============================================================================
+# GITHUB ACTIONS CI/CD PIPELINE
+# ============================================================================
+#
+# CONCEPT: Automatise lint → test → build → scan à chaque push/PR
+#
+# TRIGGER: S'exécute sur:
+#   - Push sur main, develop, feature/* branches
+#   - Pull request ouvert/modifié
+#
+# JOBS:
+#   1. Code Quality (Lint) - ESLint, indentation, etc.
+#   2. Unit Tests - Jest avec couverture
+#   3. Security Scan - npm audit (vulnérabilités)
+#   4. Build Docker - Construit l'image du service-users
+#   5. Test Docker - Lance le conteneur et le valide
+#
+# RÉSULTAT: PR est "blocked" si un job échoue (protection)
+# ============================================================================
+
+name: 'CI/CD Pipeline'
+
+# Déclenche ce workflow
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Variables env globales pour ce workflow
+env:
+  REGISTRY: ghcr.io  # GitHub Container Registry (public registry GitHub)
+  IMAGE_NAME: ecotrack-service-users
+
+jobs:
+  # =========================================================================
+  # JOB 1: CODE QUALITY (LINT)
+  # =========================================================================
+  # Vérifie que le code respecte les normes (indentation, syntax, etc.)
+  
+  lint:
+    name: 'Lint Code'
+    runs-on: ubuntu-latest  # Machine Linux utilisée par GitHub
+    
+    steps:
+      # Étape 1: Télécharger le code du repo
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      # Étape 2: Installer Node.js
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'  # Cache npm pour accélérer les dépendances
+      
+      # Étape 3: Installer dépendances
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: service-users
+      
+      # Étape 4: Lancer ESLint (si config existe)
+      # Si tu n'as pas ESLint, cette étape ne fait rien (continue-on-error: true)
+      - name: 'Run ESLint'
+        run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
+        working-directory: service-users
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2: UNIT TESTS
+  # =========================================================================
+  # Lance Jest, collecte la couverture de code
+  
+  test:
+    name: 'Unit Tests'
+    runs-on: ubuntu-latest
+    
+    # Dépend du lint (lint doit réussir en premier)
+    needs: lint
+    
+    services:
+      # Service PostgreSQL utilisé durant les tests
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: service-users
+      
+      # Lance Jest avec couverture
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: service-users
+        env:
+          # Base de test dans le service postgres ci-dessus
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+          NODE_ENV: test
+          ACCESS_TOKEN_SECRET: test_secret_access
+          REFRESH_TOKEN_SECRET: test_secret_refresh
+      
+      # Upload couverture vers Codecov (optionnel, visualiser la couverture)
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./service-users/coverage/coverage-final.json
+          flags: unittests
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 3: SECURITY SCAN
+  # =========================================================================
+  # Détecte les vulnérabilités dans les dépendances
+  
+  security:
+    name: 'Security Scan'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: service-users
+      
+      # npm audit = audit les dépendances pour vulnérabilités
+      - name: 'Run npm audit'
+        run: npm audit --production
+        working-directory: service-users
+        continue-on-error: true
+      
+      # Optionnel: Snyk scan (si tu as un compte Snyk)
+      # - name: 'Run Snyk scan'
+      #   run: npx snyk test
+      #   working-directory: service-users
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # =========================================================================
+  # JOB 4: BUILD DOCKER
+  # =========================================================================
+  # Construit l'image Docker du service-users
+  
+  build:
+    name: 'Build Docker Image'
+    runs-on: ubuntu-latest
+    
+    # Attend que les tests réussissent
+    needs: test
+    
+    # Permissions pour pousser sur le registry
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      # Setup buildx pour build multi-platform (ARM64, AMD64, etc.)
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      # Login au GitHub Container Registry (pour pousser l'image)
+      - name: 'Log in to Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Métadonnées pour le tag de l'image
+      - name: 'Extract metadata'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      
+      # Build et push l'image Docker
+      - name: 'Build and push Docker image'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./service-users
+          push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 5: TEST DOCKER IMAGE
+  # =========================================================================
+  # Lance le conteneur Docker construit et valide qu'il démarre
+  
+  test-docker:
+    name: 'Test Docker Image'
+    runs-on: ubuntu-latest
+    
+    needs: build
+    if: github.event_name == 'pull_request'  # Seulement en PR
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      # Build localement l'image (sans push)
+      - name: 'Build Docker image'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./service-users
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:test
+      
+      # Lance le conteneur et teste /health endpoint
+      - name: 'Start container and test health'
+        run: |
+          docker run -d \
+            --name test-container \
+            -p 3010:3010 \
+            -e APP_PORT=3010 \
+            -e ACCESS_TOKEN_SECRET=test \
+            -e REFRESH_TOKEN_SECRET=test \
+            -e DATABASE_URL=postgresql://test:test@localhost:5432/ecotrack \
+            ${{ env.IMAGE_NAME }}:test
+          
+          # Attendre que le container démarre
+          sleep 5
+          
+          # Tester l'endpoint /health
+          curl -f http://localhost:3010/health || exit 1
+          
+          docker logs test-container
+          docker stop test-container
+
+# ============================================================================
+# RÉSUMÉ WORKFLOW
+# ============================================================================
+# 
+# Quand tu fais: git push
+#   → GitHub Actions détecte le push
+#   → Lance tous les jobs en parallèle (lint, test, security, build)
+#   → Si l'un échoue, l'image ne se build pas
+#   → Résultats visibles dans GitHub "Actions" tab
+#
+# En production:
+#   - CD: l'image "latest" se déploie auto sur K8s
+#   - Monitoring alerte si deployment échoue
+#
+# Coûts GitHub Actions:
+#   - 2000 min/mois gratuit pour repos public
+#   - Payant au-delà

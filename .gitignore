@@ -2,3 +2,7 @@
 *.env.local
 node_modules/
 docs/
+infra/kubernetes/
+infra/terraform/  
+Figma/
+

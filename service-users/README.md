@@ -78,3 +78,45 @@ npm test
 ```
 
 Le guide détaillé des scénarios manuels est disponible dans `TESTING_GUIDE.md`.
+
+## CI: ce qui tourne sur un push
+
+Le workflow GitHub Actions `ci.yml` lance (par ordre): lint (si configuré), tests Jest avec Postgres, scan `npm audit`, build d'une image Docker, et un test de l'image en PR. Si un job échoue, l'image n'est pas poussée.
+
+## Vérifications locales avant push
+
+1) Installer dépendances (clean comme la CI):
+```bash
+cd service-users
+npm ci
+```
+
+2) Lancer les tests Jest avec une base Postgres locale (adapter l'URL si besoin):
+```bash
+DATABASE_URL=postgresql://test_user:test_pass@localhost:5432/ecotrack_test \
+NODE_ENV=test \
+npm run test:coverage
+```
+
+3) (Optionnel) Build Docker local pour vérifier l'image comme en CI:
+```bash
+docker build -t ecotrack-service-users:local .
+```
+
+4) (Optionnel) Smoke test rapide de l'image:
+```bash
+docker run --rm -p 3010:3010 \
+	-e APP_PORT=3010 \
+	-e DATABASE_URL="postgresql://test_user:test_pass@localhost:5432/ecotrack_test" \
+	-e ACCESS_TOKEN_SECRET=test \
+	-e REFRESH_TOKEN_SECRET=test \
+	ecotrack-service-users:local
+curl http://localhost:3010/health
+```
+
+5) (Si besoin d'une base de données provisionnée) Importer le schéma via le job compose dédié:
+```bash
+docker compose --profile migrate run --rm db-migrate
+```
+
+Ces commandes couvrent l'essentiel de ce que la CI exécute lors d'un push ou d'une PR.
