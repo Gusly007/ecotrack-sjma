@@ -54,6 +54,9 @@ jobs:
       # Étape 1: Télécharger le code du repo
       - name: 'Checkout code'
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout-cone: false
       
       # Étape 2: Installer Node.js
       - name: 'Setup Node.js'
@@ -289,6 +292,15 @@ jobs:
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
       
+      # Inspect workspace to confirm SQL presence
+      - name: 'Inspect workspace'
+        run: |
+          pwd
+          ls -la
+          ls -la services
+          ls -la services/service-users
+          ls -la services/service-users/sql
+
       # Initialize database schema for service-users
       - name: 'Initialize database schema'
         if: matrix.service == 'service-users'
