@@ -291,12 +291,25 @@ jobs:
             ${{ matrix.env-vars }} \
             ${{ matrix.image-name }}:test
           
-          # Attendre que le container démarre
-          sleep 10
+          # Attendre que le container démarre avec retry
+          echo "Waiting for container to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:${{ matrix.port }}/health 2>/dev/null; then
+              echo "Container is healthy!"
+              break
+            fi
+            echo "Attempt $i/30 failed, retrying in 2s..."
+            sleep 2
+          done
           
-          # Tester l'endpoint /health
-          curl -f http://localhost:${{ matrix.port }}/health || exit 1
+          # Vérifier une dernière fois
+          curl -f http://localhost:${{ matrix.port }}/health || {
+            echo "Health check failed. Container logs:"
+            docker logs test-container
+            exit 1
+          }
           
+          echo "Health check passed!"
           docker logs test-container
           docker stop test-container
 
