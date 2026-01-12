@@ -71,7 +71,7 @@ jobs:
       # Étape 4: Lancer ESLint (si config existe)
       - name: 'Run ESLint'
         run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
-        working-directory: ${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         continue-on-error: true
 
   # =========================================================================
