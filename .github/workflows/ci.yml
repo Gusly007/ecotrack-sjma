@@ -295,7 +295,8 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
           export PGPASSWORD=test_pass
-          psql -h localhost -U test_user -d ecotrack_test -f ./services/service-users/sql/EcoTrack.sql
+          ls -la services/service-users/sql/
+          psql -h localhost -U test_user -d ecotrack_test -f services/service-users/sql/EcoTrack.sql
       
       # Build localement l'image (sans push)
       - name: 'Build Docker image'
