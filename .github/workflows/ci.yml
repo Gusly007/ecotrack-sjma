@@ -289,6 +289,14 @@ jobs:
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
       
+      # Initialize database schema for service-users
+      - name: 'Initialize database schema'
+        if: matrix.service == 'service-users'
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          export PGPASSWORD=test_pass
+          psql -h localhost -U test_user -d ecotrack_test -f services/service-users/sql/001_utilisateur_identity.sql
+      
       # Build localement l'image (sans push)
       - name: 'Build Docker image'
         uses: docker/build-push-action@v5
