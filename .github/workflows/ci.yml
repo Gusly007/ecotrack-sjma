@@ -292,12 +292,12 @@ jobs:
       # Initialize database schema for service-users
       - name: 'Initialize database schema'
         if: matrix.service == 'service-users'
-        working-directory: services/service-users
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
           export PGPASSWORD=test_pass
-          ls -la sql/
-          psql -h localhost -U test_user -d ecotrack_test -f sql/EcoTrack.sql
+          echo "PWD: $(pwd)" && ls -la
+          ls -la services/service-users/sql || true
+          psql -h localhost -U test_user -d ecotrack_test -f "$GITHUB_WORKSPACE/services/service-users/sql/EcoTrack.sql"
       
       # Build localement l'image (sans push)
       - name: 'Build Docker image'
