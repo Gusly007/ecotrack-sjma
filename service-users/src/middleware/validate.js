@@ -1,5 +1,15 @@
 import { ZodError } from 'zod';
 
+
+/**
+ * Validates a request against a Zod schema.
+ * If the request is valid, it adds a `validated` property to the request object
+ * containing the validated data. If the request is invalid, it returns a 400 response
+ * with the validation errors.
+ *
+ * @param {Object} schema - A Zod schema containing the properties to validate.
+ * @returns {Function} - A middleware function that validates a request against the schema.
+ */
 export const validate = (schema) => (req, res, next) => {
   try {
     req.validated = {

@@ -15,7 +15,7 @@ export const hashPassword = async (password) => {
 }
 
 /**
- * Comarer un mot de passe en clair avec un mot de passe hashé.
+ * Comparer un mot de passe en clair avec un mot de passe hashé.
  * @param {string} password - Le mot de passe en clair.
  * @param {string} hashedPassword - Le mot de passe hashé.
  */

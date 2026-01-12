@@ -17,7 +17,7 @@ export const requirePermission = (permission) => {
 };
 
 /**
- * V2rifier les permissions de l'utilisateur avec plusieurs permissions
+ * Vérifier les permissions de l'utilisateur avec plusieurs permissions
  */
 export const requirePermissions = (permissions) => {
     return (req, res, next) => {
