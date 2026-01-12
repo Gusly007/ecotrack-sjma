@@ -258,17 +258,11 @@ jobs:
           - service: service-users
             image-name: ecotrack-service-users
             port: 3010
-            env-vars: |
-              -e APP_PORT=3010 \
-              -e JWT_SECRET=test \
-              -e JWT_REFRESH_SECRET=test \
-              -e DATABASE_URL=postgresql://test:test@localhost:5432/ecotrack
+            env-vars: '-e APP_PORT=3010 -e JWT_SECRET=test -e JWT_REFRESH_SECRET=test -e DATABASE_URL=postgresql://test:test@localhost:5432/ecotrack'
           - service: api-gateway
             image-name: ecotrack-api-gateway
             port: 3000
-            env-vars: |
-              -e GATEWAY_PORT=3000 \
-              -e USERS_SERVICE_URL=http://localhost:3010
+            env-vars: '-e GATEWAY_PORT=3000 -e USERS_SERVICE_URL=http://localhost:3010'
     
     needs: build
     if: github.event_name == 'pull_request'  # Seulement en PR
