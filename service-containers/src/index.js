@@ -2,8 +2,18 @@ const express = require('express');
 const app = express();
 
 app.use(express.json());
-const routes = require('./src/route');
+// Routes conteneurs
+const routes = require('../routes/route');
 app.use('/api', routes);
+
+// Routes zones
+const zoneRoutes = require('../routes/zone.route.js');
+app.use('/api', zoneRoutes);
+app.use((error, req, res, next) => {
+    const status = error.status || 400;
+    const message = error.message || 'Erreur serveur';
+    res.status(status).json({ error: message });
+});
 
 
 
@@ -29,7 +39,8 @@ const options = {
       },
     ],
   },
-  apis: ['./service-containers/routes/*.js'],
+  // Chemins des fichiers contenant les annotations Swagger
+  apis: ['../routes/*.js'],
 };
 const specs = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));

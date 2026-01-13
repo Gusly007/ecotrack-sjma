@@ -31,5 +31,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 const routes = require('./routes/route');
 app.use('/api', routes);
 
+// Mount zone routes
+const zoneRoutes = require('./routes/zone.route.js');
+app.use('/api', zoneRoutes);
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));

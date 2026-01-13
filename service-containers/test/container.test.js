@@ -1,4 +1,4 @@
-const ConteneurModel = require('../src/models/crudcontainermodel');
+const ConteneurModel = require('../src/models/containermodel');
 const db = {}; // Mock database object for testing
 
 describe('ConteneurModel', () => {
@@ -156,25 +156,72 @@ describe('ConteneurModel', () => {
     describe('updateStatus', () => {
       it('should throw an error if id or statut is missing', async () => {
         await expect(model.updateStatus(null, 'ACTIF'))
-          .rejects.toThrow('Champs requis manquants: id, statut');
+          .rejects.toThrow('Le paramètre id est requis');
         
         await expect(model.updateStatus(1, null))
-          .rejects.toThrow('Champs requis manquants: id, statut');
+          .rejects.toThrow('Le paramètre statut est requis');
       });
 
       it('should throw an error for invalid statut', async () => {
+        // Mock connect pour retourner un client avec query
+        const mockClient = {
+          query: jest.fn(),
+          release: jest.fn()
+        };
+        db.connect = jest.fn().mockResolvedValue(mockClient);
+        
         await expect(model.updateStatus(1, 'INVALID_STATUS'))
           .rejects.toThrow('Statut invalide');
       });
 
       it('should update container status successfully', async () => {
-        db.query = jest.fn().mockResolvedValue({
-          rows: [{ id_conteneur: 1, uid: 'CNT-123456789', statut: 'EN_MAINTENANCE' }]
-        });
+        const mockClient = {
+          query: jest.fn()
+            .mockResolvedValueOnce({}) // BEGIN
+            .mockResolvedValueOnce({ rows: [{ id_conteneur: 1, uid: 'CNT-123456789', statut: 'ACTIF' }] }) // SELECT current status
+            .mockResolvedValueOnce({ rows: [{ id_conteneur: 1, uid: 'CNT-123456789', statut: 'EN_MAINTENANCE' }] }) // UPDATE
+            .mockResolvedValueOnce({}) // INSERT historique
+            .mockResolvedValueOnce({}), // COMMIT
+          release: jest.fn()
+        };
+        db.connect = jest.fn().mockResolvedValue(mockClient);
 
         const result = await model.updateStatus(1, 'EN_MAINTENANCE');
         expect(result).toHaveProperty('id_conteneur');
         expect(result.statut).toBe('EN_MAINTENANCE');
+        expect(result.ancien_statut).toBe('ACTIF');
+        expect(result.changed).toBe(true);
+        expect(mockClient.release).toHaveBeenCalled();
+      });
+
+      it('should return unchanged when status is already the same', async () => {
+        const mockClient = {
+          query: jest.fn()
+            .mockResolvedValueOnce({}) // BEGIN
+            .mockResolvedValueOnce({ rows: [{ id_conteneur: 1, uid: 'CNT-123456789', statut: 'ACTIF' }] }) // SELECT current status
+            .mockResolvedValueOnce({}), // COMMIT
+          release: jest.fn()
+        };
+        db.connect = jest.fn().mockResolvedValue(mockClient);
+
+        const result = await model.updateStatus(1, 'ACTIF');
+        expect(result.statut).toBe('ACTIF');
+        expect(result.changed).toBe(false);
+        expect(result.message).toBe('Le statut est déjà à jour');
+      });
+
+      it('should throw error when container not found', async () => {
+        const mockClient = {
+          query: jest.fn()
+            .mockResolvedValueOnce({}) // BEGIN
+            .mockResolvedValueOnce({ rows: [] }), // SELECT returns no rows
+          release: jest.fn()
+        };
+        db.connect = jest.fn().mockResolvedValue(mockClient);
+
+        await expect(model.updateStatus(999, 'ACTIF'))
+          .rejects.toThrow("Conteneur avec l'ID 999 introuvable");
+        expect(mockClient.release).toHaveBeenCalled();
       });
     });
 

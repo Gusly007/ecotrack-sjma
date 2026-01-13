@@ -260,6 +260,49 @@ router.patch('/containers/:id', controller.update);
  */
 router.patch('/containers/:id/status', controller.updateStatus);
 
+// GET - Récupérer l'historique des changements de statut d'un conteneur
+/**
+ * @swagger
+ * /containers/{id}/status/history:
+ *   get:
+ *     summary: Récupère l'historique des changements de statut d'un conteneur
+ *     description: Retourne tous les changements de statut d'un conteneur spécifique, triés du plus récent au plus ancien
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant du conteneur
+ *     responses:
+ *       200:
+ *         description: Historique récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id_historique:
+ *                     type: integer
+ *                   ancien_statut:
+ *                     type: string
+ *                     nullable: true
+ *                   nouveau_statut:
+ *                     type: string
+ *                   date_changement:
+ *                     type: string
+ *                     format: date-time
+ *       400:
+ *         description: ID manquant
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/containers/:id/status/history', controller.getStatusHistory);
+
 // DELETE - Supprimer un conteneur
 /**
  * @swagger

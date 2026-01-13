@@ -19,6 +19,7 @@ class ContainerController {
     this.exists = this.exists.bind(this);
     this.existsByUid = this.existsByUid.bind(this);
     this.getStatistics = this.getStatistics.bind(this);
+    this.getStatusHistory = this.getStatusHistory.bind(this);
   }
 
   /**
@@ -280,6 +281,29 @@ class ContainerController {
     try {
       const stats = await this.service.getStatistics();
       return res.status(200).json(stats);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  }
+
+  /**
+   * Récupère l'historique des changements de statut d'un conteneur
+   */
+  async getStatusHistory(req, res) {
+    try {
+      const { id } = req.params;
+      const { limit, offset } = req.query;
+
+      if (!id) {
+        return res.status(400).json({ message: 'ID est requis' });
+      }
+
+      const options = {};
+      if (limit) options.limit = parseInt(limit, 10);
+      if (offset) options.offset = parseInt(offset, 10);
+
+      const history = await this.service.getHistoriqueStatut(id, options);
+      return res.status(200).json(history);
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }

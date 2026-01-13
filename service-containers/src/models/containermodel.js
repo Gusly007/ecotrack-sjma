@@ -2,6 +2,17 @@ class ConteneurModel {
   constructor(db) {
     this.db = db;
   }
+  /**
+   * Enregistre un changement de statut dans l'historique
+   * @private
+   */
+  async _enregistrerHistoriqueStatut(id_entite, type_entite, ancien_statut, nouveau_statut) {
+    await this.db.query(
+      `INSERT INTO historique_statut (id_entite, type_entite, ancien_statut, nouveau_statut, date_changement)
+       VALUES ($1, $2, $3, $4, NOW())`,
+      [id_entite, type_entite, ancien_statut, nouveau_statut]
+    );
+  }
 
   /**
    * Crée un nouveau conteneur
@@ -104,27 +115,86 @@ class ConteneurModel {
   }
 
   /**
-   * Change le statut d'un conteneur
+   * Change le statut d'un conteneur avec enregistrement dans l'historique
+   * @param {number} id - ID du conteneur
+   * @param {string} statut - Nouveau statut (ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE)
+   * @returns {Object} Conteneur mis à jour avec ancien_statut et changed
+   * @throws {Error} Si le conteneur n'existe pas ou si le statut est invalide
    */
   async updateStatus(id, statut) {
-    if (!id || !statut) {
-      throw new Error('Champs requis manquants: id, statut');
+    // Validation des paramètres
+    if (!id) {
+      throw new Error('Le paramètre id est requis');
+    }
+    if (!statut) {
+      throw new Error('Le paramètre statut est requis');
     }
 
+    // Validation du statut
     const validStatuts = ['ACTIF', 'INACTIF', 'EN_MAINTENANCE', 'HORS_SERVICE'];
     if (!validStatuts.includes(statut)) {
-      throw new Error(`Statut invalide. Valeurs acceptées: ${validStatuts.join(', ')}`);
+      throw new Error(
+        `Statut invalide: "${statut}". Valeurs acceptées: ${validStatuts.join(', ')}`
+      );
     }
 
-    const result = await this.db.query(
-      `UPDATE conteneur 
-       SET statut = $1 
-       WHERE id_conteneur = $2 
-       RETURNING id_conteneur, uid, statut`,
-      [statut, id]
-    );
+    const client = await this.db.connect();
 
-    return result.rows[0];
+    try {
+      await client.query('BEGIN');
+
+      // Récupérer le conteneur et son statut actuel
+      const currentContainer = await client.query(
+        'SELECT id_conteneur, uid, statut FROM conteneur WHERE id_conteneur = $1',
+        [id]
+      );
+
+      if (currentContainer.rows.length === 0) {
+        throw new Error(`Conteneur avec l'ID ${id} introuvable`);
+      }
+
+      const ancienStatut = currentContainer.rows[0].statut;
+
+      // Ne rien faire si le statut est déjà le même
+      if (ancienStatut === statut) {
+        await client.query('COMMIT');
+        return {
+          ...currentContainer.rows[0],
+          ancien_statut: ancienStatut,
+          changed: false,
+          message: 'Le statut est déjà à jour'
+        };
+      }
+
+      // Mettre à jour le statut
+      const result = await client.query(
+        `UPDATE conteneur 
+         SET statut = $1 
+         WHERE id_conteneur = $2 
+         RETURNING id_conteneur, uid, statut`,
+        [statut, id]
+      );
+
+      // Enregistrer dans l'historique
+      await client.query(
+        `INSERT INTO historique_statut (id_entite, type_entite, ancien_statut, nouveau_statut, date_changement)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [id, 'conteneur', ancienStatut, statut]
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        ...result.rows[0],
+        ancien_statut: ancienStatut,
+        changed: true
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   /**
@@ -365,6 +435,69 @@ class ConteneurModel {
     `);
 
     return result.rows[0];
+  }
+
+  /**
+   * Récupère l'historique complet des changements de statut d'un conteneur
+   * @param {number} id_conteneur - ID du conteneur
+   * @param {Object} options - Options de pagination
+   * @param {number} options.limit - Nombre maximum d'entrées à retourner (défaut: 50)
+   * @param {number} options.offset - Nombre d'entrées à sauter (défaut: 0)
+   * @returns {Array} Liste des changements de statut ordonnés du plus récent au plus ancien
+   * @throws {Error} Si l'ID du conteneur n'est pas fourni
+   */
+  async getHistoriqueStatut(id_conteneur, options = {}) {
+    if (!id_conteneur) {
+      throw new Error('Le paramètre id_conteneur est requis');
+    }
+
+    const { limit = 50, offset = 0 } = options;
+
+    // Validation des options de pagination
+    if (limit < 1 || limit > 1000) {
+      throw new Error('La limite doit être entre 1 et 1000');
+    }
+    if (offset < 0) {
+      throw new Error('L\'offset doit être un nombre positif');
+    }
+
+    const result = await this.db.query(
+      `SELECT 
+         id_historique,
+         id_entite,
+         type_entite,
+         ancien_statut,
+         nouveau_statut,
+         date_changement
+       FROM historique_statut
+       WHERE id_entite = $1 AND type_entite = 'conteneur'
+       ORDER BY date_changement DESC
+       LIMIT $2 OFFSET $3`,
+      [id_conteneur, limit, offset]
+    );
+
+    return result.rows;
+  }
+
+  /**
+   * Compte le nombre total de changements de statut pour un conteneur
+   * @param {number} id_conteneur - ID du conteneur
+   * @returns {number} Nombre total de changements de statut
+   * @throws {Error} Si l'ID du conteneur n'est pas fourni
+   */
+  async countHistoriqueStatut(id_conteneur) {
+    if (!id_conteneur) {
+      throw new Error('Le paramètre id_conteneur est requis');
+    }
+
+    const result = await this.db.query(
+      `SELECT COUNT(*) as total
+       FROM historique_statut
+       WHERE id_entite = $1 AND type_entite = 'conteneur'`,
+      [id_conteneur]
+    );
+
+    return parseInt(result.rows[0].total, 10);
   }
 }
 module.exports = ConteneurModel;

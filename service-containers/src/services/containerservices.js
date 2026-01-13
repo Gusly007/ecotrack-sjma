@@ -1,4 +1,4 @@
-class CrudServices {
+class ContainerServices {
   constructor(containerModel) {
     this.model = containerModel;
   }
@@ -107,6 +107,20 @@ class CrudServices {
   async getStatistics() {
     return this.model.getStatistics();
   }
+
+  /**
+   * Récupère l'historique des changements de statut d'un conteneur
+   */
+  async getHistoriqueStatut(id_conteneur, options = {}) {
+    return this.model.getHistoriqueStatut(id_conteneur, options);
+  }
+
+  /**
+   * Compte le nombre de changements de statut d'un conteneur
+   */
+  async countHistoriqueStatut(id_conteneur) {
+    return this.model.countHistoriqueStatut(id_conteneur);
+  }
 }
 
-module.exports = CrudServices;
+module.exports = ContainerServices;
