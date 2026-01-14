@@ -78,8 +78,25 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ========== ROUTES ==========
-const routes = require('./routes/route');
-app.use('/api', routes);
+// API root
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bienvenue sur EcoTrack Containers API',
+    version: '1.0.0',
+    endpoints: {
+      documentation: '/api-docs',
+      health: '/health',
+      containers: '/api/containers',
+      zones: '/api/zones',
+      types: '/api/types-conteneurs'
+    }
+  });
+});
+
+// Container routes
+const containerRoutes = require('./routes/container.route.js');
+app.use('/api', containerRoutes);
 
 // Zone routes
 const zoneRoutes = require('./routes/zone.route.js');

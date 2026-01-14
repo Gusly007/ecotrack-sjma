@@ -3,7 +3,7 @@ const app = express();
 
 app.use(express.json());
 // Routes conteneurs
-const routes = require('../routes/route');
+const routes = require('../routes/container.route.js');
 app.use('/api', routes);
 
 // Routes zones

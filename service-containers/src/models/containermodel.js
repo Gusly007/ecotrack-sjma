@@ -7,10 +7,13 @@ class ConteneurModel {
    * @private
    */
   async _enregistrerHistoriqueStatut(id_entite, type_entite, ancien_statut, nouveau_statut) {
+    // Normaliser type_entite en majuscules (CONTENEUR, TOURNEE, SIGNALEMENT)
+    const typeNormalise = type_entite.toUpperCase();
+    
     await this.db.query(
       `INSERT INTO historique_statut (id_entite, type_entite, ancien_statut, nouveau_statut, date_changement)
        VALUES ($1, $2, $3, $4, NOW())`,
-      [id_entite, type_entite, ancien_statut, nouveau_statut]
+      [id_entite, typeNormalise, ancien_statut, nouveau_statut]
     );
   }
 
@@ -179,7 +182,7 @@ class ConteneurModel {
       await client.query(
         `INSERT INTO historique_statut (id_entite, type_entite, ancien_statut, nouveau_statut, date_changement)
          VALUES ($1, $2, $3, $4, NOW())`,
-        [id, 'conteneur', ancienStatut, statut]
+        [id, 'CONTENEUR', ancienStatut, statut]
       );
 
       await client.query('COMMIT');
