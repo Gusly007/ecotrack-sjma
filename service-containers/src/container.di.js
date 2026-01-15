@@ -18,6 +18,14 @@ const typeConteneurModel = new TypeConteneurModel(pool);
 const typeConteneurService = new TypeConteneurService(typeConteneurModel);
 const typeConteneurController = new TypeConteneurController(typeConteneurService);
 
+const SignalementService = require('./services/signalementservices');
+const SignalementModel = require('./models/signalementmodel');
+const SignalementController = require('./controllers/signalementcontroller');
+const signalementModel = new SignalementModel(pool);
+const signalementService = new SignalementService(signalementModel);
+const signalementController = new SignalementController(signalementService);
+
 module.exports = controller;
 module.exports.zoneController = zoneControllerInstance;
 module.exports.typeConteneurController = typeConteneurController;
+module.exports.signalementController = signalementController;

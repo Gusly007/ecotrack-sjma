@@ -102,6 +102,14 @@ app.use('/api', containerRoutes);
 const zoneRoutes = require('./routes/zone.route.js');
 app.use('/api', zoneRoutes);
 
+// Signalement routes
+const signalementRoutes = require('./routes/signalement.route.js');
+app.use('/api', signalementRoutes);
+
+// Type Container routes
+const typeContainerRoutes = require('./routes/typecontainer.route.js');
+app.use('/api/typecontainers', typeContainerRoutes);
+
 // ========== HEALTH CHECK ==========
 app.get('/health', (req, res) => {
   res.json({
