@@ -40,7 +40,19 @@ Variables importantes dans `.env` :
 > ⚠️ **Ne commitez jamais** votre `.env` contenant des secrets dans Git.
 
 ## ▶️ Commandes utiles
-- Tester la connexion :
+- Démarrer le serveur (développement) :
+
+```powershell
+npm run dev
+```
+
+- Démarrer le serveur (production) :
+
+```powershell
+npm start
+```
+
+- Tester la connexion à la base de données :
 
 ```powershell
 npm run test-db
@@ -51,6 +63,71 @@ npm run test-db
 ```powershell
 npm run init-db
 ```
+
+- Lancer les tests Socket.IO :
+
+```powershell
+npm run test:socket           # Tests unitaires
+npm run test:socket:integration # Tests d'intégration
+npm run test:socket:e2e       # Tests E2E (serveur requis)
+```
+
+---
+
+## 🔌 Socket.IO - Notifications Temps Réel
+
+Le serveur inclut **Socket.IO** pour envoyer des notifications en temps réel aux clients WebSocket.
+
+### ✨ Fonctionnalités
+
+- ✅ Notifications instantanées lors des changements de statut
+- ✅ Rooms par zone pour broadcaster sélectif
+- ✅ Même port que l'API (8080) - une seule connexion
+- ✅ WebSocket + Polling fallback
+- ✅ CORS configuré pour toutes les origines
+
+### 🚀 Démarrage
+
+**Terminal 1 - Serveur:**
+```powershell
+npm run dev
+```
+
+Vous verrez:
+```
+🔌 Socket.IO: ws://localhost:8080
+```
+
+**Terminal 2 - Client test:**
+```powershell
+npm run test:socket:client
+```
+
+### 📡 Événements
+
+**Client → Serveur:**
+```javascript
+// S'abonner à une zone
+socket.emit('subscribe-zone', { id_zone: 1 });
+
+// Se désabonner d'une zone
+socket.emit('unsubscribe-zone', { id_zone: 1 });
+```
+
+**Serveur → Client:**
+```javascript
+// Changement de statut
+socket.on('container:status-changed', (data) => {
+  console.log('Statut:', data.nouveau_statut);
+  console.log('Zone:', data.id_zone);
+});
+```
+
+### 🧪 Tests
+
+Voir **[TESTING.md](./TESTING.md)** pour le guide complet des tests Socket.IO.
+
+---
 
 ## Alternative : exécuter le SQL via `psql` ou pgAdmin
 Si vous préférez, vous pouvez importer `sql/init.sql` depuis pgAdmin ou en CLI :

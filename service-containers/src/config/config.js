@@ -3,7 +3,7 @@
  */
 module.exports = {
   // Ports et serveur
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 8080,
   NODE_ENV: process.env.NODE_ENV || 'development',
 
   // Base de données

@@ -1,5 +1,9 @@
 const router = require('express').Router();
 const controller = require('../src/container.di.js');
+const socketMiddleware = require('../src/middleware/socketMiddleware');
+
+// Appliquer le middleware pour injecter Socket.IO à chaque requête
+router.use(socketMiddleware);
 
 // ========== CRUD de base ==========
 
@@ -258,7 +262,7 @@ router.patch('/containers/:id', controller.update);
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/containers/:id/status', controller.updateStatus);
+router.patch('/containers/:id/status', (req, res) => req.containerController.updateStatus(req, res));
 
 // GET - Récupérer l'historique des changements de statut d'un conteneur
 /**

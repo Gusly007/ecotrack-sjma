@@ -62,7 +62,10 @@ class ConteneurModel {
       throw new Error('Champ requis manquant: id');
     }
 
-    const { capacite_l, statut, latitude, longitude, id_zone, id_type } = data;
+    if (Object.prototype.hasOwnProperty.call(data, 'statut')) {
+      throw new Error('Le statut doit être modifié via la méthode updateStatus dédiée');
+    }
+    const { capacite_l, latitude, longitude, id_zone, id_type } = data;
 
     // Construire la requête dynamiquement
     const updates = [];
@@ -72,11 +75,6 @@ class ConteneurModel {
     if (capacite_l !== undefined) {
       updates.push(`capacite_l = $${paramIndex++}`);
       values.push(capacite_l);
-    }
-
-    if (statut !== undefined) {
-      updates.push(`statut = $${paramIndex++}`);
-      values.push(statut);
     }
 
     if (latitude !== undefined && longitude !== undefined) {

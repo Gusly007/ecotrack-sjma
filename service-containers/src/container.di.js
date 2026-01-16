@@ -2,8 +2,16 @@ const ContainerServices = require('./services/containerservices');
 const ContainerModel = require('./models/containermodel');
 const ContainerController = require('./controllers/containercontroller');
 const pool = require('./db/connexion').pool; // Import the actual pool
-const service = new ContainerServices(new ContainerModel(pool));
-const controller = new ContainerController(service);
+
+// Factory pour créer le service et le contrôleur avec socketService injecté
+const createContainerService = (socketService = null) => {
+  const model = new ContainerModel(pool);
+  return new ContainerServices(model, socketService);
+};
+
+// Instance par défaut sans Socket.IO (pour tests)
+const defaultService = createContainerService();
+const controller = new ContainerController(defaultService);
 
 const zoneService = require('./services/zoneservices');
 const ZoneController = require('./controllers/zonecontroller');
@@ -18,14 +26,7 @@ const typeConteneurModel = new TypeConteneurModel(pool);
 const typeConteneurService = new TypeConteneurService(typeConteneurModel);
 const typeConteneurController = new TypeConteneurController(typeConteneurService);
 
-const SignalementService = require('./services/signalementservices');
-const SignalementModel = require('./models/signalementmodel');
-const SignalementController = require('./controllers/signalementcontroller');
-const signalementModel = new SignalementModel(pool);
-const signalementService = new SignalementService(signalementModel);
-const signalementController = new SignalementController(signalementService);
-
 module.exports = controller;
+module.exports.createContainerService = createContainerService;
 module.exports.zoneController = zoneControllerInstance;
 module.exports.typeConteneurController = typeConteneurController;
-module.exports.signalementController = signalementController;

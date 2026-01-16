@@ -1,7 +1,11 @@
 const express = require('express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const http = require('http');
 require('dotenv').config();
+
+// Socket.IO
+const SocketService = require('./src/socket/socket.service');
 
 // Utilitaires
 const errorHandler = require('./src/middleware/errorHandler');
@@ -9,6 +13,11 @@ const requestLogger = require('./src/middleware/requestLogger');
 const config = require('./src/config/config');
 
 const app = express();
+const server = http.createServer(app);
+
+// ========== SOCKET.IO INITIALIZATION ==========
+const socketService = new SocketService(server);
+app.locals.socketService = socketService;
 
 // ========== MIDDLEWARE ==========
 app.use(express.json());
@@ -42,7 +51,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api',
+        url: 'http://localhost:8080/api',
         description: 'Development server'
       }
     ],
@@ -102,10 +111,6 @@ app.use('/api', containerRoutes);
 const zoneRoutes = require('./routes/zone.route.js');
 app.use('/api', zoneRoutes);
 
-// Signalement routes
-const signalementRoutes = require('./routes/signalement.route.js');
-app.use('/api', signalementRoutes);
-
 // Type Container routes
 const typeContainerRoutes = require('./routes/typecontainer.route.js');
 app.use('/api/typecontainers', typeContainerRoutes);
@@ -135,13 +140,14 @@ app.use(errorHandler);
 
 // ========== DÉMARRAGE DU SERVEUR ==========
 const port = config.PORT;
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`
 ╔════════════════════════════════════════════════════╗
 ║  🚀 EcoTrack Containers API                        ║
 ║  📍 http://localhost:${port}/api                  ║
 ║  📚 Documentation: http://localhost:${port}/api-docs ║
 ║  🔧 Environnement: ${config.NODE_ENV}                     ║
+║  🔌 Socket.IO: ws://localhost:${port}              ║
 ╚════════════════════════════════════════════════════╝
   `);
 });

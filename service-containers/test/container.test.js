@@ -56,7 +56,7 @@ describe('ConteneurModel', () => {
   });
   describe('updateContainer', () => {
     it('should throw an error if id is missing', async () => {
-      await expect(model.updateContainer(null, { statut: 'inactive' }))
+      await expect(model.updateContainer(null, { capacite_l: 100 }))
         .rejects.toThrow('Champ requis manquant: id');
     });
 
@@ -66,30 +66,35 @@ describe('ConteneurModel', () => {
         .rejects.toThrow('Aucun champ à mettre à jour');
     });
 
-      it('should throw an error for invalid GPS coordinates', async () => {
-        await expect(model.updateContainer(1, { latitude: 91, longitude: 2.3 }))
-          .rejects.toThrow('Coordonnées GPS invalides');
+    it('should throw an error if trying to update statut', async () => {
+      await expect(model.updateContainer(1, { statut: 'inactive' }))
+        .rejects.toThrow('Le statut doit être modifié via la méthode updateStatus dédiée');
+    });
+
+    it('should throw an error for invalid GPS coordinates', async () => {
+      await expect(model.updateContainer(1, { latitude: 91, longitude: 2.3 }))
+        .rejects.toThrow('Coordonnées GPS invalides');
+    });
+  
+    it('should update the container and return it', async () => {
+      db.query = jest.fn().mockResolvedValue({ 
+        rows: [{ 
+          id_conteneur: 1, 
+          uid: 'CNT-123456789',
+          capacite_l: 150, 
+          statut: 'ACTIF',
+          date_installation: '2025-01-06',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          id_zone: 1,
+          id_type: 1
+        }] 
       });
   
-      it('should update the container and return it', async () => {
-        db.query = jest.fn().mockResolvedValue({ 
-          rows: [{ 
-            id_conteneur: 1, 
-            uid: 'CNT-123456789',
-            capacite_l: 100, 
-            statut: 'inactive',
-            date_installation: '2025-01-06',
-            latitude: 48.8566,
-            longitude: 2.3522,
-            id_zone: null,
-            id_type: null
-          }] 
-        });
-  
-        const result = await model.updateContainer(1, { statut: 'inactive' });
-        expect(result).toHaveProperty('id_conteneur');
-        expect(result.statut).toBe('inactive');
-      });
+      const result = await model.updateContainer(1, { capacite_l: 150, id_zone: 1, id_type: 1 });
+      expect(result).toHaveProperty('id_conteneur');
+      expect(result.capacite_l).toBe(150);
+    });
     });
   
     describe('getContainerById', () => {
