@@ -1,8 +1,8 @@
 /**
  * Middleware de gestion centralisée des erreurs
  */
-const ApiResponse = require('../utils/ApiResponse');
-const ApiError = require('../utils/ApiError');
+const ApiResponse = require('../utils/api-response');
+const ApiError = require('../utils/api-error');
 
 const errorHandler = (err, req, res, next) => {
   console.error('❌ Error:', {

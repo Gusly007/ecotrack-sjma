@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { zoneController } = require('../src/container.di.js');
+const { zoneController } = require('../src/container-di.js');
 
 // ========== CRUD de base ==========
 

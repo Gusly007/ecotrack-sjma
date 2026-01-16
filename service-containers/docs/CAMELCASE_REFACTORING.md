@@ -460,3 +460,93 @@ req.params.id_zone  // ✅ Préservé en snake_case
 **Version**: 2.0.0  
 **Auteur**: GitHub Copilot  
 **Date**: 16 janvier 2026
+
+---
+
+## 🔄 Mise à jour: Refactoring kebab-case des noms de fichiers
+
+**Date**: 16 janvier 2026  
+**Status**: ✅ Complété  
+**Tests**: 50/50 passants
+
+### 📝 Noms de fichiers refactorisés en kebab-case
+
+Tous les noms de fichiers ont été convertis en **kebab-case** pour suivre les conventions Node.js/Express.
+
+#### Fichiers renommés (18 fichiers)
+
+**Models** (3 fichiers)
+- `containermodel.js` → `container-model.js`
+- `typeconteneurmodel.js` → `type-conteneur-model.js`
+- `zonemodel.js` → `zone-model.js`
+
+**Services** (3 fichiers)
+- `containerservices.js` → `container-services.js`
+- `typeconteneurservices.js` → `type-conteneur-services.js`
+- `zoneservices.js` → `zone-services.js`
+
+**Controllers** (3 fichiers)
+- `containercontroller.js` → `container-controller.js`
+- `typeconteneurcontroller.js` → `type-conteneur-controller.js`
+- `zonecontroller.js` → `zone-controller.js`
+
+**Middleware** (3 fichiers)
+- `errorHandler.js` → `error-handler.js`
+- `requestLogger.js` → `request-logger.js`
+- `socketMiddleware.js` → `socket-middleware.js`
+
+**Utils** (3 fichiers)
+- `ApiError.js` → `api-error.js`
+- `ApiResponse.js` → `api-response.js`
+- `Validators.js` → `validators.js`
+
+**Socket & DI** (3 fichiers)
+- `socket.service.js` → `socket-service.js`
+- `socket.config.js` → `socket-config.js`
+- `container.di.js` → `container-di.js`
+
+#### Imports mis à jour (12 fichiers)
+
+**Fichiers principaux**
+- `index.js`
+- `src/container-di.js`
+
+**Routes** (3 fichiers)
+- `routes/container.route.js`
+- `routes/typecontainer.route.js`
+- `routes/zone.route.js`
+
+**Middleware** (2 fichiers)
+- `src/middleware/error-handler.js`
+- `src/middleware/socket-middleware.js`
+
+**Tests** (5 fichiers)
+- `test/container.test.js`
+- `test/zone.test.js`
+- `test/socket.service.test.js`
+- `test/socket.integration.test.js`
+- `test/socket.e2e.test.js` (pas de changement nécessaire)
+
+### ✅ Validation finale
+
+```bash
+npx jest --runInBand test/container.test.js test/zone.test.js
+```
+
+**Résultat**:
+```
+Test Suites: 2 passed, 2 total
+Tests:       50 passed, 50 total
+Time:        1.2 s
+```
+
+✅ **Tous les tests passent** - La refactorisation est complète et fonctionnelle.
+
+### 🎯 Avantages
+
+- ✅ **Convention Node.js/Express** respectée
+- ✅ **Cohérence** avec les routes existantes (`container.route.js`)
+- ✅ **Lisibilité** améliorée (`type-conteneur-model` vs `typeconteneurmodel`)
+- ✅ **Standards communautaires** suivis
+
+---

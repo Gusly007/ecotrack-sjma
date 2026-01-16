@@ -2,8 +2,8 @@
  * Middleware pour injecter le socketService dans le service de conteneur
  * Crée une instance du service avec Socket.IO injecté
  */
-const DI = require('../container.di');
-const ContainerController = require('../controllers/containercontroller');
+const DI = require('../container-di');
+const ContainerController = require('../controllers/container-controller');
 
 const socketMiddleware = (req, res, next) => {
   const socketService = req.app.locals.socketService;

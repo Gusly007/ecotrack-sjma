@@ -1,6 +1,6 @@
-const ContainerServices = require('./services/containerservices');
-const ConteneurModel = require('./models/containermodel');
-const ContainerController = require('./controllers/containercontroller');
+const ContainerServices = require('./services/container-services');
+const ConteneurModel = require('./models/container-model');
+const ContainerController = require('./controllers/container-controller');
 const pool = require('./db/connexion').pool; // Import the actual pool
 
 // Factory pour créer le service et le contrôleur avec socketService injecté
@@ -13,15 +13,15 @@ const createContainerService = (socketService = null) => {
 const defaultService = createContainerService();
 const controller = new ContainerController(defaultService);
 
-const zoneService = require('./services/zoneservices');
-const ZoneController = require('./controllers/zonecontroller');
-const zoneModel = require('./models/zonemodel');
+const zoneService = require('./services/zone-services');
+const ZoneController = require('./controllers/zone-controller');
+const zoneModel = require('./models/zone-model');
 const zoneServiceInstance = new zoneService(new zoneModel(pool));
 const zoneControllerInstance = new ZoneController(zoneServiceInstance);
 
-const TypeConteneurService = require('./services/typeconteneurservices');
-const TypeConteneurModel = require('./models/typeconteneurmodel');
-const TypeConteneurController = require('./controllers/typeconteneurcontroller');
+const TypeConteneurService = require('./services/type-conteneur-services');
+const TypeConteneurModel = require('./models/type-conteneur-model');
+const TypeConteneurController = require('./controllers/type-conteneur-controller');
 const typeConteneurModel = new TypeConteneurModel(pool);
 const typeConteneurService = new TypeConteneurService(typeConteneurModel);
 const typeConteneurController = new TypeConteneurController(typeConteneurService);

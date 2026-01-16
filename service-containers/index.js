@@ -5,11 +5,11 @@ const http = require('http');
 require('dotenv').config();
 
 // Socket.IO
-const SocketService = require('./src/socket/socket.service');
+const SocketService = require('./src/socket/socket-service');
 
 // Utilitaires
-const errorHandler = require('./src/middleware/errorHandler');
-const requestLogger = require('./src/middleware/requestLogger');
+const errorHandler = require('./src/middleware/error-handler');
+const requestLogger = require('./src/middleware/request-logger');
 const config = require('./src/config/config');
 
 const app = express();

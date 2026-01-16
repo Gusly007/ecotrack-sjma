@@ -3,7 +3,7 @@
  * Tests pour vérifier que SocketService fonctionne avec ContainerServices
  */
 
-const ContainerServices = require('../src/services/containerservices');
+const ContainerServices = require('../src/services/container-services');
 
 describe('SocketService - Integration with ContainerServices', () => {
   let containerServices;

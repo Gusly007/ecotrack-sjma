@@ -3,7 +3,7 @@
  * Tests que les événements Socket sont émis lors du changement de statut
  */
 
-const ContainerServices = require('../src/services/containerservices');
+const ContainerServices = require('../src/services/container-services');
 
 describe('ContainerServices - Socket.IO Integration', () => {
   let containerService;
