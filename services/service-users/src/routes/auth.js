@@ -50,13 +50,13 @@ const logoutSchema = {
  *     RegisterRequest:
  *       type: object
  *       required:
- *         - prenom
+ *         - username
  *         - email
  *         - password
  *       properties:
- *         prenom:
+ *         username:
  *           type: string
- *           description: "Prénom/username de l'utilisateur"
+ *           description: "Nom d'utilisateur (prénom)"
  *           minLength: 2
  *           maxLength: 50
  *           example: "John"
