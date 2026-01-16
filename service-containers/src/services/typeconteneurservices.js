@@ -86,8 +86,8 @@ class TypeConteneurService {
   /**
    * Compte le nombre de conteneurs utilisant un type
    */
-  async countContainersByType(id_type) {
-    return this.model.countContainersByType(id_type);
+  async countContainersByType(idType) {
+    return this.model.countContainersByType(idType);
   }
 
   /**

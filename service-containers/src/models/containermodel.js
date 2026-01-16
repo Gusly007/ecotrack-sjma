@@ -47,14 +47,14 @@ class ConteneurModel {
    * Enregistre un changement de statut dans l'historique
    * @private
    */
-  async _enregistrerHistoriqueStatut(id_entite, type_entite, ancien_statut, nouveau_statut) {
-    // Normaliser type_entite en majuscules (CONTENEUR, TOURNEE, SIGNALEMENT)
-    const typeNormalise = type_entite.toUpperCase();
+  async _enregistrerHistoriqueStatut(idEntite, typeEntite, ancienStatut, nouveauStatut) {
+    // Normaliser typeEntite en majuscules (CONTENEUR, TOURNEE, SIGNALEMENT)
+    const typeNormalise = typeEntite.toUpperCase();
     
     await this.db.query(
       `INSERT INTO historique_statut (id_entite, type_entite, ancien_statut, nouveau_statut, date_changement)
        VALUES ($1, $2, $3, $4, NOW())`,
-      [id_entite, typeNormalise, ancien_statut, nouveau_statut]
+      [idEntite, typeNormalise, ancienStatut, nouveauStatut]
     );
   }
 
@@ -62,10 +62,10 @@ class ConteneurModel {
    * Crée un nouveau conteneur
    */
   async createContainer(data) {
-    const { capacite_l, statut, latitude, longitude, id_zone, id_type } = data;
+    const { capacite_l: capaciteL, statut, latitude, longitude, id_zone: idZone, id_type: idType } = data;
 
     // Validation des champs requis
-    if (!capacite_l || !statut || !latitude || !longitude) {
+    if (!capaciteL || !statut || !latitude || !longitude) {
       throw new Error('Champs requis manquants: capacite_l, statut, latitude, longitude');
     }
 
@@ -87,7 +87,7 @@ class ConteneurModel {
        RETURNING id_conteneur, uid, capacite_l, statut, date_installation, 
                  ST_X(position) as longitude, ST_Y(position) as latitude, 
                  id_zone, id_type`,
-      [uid, capacite_l, statut, pointWkt, id_zone, id_type]
+      [uid, capaciteL, statut, pointWkt, idZone, idType]
     );
 
     return result.rows[0];
@@ -104,16 +104,16 @@ class ConteneurModel {
     if (Object.prototype.hasOwnProperty.call(data, 'statut')) {
       throw new Error('Le statut doit être modifié via la méthode updateStatus dédiée');
     }
-    const { capacite_l, latitude, longitude, id_zone, id_type } = data;
+    const { capacite_l: capaciteL, latitude, longitude, id_zone: idZone, id_type: idType } = data;
 
     // Construire la requête dynamiquement
     const updates = [];
     const values = [];
     let paramIndex = 1;
 
-    if (capacite_l !== undefined) {
+    if (capaciteL !== undefined) {
       updates.push(`capacite_l = $${paramIndex++}`);
-      values.push(capacite_l);
+      values.push(capaciteL);
     }
 
     if (latitude !== undefined && longitude !== undefined) {
@@ -125,14 +125,14 @@ class ConteneurModel {
       values.push(pointWkt);
     }
 
-    if (id_zone !== undefined) {
+    if (idZone !== undefined) {
       updates.push(`id_zone = $${paramIndex++}`);
-      values.push(id_zone);
+      values.push(idZone);
     }
 
-    if (id_type !== undefined) {
+    if (idType !== undefined) {
       updates.push(`id_type = $${paramIndex++}`);
-      values.push(id_type);
+      values.push(idType);
     }
 
     if (updates.length === 0) {
@@ -274,9 +274,9 @@ class ConteneurModel {
       params.push(filters.statut);
     }
 
-    if (filters.id_zone) {
+    if (filters.idZone) {
       query += ` AND id_zone = $${paramIndex++}`;
-      params.push(filters.id_zone);
+      params.push(filters.idZone);
     }
 
     const result = await this.db.query(query, params);
@@ -359,7 +359,7 @@ class ConteneurModel {
    * Récupère tous les conteneurs avec pagination et filtres
    */
   async getAllContainers(options = {}) {
-    const { page = 1, limit = 50, statut, id_zone, id_type } = options;
+    const { page = 1, limit = 50, statut, id_zone: idZone, id_type: idType } = options;
     const offset = (page - 1) * limit;
 
     let query = `
@@ -378,14 +378,14 @@ class ConteneurModel {
       params.push(statut);
     }
 
-    if (id_zone) {
+    if (idZone) {
       query += ` AND id_zone = $${paramIndex++}`;
-      params.push(id_zone);
+      params.push(idZone);
     }
 
-    if (id_type) {
+    if (idType) {
       query += ` AND id_type = $${paramIndex++}`;
-      params.push(id_type);
+      params.push(idType);
     }
 
     query += ` ORDER BY id_conteneur DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
@@ -418,9 +418,9 @@ class ConteneurModel {
   /**
    * Récupère les conteneurs par zone
    */
-  async getContainersByZone(id_zone) {
-    if (!id_zone) {
-      throw new Error('Champ requis manquant: id_zone');
+  async getContainersByZone(idZone) {
+    if (!idZone) {
+      throw new Error('Champ requis manquant: idZone');
     }
 
     const result = await this.db.query(
@@ -429,7 +429,7 @@ class ConteneurModel {
               id_zone, id_type
        FROM conteneur 
        WHERE id_zone = $1`,
-      [id_zone]
+      [idZone]
     );
 
     return result.rows;

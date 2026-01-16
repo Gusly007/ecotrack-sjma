@@ -27,8 +27,8 @@ class SocketService {
             // Le client s'abonne à une zone
             socket.on('subscribe-zone', (data) => {
                 // Accepte soit un objet { id_zone: 1 } soit un entier direct
-                const id_zone = data.id_zone || data;
-                const roomName = `zone-${id_zone}`;
+                const idZone = data.id_zone || data;
+                const roomName = `zone-${idZone}`;
                 socket.join(roomName);
                 console.log(`[Socket] Client ${socket.id} joined room: ${roomName}`);
             });
@@ -36,8 +36,8 @@ class SocketService {
             // Le client se désabonne d'une zone
             socket.on('unsubscribe-zone', (data) => {
                 // Accepte soit un objet { id_zone: 1 } soit un entier direct
-                const id_zone = data.id_zone || data;
-                const roomName = `zone-${id_zone}`;
+                const idZone = data.id_zone || data;
+                const roomName = `zone-${idZone}`;
                 socket.leave(roomName);
                 console.log(`[Socket] Client ${socket.id} left room: ${roomName}`);
             });
@@ -55,17 +55,17 @@ class SocketService {
     /**
      * Émet un événement de changement de statut à une zone spécifique
      */
-    emitStatusChange(id_zone, containerData) {
-        const roomName = `zone-${id_zone}`;
+    emitStatusChange(idZone, containerData) {
+        const roomName = `zone-${idZone}`;
         this.io.to(roomName).emit('container:status-changed', {
             id_conteneur: containerData.id_conteneur,
             uid: containerData.uid,
             ancien_statut: containerData.ancien_statut,
             nouveau_statut: containerData.statut,
             date_changement: new Date().toISOString(),
-            id_zone: id_zone
+            id_zone: idZone
         });
-        console.log(`[Socket] Emitted status change for container ${containerData.id_conteneur} in zone ${id_zone}`);
+        console.log(`[Socket] Emitted status change for container ${containerData.id_conteneur} in zone ${idZone}`);
     }
 
     /**

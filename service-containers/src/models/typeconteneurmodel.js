@@ -289,18 +289,18 @@ class TypeConteneurModel {
 
   /**
    * Compte le nombre de conteneurs utilisant un type spécifique
-   * @param {number} id_type - ID du type de conteneur
+   * @param {number} idType - ID du type de conteneur
    * @returns {number} Nombre de conteneurs utilisant ce type
    * @throws {Error} Si l'ID du type est manquant
    */
-  async countContainersByType(id_type) {
-    if (!id_type) {
-      throw new Error('Le paramètre id_type est requis');
+  async countContainersByType(idType) {
+    if (!idType) {
+      throw new Error('Le paramètre idType est requis');
     }
 
     const result = await this.db.query(
       'SELECT COUNT(*) as total FROM conteneur WHERE id_type = $1',
-      [id_type]
+      [idType]
     );
 
     return parseInt(result.rows[0].total, 10);

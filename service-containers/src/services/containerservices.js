@@ -70,8 +70,8 @@ class ContainerServices {
   /**
    * Récupère les conteneurs par zone
    */
-  async getContainersByZone(id_zone) {
-    return this.model.getContainersByZone(id_zone);
+  async getContainersByZone(idZone) {
+    return this.model.getContainersByZone(idZone);
   }
 
   /**

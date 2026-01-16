@@ -27,9 +27,9 @@ class ContainerController {
    */
   async create(req, res) {
     try {
-      const { capacite_l, statut, latitude, longitude, id_zone, id_type } = req.body;
+      const { capacite_l: capaciteL, statut, latitude, longitude, id_zone: idZone, id_type: idType } = req.body;
 
-      if (!capacite_l || !statut || latitude == null || longitude == null) {
+      if (!capaciteL || !statut || latitude == null || longitude == null) {
         return res.status(400).json({ 
           message: 'Champs requis manquants: capacite_l, statut, latitude, longitude' 
         });
@@ -128,13 +128,13 @@ class ContainerController {
    */
   async getAll(req, res) {
     try {
-      const { page = 1, limit = 50, statut, id_zone, id_type } = req.query;
+      const { page = 1, limit = 50, statut, id_zone: idZone, id_type: idType } = req.query;
       const options = { 
         page: parseInt(page), 
         limit: parseInt(limit),
         statut,
-        id_zone,
-        id_type
+        id_zone: idZone,
+        id_type: idType
       };
 
       const containers = await this.service.getAllContainers(options);
@@ -163,9 +163,9 @@ class ContainerController {
    */
   async getByZone(req, res) {
     try {
-      const { id_zone } = req.params;
+      const { id_zone: idZone } = req.params;
 
-      const containers = await this.service.getContainersByZone(id_zone);
+      const containers = await this.service.getContainersByZone(idZone);
       return res.status(200).json(containers);
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -234,10 +234,10 @@ class ContainerController {
    */
   async count(req, res) {
     try {
-      const { statut, id_zone } = req.query;
+      const { statut, id_zone: idZone } = req.query;
       const filters = {};
       if (statut) filters.statut = statut;
-      if (id_zone) filters.id_zone = id_zone;
+      if (idZone) filters.idZone = idZone;
 
       const count = await this.service.countContainers(filters);
       return res.status(200).json({ count });
