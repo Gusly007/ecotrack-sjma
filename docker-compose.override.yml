@@ -1,0 +1,62 @@
+# ============================================================================
+# DOCKER-COMPOSE.OVERRIDE.YML - CONFIGURATION DÉVELOPPEMENT (HOT RELOAD)
+# ============================================================================
+#
+# Ce fichier est automatiquement fusionné avec docker-compose.yml
+# Il active le hot reload via les volumes et nodemon
+#
+# COMMANDES:
+#   docker compose up -d              # Démarre en mode dev (auto-merge)
+#   docker compose logs -f            # Voir les logs en temps réel
+#   docker compose down               # Arrêter
+#
+# Pour utiliser UNIQUEMENT la config production (sans override):
+#   docker compose -f docker-compose.yml up -d --build
+#
+# ============================================================================
+
+services:
+  # =========================================================================
+  # API GATEWAY - Mode développement
+  # =========================================================================
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/api-gateway/src:/app/src:ro
+      - ./services/api-gateway/package.json:/app/package.json:ro
+    # Healthcheck plus permissif en dev
+    healthcheck:
+      interval: 30s
+      retries: 10
+      start_period: 30s
+
+  # =========================================================================
+  # SERVICE-USERS - Mode développement
+  # =========================================================================
+  service-users:
+    build:
+      context: ./services/service-users
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/service-users/src:/app/src:ro
+      - ./services/service-users/package.json:/app/package.json:ro
+      # Persister les avatars uploadés
+      - service-users-storage:/app/storage
+    # Healthcheck plus permissif en dev
+    healthcheck:
+      interval: 30s
+      retries: 10
+      start_period: 30s
+
+# ============================================================================
+# VOLUMES pour persister les données en dev
+# ============================================================================
+volumes:
+  service-users-storage:
+    driver: local

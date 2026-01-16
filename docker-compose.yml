@@ -1,24 +1,102 @@
 # ============================================================================
-# DOCKER-COMPOSE.YML - ORCHESTRATION ECOTRACK (6 microservices + gateway)
+# DOCKER-COMPOSE.YML - ECOTRACK (Microservices + PostgreSQL + PgAdmin)
 # ============================================================================
 #
-# PRINCIPES:
-# - Un SEUL docker-compose pour orchestrer les services applicatifs.
-# - Chaque microservice possède son Dockerfile (build multi-stage recommandé).
-# - La base PostgreSQL est HÉBERGÉE À DISTANCE (pas de conteneur Postgres ici).
-# - Les secrets (mots de passe, JWT) doivent être fournis via un fichier .env
-#   (non commité) ou un gestionnaire de secrets.
-# - Les services non encore prêts sont placés sous "profiles" pour ne pas
-#   casser le build tant que leurs dossiers n'existent pas.
+# COMMANDES PRINCIPALES:
+#   docker compose up -d                    # Démarrer tous les services
+#   docker compose up -d postgres pgadmin   # Démarrer uniquement DB + PgAdmin
+#   docker compose down                     # Arrêter
+#   docker compose down -v                  # Arrêter + supprimer volumes (RESET)
+#   docker compose logs -f postgres         # Logs PostgreSQL
 #
-# COMMANDES UTILES:
-#   docker compose up -d --build           # Lancer
-#   docker compose down                    # Arrêter
-#   docker compose ps                      # Statut
-#   docker compose logs -f service-users   # Logs
+# ACCÈS:
+#   - API Gateway:    http://localhost:3000
+#   - Service Users:  http://localhost:3010
+#   - PgAdmin:        http://localhost:5050 (admin@ecotrack.dev / admin)
+#   - PostgreSQL:     localhost:5432 (ecotrack_user / ecotrack_password)
+#
 # ============================================================================
 
 services:
+  # =========================================================================
+  # POSTGRESQL 16 + POSTGIS (Base de données locale)
+  # =========================================================================
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ecotrack-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-ecotrack_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      POSTGRES_DB: ${DB_NAME:-ecotrack}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script d'initialisation (extensions, etc.)
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ecotrack_user} -d ${DB_NAME:-ecotrack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # PGADMIN 4 (Interface graphique pour PostgreSQL)
+  # =========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ecotrack-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ecotrack.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./database/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - ecotrack
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # MIGRATIONS (s'exécute automatiquement au démarrage)
+  # =========================================================================
+  migrations:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: ecotrack-migrations
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      RUN_SEEDS: ${RUN_SEEDS:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecotrack
+    # Ce container s'arrête après avoir terminé les migrations
+    restart: "no"
+
   # =========================================================================
   # API GATEWAY (port 3000)
   # =========================================================================
@@ -38,7 +116,7 @@ services:
       ANALYTICS_SERVICE_URL: http://service-analytics:3015
       GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3000:3000"
     depends_on:
@@ -60,7 +138,7 @@ services:
         max-file: "3"
 
   # =========================================================================
-  # SERVICE-USERS (port 3010) - Exemple complet
+  # SERVICE-USERS (port 3010)
   # =========================================================================
   service-users:
     build:
@@ -69,16 +147,22 @@ services:
     container_name: ecotrack-service-users
     environment:
       APP_PORT: 3010
-      DATABASE_URL: ${DATABASE_URL_USERS:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      JWT_SECRET: ${JWT_SECRET:-change_me_access}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_refresh}
+      # Connexion à PostgreSQL local
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_in_production_refresh_secret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3010:3010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
@@ -95,116 +179,99 @@ services:
         max-file: "3"
 
   # =========================================================================
-  # SERVICE-CONTAINERS (port 3011) - profil désactivé tant que le dossier n'existe pas
+  # SERVICES PLACEHOLDER (à implémenter)
   # =========================================================================
   service-containers:
     profiles: [placeholder]
     build:
-      context: ./service-containers
+      context: ./services/service-containers
       dockerfile: Dockerfile
     container_name: ecotrack-service-containers
     environment:
       APP_PORT: 3011
-      DATABASE_URL: ${DATABASE_URL_CONTAINERS:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3011:3011"
     networks:
       - ecotrack
     restart: unless-stopped
 
-  # =========================================================================
-  # SERVICE-ROUTES (port 3012)
-  # =========================================================================
   service-routes:
     profiles: [placeholder]
     build:
-      context: ./service-routes
+      context: ./services/service-routes
       dockerfile: Dockerfile
     container_name: ecotrack-service-routes
     environment:
       APP_PORT: 3012
-      DATABASE_URL: ${DATABASE_URL_ROUTES:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3012:3012"
     networks:
       - ecotrack
     restart: unless-stopped
 
-  # =========================================================================
-  # SERVICE-IOT (port 3013)
-  # =========================================================================
   service-iot:
     profiles: [placeholder]
     build:
-      context: ./service-iot
+      context: ./services/service-iot
       dockerfile: Dockerfile
     container_name: ecotrack-service-iot
     environment:
       APP_PORT: 3013
-      DATABASE_URL: ${DATABASE_URL_IOT:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3013:3013"
     networks:
       - ecotrack
     restart: unless-stopped
 
-  # =========================================================================
-  # SERVICE-GAMIFICATIONS (port 3014)
-  # =========================================================================
   service-gamifications:
     profiles: [placeholder]
     build:
-      context: ./service-gamifications
+      context: ./services/service-gamifications
       dockerfile: Dockerfile
     container_name: ecotrack-service-gamifications
     environment:
       APP_PORT: 3014
-      DATABASE_URL: ${DATABASE_URL_GAMIFICATIONS:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3014:3014"
     networks:
       - ecotrack
     restart: unless-stopped
 
-  # =========================================================================
-  # SERVICE-ANALYTICS (port 3015)
-  # =========================================================================
   service-analytics:
     profiles: [placeholder]
     build:
-      context: ./service-analytics
+      context: ./services/service-analytics
       dockerfile: Dockerfile
     container_name: ecotrack-service-analytics
     environment:
       APP_PORT: 3015
-      DATABASE_URL: ${DATABASE_URL_ANALYTICS:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3015:3015"
     networks:
       - ecotrack
     restart: unless-stopped
 
-  # =========================================================================
-  # JOB D'IMPORT SCHEMA (PostgreSQL Neon)
-  # =========================================================================
-  db-migrate:
-    profiles: [migrate]
-    image: postgres:16-alpine
-    environment:
-      DATABASE_URL: ${DATABASE_URL_USERS:-postgresql://neondb_owner:npg_mbPakcGQ7U6V@ep-blue-credit-agbgkufh.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require}
-    volumes:
-      - ./service-users/sql:/sql:ro
-    entrypoint: ["sh", "-c", "psql \"$DATABASE_URL\" -f /sql/EcoTrack.sql"]
-    networks:
-      - ecotrack
+# ============================================================================
+# VOLUMES (Persistance des données)
+# ============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
 
 # ============================================================================
-# RÉSEAU (bridge Docker)
+# RÉSEAU
 # ============================================================================
 networks:
   ecotrack:
