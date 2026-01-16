@@ -1,0 +1,60 @@
+/*
+  Test file for service-users
+  To run these tests, use an HTTP client that supports .http files, such as VSCode with the REST Client extension.
+  Make sure the service is running locally on the expected port before executing the tests.
+*/
+
+@baseUrl = http://localhost:3010
+@email = testuser@example.com
+@username = testuser
+@password = password123
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUwNzQsInJvbGUiOiJDSVRPWUVOIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2Nzk1NzkyOSwiZXhwIjoxNzY4MDQ0MzI5fQ.MAu7lOKaSeik8SrcgdpswvZH8HQvvnjaOK3McTxDMz0
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUwNzQsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzY3OTU4MTI2LCJleHAiOjE3Njg1NjI5MjZ9.ooa9XriBuueAXgsqCN6FAphxsmwXg87ghf4Og3grXoc
+
+### Health
+GET {{baseUrl}}/health
+
+### Register (no Bearer, JSON body)
+// First time: Run the Register request - this creates the user
+// Copy the token from the Register response into the @token variable (above)
+// Copy the refreshToken and paste into the @refreshToken variable (above)
+// Then run Login, Profile, Refresh, Logout - they'll now work with the registered user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "username": "{{username}}",
+  "password": "{{password}}",
+  "role": "CITOYEN"
+}
+
+### Login (returns token + refreshToken)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Profile (requires Bearer token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{token}}
+
+### Refresh (returns new access token)
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout (revokes refresh token)
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}

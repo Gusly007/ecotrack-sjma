@@ -1,0 +1,12 @@
+.env
+*.env.local
+node_modules/
+docs/
+infra/kubernetes/
+infra/terraform/  
+Figma/
+
+# Old folders at root (moved to services/)
+/service-users/
+/api-gateway/
+
