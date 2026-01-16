@@ -23,25 +23,17 @@ class ContainerServices {
    */
   async updateStatus(id, statut) {
     const result = await this.model.updateStatus(id, statut);
-    console.log('[DEBUG] updateStatus result:', result);
-    console.log('[DEBUG] socketService exists:', !!this.socketService);
     
     // Émettre le changement via Socket.IO si le statut a changé et que Socket.IO est disponible
     if (result.changed && this.socketService) {
       try {
         const container = await this.model.getContainerById(id);
-        console.log('[DEBUG] container:', container);
         if (container && container.id_zone) {
-          console.log('[DEBUG] Emitting to zone:', container.id_zone);
           this.socketService.emitStatusChange(container.id_zone, result);
-        } else {
-          console.log('[DEBUG] No zone or no container');
         }
       } catch (error) {
         console.error('[Socket] Erreur lors de l\'émission du changement de statut:', error.message);
       }
-    } else {
-      console.log('[DEBUG] Not emitting - changed:', result.changed, 'socketService:', !!this.socketService);
     }
     
     return result;

@@ -1,7 +1,48 @@
+const { v4: uuidv4 } = require('uuid');
+
 class ConteneurModel {
   constructor(db) {
     this.db = db;
   }
+
+  /**
+   * Génère un UID unique pour un conteneur
+   * Format: CNT-{12 caractères alphanumériques en majuscules}
+   * Exemple: CNT-A1B2C3D4E5F6
+   * 
+   * @private
+   * @param {number} maxAttempts - Nombre maximum de tentatives de génération
+   * @returns {Promise<string>} UID unique garanti
+   * @throws {Error} Si impossible de générer un UID unique après maxAttempts
+   */
+  async _generateUniqueUid(maxAttempts = 5) {
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      // Génération d'un UID basé sur UUID v4 (cryptographiquement sécurisé)
+      const randomPart = uuidv4()
+        .replace(/-/g, '')           // Supprime les tirets
+        .substring(0, 12)            // Prend les 12 premiers caractères
+        .toUpperCase();              // Convertit en majuscules
+      
+      const uid = `CNT-${randomPart}`;
+
+      // Vérification d'unicité en base de données
+      const exists = await this.existByUid(uid);
+      
+      if (!exists) {
+        return uid;
+      }
+
+      attempts++;
+    }
+
+    throw new Error(
+      `Impossible de générer un UID unique après ${maxAttempts} tentatives. ` +
+      'Cela indique un problème système critique.'
+    );
+  }
+
   /**
    * Enregistre un changement de statut dans l'historique
    * @private
@@ -33,10 +74,8 @@ class ConteneurModel {
       throw new Error('Coordonnées GPS invalides');
     }
 
-    // Génération de l'UID unique a enlever apres integration avec service UID
-    // Format: CNT-XXXXX (max 20 caractères)
-    const randomPart = Math.random().toString(36).substr(2, 14).toUpperCase();
-    const uid = `CNT-${randomPart}`;
+    // Génération d'un UID unique et sécurisé
+    const uid = await this._generateUniqueUid();
 
     // Création du POINT pour PostGIS
     const pointWkt = `POINT(${longitude} ${latitude})`;

@@ -3,9 +3,15 @@ const socketIO = require('socket.io');
 class SocketService {
     constructor(server) {
         console.log('[Socket] Initialisation de Socket.IO...');
+        
+        // Configuration CORS basée sur l'environnement
+        const allowedOrigins = process.env.ALLOWED_ORIGINS 
+            ? process.env.ALLOWED_ORIGINS.split(',')
+            : ['http://localhost:3000', 'http://localhost:8080'];
+        
         this.io = socketIO(server, {
             cors: {
-                origin: '*',
+                origin: allowedOrigins,
                 methods: ['GET', 'POST']
             },
             transports: ['websocket', 'polling']

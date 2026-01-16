@@ -116,13 +116,31 @@ const typeContainerRoutes = require('./routes/typecontainer.route.js');
 app.use('/api/typecontainers', typeContainerRoutes);
 
 // ========== HEALTH CHECK ==========
-app.get('/health', (req, res) => {
-  res.json({
+app.get('/health', async (req, res) => {
+  const healthcheck = {
     status: 'OK',
-    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    environment: config.NODE_ENV
-  });
+    uptime: process.uptime(),
+    environment: config.NODE_ENV,
+    services: {
+      api: 'healthy',
+      socketio: socketService ? 'healthy' : 'unavailable',
+      database: 'unknown'
+    }
+  };
+
+  // Test connexion base de données
+  try {
+    const { pool } = require('./src/db/connexion');
+    await pool.query('SELECT 1');
+    healthcheck.services.database = 'healthy';
+  } catch (error) {
+    healthcheck.status = 'DEGRADED';
+    healthcheck.services.database = 'unhealthy';
+  }
+
+  const statusCode = healthcheck.status === 'OK' ? 200 : 503;
+  res.status(statusCode).json(healthcheck);
 });
 
 // ========== 404 ==========

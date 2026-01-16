@@ -32,7 +32,7 @@ socket.on('container:status-changed', (data) => {
   console.log(`  ID Conteneur: ${data.id_conteneur}`);
   console.log(`  UID: ${data.uid}`);
   console.log(`  Ancien Statut: ${data.ancien_statut}`);
-  console.log(`  Nouveau Statut: ${data.nouveau_statut} 🟢`);
+  console.log(`  Nouveau Statut: ${data.nouveau_statut} `);
   console.log(`  Date: ${new Date(data.date_changement).toLocaleString('fr-FR')}`);
   console.log(`  Zone: ${data.id_zone}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

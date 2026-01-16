@@ -1,11 +1,11 @@
 const ContainerServices = require('./services/containerservices');
-const ContainerModel = require('./models/containermodel');
+const ConteneurModel = require('./models/containermodel');
 const ContainerController = require('./controllers/containercontroller');
 const pool = require('./db/connexion').pool; // Import the actual pool
 
 // Factory pour créer le service et le contrôleur avec socketService injecté
 const createContainerService = (socketService = null) => {
-  const model = new ContainerModel(pool);
+  const model = new ConteneurModel(pool);
   return new ContainerServices(model, socketService);
 };
 
