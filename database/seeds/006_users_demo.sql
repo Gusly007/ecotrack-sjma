@@ -56,12 +56,12 @@ INSERT INTO user_badge (id_utilisateur, id_badge)
 SELECT u.id_utilisateur, b.id_badge
 FROM utilisateur u
 CROSS JOIN badge b
-WHERE u.email = 'citoyen1@ecotrack.local' AND b.name IN ('FIRST_REPORT', 'ECO_STARTER')
+WHERE u.email = 'citoyen1@ecotrack.local' AND b.code IN ('FIRST_REPORT', 'ECO_STARTER')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO user_badge (id_utilisateur, id_badge)
 SELECT u.id_utilisateur, b.id_badge
 FROM utilisateur u
 CROSS JOIN badge b
-WHERE u.email = 'citoyen2@ecotrack.local' AND b.name IN ('FIRST_REPORT', 'ECO_STARTER', 'REPORTER_BRONZE')
+WHERE u.email = 'citoyen2@ecotrack.local' AND b.code IN ('FIRST_REPORT', 'ECO_STARTER', 'REPORTER_BRONZE')
 ON CONFLICT DO NOTHING;

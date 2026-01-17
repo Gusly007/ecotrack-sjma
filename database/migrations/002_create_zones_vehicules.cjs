@@ -1,35 +1,35 @@
 exports.up = (pgm) => {
+  // Extension PostGIS
+  pgm.sql(`CREATE EXTENSION IF NOT EXISTS postgis;`);
+
   // Table des zones
   pgm.sql(`
     CREATE TABLE zone (
-      id_zone SERIAL PRIMARY KEY,
+      id_zone INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      code VARCHAR(10) NOT NULL,
       nom VARCHAR(100) NOT NULL,
-      code_postal VARCHAR(10) NOT NULL,
-      geometrie GEOMETRY(Polygon, 4326),
-      CONSTRAINT uk_zone_nom UNIQUE (nom)
+      population INT,
+      superficie_km2 DECIMAL(10,2),
+      geom geometry(Polygon, 4326) NOT NULL,
+      CONSTRAINT uk_zone_code UNIQUE(code),
+      CONSTRAINT ck_population_positive CHECK (population >= 0),
+      CONSTRAINT ck_superficie_positive CHECK (superficie_km2 > 0)
     );
-    CREATE INDEX idx_zone_nom ON zone(nom);
-    CREATE INDEX idx_zone_code_postal ON zone(code_postal);
-    CREATE INDEX idx_zone_geometrie ON zone USING GIST(geometrie);
+    CREATE INDEX idx_zone_geom ON zone USING gist(geom);
+    CREATE INDEX idx_zone_code ON zone(code);
   `);
 
   // Table des véhicules
   pgm.sql(`
     CREATE TABLE vehicule (
-      id_vehicule SERIAL PRIMARY KEY,
-      immatriculation VARCHAR(15) NOT NULL,
-      capacite_kg NUMERIC(10,2) NOT NULL,
-      type_carburant VARCHAR(20) NOT NULL DEFAULT 'DIESEL',
-      statut VARCHAR(20) NOT NULL DEFAULT 'DISPONIBLE',
-      date_derniere_maintenance DATE,
-      CONSTRAINT uk_vehicule_immat UNIQUE (immatriculation),
-      CONSTRAINT ck_capacite_positive CHECK (capacite_kg > 0),
-      CONSTRAINT ck_type_carburant CHECK (type_carburant IN ('DIESEL', 'ESSENCE', 'ELECTRIQUE', 'HYBRIDE')),
-      CONSTRAINT ck_statut_vehicule CHECK (statut IN ('DISPONIBLE', 'EN_SERVICE', 'EN_MAINTENANCE', 'HORS_SERVICE'))
+      id_vehicule INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      numero_immatriculation VARCHAR(10) NOT NULL,
+      modele VARCHAR(50) NOT NULL,
+      capacite_kg INT NOT NULL,
+      CONSTRAINT uk_vehicule_immatriculation UNIQUE(numero_immatriculation),
+      CONSTRAINT ck_capacite_positive CHECK (capacite_kg > 0)
     );
-    CREATE INDEX idx_vehicule_immat ON vehicule(immatriculation);
-    CREATE INDEX idx_vehicule_statut ON vehicule(statut);
-    CREATE INDEX idx_vehicule_type ON vehicule(type_carburant);
+    CREATE INDEX idx_vehicule_immatriculation ON vehicule(numero_immatriculation);
   `);
 };
 

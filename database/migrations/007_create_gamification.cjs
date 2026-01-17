@@ -2,13 +2,14 @@ exports.up = (pgm) => {
   // Table historique des points
   pgm.sql(`
     CREATE TABLE historique_points (
-      id_historique SERIAL PRIMARY KEY,
-      delta_points INTEGER NOT NULL,
+      id_historique INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      delta_points INT NOT NULL,
       raison VARCHAR(100) NOT NULL,
       date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      id_utilisateur INTEGER NOT NULL,
-      CONSTRAINT fk_historique_points_utilisateur FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
-      CONSTRAINT ck_delta_points_non_nul CHECK (delta_points != 0)
+      id_utilisateur INT NOT NULL,
+      CONSTRAINT fk_historique_points_utilisateur FOREIGN KEY(id_utilisateur)
+        REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
+      CONSTRAINT ck_delta_points_non_nul CHECK (delta_points <> 0)
     );
     CREATE INDEX idx_historique_points_utilisateur ON historique_points(id_utilisateur);
     CREATE INDEX idx_historique_points_date ON historique_points(date_creation DESC);
@@ -19,14 +20,15 @@ exports.up = (pgm) => {
   // Table des notifications
   pgm.sql(`
     CREATE TABLE notification (
-      id_notification SERIAL PRIMARY KEY,
+      id_notification INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
       type VARCHAR(30) NOT NULL,
       titre VARCHAR(100) NOT NULL,
       corps TEXT NOT NULL,
       est_lu BOOLEAN NOT NULL DEFAULT FALSE,
       date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      id_utilisateur INTEGER NOT NULL,
-      CONSTRAINT fk_notification_utilisateur FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
+      id_utilisateur INT NOT NULL,
+      CONSTRAINT fk_notification_utilisateur FOREIGN KEY(id_utilisateur)
+        REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
       CONSTRAINT ck_type_notification CHECK (type IN ('ALERTE', 'TOURNEE', 'BADGE', 'SYSTEME'))
     );
     CREATE INDEX idx_notification_utilisateur ON notification(id_utilisateur);
