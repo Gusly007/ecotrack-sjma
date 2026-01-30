@@ -1,3 +1,33 @@
+const Joi = require('joi');
+
+const zoneCreateSchema = Joi.object({
+    code: Joi.string().min(2).max(50).required(),
+    nom: Joi.string().min(2).required(),
+    population: Joi.number().integer().min(0).required(),
+    superficie_km2: Joi.number().min(0).required(),
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required(),
+}).and('latitude', 'longitude').unknown(false);
+
+const zoneUpdateSchema = Joi.object({
+    code: Joi.string().min(2).max(50),
+    nom: Joi.string().min(2),
+    population: Joi.number().integer().min(0),
+    superficie_km2: Joi.number().min(0),
+    latitude: Joi.number().min(-90).max(90),
+    longitude: Joi.number().min(-180).max(180),
+}).and('latitude', 'longitude').unknown(false);
+
+function validateSchema(schema, data) {
+    const { error } = schema.validate(data, { abortEarly: false });
+    if (error) {
+        const message = error.details.map((detail) => detail.message).join(', ');
+        const err = new Error(`Validation invalide: ${message}`);
+        err.name = 'ValidationError';
+        throw err;
+    }
+}
+
 class ZoneModel {
     constructor(db) {
         this.db = db;
@@ -5,6 +35,13 @@ class ZoneModel {
 
     /**
      * Crée une nouvelle zone
+     * @param {Object} zoneData - Données de zone
+     * @param {string} zoneData.code - Code unique de la zone
+     * @param {string} zoneData.nom - Nom de la zone
+     * @param {number} zoneData.population - Population (entier >= 0)
+     * @param {number} zoneData.superficie_km2 - Superficie en km² (>= 0)
+     * @param {number} zoneData.latitude - Latitude entre -90 et 90
+     * @param {number} zoneData.longitude - Longitude entre -180 et 180
      */
     async addZone(zoneData) {
         const { code, nom, population, superficie_km2, latitude, longitude } = zoneData;
@@ -32,6 +69,9 @@ class ZoneModel {
         if (population < 0 || superficie_km2 < 0) {
             throw new Error('La population et la superficie doivent être positives');
         }
+
+        // Validation de schéma (types et champs autorisés)
+        validateSchema(zoneCreateSchema, zoneData);
 
                 // Construire un polygone (cercle) autour du point en fonction de la superficie (km²)
                 // Rayon en km = sqrt(superficie_km2 / pi)
@@ -137,11 +177,22 @@ class ZoneModel {
 
     /**
      * Met à jour une zone
+     * @param {number} id - ID de la zone
+     * @param {Object} zoneData - Données à mettre à jour
+     * @param {string} [zoneData.code] - Code unique de la zone
+     * @param {string} [zoneData.nom] - Nom de la zone
+     * @param {number} [zoneData.population] - Population (entier >= 0)
+     * @param {number} [zoneData.superficie_km2] - Superficie en km² (>= 0)
+     * @param {number} [zoneData.latitude] - Latitude entre -90 et 90
+     * @param {number} [zoneData.longitude] - Longitude entre -180 et 180
      */
     async updateZone(id, zoneData) {
         if (!id) {
             throw new Error('ID de zone requis');
         }
+
+        // Validation de schéma (types et champs autorisés)
+        validateSchema(zoneUpdateSchema, zoneData);
 
         const { code, nom, population, superficie_km2, latitude, longitude } = zoneData;
 

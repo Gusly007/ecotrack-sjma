@@ -1,3 +1,25 @@
+const Joi = require('joi');
+
+const typeConteneurCreateSchema = Joi.object({
+  code: Joi.string().min(2).max(50).required(),
+  nom: Joi.string().valid('ORDURE', 'RECYCLAGE', 'VERRE', 'COMPOST').required(),
+}).unknown(false);
+
+const typeConteneurUpdateSchema = Joi.object({
+  code: Joi.string().min(2).max(50),
+  nom: Joi.string().valid('ORDURE', 'RECYCLAGE', 'VERRE', 'COMPOST'),
+}).unknown(false);
+
+function validateSchema(schema, data) {
+  const { error } = schema.validate(data, { abortEarly: false });
+  if (error) {
+    const message = error.details.map((detail) => detail.message).join(', ');
+    const err = new Error(`Validation invalide: ${message}`);
+    err.name = 'ValidationError';
+    throw err;
+  }
+}
+
 /**
  * TypeConteneurModel - Gestion des types de conteneurs
  * Modèle pour les opérations CRUD sur la table type_conteneur
@@ -30,6 +52,9 @@ class TypeConteneurModel {
         `Nom invalide: "${nom}". Valeurs acceptées: ${validNoms.join(', ')}`
       );
     }
+
+    // Validation de schéma (types et champs autorisés)
+    validateSchema(typeConteneurCreateSchema, data);
 
     // Vérifier que le code est unique
     const existingCode = await this.db.query(
@@ -140,6 +165,8 @@ class TypeConteneurModel {
    * Met à jour un type de conteneur
    * @param {number} id - ID du type de conteneur
    * @param {Object} data - Données à mettre à jour
+   * @param {string} [data.code] - Code unique du type
+   * @param {string} [data.nom] - Nom du type (ORDURE, RECYCLAGE, VERRE, COMPOST)
    * @returns {Object} Type de conteneur mis à jour
    * @throws {Error} Si l'ID est manquant, si aucun champ n'est fourni ou si le type n'existe pas
    */
@@ -147,6 +174,9 @@ class TypeConteneurModel {
     if (!id) {
       throw new Error('Le paramètre id est requis');
     }
+
+    // Validation de schéma (types et champs autorisés)
+    validateSchema(typeConteneurUpdateSchema, data);
 
     const { code, nom } = data;
 

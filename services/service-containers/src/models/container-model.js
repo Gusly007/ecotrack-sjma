@@ -1,4 +1,33 @@
 const { v4: uuidv4 } = require('uuid');
+const Joi = require('joi');
+
+const containerCreateSchema = Joi.object({
+  capacite_l: Joi.number().integer().min(100).max(5000).required(),
+  statut: Joi.string().min(1).required(),
+  latitude: Joi.number().min(-90).max(90).required(),
+  longitude: Joi.number().min(-180).max(180).required(),
+  id_zone: Joi.number().integer().positive().allow(null),
+  id_type: Joi.number().integer().positive().allow(null),
+}).and('latitude', 'longitude').unknown(false);
+
+const containerUpdateSchema = Joi.object({
+  capacite_l: Joi.number().integer().min(100).max(5000),
+  latitude: Joi.number().min(-90).max(90),
+  longitude: Joi.number().min(-180).max(180),
+  id_zone: Joi.number().integer().positive().allow(null),
+  id_type: Joi.number().integer().positive().allow(null),
+  statut: Joi.forbidden(),
+}).and('latitude', 'longitude').unknown(false);
+
+function validateSchema(schema, data) {
+  const { error } = schema.validate(data, { abortEarly: false });
+  if (error) {
+    const message = error.details.map((detail) => detail.message).join(', ');
+    const err = new Error(`Validation invalide: ${message}`);
+    err.name = 'ValidationError';
+    throw err;
+  }
+}
 
 class ConteneurModel {
   constructor(db) {
@@ -60,6 +89,13 @@ class ConteneurModel {
 
   /**
    * Crée un nouveau conteneur
+   * @param {Object} data - Données du conteneur
+   * @param {number} data.capacite_l - Capacité en litres (100 à 5000)
+   * @param {string} data.statut - Statut libre (string non vide)
+   * @param {number} data.latitude - Latitude entre -90 et 90
+   * @param {number} data.longitude - Longitude entre -180 et 180
+   * @param {number|null} [data.id_zone] - ID de zone (optionnel)
+   * @param {number|null} [data.id_type] - ID de type (optionnel)
    */
   async createContainer(data) {
     const { capacite_l: capaciteL, statut, latitude, longitude, id_zone: idZone, id_type: idType } = data;
@@ -73,6 +109,9 @@ class ConteneurModel {
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       throw new Error('Coordonnées GPS invalides');
     }
+
+    // Validation de schéma (types et champs autorisés)
+    validateSchema(containerCreateSchema, data);
 
     // Génération d'un UID unique et sécurisé
     const uid = await this._generateUniqueUid();
@@ -95,6 +134,13 @@ class ConteneurModel {
 
   /**
    * Met à jour un conteneur
+   * @param {number} id - ID du conteneur
+   * @param {Object} data - Données à mettre à jour
+   * @param {number} [data.capacite_l] - Capacité en litres (100 à 5000)
+   * @param {number} [data.latitude] - Latitude entre -90 et 90 (avec longitude)
+   * @param {number} [data.longitude] - Longitude entre -180 et 180 (avec latitude)
+   * @param {number|null} [data.id_zone] - ID de zone (optionnel)
+   * @param {number|null} [data.id_type] - ID de type (optionnel)
    */
   async updateContainer(id, data) {
     if (!id) {
@@ -104,6 +150,10 @@ class ConteneurModel {
     if (Object.prototype.hasOwnProperty.call(data, 'statut')) {
       throw new Error('Le statut doit être modifié via la méthode updateStatus dédiée');
     }
+
+    // Validation de schéma (types et champs autorisés)
+    validateSchema(containerUpdateSchema, data);
+
     const { capacite_l: capaciteL, latitude, longitude, id_zone: idZone, id_type: idType } = data;
 
     // Construire la requête dynamiquement
