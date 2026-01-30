@@ -1,4 +1,4 @@
-const Validators = require('../src/utils/Validators');
+const Validators = require('../utils/Validators');
 
 function expectValidationError(fn, message) {
   try {

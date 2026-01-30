@@ -1,4 +1,4 @@
-const ZoneModel = require('../src/models/zone-model');
+const ZoneModel = require('../models/zone-model');
 
 function createMockDb(returnSequence = []) {
   let callIndex = 0;
