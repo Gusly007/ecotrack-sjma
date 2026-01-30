@@ -121,7 +121,10 @@ describe('SocketService - Integration with ContainerServices', () => {
       });
 
       const result = await containerServices.createContainer({
-        uid: 'CNT-123456789',
+        capacite_l: 1200,
+        statut: 'ACTIF',
+        latitude: 48.8566,
+        longitude: 2.3522,
         id_zone: 1
       });
 

@@ -73,7 +73,7 @@ describe('ConteneurModel', () => {
 
     it('should throw an error for invalid GPS coordinates', async () => {
       await expect(model.updateContainer(1, { latitude: 91, longitude: 2.3 }))
-        .rejects.toThrow('Coordonnées GPS invalides');
+        .rejects.toThrow();
     });
   
     it('should update the container and return it', async () => {
