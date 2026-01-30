@@ -1,3 +1,5 @@
+const Validators = require('../utils/Validators');
+
 class ZoneService {
     constructor(zoneModel) {
         this.zoneModel = zoneModel;
@@ -7,6 +9,7 @@ class ZoneService {
      * Crée une nouvelle zone
      */
     async createZone(zoneData) {
+        Validators.validateZoneData(zoneData); // Validation des données de zone
         return await this.zoneModel.addZone(zoneData);
     }
 
@@ -14,6 +17,7 @@ class ZoneService {
      * Récupère toutes les zones
      */
     async getAllZones(page = 1, limit = 10) {
+        Validators.validatePagination(page, limit); // Validation pagination
         return await this.zoneModel.getAllZones(page, limit);
     }
 
@@ -21,6 +25,7 @@ class ZoneService {
      * Récupère une zone par ID
      */
     async getZoneById(id) {
+        Validators.validateZoneId(id); // Validation ID zone
         return await this.zoneModel.getZoneById(id);
     }
 
@@ -28,6 +33,7 @@ class ZoneService {
      * Récupère une zone par son code
      */
     async getZoneByCode(code) {
+        Validators.validateCode(code, 'code'); // Validation code zone
         return await this.zoneModel.getZoneByCode(code);
     }
 
@@ -35,6 +41,8 @@ class ZoneService {
      * Met à jour une zone
      */
     async updateZone(id, zoneData) {
+        Validators.validateZoneId(id); // Validation ID zone
+        Validators.validateZoneData(zoneData, { isUpdate: true }); // Validation données zone
         return await this.zoneModel.updateZone(id, zoneData);
     }
 
@@ -42,6 +50,7 @@ class ZoneService {
      * Supprime une zone
      */
     async deleteZone(id) {
+        Validators.validateZoneId(id); // Validation ID zone
         return await this.zoneModel.deleteZone(id);
     }
 
@@ -56,6 +65,7 @@ class ZoneService {
      * Recherche les zones par nom
      */
     async searchZonesByName(nom) {
+        Validators.validateNonEmptyString(nom, 'nom', 2); // Validation nom
         return await this.zoneModel.searchZonesByName(nom);
     }
 
@@ -63,6 +73,8 @@ class ZoneService {
      * Récupère les zones dans un rayon
      */
     async getZonesInRadius(latitude, longitude, radiusKm) {
+        Validators.validateCoordinates(latitude, longitude); // Validation coordonnées
+        Validators.validateRadius(radiusKm); // Validation rayon
         return await this.zoneModel.getZonesInRadius(latitude, longitude, radiusKm);
     }
 
@@ -84,6 +96,7 @@ class ZoneService {
      * Vérifie si une zone existe
      */
     async zoneExists(id) {
+        Validators.validateZoneId(id); // Validation ID zone
         return await this.zoneModel.zoneExists(id);
     }
 
@@ -91,6 +104,7 @@ class ZoneService {
      * Vérifie si un code de zone existe
      */
     async codeExists(code) {
+        Validators.validateCode(code, 'code'); // Validation code zone
         return await this.zoneModel.codeExists(code);
     }
 }

@@ -1,3 +1,5 @@
+const Validators = require('../utils/Validators');
+
 class ContainerServices {
   constructor(containerModel, socketService = null) {
     this.model = containerModel;
@@ -8,6 +10,7 @@ class ContainerServices {
    * Crée un nouveau conteneur
    */
   async createContainer(data) {
+    Validators.validateContainerData(data); // Validation des données du conteneur
     return this.model.createContainer(data);
   }
 
@@ -15,6 +18,8 @@ class ContainerServices {
    * Met à jour un conteneur
    */
   async updateContainer(id, data) {
+    Validators.validateContainerId(id); // Validation de l'ID du conteneur
+    Validators.validateContainerData(data, { isUpdate: true }); // Validation des données du conteneur
     return this.model.updateContainer(id, data);
   }
 
@@ -22,6 +27,8 @@ class ContainerServices {
    * Change le statut d'un conteneur et émet l'événement Socket
    */
   async updateStatus(id, statut) {
+    Validators.validateStatut(statut); // Validation du statut  
+    Validators.validateContainerId(id); // Validation de l'ID du conteneur
     const result = await this.model.updateStatus(id, statut);
     
     // Émettre le changement via Socket.IO si le statut a changé et que Socket.IO est disponible
@@ -43,6 +50,7 @@ class ContainerServices {
    * Récupère un conteneur par ID
    */
   async getContainerById(id) {
+    Validators.validateContainerId(id); // Validation de l'ID du conteneur
     return this.model.getContainerById(id);
   }
 
@@ -50,6 +58,7 @@ class ContainerServices {
    * Récupère un conteneur par UID
    */
   async getContainerByUid(uid) {
+    Validators.validateContainerUid(uid); // Validation de l'UID du conteneur
     return this.model.getContainerByUid(uid);
   }
 
@@ -57,13 +66,16 @@ class ContainerServices {
    * Récupère tous les conteneurs
    */
   async getAllContainers(options = {}) {
-    return this.model.getAllContainers(options);
+    const { page = 1, limit = 50, ...filters } = options;
+    Validators.validatePagination(page, limit); // Validation des options de pagination
+    return this.model.getAllContainers({ page, limit, ...filters });
   }
 
   /**
    * Récupère les conteneurs par statut
    */
   async getContainersByStatus(statut) {
+    Validators.validateStatut(statut); // Validation du statut
     return this.model.getContainersByStatus(statut);
   }
 
@@ -71,6 +83,7 @@ class ContainerServices {
    * Récupère les conteneurs par zone
    */
   async getContainersByZone(idZone) {
+    Validators.validateZoneId(idZone); // Validation de l'ID de la zone
     return this.model.getContainersByZone(idZone);
   }
 
@@ -78,6 +91,8 @@ class ContainerServices {
    * Recherche les conteneurs dans un rayon
    */
   async getContainersInRadius(latitude, longitude, radiusKm) {
+    Validators.validateCoordinates(latitude, longitude); // Validation des coordonnées
+    Validators.validateRadius(radiusKm); // Validation du rayon
     return this.model.getContainersInRadius(latitude, longitude, radiusKm);
   }
 
@@ -85,6 +100,7 @@ class ContainerServices {
    * Supprime un conteneur
    */
   async deleteContainer(id) {
+    Validators.validateContainerId(id); // Validation de l'ID du conteneur
     return this.model.deleteContainer(id);
   }
 
@@ -106,6 +122,7 @@ class ContainerServices {
    * Vérifie si un conteneur existe
    */
   async existContainer(id) {
+    Validators.validateContainerId(id); // Validation de l'ID du conteneur
     return this.model.existContainer(id);
   }
 
@@ -113,6 +130,7 @@ class ContainerServices {
    * Vérifie si un UID existe
    */
   async existByUid(uid) {
+    Validators.validateContainerUid(uid); // Validation de l'UID du conteneur
     return this.model.existByUid(uid);
   }
 
@@ -127,6 +145,7 @@ class ContainerServices {
    * Récupère l'historique des changements de statut d'un conteneur
    */
   async getHistoriqueStatut(id_conteneur, options = {}) {
+    Validators.validateContainerId(id_conteneur); // Validation de l'ID du conteneur  
     return this.model.getHistoriqueStatut(id_conteneur, options);
   }
 
@@ -134,6 +153,7 @@ class ContainerServices {
    * Compte le nombre de changements de statut d'un conteneur
    */
   async countHistoriqueStatut(id_conteneur) {
+    Validators.validateContainerId(id_conteneur); // Validation de l'ID du conteneur  
     return this.model.countHistoriqueStatut(id_conteneur);
   }
 }

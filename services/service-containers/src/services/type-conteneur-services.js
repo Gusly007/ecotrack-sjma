@@ -1,6 +1,8 @@
 /**
  * TypeConteneurService - Service métier pour les types de conteneurs
  */
+const Validators = require('../utils/Validators');
+
 class TypeConteneurService {
   constructor(typeConteneurModel) {
     this.model = typeConteneurModel;
@@ -10,6 +12,7 @@ class TypeConteneurService {
    * Crée un nouveau type de conteneur
    */
   async createTypeConteneur(data) {
+    Validators.validateTypeConteneurData(data); // Validation données type conteneur
     return this.model.createTypeConteneur(data);
   }
 
@@ -24,6 +27,7 @@ class TypeConteneurService {
    * Récupère un type de conteneur par ID
    */
   async getTypeById(id) {
+    Validators.validateTypeConteneurId(id); // Validation ID type conteneur
     return this.model.getTypeById(id);
   }
 
@@ -31,6 +35,7 @@ class TypeConteneurService {
    * Récupère un type de conteneur par code
    */
   async getTypeByCode(code) {
+    Validators.validateCode(code, 'code'); // Validation code type conteneur
     return this.model.getTypeByCode(code);
   }
 
@@ -38,6 +43,7 @@ class TypeConteneurService {
    * Récupère les types de conteneur par nom
    */
   async getTypeByNom(nom) {
+    Validators.validateTypeConteneurNom(nom); // Validation nom type conteneur
     return this.model.getTypeByNom(nom);
   }
 
@@ -45,6 +51,8 @@ class TypeConteneurService {
    * Met à jour un type de conteneur
    */
   async updateTypeConteneur(id, data) {
+    Validators.validateTypeConteneurId(id); // Validation ID type conteneur
+    Validators.validateTypeConteneurData(data, { isUpdate: true }); // Validation données type conteneur
     return this.model.updateTypeConteneur(id, data);
   }
 
@@ -52,6 +60,7 @@ class TypeConteneurService {
    * Supprime un type de conteneur
    */
   async deleteTypeConteneur(id) {
+    Validators.validateTypeConteneurId(id); // Validation ID type conteneur
     return this.model.deleteTypeConteneur(id);
   }
 
@@ -73,6 +82,7 @@ class TypeConteneurService {
    * Vérifie si un type de conteneur existe
    */
   async typeExists(id) {
+    Validators.validateTypeConteneurId(id); // Validation ID type conteneur
     return this.model.typeExists(id);
   }
 
@@ -80,6 +90,7 @@ class TypeConteneurService {
    * Vérifie si un code de type existe
    */
   async codeExists(code) {
+    Validators.validateCode(code, 'code'); // Validation code type conteneur
     return this.model.codeExists(code);
   }
 
@@ -87,6 +98,7 @@ class TypeConteneurService {
    * Compte le nombre de conteneurs utilisant un type
    */
   async countContainersByType(idType) {
+    Validators.validateTypeConteneurId(idType); // Validation ID type conteneur
     return this.model.countContainersByType(idType);
   }
 
@@ -94,6 +106,7 @@ class TypeConteneurService {
    * Récupère les détails d'un type avec statistiques
    */
   async getTypeWithStats(id) {
+    Validators.validateTypeConteneurId(id); // Validation ID type conteneur
     return this.model.getTypeWithStats(id);
   }
 
