@@ -19,6 +19,18 @@ Bienvenue dans la documentation technique complète du microservice de gestion d
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Architecture globale du service
 - **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** - Structure des fichiers et organisation du code
+- **[MIDDLEWARE_INDEX.md](./MIDDLEWARE_INDEX.md)** - 📊 Index complet des middleware (NEW!)
+
+### Middleware (Optimisation Récente)
+
+Pour répondre à la question **"Mes middleware sont-ils bien utilisés?"**:
+
+| Document | Durée | Contenu |
+|----------|-------|---------|
+| **[MIDDLEWARE_FINAL_REPORT.md](./MIDDLEWARE_FINAL_REPORT.md)** ⭐ | 5 mins | Verdict: ✅ Oui (après optimisation) |
+| **[MIDDLEWARE_AUDIT.md](./MIDDLEWARE_AUDIT.md)** | 10 mins | Problèmes initiaux identifiés |
+| **[MIDDLEWARE_OPTIMIZATION.md](./MIDDLEWARE_OPTIMIZATION.md)** | 10 mins | Optimisations implémentées |
+| **[MIDDLEWARE_FLOW.md](./MIDDLEWARE_FLOW.md)** | 15 mins | Diagrammes et flux détaillé |
 
 ### APIs & Intégrations
 

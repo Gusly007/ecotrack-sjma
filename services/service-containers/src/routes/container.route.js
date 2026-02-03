@@ -1,9 +1,8 @@
 const router = require('express').Router();
 const controller = require('../container-di.js');
-const socketMiddleware = require('../middleware/socket-middleware');
 
-// Appliquer le middleware pour injecter Socket.IO à chaque requête
-router.use(socketMiddleware);
+// Le socketMiddleware est désormais appliqué globalement dans index.js
+// req.socketService est disponible dans tous les contrôleurs
 
 // ========== CRUD de base ==========
 

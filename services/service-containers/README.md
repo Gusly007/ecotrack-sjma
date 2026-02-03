@@ -44,7 +44,8 @@ npm run dev
 - 🧪 [Tests](./docs/TESTING.md) - Guide des tests
 - 🚀 [Déploiement](./docs/DEPLOYMENT.md) - Guide de prod
 - 💚 [Health Check](./docs/HEALTH_CHECK.md) - Monitoring
-- 📚 [API Swagger](http://localhost:8080/api-docs) - Documentation interactive
+- � **[Middleware Audit](./docs/MIDDLEWARE_FINAL_REPORT.md)** - Architecture des middleware ✨
+- �📚 [API Swagger](http://localhost:8080/api-docs) - Documentation interactive
 
 ---
 

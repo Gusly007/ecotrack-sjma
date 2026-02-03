@@ -20,13 +20,14 @@ const socketService = new SocketService(server);
 app.locals.socketService = socketService;
 
 // ========== MIDDLEWARE ==========
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// JSON parsing avec limite de taille
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging des requêtes
+// Logging des requêtes (avant les routes)
 app.use(requestLogger);
 
-// CORS
+// CORS (avant les routes)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
@@ -37,8 +38,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Compression
-app.use(express.json({ limit: '10mb' }));
+// Socket.IO middleware (injecter le socketService pour toutes les routes)
+const socketMiddleware = require('./src/middleware/socket-middleware');
+app.use(socketMiddleware);
 
 // ========== DOCUMENTATION API ==========
 const swaggerOptions = {

@@ -4,14 +4,9 @@
  */
 
 const socketMiddleware = require('../../src/middleware/socket-middleware');
-const DI = require('../../src/container-di');
-const ContainerController = require('../../src/controllers/container-controller');
-
-jest.mock('../../src/container-di');
-jest.mock('../../src/controllers/container-controller');
 
 describe('Socket Middleware - Unit Tests', () => {
-  let mockReq, mockRes, mockNext, mockSocketService, mockService;
+  let mockReq, mockRes, mockNext, mockSocketService;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -19,8 +14,6 @@ describe('Socket Middleware - Unit Tests', () => {
     mockSocketService = {
       emitStatusChange: jest.fn()
     };
-
-    mockService = jest.fn();
 
     mockReq = {
       app: {
@@ -31,34 +24,32 @@ describe('Socket Middleware - Unit Tests', () => {
     };
     mockRes = {};
     mockNext = jest.fn();
-
-    DI.createContainerService.mockReturnValue(mockService);
   });
 
-  it('devrait créer un service de conteneur avec socketService', () => {
+  it('devrait injecter le socketService dans la requête', () => {
     socketMiddleware(mockReq, mockRes, mockNext);
 
-    expect(DI.createContainerService).toHaveBeenCalledWith(mockSocketService);
+    expect(mockReq.socketService).toBe(mockSocketService);
   });
 
-  it('devrait créer un controlleur de conteneur avec le service', () => {
+  it('devrait définir socketReady à true quand socketService existe', () => {
     socketMiddleware(mockReq, mockRes, mockNext);
 
-    expect(ContainerController).toHaveBeenCalledWith(mockService);
-  });
-
-  it('devrait attacher le controlleur à req.containerController', () => {
-    const mockController = jest.fn();
-    ContainerController.mockImplementation(() => mockController);
-
-    socketMiddleware(mockReq, mockRes, mockNext);
-
-    expect(mockReq.containerController).toBe(mockController);
+    expect(mockReq.socketReady).toBe(true);
   });
 
   it('devrait appeler next() après injection', () => {
     socketMiddleware(mockReq, mockRes, mockNext);
 
+    expect(mockNext).toHaveBeenCalled();
+  });
+
+  it('devrait gérer l\'absence de socketService gracieusement', () => {
+    mockReq.app.locals.socketService = null;
+
+    socketMiddleware(mockReq, mockRes, mockNext);
+
+    expect(mockReq.socketService).toBeNull();
     expect(mockNext).toHaveBeenCalled();
   });
 });
