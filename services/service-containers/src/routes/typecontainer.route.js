@@ -1,8 +1,8 @@
 const express = require('express');
-const db = require('../src/db/connexion');
-const TypeConteneurModel = require('../src/models/type-conteneur-model');
-const TypeConteneurService = require('../src/services/type-conteneur-services');
-const TypeConteneurController = require('../src/controllers/type-conteneur-controller');
+const db = require('../db/connexion');
+const TypeConteneurModel = require('../models/type-conteneur-model');
+const TypeConteneurService = require('../services/type-conteneur-services');
+const TypeConteneurController = require('../controllers/type-conteneur-controller');
 
 const router = express.Router();
 
