@@ -70,14 +70,20 @@ npm run test:socket # Tests Socket.IO uniquement
 service-containers/
 ├── index.js                    # Point d'entrée, configuration Express
 ├── src/
-│   ├── models/                 # Couche données (ConteneurModel, etc.)
-│   ├── services/               # Logique métier avec Socket.IO injection
+│   ├── routes/                 # Définitions des routes API
+│   ├── config/                 # Configuration (config.js, socket-config.js)
 │   ├── controllers/            # Handlers HTTP
-│   ├── middleware/             # Socket.IO injection middleware
+│   ├── services/               # Logique métier avec Socket.IO injection
+│   ├── models/                 # Couche données (ConteneurModel, etc.)
 │   ├── socket/                 # Service Socket.IO
-│   ├── config/                 # Configuration
+│   ├── middleware/             # Socket.IO injection middleware
+│   ├── utils/                  # Validateurs et utilitaires
 │   └── db/                     # Connexion et schéma
-├── routes/                     # Définitions des routes
+├── test/
+│   ├── unit/                   # Tests unitaires
+│   ├── integration/            # Tests d'intégration
+│   ├── e2e/                    # Tests end-to-end
+│   └── manual/                 # Scripts de test manuels
 ├── test/                       # Suite de tests complète
 └── .env                        # Variables d'environnement
 

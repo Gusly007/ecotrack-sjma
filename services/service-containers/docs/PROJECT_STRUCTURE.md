@@ -19,61 +19,69 @@ service-containers/
 ├── 🚀 Serveur
 │   └── index.js                  # Point d'entrée principal
 │
-├── 🛣️ Routes API
-│   └── routes/
-│       ├── container.route.js    # CRUD Conteneurs + status changes
-│       ├── typecontainer.route.js # Gestion des types
-│       └── zone.route.js         # Gestion des zones
-│
-├── 💼 Logique Métier
+├── � Logique Métier
 │   └── src/
+│       ├── routes/
+│       │   ├── container.route.js        # CRUD Conteneurs + status changes
+│       │   ├── typecontainer.route.js    # Gestion des types
+│       │   └── zone.route.js             # Gestion des zones
+│       │
 │       ├── config/
-│       │   └── config.js         # Configuration centralisée (port, DB, etc.)
+│       │   ├── config.js                 # Configuration centralisée (port, DB, etc.)
+│       │   └── socket-config.js          # Configuration Socket.IO
 │       │
 │       ├── controllers/
-│       │   ├── containercontroller.js      # Contrôleurs HTTP
-│       │   ├── typeconteneurcontroller.js
-│       │   └── zonecontroller.js
+│       │   ├── container-controller.js   # Contrôleurs HTTP
+│       │   ├── type-conteneur-controller.js
+│       │   └── zone-controller.js
 │       │
 │       ├── services/
-│       │   ├── containerservices.js        # Logique métier + Socket.IO
-│       │   ├── typeconteneurservices.js
-│       │   └── zoneservices.js
+│       │   ├── container-services.js     # Logique métier + Socket.IO
+│       │   ├── type-conteneur-services.js
+│       │   └── zone-services.js
 │       │
 │       ├── models/
-│       │   ├── containermodel.js           # Accès base de données
-│       │   ├── typeconteneurmodel.js
-│       │   └── zonemodel.js
+│       │   ├── container-model.js        # Accès base de données
+│       │   ├── type-conteneur-model.js
+│       │   └── zone-model.js
 │       │
 │       ├── socket/
-│       │   └── socket.service.js           # ⭐ Service Socket.IO
+│       │   └── socket-service.js         # ⭐ Service Socket.IO
 │       │
 │       ├── middleware/
-│       │   ├── socketMiddleware.js         # ⭐ Injection Socket.IO
-│       │   ├── errorHandler.js             # Gestion des erreurs
-│       │   └── requestLogger.js            # Logging des requêtes
+│       │   ├── socket-middleware.js      # ⭐ Injection Socket.IO
+│       │   ├── error-handler.js          # Gestion des erreurs
+│       │   └── request-logger.js         # Logging des requêtes
 │       │
 │       ├── utils/
-│       │   ├── ApiError.js                 # Classe d'erreur
-│       │   ├── ApiResponse.js              # Classe de réponse
-│       │   └── Validators.js               # Validateurs
+│       │   ├── api-error.js              # Classe d'erreur
+│       │   ├── api-response.js           # Classe de réponse
+│       │   └── Validators.js             # Validateurs
 │       │
 │       ├── db/
-│       │   ├── connexion.js                # Connexion PostgreSQL
-│       │   ├── init-db-pg.sql              # Schéma BD
-│       │   └── test-db.js                  # Test de connexion
+│       │   ├── connexion.js              # Connexion PostgreSQL
+│       │   ├── init-db-pg.sql            # Schéma BD
+│       │   └── test-db.js                # Test de connexion
 │       │
-│       └── container.di.js                 # Injection de dépendances
+│       └── container-di.js               # Injection de dépendances
 │
 ├── 🧪 Tests
 │   └── test/
-│       ├── socket.service.test.js          # Tests unitaires Socket
-│       ├── socket.integration.test.js      # Tests d'intégration
-│       └── socket.e2e.test.js              # Tests E2E
-│
-├── 🛠️ Scripts de Test Manuels
-│   ├── test-socket-client.js               # Client Socket.IO simple
-│   └── test-socket-interactive.js          # CLI interactive
+│       ├── unit/                         # Tests unitaires
+│       │   ├── container.test.js         # Tests modèle conteneur
+│       │   ├── zone.test.js              # Tests modèle zone
+│       │   └── validators.test.js        # Tests validateurs
+│       │
+│       ├── integration/                  # Tests d'intégration
+│       │   ├── socket.service.test.js    # Service Socket.IO
+│       │   └── socket.integration.test.js # Intégration complète
+│       │
+│       ├── e2e/                          # Tests end-to-end
+│       │   └── socket.e2e.test.js        # Tests E2E Socket
+│       │
+│       └── manual/                       # Scripts de test manuels
+│           ├── socket-client-test.js     # Client Socket.IO simple
+│           └── socket-interactive-test.js # CLI interactive
 │
 └── 📊 Scripts d'Initialisation
     └── scripts/
@@ -85,8 +93,9 @@ service-containers/
 ## 🎯 Points Clés de l'Architecture
 
 ### 1️⃣ Socket.IO (Port 8080)
-- **Fichier principal:** `src/socket/socket.service.js`
-- **Intégration API:** `src/middleware/socketMiddleware.js`
+- **Fichier principal:** `src/socket/socket-service.js`
+- **Configuration:** `src/config/socket-config.js`
+- **Intégration API:** `src/middleware/socket-middleware.js`
 - **Events:**
   - `subscribe-zone` / `unsubscribe-zone` (Client → Serveur)
   - `container:status-changed` (Serveur → Client)

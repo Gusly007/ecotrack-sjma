@@ -13,8 +13,12 @@
     "test:socket": "jest test/integration/socket.service.test.js --runInBand",
     "test:socket:integration": "jest test/integration/socket.integration.test.js --runInBand",
     "test:socket:e2e": "jest test/e2e/socket.e2e.test.js --runInBand --detectOpenHandles",
-    "test:socket:interactive": "node test/manual/test-socket-interactive.js",
-    "test:socket:client": "node test/manual/test-socket-client.js",
+    "test:socket:client": "node test/manual/socket-client-test.js",
+    "test:socket:interactive": "node test/manual/socket-interactive-test.js",
+    "test:routes": "jest test/integration/*-routes.test.js --runInBand",
+    "test:security": "jest test/integration/security.test.js --runInBand",
+    "test:performance": "jest test/e2e/performance.test.js --runInBand --detectOpenHandles",
+    "test:scenarios": "jest test/e2e/user-scenarios.test.js --runInBand --detectOpenHandles",
     "test-db": "node src/db/test-db.js",
     "init-db": "node scripts/init-db.js"
   },
@@ -49,6 +53,7 @@
   },
   "devDependencies": {
     "jest": "^30.2.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.3"
   }
 }

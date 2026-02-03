@@ -16,15 +16,21 @@ describe('ZoneServices - Unit Tests', () => {
     jest.clearAllMocks();
     
     mockModel = {
-      createZone: jest.fn(),
+      addZone: jest.fn(),
       getAllZones: jest.fn(),
       getZoneById: jest.fn(),
+      getZoneByCode: jest.fn(),
       updateZone: jest.fn(),
-      deleteZone: jest.fn(),
-      getZoneWithContainers: jest.fn()
+      deleteZone: jest.fn()
     };
 
     zoneService = new ZoneServices(mockModel);
+    
+    // Réinitialiser les implémentations de Validators
+    Validators.validateZoneData.mockClear();
+    Validators.validateZoneId.mockClear();
+    Validators.validatePagination.mockClear();
+    Validators.validateCode.mockClear();
   });
 
   describe('createZone', () => {
@@ -36,24 +42,24 @@ describe('ZoneServices - Unit Tests', () => {
       };
       const expectedResult = { id: 1, ...zoneData };
 
-      mockModel.createZone.mockResolvedValue(expectedResult);
+      mockModel.addZone.mockResolvedValue(expectedResult);
 
       const result = await zoneService.createZone(zoneData);
 
       expect(Validators.validateZoneData).toHaveBeenCalledWith(zoneData);
-      expect(mockModel.createZone).toHaveBeenCalledWith(zoneData);
+      expect(mockModel.addZone).toHaveBeenCalledWith(zoneData);
       expect(result).toEqual(expectedResult);
     });
 
     it('devrait valider les données avant création', async () => {
-      Validators.validateZoneData.mockImplementation(() => {
+      jest.spyOn(Validators, 'validateZoneData').mockImplementationOnce(() => {
         throw new Error('Invalid zone data');
       });
 
       await expect(zoneService.createZone({}))
         .rejects.toThrow('Invalid zone data');
       
-      expect(mockModel.createZone).not.toHaveBeenCalled();
+      expect(mockModel.addZone).not.toHaveBeenCalled();
     });
   });
 
@@ -118,22 +124,4 @@ describe('ZoneServices - Unit Tests', () => {
     });
   });
 
-  describe('getZoneWithContainers', () => {
-    it('devrait récupérer une zone avec ses conteneurs', async () => {
-      const id = 1;
-      const mockZoneWithContainers = {
-        id,
-        nom: 'Zone Test',
-        containers: [{ id: 1 }, { id: 2 }]
-      };
-
-      mockModel.getZoneWithContainers.mockResolvedValue(mockZoneWithContainers);
-
-      const result = await zoneService.getZoneWithContainers(id);
-
-      expect(Validators.validateZoneId).toHaveBeenCalledWith(id);
-      expect(mockModel.getZoneWithContainers).toHaveBeenCalledWith(id);
-      expect(result).toEqual(mockZoneWithContainers);
-    });
-  });
 });

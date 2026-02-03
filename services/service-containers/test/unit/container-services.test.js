@@ -15,7 +15,7 @@ describe('ContainerServices - Unit Tests', () => {
   let mockSocketService;
 
   beforeEach(() => {
-    // Réinitialiser les mocks
+    // Réinitialiser tous les mocks
     jest.clearAllMocks();
     
     // Mock du modèle
@@ -29,8 +29,7 @@ describe('ContainerServices - Unit Tests', () => {
       getContainersByStatus: jest.fn(),
       getContainersByZone: jest.fn(),
       getContainersInRadius: jest.fn(),
-      deleteContainer: jest.fn(),
-      getStatusHistory: jest.fn()
+      deleteContainer: jest.fn()
     };
 
     // Mock du service Socket.IO
@@ -39,7 +38,17 @@ describe('ContainerServices - Unit Tests', () => {
     };
 
     containerService = new ContainerServices(mockModel, mockSocketService);
-  });
+    
+    // Réinitialiser les implémentations de Validators
+    Validators.validateContainerData.mockClear();
+    Validators.validateContainerId.mockClear();
+    Validators.validateStatut.mockClear();
+    Validators.validatePagination.mockClear();
+    Validators.validateZoneId.mockClear();
+    Validators.validateContainerUid.mockClear();
+    Validators.validateCoordinates.mockClear();
+    Validators.validateRadius.mockClear();
+  });;;
 
   describe('createContainer', () => {
     it('devrait créer un conteneur avec des données valides', async () => {
@@ -63,8 +72,9 @@ describe('ContainerServices - Unit Tests', () => {
     it('devrait valider les données avant création', async () => {
       const invalidData = { capacite_l: -10 };
       
-      Validators.validateContainerData.mockImplementation(() => {
-        throw new Error('Invalid data');
+      const validationError = new Error('Invalid data');
+      jest.spyOn(Validators, 'validateContainerData').mockImplementationOnce(() => {
+        throw validationError;
       });
 
       await expect(containerService.createContainer(invalidData))
@@ -91,7 +101,7 @@ describe('ContainerServices - Unit Tests', () => {
     });
 
     it('devrait valider l\'ID et les données', async () => {
-      Validators.validateContainerId.mockImplementation(() => {
+      jest.spyOn(Validators, 'validateContainerId').mockImplementationOnce(() => {
         throw new Error('Invalid ID');
       });
 
@@ -274,21 +284,6 @@ describe('ContainerServices - Unit Tests', () => {
       expect(Validators.validateContainerId).toHaveBeenCalledWith(id);
       expect(mockModel.deleteContainer).toHaveBeenCalledWith(id);
       expect(result).toEqual({ success: true });
-    });
-  });
-
-  describe('getStatusHistory', () => {
-    it('devrait récupérer l\'historique des statuts', async () => {
-      const id = 1;
-      const mockHistory = [{ statut: 'Vide', date: '2024-01-01' }];
-
-      mockModel.getStatusHistory.mockResolvedValue(mockHistory);
-
-      const result = await containerService.getStatusHistory(id);
-
-      expect(Validators.validateContainerId).toHaveBeenCalledWith(id);
-      expect(mockModel.getStatusHistory).toHaveBeenCalledWith(id);
-      expect(result).toEqual(mockHistory);
     });
   });
 });

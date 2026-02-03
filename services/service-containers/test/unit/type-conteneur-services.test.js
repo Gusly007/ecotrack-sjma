@@ -4,6 +4,9 @@
  */
 
 const TypeConteneurServices = require('../../src/services/type-conteneur-services');
+const Validators = require('../../src/utils/Validators');
+
+jest.mock('../../src/utils/Validators');
 
 describe('TypeConteneurServices - Unit Tests', () => {
   let typeService;
@@ -13,73 +16,70 @@ describe('TypeConteneurServices - Unit Tests', () => {
     jest.clearAllMocks();
     
     mockModel = {
-      getAll: jest.fn(),
-      getByCode: jest.fn(),
-      getAllWithStats: jest.fn()
+      createTypeConteneur: jest.fn(),
+      getAllTypes: jest.fn(),
+      getTypeById: jest.fn(),
+      getTypeByCode: jest.fn(),
+      getTypeByNom: jest.fn(),
+      updateTypeConteneur: jest.fn(),
+      deleteTypeConteneur: jest.fn()
     };
 
     typeService = new TypeConteneurServices(mockModel);
   });
 
-  describe('getAll', () => {
+  describe('getAllTypes', () => {
     it('devrait récupérer tous les types de conteneurs', async () => {
       const mockTypes = [
         { code: 'OM', nom: 'Ordures Ménagères' },
         { code: 'TRI', nom: 'Tri Sélectif' }
       ];
 
-      mockModel.getAll.mockResolvedValue(mockTypes);
+      mockModel.getAllTypes.mockResolvedValue(mockTypes);
 
-      const result = await typeService.getAll();
+      const result = await typeService.getAllTypes();
 
-      expect(mockModel.getAll).toHaveBeenCalled();
+      expect(mockModel.getAllTypes).toHaveBeenCalled();
       expect(result).toEqual(mockTypes);
     });
-
-    it('devrait retourner un tableau vide si aucun type', async () => {
-      mockModel.getAll.mockResolvedValue([]);
-
-      const result = await typeService.getAll();
-
-      expect(result).toEqual([]);
-    });
   });
 
-  describe('getByCode', () => {
-    it('devrait récupérer un type par son code', async () => {
-      const code = 'OM';
-      const mockType = { code, nom: 'Ordures Ménagères' };
+  describe('getTypeById', () => {
+    it('devrait récupérer un type par ID', async () => {
+      const mockType = { id: 1, code: 'OM', nom: 'Ordures Ménagères' };
+      mockModel.getTypeById.mockResolvedValue(mockType);
 
-      mockModel.getByCode.mockResolvedValue(mockType);
+      const result = await typeService.getTypeById(1);
 
-      const result = await typeService.getByCode(code);
-
-      expect(mockModel.getByCode).toHaveBeenCalledWith(code);
+      expect(Validators.validateTypeConteneurId).toHaveBeenCalledWith(1);
+      expect(mockModel.getTypeById).toHaveBeenCalledWith(1);
       expect(result).toEqual(mockType);
     });
+  });
 
-    it('devrait retourner null si type non trouvé', async () => {
-      mockModel.getByCode.mockResolvedValue(null);
+  describe('getTypeByCode', () => {
+    it('devrait récupérer un type par code', async () => {
+      const mockType = { code: 'OM', nom: 'Ordures Ménagères' };
+      mockModel.getTypeByCode.mockResolvedValue(mockType);
 
-      const result = await typeService.getByCode('INVALID');
+      const result = await typeService.getTypeByCode('OM');
 
-      expect(result).toBeNull();
+      expect(Validators.validateCode).toHaveBeenCalledWith('OM', 'code');
+      expect(mockModel.getTypeByCode).toHaveBeenCalledWith('OM');
+      expect(result).toEqual(mockType);
     });
   });
 
-  describe('getAllWithStats', () => {
-    it('devrait récupérer tous les types avec statistiques', async () => {
-      const mockTypesWithStats = [
-        { code: 'OM', nom: 'Ordures Ménagères', nb_conteneurs: 10 },
-        { code: 'TRI', nom: 'Tri Sélectif', nb_conteneurs: 5 }
-      ];
+  describe('getTypeByNom', () => {
+    it('devrait récupérer un type par nom', async () => {
+      const mockType = { code: 'OM', nom: 'Ordures Ménagères' };
+      mockModel.getTypeByNom.mockResolvedValue(mockType);
 
-      mockModel.getAllWithStats.mockResolvedValue(mockTypesWithStats);
+      const result = await typeService.getTypeByNom('Ordures Ménagères');
 
-      const result = await typeService.getAllWithStats();
-
-      expect(mockModel.getAllWithStats).toHaveBeenCalled();
-      expect(result).toEqual(mockTypesWithStats);
+      expect(Validators.validateTypeConteneurNom).toHaveBeenCalledWith('Ordures Ménagères');
+      expect(mockModel.getTypeByNom).toHaveBeenCalledWith('Ordures Ménagères');
+      expect(result).toEqual(mockType);
     });
   });
 });

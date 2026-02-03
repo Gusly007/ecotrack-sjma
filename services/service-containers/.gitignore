@@ -37,3 +37,6 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Internal documentation
+GUIDE_COLLEGUES.md
