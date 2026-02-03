@@ -1,4 +1,4 @@
-const ConteneurModel = require('models/container-model');
+const ConteneurModel = require('../../src/models/container-model');
 const db = {}; // Mock database object for testing
 
 describe('ConteneurModel', () => {

@@ -7,11 +7,14 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest --runInBand",
-    "test:socket": "jest test/socket.service.test.js --runInBand",
-    "test:socket:integration": "jest test/socket.integration.test.js --runInBand",
-    "test:socket:e2e": "jest test/socket.e2e.test.js --runInBand --detectOpenHandles",
-    "test:socket:interactive": "node test-socket-interactive.js",
-    "test:socket:client": "node test-socket-client.js",
+    "test:unit": "jest test/unit --runInBand",
+    "test:integration": "jest test/integration --runInBand",
+    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles",
+    "test:socket": "jest test/integration/socket.service.test.js --runInBand",
+    "test:socket:integration": "jest test/integration/socket.integration.test.js --runInBand",
+    "test:socket:e2e": "jest test/e2e/socket.e2e.test.js --runInBand --detectOpenHandles",
+    "test:socket:interactive": "node test/manual/test-socket-interactive.js",
+    "test:socket:client": "node test/manual/test-socket-client.js",
     "test-db": "node src/db/test-db.js",
     "init-db": "node scripts/init-db.js"
   },
@@ -21,6 +24,14 @@
   "type": "commonjs",
   "jest": {
     "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/test/unit/**/*.test.js",
+      "<rootDir>/test/integration/**/*.test.js",
+      "<rootDir>/test/e2e/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/src/test/"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!uuid)"
     ]
