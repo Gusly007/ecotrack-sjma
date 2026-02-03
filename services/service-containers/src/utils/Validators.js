@@ -15,7 +15,8 @@ class Validators {
    * Valide l'ID d'un conteneur
    */ 
   static validateContainerId(id) {
-    if (!Number.isInteger(id) || id <= 0) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
       Validators.throwValidationError('ID de conteneur invalide: doit être un nombre entier positif');
     }
   }
@@ -85,7 +86,8 @@ class Validators {
    * Valide l'ID d'une zone
    */
   static validateZoneId(id) {
-    if (!Number.isInteger(id) || id <= 0) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
       Validators.throwValidationError('ID de zone invalide: doit être un nombre entier positif');
     }
     return true;
@@ -95,7 +97,8 @@ class Validators {
    * Valide l'ID d'un type de conteneur
    */
   static validateTypeConteneurId(id) {
-    if (!Number.isInteger(id) || id <= 0) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
       Validators.throwValidationError('ID de type de conteneur invalide: doit être un nombre entier positif');
     }
     return true;
