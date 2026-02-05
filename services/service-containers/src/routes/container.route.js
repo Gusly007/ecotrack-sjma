@@ -192,10 +192,6 @@ router.get('/containers/uid/:uid', controller.getByUid);
  *               capacite_l:
  *                 type: integer
  *                 description: Capacité du conteneur en litres
- *               statut:
- *                 type: string
- *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE]
- *                 description: Statut du conteneur
  *               latitude:
  *                 type: number
  *                 format: double
@@ -261,7 +257,7 @@ router.patch('/containers/:id', controller.update);
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/containers/:id/status', (req, res) => req.containerController.updateStatus(req, res));
+router.patch('/containers/:id/status', controller.updateStatus);
 
 // GET - Récupérer l'historique des changements de statut d'un conteneur
 /**

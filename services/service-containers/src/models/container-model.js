@@ -560,7 +560,7 @@ class ConteneurModel {
          nouveau_statut,
          date_changement
        FROM historique_statut
-       WHERE id_entite = $1 AND type_entite = 'conteneur'
+       WHERE id_entite = $1 AND type_entite = 'CONTENEUR'
        ORDER BY date_changement DESC
        LIMIT $2 OFFSET $3`,
       [id_conteneur, limit, offset]

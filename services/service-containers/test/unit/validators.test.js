@@ -23,9 +23,10 @@ describe('Validators', () => {
   test('validateContainerUid validates CNT format', () => {
     expectValidationError(
       () => Validators.validateContainerUid('123'),
-      'UID de conteneur invalide: doit respecter le format CNT-XXXXXXXXXXXX'
+      'UID de conteneur invalide: doit respecter le format CNT-XXXXXXXXXXXX (11 ou 12 caractères)'
     );
     expect(Validators.validateContainerUid('CNT-ABCDEF123456')).toBeUndefined();
+    expect(Validators.validateContainerUid('CNT-ABCDEF12345')).toBeUndefined();
   });
 
   test('validateContainerData enforces required fields on create', () => {

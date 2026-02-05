@@ -208,7 +208,7 @@ class ContainerController {
         return res.status(404).json({ message: 'Conteneur introuvable' });
       }
 
-      return res.status(204).send();
+      return res.status(200).json({ message: 'Conteneur supprimé avec succès' });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }

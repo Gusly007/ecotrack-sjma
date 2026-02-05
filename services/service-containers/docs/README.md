@@ -67,14 +67,14 @@ npm run dev
 
 ## 📋 Tous les Documents
 
-| Document | Durée | Public | Contenu |
+| Document  | Public | Contenu |
 |----------|-------|--------|---------|
-| **[SETUP.md](./SETUP.md)** | 15 min | Devs | Installation, config, premiers pas |
-| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | 25 min | Tous | Design, patterns, middleware ✨ |
-| **[SOCKET_IO.md](./SOCKET_IO.md)** | 20 min | Devs | WebSocket, événements, rooms |
-| **[TESTING.md](./TESTING.md)** | 30 min | QA/Devs | Tous les tests, fixtures, coverage |
-| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | 30 min | DevOps | Production, monitoring, health |
-| **[CHANGELOG.md](./CHANGELOG.md)** | 5 min | Tous | Historique versions |
+| **[SETUP.md](./SETUP.md)** |  Devs | Installation, config, premiers pas |
+| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Tous | Design, patterns, middleware ✨ |
+| **[SOCKET_IO.md](./SOCKET_IO.md)**  | Devs | WebSocket, événements, rooms |
+| **[TESTING.md](./TESTING.md)** | QA/Devs | Tous les tests, fixtures, coverage |
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)**  | DevOps | Production, monitoring, health |
+| **[CHANGELOG.md](./CHANGELOG.md)**  | Tous | Historique versions |
 
 ---
 

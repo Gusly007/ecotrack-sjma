@@ -93,6 +93,56 @@ router.post('/zones', zoneController.create);
  */
 router.get('/zones', zoneController.getAll);
 
+// GET - Compter les zones (doit être avant /zones/:id pour éviter la capture par :id)
+/**
+ * @swagger
+ * /zones/count:
+ *   get:
+ *     summary: Compte le nombre total de zones
+ *     tags:
+ *       - Statistiques
+ *     responses:
+ *       200:
+ *         description: Nombre de zones
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/zones/count', zoneController.count);
+
+// GET - Récupérer une zone par son code (doit être avant /zones/:id)
+/**
+ * @swagger
+ * /zones/code/{code}:
+ *   get:
+ *     summary: Récupère une zone par son code
+ *     tags:
+ *       - Zones
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Code unique de la zone
+ *     responses:
+ *       200:
+ *         description: Zone récupérée avec succès
+ *       400:
+ *         description: Code manquant
+ *       404:
+ *         description: Zone non trouvée
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/zones/code/:code', zoneController.getByCode);
+
 // GET - Récupérer une zone par ID
 /**
  * @swagger
@@ -119,33 +169,6 @@ router.get('/zones', zoneController.getAll);
  *         description: Erreur serveur
  */
 router.get('/zones/:id', zoneController.getById);
-
-// GET - Récupérer une zone par son code
-/**
- * @swagger
- * /zones/code/{code}:
- *   get:
- *     summary: Récupère une zone par son code
- *     tags:
- *       - Zones
- *     parameters:
- *       - in: path
- *         name: code
- *         required: true
- *         schema:
- *           type: string
- *         description: Code unique de la zone
- *     responses:
- *       200:
- *         description: Zone récupérée avec succès
- *       400:
- *         description: Code manquant
- *       404:
- *         description: Zone non trouvée
- *       500:
- *         description: Erreur serveur
- */
-router.get('/zones/code/:code', zoneController.getByCode);
 
 // PATCH - Mettre à jour une zone
 /**
