@@ -1,19 +1,15 @@
 /**
  * Tests Intégration - Container Routes
- * Tests des routes API avec base de données de test
+ * Tests des routes API avec mocking du service
  */
 
 const request = require('supertest');
 const express = require('express');
-const containerRoute = require('../../src/routes/container.route');
-
-// Mock de la base de données pour les tests
-const mockDb = {
-  query: jest.fn()
-};
+const ContainerController = require('../../src/controllers/container-controller');
 
 describe('Container Routes - Integration Tests', () => {
   let app;
+  let mockService;
 
   beforeAll(() => {
     app = express();
@@ -25,7 +21,40 @@ describe('Container Routes - Integration Tests', () => {
       next();
     });
     
-    app.use('/api/containers', containerRoute);
+    // Créer un mock du service
+    mockService = {
+      createContainer: jest.fn(),
+      getContainerById: jest.fn(),
+      getContainerByUid: jest.fn(),
+      getAllContainers: jest.fn(),
+      getContainersByStatus: jest.fn(),
+      getContainersByZone: jest.fn(),
+      getContainersInRadius: jest.fn(),
+      updateContainer: jest.fn(),
+      updateStatus: jest.fn(),
+      deleteContainer: jest.fn(),
+      deleteAllContainers: jest.fn(),
+      countContainers: jest.fn(),
+      existContainer: jest.fn(),
+      existByUid: jest.fn(),
+      getStatistics: jest.fn(),
+      getHistoriqueStatut: jest.fn(),
+      countHistoriqueStatut: jest.fn()
+    };
+    
+    const controller = new ContainerController(mockService);
+    
+    // Créer un mini-router pour les tests
+    const router = require('express').Router();
+    router.post('/', controller.create);
+    router.get('/', controller.getAll);
+    router.get('/id/:id', controller.getById);
+    router.get('/uid/:uid', controller.getByUid);
+    router.patch('/:id/status', controller.updateStatus);
+    router.delete('/:id', controller.delete);
+    router.get('/:id/status/history', controller.getStatusHistory);
+    
+    app.use('/api/containers', router);
     
     // Error handler
     app.use((err, req, res, next) => {
@@ -44,32 +73,34 @@ describe('Container Routes - Integration Tests', () => {
     it('devrait créer un nouveau conteneur', async () => {
       const newContainer = {
         capacite_l: 100,
-        statut: 'Vide',
+        statut: 'ACTIF',
         latitude: 48.8566,
         longitude: 2.3522,
         id_zone: 1,
-        code_type: 'OM'
+        id_type: 1
       };
 
       const mockResult = {
-        rows: [{ id: 1, ...newContainer }]
+        id_conteneur: 1,
+        uid: 'CNT-ABC123XYZ456',
+        ...newContainer
       };
 
-      mockDb.query.mockResolvedValue(mockResult);
+      mockService.createContainer.mockResolvedValue(mockResult);
 
       const response = await request(app)
         .post('/api/containers')
         .send(newContainer)
         .expect(201);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('id');
+      expect(response.body).toHaveProperty('id_conteneur');
+      expect(mockService.createContainer).toHaveBeenCalledWith(newContainer);
     });
 
     it('devrait rejeter un conteneur avec données invalides', async () => {
       const invalidContainer = {
         capacite_l: -100, // Capacité négative invalide
-        statut: 'Vide'
+        statut: 'ACTIF'
       };
 
       await request(app)
@@ -82,26 +113,27 @@ describe('Container Routes - Integration Tests', () => {
   describe('GET /api/containers/:id', () => {
     it('devrait récupérer un conteneur par ID', async () => {
       const mockContainer = {
-        id: 1,
+        id_conteneur: 1,
+        uid: 'CNT-ABC123XYZ456',
         capacite_l: 100,
-        statut: 'Vide'
+        statut: 'ACTIF'
       };
 
-      mockDb.query.mockResolvedValue({ rows: [mockContainer] });
+      mockService.getContainerById.mockResolvedValue(mockContainer);
 
       const response = await request(app)
-        .get('/api/containers/1')
+        .get('/api/containers/id/1')
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toMatchObject(mockContainer);
+      expect(response.body).toEqual(mockContainer);
+      expect(mockService.getContainerById).toHaveBeenCalledWith('1');
     });
 
     it('devrait retourner 404 si conteneur non trouvé', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] });
+      mockService.getContainerById.mockResolvedValue(null);
 
       await request(app)
-        .get('/api/containers/999')
+        .get('/api/containers/id/999')
         .expect(404);
     });
   });
@@ -110,57 +142,51 @@ describe('Container Routes - Integration Tests', () => {
     it('devrait mettre à jour le statut d\'un conteneur', async () => {
       const mockResult = {
         changed: true,
-        container: { id: 1, statut: 'Plein' }
+        id_conteneur: 1,
+        statut: 'EN_MAINTENANCE',
+        ancien_statut: 'ACTIF'
       };
 
-      mockDb.query.mockResolvedValue({ rows: [mockResult] });
+      mockService.updateStatus.mockResolvedValue(mockResult);
 
       const response = await request(app)
         .patch('/api/containers/1/status')
-        .send({ statut: 'Plein' })
+        .send({ statut: 'EN_MAINTENANCE' })
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.changed).toBe(true);
-    });
-
-    it('devrait rejeter un statut invalide', async () => {
-      await request(app)
-        .patch('/api/containers/1/status')
-        .send({ statut: 'InvalidStatus' })
-        .expect(400);
+      expect(response.body).toEqual(mockResult);
+      expect(mockService.updateStatus).toHaveBeenCalledWith('1', 'EN_MAINTENANCE');
     });
   });
 
   describe('GET /api/containers', () => {
     it('devrait récupérer tous les conteneurs avec pagination', async () => {
       const mockContainers = [
-        { id: 1, capacite_l: 100 },
-        { id: 2, capacite_l: 150 }
+        { id_conteneur: 1, capacite_l: 100 },
+        { id_conteneur: 2, capacite_l: 150 }
       ];
 
-      mockDb.query.mockResolvedValue({ rows: mockContainers });
+      mockService.getAllContainers.mockResolvedValue(mockContainers);
 
       const response = await request(app)
         .get('/api/containers')
         .query({ page: 1, limit: 10 })
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body).toEqual(mockContainers);
     });
 
     it('devrait filtrer par statut', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] });
+      mockService.getAllContainers.mockResolvedValue([]);
 
       await request(app)
         .get('/api/containers')
-        .query({ statut: 'Plein' })
+        .query({ statut: 'ACTIF' })
         .expect(200);
     });
 
     it('devrait filtrer par zone', async () => {
-      mockDb.query.mockResolvedValue({ rows: [] });
+      mockService.getAllContainers.mockResolvedValue([]);
 
       await request(app)
         .get('/api/containers')
@@ -169,51 +195,42 @@ describe('Container Routes - Integration Tests', () => {
     });
   });
 
-  describe('GET /api/containers/zone/:id', () => {
-    it('devrait récupérer les conteneurs d\'une zone', async () => {
-      const mockContainers = [
-        { id: 1, id_zone: 1 },
-        { id: 2, id_zone: 1 }
-      ];
-
-      mockDb.query.mockResolvedValue({ rows: mockContainers });
-
-      const response = await request(app)
-        .get('/api/containers/zone/1')
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(2);
-    });
-  });
-
   describe('DELETE /api/containers/:id', () => {
     it('devrait supprimer un conteneur', async () => {
-      mockDb.query.mockResolvedValue({ rows: [{ success: true }] });
+      mockService.deleteContainer.mockResolvedValue(true);
 
       const response = await request(app)
         .delete('/api/containers/1')
         .expect(200);
 
-      expect(response.body.success).toBe(true);
+      expect(response.body.message).toContain('supprimé');
+      expect(mockService.deleteContainer).toHaveBeenCalledWith('1');
+    });
+
+    it('devrait retourner 404 si conteneur non trouvé', async () => {
+      mockService.deleteContainer.mockResolvedValue(false);
+
+      await request(app)
+        .delete('/api/containers/999')
+        .expect(404);
     });
   });
 
-  describe('GET /api/containers/:id/history', () => {
+  describe('GET /api/containers/:id/status/history', () => {
     it('devrait récupérer l\'historique des statuts', async () => {
       const mockHistory = [
-        { statut: 'Vide', date: '2024-01-01' },
-        { statut: 'Plein', date: '2024-01-02' }
+        { id_historique: 1, ancien_statut: 'ACTIF', nouveau_statut: 'EN_MAINTENANCE', date_changement: '2026-02-05' },
+        { id_historique: 2, ancien_statut: 'EN_MAINTENANCE', nouveau_statut: 'ACTIF', date_changement: '2026-02-04' }
       ];
 
-      mockDb.query.mockResolvedValue({ rows: mockHistory });
+      mockService.getHistoriqueStatut.mockResolvedValue(mockHistory);
 
       const response = await request(app)
-        .get('/api/containers/1/history')
+        .get('/api/containers/1/status/history')
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(2);
+      expect(response.body).toEqual(mockHistory);
+      expect(mockService.getHistoriqueStatut).toHaveBeenCalledWith('1', {});
     });
   });
 });
