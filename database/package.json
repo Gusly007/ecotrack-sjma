@@ -1,0 +1,32 @@
+{
+  "name": "ecotrack-database",
+  "version": "1.0.0",
+  "description": "Gestion de la base de données EcoTrack (migrations, seeds)",
+  "type": "module",
+  "scripts": {
+    "migrate": "node-pg-migrate up -f migrate.config.cjs",
+    "migrate:down": "node-pg-migrate down -f migrate.config.cjs",
+    "migrate:redo": "node-pg-migrate redo -f migrate.config.cjs",
+    "migrate:status": "node-pg-migrate status -f migrate.config.cjs",
+    "migrate:create": "node-pg-migrate create -f migrate.config.cjs",
+
+    "seed": "node scripts/seed.mjs",
+    "seed:fresh": "node scripts/seed.mjs --fresh",
+
+    "db:fresh": "node scripts/fresh.mjs",
+    "db:reset": "node scripts/reset.mjs",
+    "db:status": "node scripts/status.mjs",
+
+    "fresh": "npm run db:fresh && npm run migrate && npm run seed",
+    "reset": "npm run db:reset"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-pg-migrate": "^7.9.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {},
+  "keywords": ["database", "migrations", "postgresql", "ecotrack"],
+  "author": "EcoTrack Team",
+  "license": "MIT"
+}
