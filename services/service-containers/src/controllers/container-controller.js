@@ -20,6 +20,7 @@ class ContainerController {
     this.existsByUid = this.existsByUid.bind(this);
     this.getStatistics = this.getStatistics.bind(this);
     this.getStatusHistory = this.getStatusHistory.bind(this);
+    this.getFillLevels = this.getFillLevels.bind(this);
   }
 
   /**
@@ -304,6 +305,24 @@ class ContainerController {
 
       const history = await this.service.getHistoriqueStatut(id, options);
       return res.status(200).json(history);
+    } catch (err) {
+      next(err);
+    }
+  }
+  /**
+   * Recupere les conteneurs avec leur niveau de remplissage
+   */
+  async getFillLevels(req, res, next) {
+    try {
+      const { min_level, max_level, id_zone } = req.query;
+
+      const options = {};
+      if (min_level != null) options.minLevel = parseFloat(min_level);
+      if (max_level != null) options.maxLevel = parseFloat(max_level);
+      if (id_zone != null) options.id_zone = parseInt(id_zone, 10);
+
+      const containers = await this.service.getContainersByFillLevel(options);
+      return res.status(200).json(containers);
     } catch (err) {
       next(err);
     }

@@ -553,4 +553,63 @@ router.get('/check/uid/:uid', controller.existsByUid);
  */
 router.get('/stats', controller.getStatistics);
 
+// GET - Conteneurs avec niveau de remplissage
+/**
+ * @swagger
+ * /containers/fill-levels:
+ *   get:
+ *     summary: Recupere les conteneurs avec leur niveau de remplissage
+ *     description: Joint les tables conteneur, capteur et mesure pour retourner le dernier niveau de remplissage de chaque conteneur. Permet de filtrer par niveau min/max et par zone.
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: query
+ *         name: min_level
+ *         schema:
+ *           type: number
+ *         description: Niveau de remplissage minimum (0-100)
+ *       - in: query
+ *         name: max_level
+ *         schema:
+ *           type: number
+ *         description: Niveau de remplissage maximum (0-100)
+ *       - in: query
+ *         name: id_zone
+ *         schema:
+ *           type: integer
+ *         description: Filtrer par zone
+ *     responses:
+ *       200:
+ *         description: Liste des conteneurs avec fill_level
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id_conteneur:
+ *                     type: integer
+ *                   uid:
+ *                     type: string
+ *                   statut:
+ *                     type: string
+ *                   capacite_l:
+ *                     type: integer
+ *                   latitude:
+ *                     type: number
+ *                   longitude:
+ *                     type: number
+ *                   id_zone:
+ *                     type: integer
+ *                   id_type:
+ *                     type: integer
+ *                   fill_level:
+ *                     type: number
+ *                     description: Dernier pourcentage de remplissage (null si aucune mesure)
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/containers/fill-levels', controller.getFillLevels);
+
 module.exports = router;

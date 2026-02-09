@@ -150,6 +150,13 @@ class ContainerServices {
   }
 
   /**
+   * Recupere les conteneurs avec leur niveau de remplissage
+   */
+  async getContainersByFillLevel(options = {}) {
+    return this.model.getContainersByFillLevel(options);
+  }
+
+  /**
    * Compte le nombre de changements de statut d'un conteneur
    */
   async countHistoriqueStatut(id_conteneur) {

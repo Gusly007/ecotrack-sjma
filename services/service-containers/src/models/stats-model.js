@@ -94,13 +94,11 @@ class StatsModel {
         tc.id_type,
         tc.nom             AS type_nom,
         tc.code            AS type_code,
-        tc.couleur,
         COUNT(c.id_conteneur)::int AS nb_conteneurs,
-        COUNT(CASE WHEN c.statut = 'ACTIF' THEN 1 END)::int AS actifs,
-        ROUND(AVG(c.capacite_l))::int AS capacite_moyenne_l
+        COUNT(CASE WHEN c.statut = 'ACTIF' THEN 1 END)::int AS actifs
       FROM type_conteneur tc
       LEFT JOIN conteneur c ON c.id_type = tc.id_type
-      GROUP BY tc.id_type, tc.nom, tc.code, tc.couleur
+      GROUP BY tc.id_type, tc.nom, tc.code
       ORDER BY nb_conteneurs DESC
     `);
     return result.rows;

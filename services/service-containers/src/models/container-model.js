@@ -570,6 +570,72 @@ class ConteneurModel {
   }
 
   /**
+   * Recupere les conteneurs avec leur dernier niveau de remplissage
+   * Joint les tables conteneur, capteur et mesure (derniere mesure par capteur)
+   * @param {Object} options - Options de filtrage
+   * @param {number} [options.minLevel] - Niveau minimum de remplissage (0-100)
+   * @param {number} [options.maxLevel] - Niveau maximum de remplissage (0-100)
+   * @param {number} [options.id_zone] - Filtrer par zone
+   * @returns {Promise<Array>} Liste des conteneurs avec fill_level
+   */
+  async getContainersByFillLevel(options = {}) {
+    const { minLevel, maxLevel, id_zone } = options;
+    const params = [];
+    const conditions = [];
+
+    if (id_zone) {
+      params.push(id_zone);
+      conditions.push(`c.id_zone = $${params.length}`);
+    }
+
+    let havingClause = '';
+    const havingConditions = [];
+
+    if (minLevel != null) {
+      params.push(minLevel);
+      havingConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) >= $${params.length}`);
+    }
+
+    if (maxLevel != null) {
+      params.push(maxLevel);
+      havingConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) <= $${params.length}`);
+    }
+
+    if (havingConditions.length > 0) {
+      havingClause = `HAVING ${havingConditions.join(' AND ')}`;
+    }
+
+    const whereClause = conditions.length > 0
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
+
+    const query = `
+      SELECT 
+        c.id_conteneur, c.uid, c.statut, c.capacite_l,
+        c.latitude, c.longitude, c.id_zone, c.id_type,
+        COALESCE(m.niveau_remplissage_pct, NULL) AS fill_level
+      FROM conteneur c
+      LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
+      LEFT JOIN LATERAL (
+        SELECT niveau_remplissage_pct 
+        FROM mesure 
+        WHERE id_capteur = cap.id_capteur 
+        ORDER BY date_heure_mesure DESC 
+        LIMIT 1
+      ) m ON TRUE
+      ${whereClause}
+      GROUP BY c.id_conteneur, c.uid, c.statut, c.capacite_l,
+               c.latitude, c.longitude, c.id_zone, c.id_type,
+               m.niveau_remplissage_pct
+      ${havingClause}
+      ORDER BY fill_level DESC NULLS LAST
+    `;
+
+    const result = await this.db.query(query, params);
+    return result.rows;
+  }
+
+  /**
    * Compte le nombre total de changements de statut pour un conteneur
    * @param {number} id_conteneur - ID du conteneur
    * @returns {number} Nombre total de changements de statut
