@@ -93,7 +93,8 @@ app.get('/api', (req, res) => {
       health: '/health',
       containers: '/api/containers',
       zones: '/api/zones',
-      types: '/api/types-conteneurs'
+      types: '/api/types-conteneurs',
+      stats: '/api/stats' 
     }
   });
 });
@@ -109,7 +110,9 @@ app.use('/api', zoneRoutes);
 // Type Container routes
 const typeContainerRoutes = require('./src/routes/typecontainer.route.js');
 app.use('/api/typecontainers', typeContainerRoutes);
-
+// Stats routes
+const statsRoutes = require('./src/routes/stats.route.js');
+app.use('/api/stats', statsRoutes);
 // ========== HEALTH CHECK ==========
 app.get('/health', async (req, res) => {
   const healthcheck = {

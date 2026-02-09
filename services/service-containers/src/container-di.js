@@ -26,7 +26,17 @@ const typeConteneurModel = new TypeConteneurModel(pool);
 const typeConteneurService = new TypeConteneurService(typeConteneurModel);
 const typeConteneurController = new TypeConteneurController(typeConteneurService);
 
+// Stats (Phase 5)
+const StatsModel = require('./models/stats-model');
+const StatsService = require('./services/stats-service');
+const StatsController = require('./controllers/stats-controller');
+const statsModel = new StatsModel(pool);
+const statsService = new StatsService(statsModel);
+const statsController = new StatsController(statsService);  
+
+
 module.exports = controller;
 module.exports.createContainerService = createContainerService;
 module.exports.zoneController = zoneControllerInstance;
 module.exports.typeConteneurController = typeConteneurController;
+module.exports.statsController = statsController;
