@@ -11,7 +11,7 @@ const router = express.Router();
 const registerSchema = {
 	body: z.object({
 		email: z.string().email(),
-		username: z.string().min(2).max(50),
+		prenom: z.string().min(2).max(50),
 		password: z.string().min(6),
 		role: z.enum(['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN']).optional()
 	}).strict()
@@ -50,16 +50,16 @@ const logoutSchema = {
  *     RegisterRequest:
  *       type: object
  *       required:
- *         - username
+ *         - prenom
  *         - email
  *         - password
  *       properties:
- *         username:
+ *         prenom:
  *           type: string
- *           description: "Nom d'utilisateur (prénom)"
+ *           description: "Prénom de l'utilisateur"
  *           minLength: 2
  *           maxLength: 50
- *           example: "John"
+ *           example: "Jean"
  *         email:
  *           type: string
  *           format: email

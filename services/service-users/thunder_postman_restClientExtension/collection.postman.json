@@ -20,7 +20,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"CITOYEN\"\n}"
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"prenom\": \"{{prenom}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"CITOYEN\"\n}"
         },
         "url": "{{baseUrl}}/auth/register"
       }
@@ -82,7 +82,7 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "email", "value": "test@example.com" },
-    { "key": "username", "value": "test_user" },
+    { "key": "prenom", "value": "test_user" },
     { "key": "password", "value": "password123" },
     { "key": "token", "value": "" },
     { "key": "refreshToken", "value": "" }

@@ -75,14 +75,14 @@ const run = async () => {
   // 3) Register OK
   const email = `smoke_${Date.now()}@example.com`;
   const password = 'password123';
-  const username = `smoke_${Date.now()}`;
+  const prenom = `smoke_${Date.now()}`;
 
   let accessToken;
   let refreshToken;
 
   {
     const { res, json, text } = await requestJson('POST', '/auth/register', {
-      body: { email, username, password, role: 'CITOYEN' }
+      body: { email, prenom, password, role: 'CITOYEN' }
     });
     assert(res.status === 201, `Expected 201 on register, got ${res.status}: ${text}`);
     assert(typeof json?.token === 'string' && json.token.length > 10, 'Expected token string');
