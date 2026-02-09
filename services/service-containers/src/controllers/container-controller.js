@@ -25,7 +25,7 @@ class ContainerController {
   /**
    * Crée un nouveau conteneur
    */
-  async create(req, res) {
+  async create(req, res, next) {
     try {
       const { capacite_l: capaciteL, statut, latitude, longitude, id_zone: idZone, id_type: idType } = req.body;
 
@@ -38,14 +38,14 @@ class ContainerController {
       const container = await this.service.createContainer(req.body);
       return res.status(201).json(container);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Met à jour un conteneur
    */
-  async update(req, res) {
+  async update(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -60,14 +60,14 @@ class ContainerController {
 
       return res.status(200).json(updated);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Change le statut d'un conteneur
    */
-  async updateStatus(req, res) {
+  async updateStatus(req, res, next) {
     try {
       const { id } = req.params;
       const { statut } = req.body;
@@ -83,14 +83,14 @@ class ContainerController {
 
       return res.status(200).json(updated);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère un conteneur par ID
    */
-  async getById(req, res) {
+  async getById(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -101,14 +101,14 @@ class ContainerController {
 
       return res.status(200).json(container);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère un conteneur par UID
    */
-  async getByUid(req, res) {
+  async getByUid(req, res, next) {
     try {
       const { uid } = req.params;
 
@@ -119,14 +119,14 @@ class ContainerController {
 
       return res.status(200).json(container);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère tous les conteneurs avec pagination
    */
-  async getAll(req, res) {
+  async getAll(req, res, next) {
     try {
       const { page = 1, limit = 50, statut, id_zone: idZone, id_type: idType } = req.query;
       const options = { 
@@ -140,42 +140,42 @@ class ContainerController {
       const containers = await this.service.getAllContainers(options);
       return res.status(200).json(containers);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère les conteneurs par statut
    */
-  async getByStatus(req, res) {
+  async getByStatus(req, res, next) {
     try {
       const { statut } = req.params;
 
       const containers = await this.service.getContainersByStatus(statut);
       return res.status(200).json(containers);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère les conteneurs par zone
    */
-  async getByZone(req, res) {
+  async getByZone(req, res, next) {
     try {
       const { id_zone: idZone } = req.params;
 
       const containers = await this.service.getContainersByZone(idZone);
       return res.status(200).json(containers);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Recherche les conteneurs dans un rayon
    */
-  async getInRadius(req, res) {
+  async getInRadius(req, res, next) {
     try {
       const { latitude, longitude, radiusKm } = req.query;
 
@@ -192,14 +192,14 @@ class ContainerController {
       );
       return res.status(200).json(containers);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Supprime un conteneur
    */
-  async delete(req, res) {
+  async delete(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -210,14 +210,14 @@ class ContainerController {
 
       return res.status(200).json({ message: 'Conteneur supprimé avec succès' });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Supprime tous les conteneurs
    */
-  async deleteAll(req, res) {
+  async deleteAll(req, res, next) {
     try {
       const deleted = await this.service.deleteAllContainers();
       return res.status(200).json({ 
@@ -225,14 +225,14 @@ class ContainerController {
         count: deleted.length 
       });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Compte les conteneurs
    */
-  async count(req, res) {
+  async count(req, res, next) {
     try {
       const { statut, id_zone: idZone } = req.query;
       const filters = {};
@@ -242,54 +242,54 @@ class ContainerController {
       const count = await this.service.countContainers(filters);
       return res.status(200).json({ count });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Vérifie si un conteneur existe
    */
-  async exists(req, res) {
+  async exists(req, res, next) {
     try {
       const { id } = req.params;
 
       const exists = await this.service.existContainer(id);
       return res.status(200).json({ exists });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Vérifie si un UID existe
    */
-  async existsByUid(req, res) {
+  async existsByUid(req, res, next) {
     try {
       const { uid } = req.params;
 
       const exists = await this.service.existByUid(uid);
       return res.status(200).json({ exists });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère les statistiques
    */
-  async getStatistics(req, res) {
+  async getStatistics(req, res, next) {
     try {
       const stats = await this.service.getStatistics();
       return res.status(200).json(stats);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
   /**
    * Récupère l'historique des changements de statut d'un conteneur
    */
-  async getStatusHistory(req, res) {
+  async getStatusHistory(req, res, next) {
     try {
       const { id } = req.params;
       const { limit, offset } = req.query;
@@ -305,7 +305,7 @@ class ContainerController {
       const history = await this.service.getHistoriqueStatut(id, options);
       return res.status(200).json(history);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 }

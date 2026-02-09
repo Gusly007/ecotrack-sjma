@@ -25,7 +25,7 @@ class TypeConteneurController {
    * Crée un nouveau type de conteneur
    * POST /types-conteneurs
    */
-  async create(req, res) {
+  async create(req, res, next) {
     try {
       const { code, nom } = req.body;
 
@@ -38,7 +38,7 @@ class TypeConteneurController {
       const typeConteneur = await this.service.createTypeConteneur(req.body);
       return res.status(201).json(typeConteneur);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -46,12 +46,12 @@ class TypeConteneurController {
    * Récupère tous les types de conteneur
    * GET /types-conteneurs
    */
-  async getAll(req, res) {
+  async getAll(req, res, next) {
     try {
       const types = await this.service.getAllTypes();
       return res.status(200).json(types);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -59,12 +59,12 @@ class TypeConteneurController {
    * Récupère tous les types de conteneur avec statistiques
    * GET /types-conteneurs/stats/all
    */
-  async getAllWithStats(req, res) {
+  async getAllWithStats(req, res, next) {
     try {
       const types = await this.service.getAllTypesWithStats();
       return res.status(200).json(types);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -72,7 +72,7 @@ class TypeConteneurController {
    * Récupère un type de conteneur par ID
    * GET /types-conteneurs/:id
    */
-  async getById(req, res) {
+  async getById(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -83,7 +83,7 @@ class TypeConteneurController {
       const type = await this.service.getTypeById(id);
       return res.status(200).json(type);
     } catch (err) {
-      return res.status(404).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -91,7 +91,7 @@ class TypeConteneurController {
    * Récupère un type de conteneur par code
    * GET /types-conteneurs/code/:code
    */
-  async getByCode(req, res) {
+  async getByCode(req, res, next) {
     try {
       const { code } = req.params;
 
@@ -102,7 +102,7 @@ class TypeConteneurController {
       const type = await this.service.getTypeByCode(code);
       return res.status(200).json(type);
     } catch (err) {
-      return res.status(404).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -110,7 +110,7 @@ class TypeConteneurController {
    * Récupère les types de conteneur par nom
    * GET /types-conteneurs/nom/:nom
    */
-  async getByNom(req, res) {
+  async getByNom(req, res, next) {
     try {
       const { nom } = req.params;
 
@@ -121,7 +121,7 @@ class TypeConteneurController {
       const types = await this.service.getTypeByNom(nom);
       return res.status(200).json(types);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -129,7 +129,7 @@ class TypeConteneurController {
    * Met à jour un type de conteneur
    * PATCH /types-conteneurs/:id
    */
-  async update(req, res) {
+  async update(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -140,7 +140,7 @@ class TypeConteneurController {
       const typeConteneur = await this.service.updateTypeConteneur(id, req.body);
       return res.status(200).json(typeConteneur);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -148,7 +148,7 @@ class TypeConteneurController {
    * Supprime un type de conteneur
    * DELETE /types-conteneurs/:id
    */
-  async delete(req, res) {
+  async delete(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -159,7 +159,7 @@ class TypeConteneurController {
       const type = await this.service.deleteTypeConteneur(id);
       return res.status(200).json(type);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -167,12 +167,12 @@ class TypeConteneurController {
    * Supprime tous les types de conteneur
    * DELETE /types-conteneurs
    */
-  async deleteAll(req, res) {
+  async deleteAll(req, res, next) {
     try {
       const types = await this.service.deleteAllTypes();
       return res.status(200).json(types);
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -180,12 +180,12 @@ class TypeConteneurController {
    * Compte le nombre de types de conteneur
    * GET /types-conteneurs/count
    */
-  async count(req, res) {
+  async count(req, res, next) {
     try {
       const total = await this.service.countTypes();
       return res.status(200).json({ total });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -193,7 +193,7 @@ class TypeConteneurController {
    * Vérifie si un type de conteneur existe
    * GET /types-conteneurs/check/exists/:id
    */
-  async exists(req, res) {
+  async exists(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -204,7 +204,7 @@ class TypeConteneurController {
       const exists = await this.service.typeExists(id);
       return res.status(200).json({ exists });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -212,7 +212,7 @@ class TypeConteneurController {
    * Vérifie si un code existe
    * GET /types-conteneurs/check/code/:code
    */
-  async codeExists(req, res) {
+  async codeExists(req, res, next) {
     try {
       const { code } = req.params;
 
@@ -223,7 +223,7 @@ class TypeConteneurController {
       const exists = await this.service.codeExists(code);
       return res.status(200).json({ exists });
     } catch (err) {
-      return res.status(500).json({ message: err.message });
+      next(err);
     }
   }
 
@@ -231,7 +231,7 @@ class TypeConteneurController {
    * Récupère un type de conteneur avec statistiques
    * GET /types-conteneurs/:id/stats
    */
-  async getWithStats(req, res) {
+  async getWithStats(req, res, next) {
     try {
       const { id } = req.params;
 
@@ -242,7 +242,7 @@ class TypeConteneurController {
       const typeWithStats = await this.service.getTypeWithStats(id);
       return res.status(200).json(typeWithStats);
     } catch (err) {
-      return res.status(404).json({ message: err.message });
+      next(err);
     }
   }
 }
