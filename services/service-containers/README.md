@@ -1,4 +1,4 @@
-# 🚀 EcoTrack Containers Service
+﻿# 🚀 EcoTrack Containers Service
 
 Microservice moderne pour la gestion des conteneurs de la plateforme EcoTrack avec **notifications en temps réel** via Socket.IO.
 
@@ -25,7 +25,7 @@ npm run init-db
 # 4. Démarre
 npm run dev
 
-# ✨ Accède à http://localhost:8080/api
+# ✨ Accède à http://localhost:3011/api
 ```
 
 ---
@@ -45,7 +45,7 @@ npm run dev
 - 🚀 [Déploiement](./docs/DEPLOYMENT.md) - Guide de prod
 - 💚 [Health Check](./docs/HEALTH_CHECK.md) - Monitoring
 - � **[Middleware Audit](./docs/MIDDLEWARE_FINAL_REPORT.md)** - Architecture des middleware ✨
-- �📚 [API Swagger](http://localhost:8080/api-docs) - Documentation interactive
+- �📚 [API Swagger](http://localhost:3011/api-docs) - Documentation interactive
 
 ---
 
@@ -66,7 +66,7 @@ npm run dev
 **Service en couches moderne :**
 ```
 ┌─────────────────────────────────────┐
-│   API REST + Socket.IO (port 8080) │
+│   API REST + Socket.IO (port 3011) │
 ├─────────────────────────────────────┤
 │      Routes → Controllers           │
 ├─────────────────────────────────────┤
@@ -215,7 +215,7 @@ npm install
 npm run init-db
 npm run dev
 
-# ✨ Visite http://localhost:8080/api-docs
+# ✨ Visite http://localhost:3011/api-docs
 ```
 
 **Pour des instructions détaillées** : [GUIDE_COLLEGUES.md](./GUIDE_COLLEGUES.md)

@@ -10,7 +10,7 @@
 const io = require('socket.io-client');
 const readline = require('readline');
 
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3011');
 let currentZones = new Set();
 
 const rl = readline.createInterface({
@@ -163,7 +163,7 @@ function simulateStatusChange() {
             console.log('\n📨 Données simulées:');
             console.log(JSON.stringify(mockData, null, 2));
             console.log('\n💡 Note: Ceci est une simulation. Pour un vrai test, lancez:');
-            console.log(`curl -X PATCH http://localhost:3000/api/containers/${id}/status \\`);
+            console.log(`curl -X PATCH http://localhost:3011/api/containers/${id}/status \`);
             console.log(`  -H "Content-Type: application/json" \\`);
             console.log(`  -d '{"statut": "${newStatus.toUpperCase()}"}'`);
 
@@ -186,7 +186,7 @@ function showHelp() {
 
 2. Changer le statut d'un conteneur:
    - Dans un autre terminal, lancez:
-   curl -X PATCH http://localhost:3000/api/containers/1/status \\
+   curl -X PATCH http://localhost:3011/api/containers/1/status \\
      -H "Content-Type: application/json" \\
      -d '{"statut": "EN_MAINTENANCE"}'
    
@@ -220,7 +220,7 @@ function quit() {
 console.log(`
 ╔═══════════════════════════════════════════╗
 ║  🧪 TESTEUR SOCKET.IO INTERACTIF          ║
-║  Connecté à: http://localhost:3000        ║
+║  Connecté à: http://localhost:3011        ║
 ╚═══════════════════════════════════════════╝
 `);
 

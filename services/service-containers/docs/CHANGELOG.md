@@ -1,4 +1,4 @@
-# 📝 Changelog - Socket.IO Integration
+﻿# 📝 Changelog - Socket.IO Integration
 
 ## Version 2.0.0 - Socket.IO Real-time Notifications (16 Jan 2026)
 
@@ -130,7 +130,7 @@ PATCH /api/containers/:id/status
 2. `npm install socket.io socket.io-client`
 3. Configurer `.env` (si port change)
 4. `npm run dev` ou `npm start`
-5. Clients WebSocket se connectent à `ws://localhost:8080`
+5. Clients WebSocket se connectent à `ws://localhost:3011`
 6. Voir `TESTING.md` pour valider
 
 ### 📊 Metrics

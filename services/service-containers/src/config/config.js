@@ -3,7 +3,7 @@
  */
 module.exports = {
   // Ports et serveur
-  PORT: process.env.PORT || 8080,
+  PORT: process.env.APP_PORT || 3011,
   NODE_ENV: process.env.NODE_ENV || 'development',
 
   // Base de données
@@ -12,7 +12,7 @@ module.exports = {
     port: process.env.PGPORT || 5432,
     user: process.env.PGUSER || 'postgres',
     password: process.env.PGPASSWORD || '',
-    database: process.env.PGDATABASE || 'ecotrack-db',
+    database: process.env.PGDATABASE || 'ecotrack',
     max: 20, // pool size
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000

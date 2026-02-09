@@ -1,4 +1,4 @@
-# 🚀 EcoTrack Containers Service - Guide pour les collègues
+﻿# 🚀 EcoTrack Containers Service - Guide pour les collègues
 
 Bienvenue ! Ce microservice gère les conteneurs de la plateforme EcoTrack avec notifications en temps réel.
 
@@ -69,11 +69,11 @@ PGPORT=5432
 PGDATABASE=ecotrack_db
 
 # Serveur
-PORT=8080
+APP_PORT=3011
 NODE_ENV=development
 
 # Socket.IO CORS
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+ALLOWED_ORIGINS=http://localhost:3011,http://localhost:3011
 
 # Logging
 LOG_LEVEL=info
@@ -98,9 +98,9 @@ npm run dev
 Vous verrez :
 ```
 ✓ EcoTrack Containers API
-✓ 📍 http://localhost:8080/api
-✓ 📚 Documentation: http://localhost:8080/api-docs
-✓ 🔌 Socket.IO: ws://localhost:8080
+✓ 📍 http://localhost:3011/api
+✓ 📚 Documentation: http://localhost:3011/api-docs
+✓ 🔌 Socket.IO: ws://localhost:3011
 ```
 
 ### Mode production
@@ -123,7 +123,7 @@ Cela crée les tables (`conteneur`, `zone`, `historique_statut`, etc.)
 
 ### Base URL
 ```
-http://localhost:8080/api
+http://localhost:3011/api
 ```
 
 ### Endpoints
@@ -223,7 +223,7 @@ Le service émet des **notifications instantanées** quand un conteneur change d
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:8080');
+const socket = io('http://localhost:3011');
 
 socket.on('connect', () => {
   console.log('Connecté au serveur !');
@@ -263,7 +263,7 @@ function ContainerUpdates() {
   const [updates, setUpdates] = useState([]);
   
   useEffect(() => {
-    const socket = io('http://localhost:8080');
+    const socket = io('http://localhost:3011');
     
     socket.on('connect', () => {
       socket.emit('subscribe-zone', { id_zone: 1 });
@@ -333,7 +333,7 @@ Cela ouvre un terminal interactif pour tester Socket.IO manuellement.
 npm run test-db
 ```
 
-### ❌ "Port 8080 déjà utilisé"
+### ❌ "port 3011 déjà utilisé"
 
 ```bash
 # Tuer le processus Node
@@ -462,7 +462,7 @@ Si vous avez des questions :
 # 5. npm run init-db
 # 6. npm run dev
 
-# ✨ Le service tourne sur http://localhost:8080
+# ✨ Le service tourne sur http://localhost:3011
 ```
 
 Bonne chance ! 🚀

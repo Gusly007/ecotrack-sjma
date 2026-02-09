@@ -1,4 +1,4 @@
-# 🚀 Setup & Installation Guide
+﻿# 🚀 Setup & Installation Guide
 
 **Durée**: 15 minutes | **Difficulty**: Facile | **Audience**: Developers
 
@@ -67,9 +67,9 @@ npm run dev
 ```
 ╔════════════════════════════════════════════════════╗
 ║  🚀 EcoTrack Containers API                        ║
-║  📍 http://localhost:8080/api                      ║
-║  📚 Documentation: http://localhost:8080/api-docs  ║
-║  🔌 Socket.IO: ws://localhost:8080                 ║
+║  📍 http://localhost:3011/api                      ║
+║  📚 Documentation: http://localhost:3011/api-docs  ║
+║  🔌 Socket.IO: ws://localhost:3011                 ║
 ╚════════════════════════════════════════════════════╝
 ```
 
@@ -82,7 +82,7 @@ npm run dev
 ```ini
 # ========== SERVER ==========
 NODE_ENV=development
-PORT=8080
+APP_PORT=3011
 
 # ========== DATABASE ==========
 DATABASE_URL=postgresql://postgres:password@localhost:5432/ecotrack_containers
@@ -94,7 +94,7 @@ PGDATABASE=ecotrack_containers
 
 # ========== SOCKET.IO ==========
 SOCKET_IO_ENABLED=true
-SOCKET_CORS_ORIGIN=http://localhost:3000
+SOCKET_CORS_ORIGIN=http://localhost:3011
 
 # ========== LOGGING ==========
 LOG_LEVEL=debug
@@ -125,13 +125,13 @@ npm run test:db
 
 ### 2️⃣ Teste l'API
 ```bash
-curl http://localhost:8080/api
+curl http://localhost:3011/api
 # Affiche JSON avec endpoints disponibles
 ```
 
 ### 3️⃣ Teste la Santé
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:3011/health
 # Affiche: { status: "OK", services: { ... } }
 ```
 
@@ -216,7 +216,7 @@ psql -U postgres -c "SELECT 1;"
 docker ps | grep postgres
 ```
 
-### ❌ "Port 8080 already in use"
+### ❌ "port 3011 already in use"
 ```bash
 # Change le port dans .env
 PORT=8081
@@ -249,9 +249,9 @@ npm run test:unit
 - [ ] PostgreSQL tourne
 - [ ] `npm run init-db` réussi
 - [ ] `npm run dev` lance sans erreurs
-- [ ] http://localhost:8080/api répond
+- [ ] http://localhost:3011/api répond
 - [ ] `npm run test:unit` passe (111/111)
-- [ ] http://localhost:8080/health répond OK
+- [ ] http://localhost:3011/health répond OK
 
 ---
 

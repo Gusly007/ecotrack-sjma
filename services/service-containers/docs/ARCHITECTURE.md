@@ -1,4 +1,4 @@
-# 🚀 EcoTrack Containers API - Service Professionnel
+﻿# 🚀 EcoTrack Containers API - Service Professionnel
 
 API RESTful professionnelle pour la gestion des conteneurs écologiques intelligents.
 
@@ -54,7 +54,7 @@ PGHOST=localhost
 PGPORT=5432
 PGUSER=postgres
 PGPASSWORD=your_password
-PGDATABASE=ecotrack-db
+PGDATABASE=ecotrack
 ```
 
 ### 3. Initialiser la base de données
@@ -64,7 +64,7 @@ PGDATABASE=ecotrack-db
 npm run init-db
 
 # Option 2: Via psql
-psql -h localhost -U postgres -d ecotrack-db -f src/db/init-db-pg.sql
+psql -h localhost -U postgres -d ecotrack -f src/db/init-db-pg.sql
 ```
 
 ### 4. Démarrer le serveur
@@ -83,7 +83,7 @@ npm start
 
 ```env
 # Serveur
-PORT=3000
+APP_PORT=3011
 NODE_ENV=development
 
 # PostgreSQL
@@ -91,7 +91,7 @@ PGHOST=localhost
 PGPORT=5432
 PGUSER=postgres
 PGPASSWORD=password
-PGDATABASE=ecotrack-db
+PGDATABASE=ecotrack
 
 # Logging
 LOG_LEVEL=debug
@@ -155,7 +155,7 @@ npm start
 ### Accéder à la documentation
 
 ```
-http://localhost:3000/api-docs
+http://localhost:3011/api-docs
 ```
 
 ### Tests
@@ -292,4 +292,4 @@ MIT
 
 ---
 
-**Besoin d'aide ?** Consultez la documentation Swagger : http://localhost:3000/api-docs
+**Besoin d'aide ?** Consultez la documentation Swagger : http://localhost:3011/api-docs

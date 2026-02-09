@@ -1,4 +1,4 @@
-# 📚 Documentation EcoTrack Containers Service
+﻿# 📚 Documentation EcoTrack Containers Service
 
 **Version**: 2.0  
 **Status**: ✅ Production Ready  
@@ -58,7 +58,7 @@ cp .env.example .env
 
 # 3. Lance
 npm run dev
-# ✨ http://localhost:8080/api
+# ✨ http://localhost:3011/api
 ```
 
 **Besoin d'aide?** → [SETUP.md](./SETUP.md)
@@ -146,10 +146,10 @@ Frontend Connection
 
 ## 🔗 Ressources Utiles
 
-- 📖 **API Swagger**: http://localhost:8080/api-docs (quand l'app tourne)
+- 📖 **API Swagger**: http://localhost:3011/api-docs (quand l'app tourne)
 - 🧪 **Tests**: `npm run test:unit` / `npm run test:integration`
-- 📊 **Health**: http://localhost:8080/health
-- 🔌 **WebSocket**: ws://localhost:8080 (via Socket.IO)
+- 📊 **Health**: http://localhost:3011/health
+- 🔌 **WebSocket**: ws://localhost:3011 (via Socket.IO)
 
 ---
 

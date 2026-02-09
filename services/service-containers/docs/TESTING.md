@@ -1,4 +1,4 @@
-# 🧪 Guide des Tests Socket.IO
+﻿# 🧪 Guide des Tests Socket.IO
 
 ## 📋 Fichiers de Test
 
@@ -62,7 +62,7 @@ ID du socket: abc123...
 Pendant que le serveur tourne:
 ```bash
 # Changer le statut d'un conteneur
-PATCH http://localhost:8080/api/containers/:id/status
+PATCH http://localhost:3011/api/containers/:id/status
 Content-Type: application/json
 
 {
@@ -88,7 +88,7 @@ Content-Type: application/json
          │ WebSocket
          ▼
 ┌─────────────────────────────────────┐
-│  EcoTrack API (Port 8080)           │
+│  EcoTrack API (port 3011)           │
 ├─────────────────────────────────────┤
 │  ✅ Express Routes                  │
 │  ✅ Socket.IO Server                │
@@ -158,7 +158,7 @@ socket.on('container:status-changed', (data) => {
 
 **Vérifications:**
 1. Le serveur est lancé? → `npm run dev` ou `npm start`
-2. Le port 8080 est libre? → `netstat -ano | findstr :8080`
+2. Le port 3011 est libre? → `netstat -ano | findstr :8080`
 3. Socket.IO s'initialise? → Logs du serveur doivent afficher `[Socket] Socket.IO initialisé`
 
 ### Tests Jest échouent

@@ -1,4 +1,4 @@
-# 🚀 EcoTrack Containers Service - Prêt pour le déploiement
+﻿# 🚀 EcoTrack Containers Service - Prêt pour le déploiement
 
 ## ✅ Status: Production Ready (10/10)
 
@@ -126,7 +126,7 @@ GET    /api/zones                   # Lister les zones
 **Si vous devez modifier la whitelist CORS :**
 Éditez `.env` :
 ```
-ALLOWED_ORIGINS=http://localhost:3000,https://votre-app.com
+ALLOWED_ORIGINS=http://localhost:3011,https://votre-app.com
 ```
 
 ## ✨ Qualité du code

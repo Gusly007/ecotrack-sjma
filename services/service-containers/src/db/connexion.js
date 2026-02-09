@@ -20,7 +20,7 @@ const pool = new Pool({
   port: Number(process.env.PGPORT) || 5432,
   user: process.env.PGUSER || 'postgres',
   password,
-  database: process.env.PGDATABASE || 'ecotrack-db',
+  database: process.env.PGDATABASE || 'ecotrack',
   max: 10,
   idleTimeoutMillis: 30000,
 });

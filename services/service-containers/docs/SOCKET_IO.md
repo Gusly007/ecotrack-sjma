@@ -1,4 +1,4 @@
-# Socket.IO - Notifications en Temps Réel
+﻿# Socket.IO - Notifications en Temps Réel
 
 ## Configuration
 
@@ -6,7 +6,7 @@ Socket.IO est maintenant intégré à votre API pour envoyer des notifications e
 
 ### Serveur
 
-- **URL**: `ws://localhost:3000`
+- **URL**: `ws://localhost:3011`
 - **Transport**: WebSocket
 - **CORS**: Activé pour toutes les origines
 
@@ -16,7 +16,7 @@ Socket.IO est maintenant intégré à votre API pour envoyer des notifications e
 
 ```javascript
 const io = require('socket.io-client');
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3011');
 
 socket.on('connect', () => {
   console.log('Connecté au serveur Socket.IO');
@@ -69,7 +69,7 @@ socket.on('disconnect', () => {
 
 ```javascript
 // 1. Connexion
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3011');
 
 socket.on('connect', () => {
   console.log('Connecté');
@@ -159,7 +159,7 @@ function ContainerList({ zoneId }) {
 
   useEffect(() => {
     // Connexion Socket.IO
-    const newSocket = io('http://localhost:3000');
+    const newSocket = io('http://localhost:3011');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -229,7 +229,7 @@ const containers = ref([]);
 let socket = null;
 
 onMounted(() => {
-  socket = io('http://localhost:3000');
+  socket = io('http://localhost:3011');
 
   socket.on('connect', () => {
     socket.emit('subscribe-zone', props.zoneId);
@@ -287,7 +287,7 @@ npm install socket.io-client
 npm install -g wscat
 
 # Connecter et s'abonner
-wscat -c ws://localhost:3000
+wscat -c ws://localhost:3011
 
 # Dans le terminal wscat:
 > {"type":"subscribe-zone","data":1}
@@ -296,7 +296,7 @@ wscat -c ws://localhost:3000
 ### Avec Postman
 
 1. Créer une requête WebSocket
-2. URL: `ws://localhost:3000`
+2. URL: `ws://localhost:3011`
 3. Envoyer un message: `subscribe-zone:1`
 
 ## Avantages
@@ -321,7 +321,7 @@ cors: {
 ### Connection refused
 - Vérifier que le serveur est lancé sur le port 3000
 - Vérifier la configuration réseau/firewall
-- Vérifier l'URL: `http://localhost:3000` ou `ws://localhost:3000`
+- Vérifier l'URL: `http://localhost:3011` ou `ws://localhost:3011`
 
 ### Événements non reçus
 - Vérifier que le client est abonné à la bonne zone

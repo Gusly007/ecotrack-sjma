@@ -7,7 +7,7 @@ class SocketService {
         // Configuration CORS basée sur l'environnement
         const allowedOrigins = process.env.ALLOWED_ORIGINS 
             ? process.env.ALLOWED_ORIGINS.split(',')
-            : ['http://localhost:3000', 'http://localhost:8080'];
+            : ['http://localhost:3011'];
         
         this.io = socketIO(server, {
             cors: {

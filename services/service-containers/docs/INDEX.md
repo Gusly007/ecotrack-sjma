@@ -1,4 +1,4 @@
-# 📚 Documentation EcoTrack Containers Service
+﻿# 📚 Documentation EcoTrack Containers Service
 
 Bienvenue dans la documentation technique complète du microservice de gestion des conteneurs.
 
@@ -35,7 +35,7 @@ Pour répondre à la question **"Mes middleware sont-ils bien utilisés?"**:
 ### APIs & Intégrations
 
 - **[SOCKET_IO.md](./SOCKET_IO.md)** - Documentation complète Socket.IO (événements, rooms, exemples)
-- **[API REST]** - Voir Swagger UI : http://localhost:8080/api-docs
+- **[API REST]** - Voir Swagger UI : http://localhost:3011/api-docs
 
 ### Opérations & Monitoring
 
@@ -122,8 +122,8 @@ Pour répondre à la question **"Mes middleware sont-ils bien utilisés?"**:
 
 ## 🎉 Quick Links
 
-- **API Documentation** : http://localhost:8080/api-docs
-- **Health Check** : http://localhost:8080/health
+- **API Documentation** : http://localhost:3011/api-docs
+- **Health Check** : http://localhost:3011/health
 - **Tests** : `npm test`
 - **Dev Server** : `npm run dev`
 

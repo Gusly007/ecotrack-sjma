@@ -8,7 +8,7 @@
 const io = require('socket.io-client');
 
 // Connexion au serveur Socket.IO
-const socket = io('http://localhost:8080');
+const socket = io('http://localhost:3011');
 
 // ID du conteneur et de la zone à utiliser pour les tests
 const containerId = 113;
@@ -51,7 +51,7 @@ console.log(`\n📋 Instructions:
 1. Le client est maintenant connecté et écoute les changements de la zone ${zoneId}
 2. Pour tester, lancez une requête PATCH:
    
-   curl -X PATCH http://localhost:8080/api/containers/${containerId}/status \\
+   curl -X PATCH http://localhost:3011/api/containers/${containerId}/status \\
      -H "Content-Type: application/json" \\
      -d '{"statut": "EN_MAINTENANCE"}'
    
