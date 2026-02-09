@@ -1,6 +1,6 @@
 ﻿# 🧪 Guide des Tests Socket.IO
 
-## 📋 Fichiers de Test
+##  Fichiers de Test
 
 ### Tests Automatisés (Jest)
 Situés dans `test/` et exécutés avec `npm run test:*`
@@ -21,20 +21,11 @@ Exécutés directement pour développement/debugging
 
 ---
 
-## 🚀 Démarrage Rapide
+##  Démarrage Rapide
 
-### 1️⃣ Lancer les tests automatisés
+###  Lancer les tests automatisés
 
 ```bash
-# Tests unitaires (rapide, 0-1s)
-npm run test:socket
-
-# Tests d'intégration (rapide, 0-1s)
-npm run test:socket:integration
-
-# Tests E2E (nécessite serveur en marche)
-npm run test:socket:e2e
-```
 
 ### 2️⃣ Tester manuellement avec le serveur
 
@@ -52,7 +43,7 @@ npm run test:socket:client
 
 Le client affichera:
 ```
-✅ Connecté au serveur Socket.IO
+ Connecté au serveur Socket.IO
 ID du socket: abc123...
 📢 S'abonnement à la zone 1...
 ```
@@ -90,9 +81,9 @@ Content-Type: application/json
 ┌─────────────────────────────────────┐
 │  EcoTrack API (port 3011)           │
 ├─────────────────────────────────────┤
-│  ✅ Express Routes                  │
-│  ✅ Socket.IO Server                │
-│  ✅ Zone-based rooms                │
+│   Express Routes                  │
+│   Socket.IO Server                │
+│   Zone-based rooms                │
 │     (zone-1, zone-2, ...)           │
 └────────┬────────────────────────────┘
          │
@@ -138,14 +129,14 @@ socket.on('container:status-changed', (data) => {
 
 ---
 
-## ✅ Vérifications
+##  Vérifications
 
-- ✅ Socket.IO fonctionne sur le même port que l'API (8080)
-- ✅ WebSocket activé (transports: ['websocket', 'polling'])
-- ✅ CORS configuré pour accepter toutes les origines
-- ✅ Rooms par zone pour broadcaster sélectif
-- ✅ Graceful fallback si socketService unavailable
-- ✅ Tests manuels et automatisés disponibles
+-  Socket.IO fonctionne sur le même port que l'API (3011)
+-  WebSocket activé (transports: ['websocket', 'polling'])
+-  CORS configuré pour accepter toutes les origines
+-  Rooms par zone pour broadcaster sélectif
+-  Graceful fallback si socketService unavailable
+-  Tests manuels et automatisés disponibles
 
 ---
 
@@ -153,12 +144,12 @@ socket.on('container:status-changed', (data) => {
 
 ### Erreur: "websocket error"
 ```
-❌ [CLIENT] Erreur: websocket error
+ [CLIENT] Erreur: websocket error
 ```
 
 **Vérifications:**
 1. Le serveur est lancé? → `npm run dev` ou `npm start`
-2. Le port 3011 est libre? → `netstat -ano | findstr :8080`
+2. Le port 3011 est libre? → `netstat -ano | findstr :3011`
 3. Socket.IO s'initialise? → Logs du serveur doivent afficher `[Socket] Socket.IO initialisé`
 
 ### Tests Jest échouent
@@ -172,16 +163,16 @@ FAIL test/socket.e2e.test.js
 - Puis lancer: `npm run test:socket:e2e`
 
 ### Client ne reçoit pas les notifications
-1. ✅ Client s'abonne? Vérifier console: `[Socket] joined room: zone-1`
-2. ✅ Status changé? Appeler l'API PATCH
-3. ✅ Zone correcte? L'ID du conteneur doit avoir `id_zone: 1` en BD
+1.  Client s'abonne? Vérifier console: `[Socket] joined room: zone-1`
+2.  Status changé? Appeler l'API PATCH
+3.  Zone correcte? L'ID du conteneur doit avoir `id_zone: 1` en BD
 
 ---
 
 ## 📚 Documentation Complète
 
 Voir `docs/SOCKET_IO.md` pour:
-- Exemples React/Vue
+- Exemples React
 - Implémentation client complète
 - Gestion des reconnexions
 - Erreurs et fallbacks

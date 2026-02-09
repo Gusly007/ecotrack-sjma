@@ -35,12 +35,11 @@ npm install
 cp .env.example .env
 
 # Configure dans .env:
-DATABASE_URL=postgresql://postgres:password@localhost:5432/ecotrack_containers
 PGUSER=postgres
 PGPASSWORD=password
 PGHOST=localhost
 PGPORT=5432
-PGDATABASE=ecotrack_containers
+PGDATABASE=ecotrack
 ```
 
 **Option B: Docker (Recommandé)**
@@ -48,17 +47,12 @@ PGDATABASE=ecotrack_containers
 # Lance PostgreSQL dans Docker
 docker run --name postgres_ecotrack \
   -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=ecotrack_containers \
+  -e POSTGRES_DB=ecotrack \
   -p 5432:5432 \
   -d postgres:15
 ```
 
-### 3️⃣ Initialise la BD
-```bash
-npm run init-db
-```
-
-### 4️⃣ Démarre l'Application
+### 3️⃣ Démarre l'Application
 ```bash
 npm run dev
 ```
@@ -75,7 +69,7 @@ npm run dev
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Fichier `.env` - Exemple Complet
 
@@ -85,12 +79,11 @@ NODE_ENV=development
 APP_PORT=3011
 
 # ========== DATABASE ==========
-DATABASE_URL=postgresql://postgres:password@localhost:5432/ecotrack_containers
 PGUSER=postgres
 PGPASSWORD=password
 PGHOST=localhost
 PGPORT=5432
-PGDATABASE=ecotrack_containers
+PGDATABASE=ecotrack
 
 # ========== SOCKET.IO ==========
 SOCKET_IO_ENABLED=true
@@ -104,46 +97,45 @@ LOG_LEVEL=debug
 
 | Variable | Défaut | Description |
 |----------|--------|-------------|
-| `PORT` | 8080 | Port du serveur |
+| `APP_PORT` | 3011 | Port du serveur |
 | `NODE_ENV` | development | Environnement (dev/prod) |
-| `DATABASE_URL` | - | URL PostgreSQL **REQUIS** |
 | `PGUSER` | postgres | Utilisateur DB |
 | `PGPASSWORD` | - | Password DB **REQUIS** |
 | `PGHOST` | localhost | Host DB |
 | `PGPORT` | 5432 | Port DB |
-| `PGDATABASE` | ecotrack_containers | Nom de la DB |
+| `PGDATABASE` | ecotrack | Nom de la DB |
 
 ---
 
-## 🧪 Vérification Installation
+##  Vérification Installation
 
-### 1️⃣ Teste la Connexion DB
+### 1️ Teste la Connexion DB
 ```bash
 npm run test:db
-# Affiche: ✅ Database connected successfully
+# Affiche:  Database connected successfully
 ```
 
-### 2️⃣ Teste l'API
+### 2️ Teste l'API
 ```bash
 curl http://localhost:3011/api
 # Affiche JSON avec endpoints disponibles
 ```
 
-### 3️⃣ Teste la Santé
+### 3️ Teste la Santé
 ```bash
 curl http://localhost:3011/health
 # Affiche: { status: "OK", services: { ... } }
 ```
 
-### 4️⃣ Teste les Tests
+### 4️ Teste les Tests
 ```bash
 npm run test:unit
-# Affiche: Tests: 111 passed, 111 total ✅
+# Affiche: Tests: 111 passed, 111 total 
 ```
 
 ---
 
-## 📁 Structure de Dossiers
+##  Structure de Dossiers
 
 ```
 service-containers/
@@ -180,18 +172,18 @@ service-containers/
 npm run dev              # Lance l'app en mode watch
 npm run dev:debug        # Avec debugger Node.js
 
-# 🧪 Tests
+# Tests
 npm run test:unit        # Tests unitaires
 npm run test:integration # Tests d'intégration
 npm run test:all         # Tous les tests
 npm test                 # Alias test:all
 
-# 🔨 Production
+# Production
 npm run build            # Build (si applicable)
 npm start                # Lance en production
 
-# 🛠️ Utilitaires
-npm run init-db          # Initialise la BD
+# Utilitaires
+npm run test-db          # Teste la connexion DB
 npm run lint             # ESLint check
 npm run format           # Prettier format
 ```
@@ -200,14 +192,14 @@ npm run format           # Prettier format
 
 ## 🐛 Troubleshooting
 
-### ❌ "Cannot find module 'express'"
+###  "Cannot find module 'express'"
 ```bash
 # Solution: Réinstalle les dépendances
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### ❌ "Connection refused" (PostgreSQL)
+###  "Connection refused" (PostgreSQL)
 ```bash
 # Vérifie que PostgreSQL tourne
 psql -U postgres -c "SELECT 1;"
@@ -216,22 +208,22 @@ psql -U postgres -c "SELECT 1;"
 docker ps | grep postgres
 ```
 
-### ❌ "port 3011 already in use"
+###  "port 3011 already in use"
 ```bash
 # Change le port dans .env
 PORT=8081
 
 # Ou tue le processus (Linux/Mac):
-lsof -i :8080 | grep -v PID | awk '{print $2}' | xargs kill -9
+lsof -i :3011 | grep -v PID | awk '{print $2}' | xargs kill -9
 ```
 
-### ❌ "Database does not exist"
+###  "Database does not exist"
 ```bash
-# Réinitialise la BD
-npm run init-db
+# Créez la base de données manuellement
+psql -U postgres -c "CREATE DATABASE ecotrack;"
 ```
 
-### ❌ Tests échouent
+###  Tests échouent
 ```bash
 # Vérifie l'env
 echo $NODE_ENV  # Devrait être 'test' ou 'development'
@@ -242,12 +234,11 @@ npm run test:unit
 
 ---
 
-## ✅ Checklist Post-Installation
+##  Checklist Post-Installation
 
 - [ ] `npm install` complété
 - [ ] `.env` configuré
 - [ ] PostgreSQL tourne
-- [ ] `npm run init-db` réussi
 - [ ] `npm run dev` lance sans erreurs
 - [ ] http://localhost:3011/api répond
 - [ ] `npm run test:unit` passe (111/111)
@@ -302,4 +293,4 @@ npm run dev 2>&1 | grep -i "error\|socket\|api"
 ---
 
 *Setup guide professionnel et rapide*  
-*Prêt en 15 minutes* ✅
+*Prêt en 15 minutes* 

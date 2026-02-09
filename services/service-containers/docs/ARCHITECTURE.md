@@ -1,8 +1,8 @@
-﻿# 🚀 EcoTrack Containers API - Service Professionnel
+﻿#  EcoTrack Containers API - Service Professionnel
 
 API RESTful professionnelle pour la gestion des conteneurs écologiques intelligents.
 
-## 📋 Table des matières
+## Table des matières
 
 - [Caractéristiques](#caractéristiques)
 - [Prérequis](#prérequis)
@@ -13,28 +13,28 @@ API RESTful professionnelle pour la gestion des conteneurs écologiques intellig
 - [API Documentation](#api-documentation)
 - [Architecture](#architecture)
 
-## ✨ Caractéristiques
+##  Caractéristiques
 
-- ✅ **Architecture MVC professionnelle** - Séparation des préoccupations
-- ✅ **Gestion centralisée des erreurs** - Middleware d'erreur personnalisé
-- ✅ **Validation robuste** - Validateurs réutilisables
-- ✅ **Réponses API standardisées** - Format cohérent pour toutes les réponses
-- ✅ **Logging des requêtes** - Traçabilité complète
-- ✅ **Configuration externalisée** - Fichier `.env` pour les secrets
-- ✅ **Documentation Swagger** - API interactive
-- ✅ **Tests unitaires** - Couverture complète des modèles
-- ✅ **PostGIS intégré** - Gestion géospatiale pour les coordonnées GPS
-- ✅ **Transactions PostgreSQL** - Garantie d'intégrité des données
-- ✅ **Historique d'audit** - Suivi des changements de statut
-- ✅ **CORS et sécurité** - Headers de sécurité configurés
+-  **Architecture MVC professionnelle** - Séparation des préoccupations
+-  **Gestion centralisée des erreurs** - Middleware d'erreur personnalisé
+-  **Validation robuste** - Validateurs réutilisables
+-  **Réponses API standardisées** - Format cohérent pour toutes les réponses
+-  **Logging des requêtes** - Traçabilité complète
+-  **Configuration externalisée** - Fichier `.env` pour les secrets
+-  **Documentation Swagger** - API interactive
+-  **Tests unitaires** - Couverture complète des modèles
+-  **PostGIS intégré** - Gestion géospatiale pour les coordonnées GPS
+-  **Transactions PostgreSQL** - Garantie d'intégrité des données
+-  **Historique d'audit** - Suivi des changements de statut
+-  **CORS et sécurité** - Headers de sécurité configurés
 
-## 🔧 Prérequis
+##  Prérequis
 
-- Node.js >= 14.x
+- Node.js >= 18.x
 - PostgreSQL >= 12 avec PostGIS
 - npm ou yarn
 
-## 📦 Installation
+## Installation
 
 ### 1. Cloner et installer les dépendances
 
@@ -57,17 +57,7 @@ PGPASSWORD=your_password
 PGDATABASE=ecotrack
 ```
 
-### 3. Initialiser la base de données
-
-```bash
-# Option 1: Script Node
-npm run init-db
-
-# Option 2: Via psql
-psql -h localhost -U postgres -d ecotrack -f src/db/init-db-pg.sql
-```
-
-### 4. Démarrer le serveur
+### 3. Démarrer le serveur
 
 ```bash
 # Mode développement
@@ -77,7 +67,7 @@ npm run dev
 npm start
 ```
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Variables d'environnement (.env)
 
@@ -97,7 +87,7 @@ PGDATABASE=ecotrack
 LOG_LEVEL=debug
 ```
 
-## 📁 Structure du projet
+##  Structure du projet
 
 ```
 service-containers/
@@ -110,7 +100,6 @@ service-containers/
 │   │   └── typeconteneurcontroller.js
 │   ├── db/
 │   │   ├── connexion.js        # Pool PostgreSQL
-│   │   ├── init-db-pg.sql      # Schéma de base
 │   │   └── test-db.js          # Tests de connexion
 │   ├── middleware/             # Middleware personnalisé
 │   │   ├── errorHandler.js     # Gestion centralisée des erreurs
@@ -136,15 +125,13 @@ service-containers/
 ├── test/                       # Tests unitaires
 │   ├── container.test.js
 │   └── zone.test.js
-├── scripts/
-│   └── init-db.js             # Script d'initialisation DB
 ├── .env.example               # Variables d'environnement (exemple)
 ├── index.js                   # Application principale
 ├── package.json               # Dépendances npm
 └── README.md                  # Cette documentation
 ```
 
-## 🚀 Utilisation
+##  Utilisation
 
 ### Démarrer le serveur
 
@@ -177,7 +164,7 @@ npm test -- --coverage
 npm run test-db
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Format des réponses
 
@@ -224,7 +211,7 @@ npm run test-db
 #### Santé
 - `GET /health` - Vérifier que le serveur est actif
 
-## 🏗️ Architecture
+## Architecture
 
 ### Pattern MVC
 
@@ -264,32 +251,26 @@ Les opérations critiques (changement de statut) utilisent les transactions Post
 BEGIN → SELECT → UPDATE → INSERT → COMMIT/ROLLBACK
 ```
 
-## 🔐 Sécurité
+##  Sécurité
 
-- ✅ CORS configuré
-- ✅ Validation des entrées
-- ✅ Prepared statements contre l'injection SQL
-- ✅ Gestion des erreurs sans exposition d'informations sensibles
-- ✅ Logging des requêtes pour audit
+-  CORS configuré
+-  Validation des entrées
+-  Prepared statements contre l'injection SQL
+-  Gestion des erreurs sans exposition d'informations sensibles
+-  Logging des requêtes pour audit
 
-## 📊 Monitoring
+##  Monitoring
 
 Les requêtes sont loggées automatiquement :
 ```
-✅ GET /api/containers - 200 [45ms]
+ GET /api/containers - 200 [45ms]
 ⚠️  POST /api/containers - 400 [12ms]
 ```
 
-## 🤝 Contribution
+##  Contribution
 
 1. Créer une branche pour votre feature
 2. Écrire des tests
 3. Soumettre une pull request
-
-## 📄 Licence
-
-MIT
-
----
 
 **Besoin d'aide ?** Consultez la documentation Swagger : http://localhost:3011/api-docs

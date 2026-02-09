@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const http = require('http');
@@ -27,16 +28,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Logging des requêtes (avant les routes)
 app.use(requestLogger);
 
-// CORS (avant les routes)
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// CORS
+app.use(cors());
 
 // Socket.IO middleware (injecter le socketService pour toutes les routes)
 const socketMiddleware = require('./src/middleware/socket-middleware');
@@ -53,7 +46,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3011/api',
+        url: `http://localhost:${config.PORT}/api`,
         description: 'Development server'
       }
     ],
@@ -161,15 +154,11 @@ app.use(errorHandler);
 // ========== DÉMARRAGE DU SERVEUR ==========
 const port = config.PORT;
 server.listen(port, () => {
-  console.log(`
-╔════════════════════════════════════════════════════╗
-║  🚀 EcoTrack Containers API                        ║
-║  📍 http://localhost:${port}/api                  ║
-║  📚 Documentation: http://localhost:${port}/api-docs ║
-║  🔧 Environnement: ${config.NODE_ENV}                     ║
-║  🔌 Socket.IO: ws://localhost:${port}              ║
-╚════════════════════════════════════════════════════╝
-  `);
+  console.log(`EcoTrack Containers API started`);
+  console.log(`  API:    http://localhost:${port}/api`);
+  console.log(`  Docs:   http://localhost:${port}/api-docs`);
+  console.log(`  Env:    ${config.NODE_ENV}`);
+  console.log(`  Socket: ws://localhost:${port}`);
 });
 
 module.exports = app;

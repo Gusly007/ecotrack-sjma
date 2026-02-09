@@ -2,7 +2,7 @@
 
 ## Configuration
 
-Socket.IO est maintenant intégré à votre API pour envoyer des notifications en temps réel lors des changements de statut des conteneurs.
+Socket.IO est  intégré à l'API pour envoyer des notifications en temps réel lors des changements de statut des conteneurs.
 
 ### Serveur
 
@@ -80,7 +80,7 @@ socket.on('connect', () => {
 
 // 3. Écouter les notifications de changement de statut
 socket.on('container:status-changed', (data) => {
-  console.log('✅ Un conteneur a changé de statut:', {
+  console.log(' Un conteneur a changé de statut:', {
     conteneur: data.uid,
     ancien_statut: data.ancien_statut,
     nouveau_statut: data.nouveau_statut,
@@ -111,7 +111,7 @@ document.getElementById('zone-selector').addEventListener('change', (e) => {
 
 // 5. Gestion de la déconnexion
 socket.on('disconnect', () => {
-  console.log('❌ Déconnecté. Reconnexion...');
+  console.log(' Déconnecté. Reconnexion...');
 });
 ```
 
@@ -203,69 +203,6 @@ function ContainerList({ zoneId }) {
 export default ContainerList;
 ```
 
-## Exemple Complet - Vue.js
-
-```vue
-<template>
-  <div class="containers">
-    <div
-      v-for="container in containers"
-      :key="container.id_conteneur"
-      class="container-card"
-      :class="container.statut.toLowerCase()"
-    >
-      <p>{{ container.uid }}</p>
-      <span class="status">{{ container.statut }}</span>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
-import io from 'socket.io-client';
-
-const props = defineProps(['zoneId']);
-const containers = ref([]);
-let socket = null;
-
-onMounted(() => {
-  socket = io('http://localhost:3011');
-
-  socket.on('connect', () => {
-    socket.emit('subscribe-zone', props.zoneId);
-  });
-
-  socket.on('container:status-changed', (data) => {
-    const index = containers.value.findIndex(
-      c => c.id_conteneur === data.id_conteneur
-    );
-    if (index > -1) {
-      containers.value[index].statut = data.nouveau_statut;
-    }
-  });
-});
-
-onUnmounted(() => {
-  if (socket) {
-    socket.emit('unsubscribe-zone', props.zoneId);
-    socket.disconnect();
-  }
-});
-</script>
-
-<style scoped>
-.container-card.en_maintenance {
-  background-color: #fff3cd;
-  border: 2px solid #ffc107;
-}
-
-.container-card.actif {
-  background-color: #d4edda;
-  border: 2px solid #28a745;
-}
-</style>
-```
-
 ## Installation Client
 
 ### npm
@@ -301,11 +238,11 @@ wscat -c ws://localhost:3011
 
 ## Avantages
 
-✅ **Notifications en temps réel** - Pas besoin de polling
-✅ **Scalable** - Support des rooms par zone
-✅ **Efficace** - Seuls les clients intéressés reçoivent les mises à jour
-✅ **Réactif** - Mise à jour instantanée de l'interface
-✅ **Fiable** - Reconnexion automatique en cas de déconnexion
+ **Notifications en temps réel** - Pas besoin de polling
+ **Scalable** - Support des rooms par zone
+ **Efficace** - Seuls les clients intéressés reçoivent les mises à jour
+ **Réactif** - Mise à jour instantanée de l'interface
+ **Fiable** - Reconnexion automatique en cas de déconnexion
 
 ## Troubleshooting
 
@@ -319,7 +256,7 @@ cors: {
 ```
 
 ### Connection refused
-- Vérifier que le serveur est lancé sur le port 3000
+- Vérifier que le serveur est lancé sur le port 3011
 - Vérifier la configuration réseau/firewall
 - Vérifier l'URL: `http://localhost:3011` ou `ws://localhost:3011`
 

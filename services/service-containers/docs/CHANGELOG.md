@@ -1,28 +1,28 @@
-﻿# 📝 Changelog - Socket.IO Integration
+﻿#  Changelog - Socket.IO Integration
 
 ## Version 2.0.0 - Socket.IO Real-time Notifications (16 Jan 2026)
 
-### ✨ Nouvelles Fonctionnalités
+###  Nouvelles Fonctionnalités
 
-#### 🔌 Socket.IO Integration
-- **Initialisation Socket.IO** sur le même port que l'API (8080)
+####  Socket.IO Integration
+- **Initialisation Socket.IO** sur le même port que l'API (3011)
 - **Rooms par zone** pour broadcaster sélectif (`zone-{id}`)
 - **WebSocket + Polling fallback** pour compatibilité maximale
 - **CORS configuré** pour toutes les origines
 - **Graceful fallback** si Socket.IO unavailable
 
-#### 📡 Événements en Temps Réel
+####  Événements en Temps Réel
 - **Subscribe/Unsubscribe**: Clients peuvent s'abonner aux zones
 - **container:status-changed**: Notification émise lors des changements de statut
 - Données enrichies: `id_conteneur`, `uid`, `ancien_statut`, `nouveau_statut`, `date_changement`, `id_zone`
 
-#### 🏗️ Architecture Améliorée
+####  Architecture Améliorée
 - **SocketService** (`src/socket/socket.service.js`): Service dédié Socket.IO
 - **socketMiddleware** (`src/middleware/socketMiddleware.js`): Injection du service dans les requêtes
 - **DI Container** (`src/container.di.js`): Factory pour créer les services avec Socket injecté
 - **Service Layer**: ContainerServices émet les changements via Socket.IO
 
-### 📝 Modifications Fichiers
+###  Modifications Fichiers
 
 #### Fichiers Créés
 - `src/socket/socket.service.js` - Service Socket.IO principal
@@ -34,7 +34,7 @@
 - `test-socket-interactive.js` - CLI interactive pour test
 - `docs/SOCKET_IO.md` - Documentation Socket.IO (1000+ lignes)
 - `docs/TESTING_SOCKET_IO.md` - Guide de test (500+ lignes)
-- `TESTING.md` - Guide rapide des tests ⭐
+- `TESTING.md` - Guide rapide des tests 
 - `PROJECT_STRUCTURE.md` - Structure du projet
 
 #### Fichiers Modifiés
@@ -44,7 +44,7 @@
 - `src/container.di.js` - Factory pour ContainerService avec Socket
 - `routes/container.route.js` - Utilise socketMiddleware
 - `package.json` - Dépendances Socket.IO + scripts test
-- `src/config/config.js` - PORT défini à 8080
+- `src/config/config.js` - PORT défini à 3011
 - `README.md` - Section Socket.IO + commandes
 
 #### Fichiers Supprimés (Cleanup)
@@ -52,12 +52,12 @@
 - `test-socket-e2e-simple.js` - Doublon
 - `test-ecotrack-socket.js` - Doublon
 
-### 🧪 Tests
+###  Tests
 
 #### Tests Automatisés
 ```bash
-npm run test:socket                # 8/8 ✅
-npm run test:socket:integration    # 8/8 ✅
+npm run test:socket                # 8/8 
+npm run test:socket:integration    # 8/8 
 npm run test:socket:e2e            # Prêt à lancer
 ```
 
@@ -74,7 +74,7 @@ npm run test:socket:client         # Client test simple
 npm run test:socket:interactive    # CLI interactive
 ```
 
-### 🔄 Flow Données
+###  Flow Données
 
 **Avant:**
 ```
@@ -98,32 +98,32 @@ PATCH /api/containers/:id/status
 → Réponse HTTP
 ```
 
-### 🛡️ Sécurité & Best Practices
+###  Sécurité & Best Practices
 
-- ✅ CORS explicite mais permissif (à affiner en production)
-- ✅ Socket.IO n'interfère pas avec API REST
-- ✅ Pas de breaking changes avec l'API existante
-- ✅ Injection optionnelle de Socket (fallback gracieux)
-- ✅ Logging pour debugging (`[Socket]` prefix)
-- ✅ Tests couvrent cas d'erreur
+-  CORS explicite mais permissif (à affiner en production)
+-  Socket.IO n'interfère pas avec API REST
+-  Pas de breaking changes avec l'API existante
+-  Injection optionnelle de Socket (fallback gracieux)
+-  Logging pour debugging (`[Socket]` prefix)
+-  Tests couvrent cas d'erreur
 
-### 📚 Documentation
+###  Documentation
 
 - **[README.md](./README.md)** - Mise à jour avec Socket.IO
-- **[TESTING.md](./TESTING.md)** - Guide complet des tests ⭐
+- **[TESTING.md](./TESTING.md)** - Guide complet des tests 
 - **[docs/SOCKET_IO.md](./docs/SOCKET_IO.md)** - Implémentation client (React, Vue, vanilla)
 - **[docs/TESTING_SOCKET_IO.md](./docs/TESTING_SOCKET_IO.md)** - Stratégies avancées
 - **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** - Structure et flux données
 
-### 🚀 Production Readiness
+###  Production Readiness
 
-- ✅ Code production-ready
-- ✅ Tests passants
-- ✅ Documentation complète
-- ✅ Logging/debugging inclus
-- ✅ Graceful degradation
+-  Code production-ready
+-  Tests passants
+-  Documentation complète
+-  Logging/debugging inclus
+-  Graceful degradation
 
-### 🔄 Notes de Migration
+###  Notes de Migration
 
 **Pour les équipes:**
 1. Checkout des changements
@@ -133,14 +133,14 @@ PATCH /api/containers/:id/status
 5. Clients WebSocket se connectent à `ws://localhost:3011`
 6. Voir `TESTING.md` pour valider
 
-### 📊 Metrics
+###  Metrics
 
 - **Ligne de code ajoutées:** ~2000 (socket + tests + docs)
 - **Tests créés:** 24 (8 unitaires + 8 intégration + 8 E2E)
 - **Documentation:** 2500+ lignes
 - **Fichiers créés:** 12
 - **Fichiers modifiés:** 8
-- **Breaking changes:** 0 ✅
+- **Breaking changes:** 0 
 
 ---
 
@@ -152,10 +152,3 @@ PATCH /api/containers/:id/status
 - PostgreSQL avec PostGIS
 - Tests basic
 - Documentation
-
----
-
-**Politique de Versioning:** Semantic Versioning (MAJOR.MINOR.PATCH)
-- MAJOR: Breaking changes
-- MINOR: Nouvelles fonctionnalités
-- PATCH: Bug fixes

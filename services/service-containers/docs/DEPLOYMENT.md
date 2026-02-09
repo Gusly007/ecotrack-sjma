@@ -1,13 +1,13 @@
-﻿# 🚀 EcoTrack Containers Service - Prêt pour le déploiement
+﻿#  EcoTrack Containers Service - Prêt pour le déploiement
 
-## ✅ Status: Production Ready (10/10)
+##  Status: Production Ready (10/10)
 
 Ce microservice est prêt à être partagé avec vos collègues. Voici ce qui a été implémenté et nettoyé :
 
-## 📋 Checklist de déploiement
+##  Checklist de déploiement
 
-### ✔️ Fonctionnalités complètes
-- [x] REST API avec 7 endpoints
+###  Fonctionnalités complètes
+- [x] REST API avec ~16 endpoints
 - [x] Socket.IO pour notifications en temps réel
 - [x] Génération d'UID cryptographiquement sécurisée (UUID v4)
 - [x] Historique des changements de statut
@@ -15,7 +15,7 @@ Ce microservice est prêt à être partagé avec vos collègues. Voici ce qui a 
 - [x] Swagger UI documentation
 - [x] Gestion des zones et filtrage par zone
 
-### ✔️ Nettoyage du code
+###  Nettoyage du code
 - [x] Suppression des console.log DEBUG
 - [x] Configuration CORS sécurisée
 - [x] Validation d'entrées robuste
@@ -23,7 +23,7 @@ Ce microservice est prêt à être partagé avec vos collègues. Voici ce qui a 
 - [x] Code formaté et documenté
 
 ### ✔️ Tests
-- [x] 40/40 tests unitaires passants
+- [x] 111 tests unitaires passants
 - [x] Coverage complet des modèles
 - [x] Tests d'intégration Socket.IO
 - [x] Pas de erreurs de linting
@@ -34,7 +34,7 @@ Ce microservice est prêt à être partagé avec vos collègues. Voici ce qui a 
 - [x] TESTING.md avec guide de test
 - [x] .env.example fourni
 
-## 🚀 Pour vos collègues
+##  Pour les collègues
 
 ### 1. Installation
 ```bash
@@ -49,7 +49,8 @@ cp .env.example .env
 
 ### 3. Initialiser la base de données
 ```bash
-npm run init-db
+# Les tables doivent exister dans la BD PostgreSQL
+# Voir le schéma dans la documentation du projet
 ```
 
 ### 4. Démarrage
@@ -64,14 +65,14 @@ npm test           # Tous les tests
 npm run test:socket # Tests Socket.IO uniquement
 ```
 
-## 📊 Architecture
+##  Architecture
 
 ```
 service-containers/
 ├── index.js                    # Point d'entrée, configuration Express
 ├── src/
 │   ├── routes/                 # Définitions des routes API
-│   ├── config/                 # Configuration (config.js, socket-config.js)
+│   ├── config/                 # Configuration
 │   ├── controllers/            # Handlers HTTP
 │   ├── services/               # Logique métier avec Socket.IO injection
 │   ├── models/                 # Couche données (ConteneurModel, etc.)
@@ -115,11 +116,11 @@ GET    /api/zones                   # Lister les zones
 
 ## 🔒 Sécurité
 
-- ✅ CORS configuré par environnement (via ALLOWED_ORIGINS)
-- ✅ Validation d'entrées sur tous les paramètres
-- ✅ Contrainte UNIQUE sur uid en base de données
-- ✅ Transactions atomiques pour les changements de statut
-- ✅ Pas de secrets en dur dans le code
+-  CORS configuré par environnement (via ALLOWED_ORIGINS)
+-  Validation d'entrées sur tous les paramètres
+-  Contrainte UNIQUE sur uid en base de données
+-  Transactions atomiques pour les changements de statut
+-  Pas de secrets en dur dans le code
 
 ## 📝 Derniers ajustements
 
@@ -129,14 +130,12 @@ GET    /api/zones                   # Lister les zones
 ALLOWED_ORIGINS=http://localhost:3011,https://votre-app.com
 ```
 
-## ✨ Qualité du code
+##  Qualité du code
 
-- Tests: 40/40 ✅
-- Linting: ✅
-- Coverage: ✅
-- Documentation: ✅
-- Production ready: ✅
+- Tests: 111 
+- Linting: 
+- Coverage: 
+- Documentation: 
+- Production ready: 
 
 ---
-
-**Prêt à partager avec votre équipe ! 🎉**

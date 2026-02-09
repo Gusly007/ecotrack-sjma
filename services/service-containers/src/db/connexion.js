@@ -1,20 +1,13 @@
 /**
- * service-containers/dbconnexion.js
- * Connexion à PostgreSQL via `pg`.
- * Configurez vos variables d'environnement dans `service-containers/.env` (voir `.env.example`).
+ * Connexion PostgreSQL via pg.
+ * Variables d'environnement dans .env (voir .env.example).
  */
-// Importer le module pg pour PostgreSQL ce qui inclut Pool per la gestion des connexions
 const { Pool } = require('pg');
-// Charger les variables d'environnement depuis le fichier .env (au dossier parent)
 const path = require('path');
-// Load .env from repository root (two levels above src/db)
 const envPath = path.resolve(__dirname, '..', '..', '.env');
 require('dotenv').config({ path: envPath });
-console.log('Loaded env from', envPath);
 
 const password = process.env.PGPASSWORD !== undefined ? String(process.env.PGPASSWORD) : '';
-// Debug: show type and presence (do not print the raw password in logs in production)
-console.log('PGPASSWORD raw type:', typeof process.env.PGPASSWORD, 'coerced type:', typeof password, 'present:', password.length > 0);
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   port: Number(process.env.PGPORT) || 5432,
