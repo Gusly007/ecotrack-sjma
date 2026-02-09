@@ -403,7 +403,6 @@ describe('ConteneurModel', () => {
           actif: 8,
           inactif: 1,
           en_maintenance: 1,
-          hors_service: 0,
           capacite_moyenne: 150
         };
         db.query = jest.fn().mockResolvedValue({ rows: [stats] });

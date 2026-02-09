@@ -1,6 +1,74 @@
-﻿#  Changelog - Socket.IO Integration
+﻿#  Changelog
 
-## Version 2.0.0 - Socket.IO Real-time Notifications (16 Jan 2026)
+## Version 2.1.0 - Sécurité, Validation et Documentation
+
+###  Sécurité
+
+#### Helmet - Protection HTTP Headers
+- **Content Security Policy (CSP)** configuré pour Swagger
+- **Protection XSS** avec headers sécurisés
+- **Cross-Origin Embedder Policy** désactivé pour compatibilité Swagger
+- **Headers HTTP sécurisés** par défaut
+
+#### Validation Joi
+- **Validation centralisée** avec middleware dédié (`src/middleware/validate-request.js`)
+- **Schémas Joi complets** pour tous les endpoints stats:
+  - `paginationSchema` - Validation page/limit
+  - `dateRangeSchema` - Validation plages de dates
+  - `fillHistoryQuerySchema` - Historique de remplissage
+  - `statsByZoneSchema` - Stats par zone
+  - `statsByTypeSchema` - Stats par type
+  - `criticalContainersSchema` - Conteneurs critiques
+  - `containerIdParamSchema` - Validation ID conteneur
+- **Gestion erreurs 400** avec messages clairs
+- **Protection injection SQL** via validation stricte
+
+###  Infrastructure
+
+#### Docker
+- **healthcheck.cjs** - Script Node.js pour vérification santé
+- **.dockerignore** optimisé pour builds rapides
+- **Support multi-stage builds** (Dockerfile.dev)
+
+#### Scripts de Test
+- **test-api-complete.js** - Tests API complets sans Jest
+- **Scripts Swagger** documentés dans README
+
+###  Documentation
+
+#### Documentation Enrichie
+- **README.md** restructuré avec table des matières complète
+- **Sections détaillées**: Installation, Configuration, API, Socket.IO
+- **Exemples curl** pour chaque endpoint
+- **Guide troubleshooting** complet
+- **Architecture expliquée** avec diagrammes
+- **Guide de contribution**
+
+#### Tests et Rapports
+- **TEST_REPORT.md** - Rapport détaillé des 174 tests
+- **Métriques de coverage** documentées
+- **Recommandations** pour améliorations futures
+
+###  Corrections
+
+#### Statuts Valides
+- **Suppression HORS_SERVICE** du système
+- **Statuts autorisés**: ACTIF, INACTIF, EN_MAINTENANCE
+- **Mise à jour** socket-interactive-test.js
+- **Cohérence** dans toute la codebase
+
+###  Métriques
+
+- **Tests unitaires**: 174/174 passants
+- **Dépendances ajoutées**: helmet (^8.0.0), joi (^17.13.3)
+- **Fichiers créés**: 6 (healthcheck, validate-request, test-api-complete, .dockerignore, TEST_REPORT, README enrichi)
+- **Fichiers modifiés**: 10
+- **Lignes de documentation**: 800+
+- **Breaking changes**: 0
+
+---
+
+## Version 2.0.0 - Socket.IO Real-time Notifications
 
 ###  Nouvelles Fonctionnalités
 

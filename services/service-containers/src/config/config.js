@@ -26,7 +26,7 @@ module.exports = {
   },
 
   // Constantes métier
-  CONTAINER_STATUTS: ['ACTIF', 'INACTIF', 'EN_MAINTENANCE', 'HORS_SERVICE'],
+  CONTAINER_STATUTS: ['ACTIF', 'INACTIF', 'EN_MAINTENANCE'],
   TYPE_CONTENEUR_NOMS: ['ORDURE', 'RECYCLAGE', 'VERRE', 'COMPOST'],
 
   // Validation

@@ -207,7 +207,7 @@ class ConteneurModel {
   /**
    * Change le statut d'un conteneur avec enregistrement dans l'historique
    * @param {number} id - ID du conteneur
-   * @param {string} statut - Nouveau statut (ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE)
+   * @param {string} statut - Nouveau statut (ACTIF, INACTIF, EN_MAINTENANCE)
    * @returns {Object} Conteneur mis à jour avec ancien_statut et changed
    * @throws {Error} Si le conteneur n'existe pas ou si le statut est invalide
    */
@@ -221,7 +221,7 @@ class ConteneurModel {
     }
 
     // Validation du statut
-    const validStatuts = ['ACTIF', 'INACTIF', 'EN_MAINTENANCE', 'HORS_SERVICE'];
+    const validStatuts = ['ACTIF', 'INACTIF', 'EN_MAINTENANCE'];
     if (!validStatuts.includes(statut)) {
       throw new Error(
         `Statut invalide: "${statut}". Valeurs acceptées: ${validStatuts.join(', ')}`
@@ -519,7 +519,6 @@ class ConteneurModel {
         COUNT(CASE WHEN statut = 'ACTIF' THEN 1 END) as actifs,
         COUNT(CASE WHEN statut = 'INACTIF' THEN 1 END) as inactifs,
         COUNT(CASE WHEN statut = 'EN_MAINTENANCE' THEN 1 END) as en_maintenance,
-        COUNT(CASE WHEN statut = 'HORS_SERVICE' THEN 1 END) as hors_service,
         AVG(capacite_l) as capacite_moyenne
       FROM conteneur
     `);

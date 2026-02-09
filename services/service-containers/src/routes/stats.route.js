@@ -8,6 +8,16 @@
  */
 const express = require('express');
 const { statsController } = require('../container-di');
+const {
+  validateQuery,
+  validateParams,
+  dateRangeSchema,
+  fillHistoryQuerySchema,
+  statsByZoneSchema,
+  statsByTypeSchema,
+  criticalContainersSchema,
+  containerIdParamSchema
+} = require('../middleware/validate-request');
 
 const router = express.Router();
 
@@ -21,25 +31,30 @@ router.get('/', statsController.getGlobalStats);
 router.get('/fill-levels', statsController.getFillLevelDistribution);
 
 // ── Stats par zone ──
-router.get('/by-zone', statsController.getStatsByZone);
+router.get('/by-zone', validateQuery(statsByZoneSchema), statsController.getStatsByZone);
 
 // ── Stats par type de conteneur ──
-router.get('/by-type', statsController.getStatsByType);
+router.get('/by-type', validateQuery(statsByTypeSchema), statsController.getStatsByType);
 
 // ── Alertes actives ──
 router.get('/alerts', statsController.getAlertsSummary);
 
 // ── Conteneurs critiques (remplissage >= seuil OU EN_MAINTENANCE) ──
-router.get('/critical', statsController.getCriticalContainers);
+router.get('/critical', validateQuery(criticalContainersSchema), statsController.getCriticalContainers);
 
 // ── Historique de remplissage d'un conteneur (pour graphiques) ──
-router.get('/containers/:id/history', statsController.getFillHistory);
+router.get(
+  '/containers/:id/history',
+  validateParams(containerIdParamSchema),
+  validateQuery(fillHistoryQuerySchema),
+  statsController.getFillHistory
+);
 
 // ── Stats de collecte ──
-router.get('/collections', statsController.getCollectionStats);
+router.get('/collections', validateQuery(dateRangeSchema), statsController.getCollectionStats);
 
 // ── Stats de maintenance ──
-router.get('/maintenance', statsController.getMaintenanceStats);
+router.get('/maintenance', validateQuery(dateRangeSchema), statsController.getMaintenanceStats);
 
 module.exports = router;
 
@@ -47,7 +62,7 @@ module.exports = router;
  * @swagger
  * tags:
  *   - name: Statistiques
- *     description: Endpoints Phase 5 — Statistiques & Monitoring
+ *     description: Statistiques & Monitoring
  *
  * /stats/dashboard:
  *   get:

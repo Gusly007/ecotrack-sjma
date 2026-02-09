@@ -63,7 +63,7 @@ class Validators {
    * Valide un statut de conteneur
    */
   static validateStatut(statut) {
-    const validStatuts = ['ACTIF', 'INACTIF', 'EN_MAINTENANCE', 'HORS_SERVICE'];
+    const validStatuts = ['ACTIF', 'INACTIF', 'EN_MAINTENANCE'];
     if (!validStatuts.includes(statut)) {
       Validators.throwValidationError(
         `Statut invalide: "${statut}". Valeurs acceptées: ${validStatuts.join(', ')}`

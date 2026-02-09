@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
@@ -21,6 +22,12 @@ const socketService = new SocketService(server);
 app.locals.socketService = socketService;
 
 // ========== MIDDLEWARE ==========
+// Sécurité HTTP headers avec Helmet
+app.use(helmet({
+  contentSecurityPolicy: false, // Désactivé pour Swagger UI
+  crossOriginEmbedderPolicy: false
+}));
+
 // JSON parsing avec limite de taille
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

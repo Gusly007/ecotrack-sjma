@@ -33,8 +33,8 @@ const controller = require('../container-di.js');
  *                 example: 1200
  *               statut:
  *                 type: string
- *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE]
- *                 description: Statut du conteneur (ACTIF, INACTIF, EN_MAINTENANCE ou HORS_SERVICE)
+ *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE]
+ *                 description: Statut du conteneur (ACTIF, INACTIF ou EN_MAINTENANCE)
  *                 example: ACTIF
  *               latitude:
  *                 type: number
@@ -224,7 +224,7 @@ router.patch('/containers/:id', controller.update);
  * /containers/{id}/status:
  *   patch:
  *     summary: Met à jour le statut d'un conteneur
- *     description: Change le statut d'un conteneur. Les valeurs acceptées sont ACTIF, INACTIF, EN_MAINTENANCE ou HORS_SERVICE.
+ *     description: Change le statut d'un conteneur. Les valeurs acceptées sont ACTIF, INACTIF, EN_MAINTENANCE.
  *     tags:
  *       - Conteneurs
  *     parameters:
@@ -245,7 +245,7 @@ router.patch('/containers/:id', controller.update);
  *             properties:
  *               statut:
  *                 type: string
- *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE]
+ *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE]
  *                 description: Nouveau statut du conteneur
  *     responses:
  *       200:
@@ -360,7 +360,7 @@ router.delete('/containers', controller.deleteAll);
  *         required: true
  *         schema:
  *           type: string
- *           enum: [ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE]
+ *           enum: [ACTIF, INACTIF, EN_MAINTENANCE]
  *         description: Statut à rechercher
  *     responses:
  *       200:

@@ -144,7 +144,7 @@ function simulateStatusChange() {
   }
 
   console.log('\n📌 SIMULATEUR DE CHANGEMENT DE STATUT');
-  console.log('Statuts valides: ACTIF, INACTIF, EN_MAINTENANCE, HORS_SERVICE\n');
+  console.log('Statuts valides: ACTIF, INACTIF, EN_MAINTENANCE\n');
 
   rl.question('ID du conteneur: ', (id) => {
     rl.question('UID du conteneur (ex: CNT-123456789): ', (uid) => {
@@ -163,7 +163,7 @@ function simulateStatusChange() {
             console.log('\n📨 Données simulées:');
             console.log(JSON.stringify(mockData, null, 2));
             console.log('\n💡 Note: Ceci est une simulation. Pour un vrai test, lancez:');
-            console.log(`curl -X PATCH http://localhost:3011/api/containers/${id}/status \`);
+            console.log(`curl -X PATCH http://localhost:3011/api/containers/${id}/status \\`);
             console.log(`  -H "Content-Type: application/json" \\`);
             console.log(`  -d '{"statut": "${newStatus.toUpperCase()}"}'`);
 
@@ -201,7 +201,6 @@ function showHelp() {
    - ACTIF
    - INACTIF
    - EN_MAINTENANCE
-   - HORS_SERVICE
 
 💡 CONSEIL: Ouvrez plusieurs instances pour tester les notifications
            en temps réel vers plusieurs clients!
