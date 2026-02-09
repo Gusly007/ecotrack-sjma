@@ -1,0 +1,60 @@
+{
+  "name": "service-containers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest --runInBand",
+    "test:unit": "jest test/unit --runInBand",
+    "test:integration": "jest test/integration --runInBand",
+    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles",
+    "test:socket": "jest test/integration/socket.service.test.js --runInBand",
+    "test:socket:integration": "jest test/integration/socket.integration.test.js --runInBand",
+    "test:socket:e2e": "jest test/e2e/socket.e2e.test.js --runInBand --detectOpenHandles",
+    "test:socket:client": "node test/manual/socket-client-test.js",
+    "test:socket:interactive": "node test/manual/socket-interactive-test.js",
+    "test:routes": "jest test/integration/*-routes.test.js --runInBand",
+    "test:security": "jest test/integration/security.test.js --runInBand",
+    "test:performance": "jest test/e2e/performance.test.js --runInBand --detectOpenHandles",
+    "test:scenarios": "jest test/e2e/user-scenarios.test.js --runInBand --detectOpenHandles",
+    "test-db": "node src/db/test-db.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/test/unit/**/*.test.js",
+      "<rootDir>/test/integration/**/*.test.js",
+      "<rootDir>/test/e2e/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/src/test/"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!uuid)"
+    ]
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "joi": "^17.13.3",
+    "pg": "^8.11.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.3"
+  }
+}
