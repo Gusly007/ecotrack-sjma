@@ -1,15 +1,8 @@
 const express = require('express');
-const db = require('../db/connexion');
-const TypeConteneurModel = require('../models/type-conteneur-model');
-const TypeConteneurService = require('../services/type-conteneur-services');
-const TypeConteneurController = require('../controllers/type-conteneur-controller');
+const { typeConteneurController } = require('../container-di.js');
 
 const router = express.Router();
 
-// Initialize dependencies
-const typeConteneurModel = new TypeConteneurModel(db);
-const typeConteneurService = new TypeConteneurService(typeConteneurModel);
-const typeConteneurController = new TypeConteneurController(typeConteneurService);
 
 // GET all type containers
 router.get('/', typeConteneurController.getAll);
