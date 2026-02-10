@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway']
+        service: ['service-users', 'api-gateway', 'service-containers']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -133,10 +133,81 @@ jobs:
       
       # Upload couverture vers Codecov (optionnel, visualiser la couverture)
       - name: 'Upload coverage to Codecov'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@5ecb98a3c6b747a27925e52e4d890e1873451664
         with:
           file: ./services/service-users/coverage/coverage-final.json
           flags: unittests
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2B: UNIT TESTS - SERVICE-CONTAINERS
+  # =========================================================================
+  # Lance Jest pour service-containers avec PostgreSQL + PostGIS
+  
+  test-containers:
+    name: 'Unit Tests - service-containers'
+    runs-on: ubuntu-latest
+    
+    # Dépend du lint
+    needs: lint
+    
+    services:
+      # Service PostgreSQL avec PostGIS pour les tests
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'services/service-containers/package-lock.json'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-containers
+      
+      # Initialiser le schéma de test
+      - name: 'Initialize test database'
+        run: |
+          PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -f src/db/init-db-pg.sql || echo "Schema init skipped"
+        working-directory: services/service-containers
+        continue-on-error: true
+      
+      # Lance Jest avec couverture
+      - name: 'Run Jest tests'
+        run: npm run test:unit
+        working-directory: services/service-containers
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          NODE_ENV: test
+      
+      # Upload couverture
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@5ecb98a3c6b747a27925e52e4d890e1873451664
+        with:
+          file: ./services/service-containers/coverage/coverage-final.json
+          flags: unittests-containers
         continue-on-error: true
 
   # =========================================================================
@@ -150,7 +221,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway']
+        service: ['service-users', 'api-gateway', 'service-containers']
     
     steps:
       - name: 'Checkout code'
@@ -198,9 +269,12 @@ jobs:
           - service: api-gateway
             image-name: ecotrack-api-gateway
             port: 3000
+          - service: service-containers
+            image-name: ecotrack-service-containers
+            port: 3011
     
-    # Attend que les tests réussissent
-    needs: test
+    # Attend que tous les tests réussissent
+    needs: [test, test-containers]
     
     # Permissions pour pousser sur le registry
     permissions:

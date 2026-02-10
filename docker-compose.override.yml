@@ -54,6 +54,25 @@ services:
       retries: 10
       start_period: 30s
 
+  # =========================================================================
+  # SERVICE-CONTAINERS - Mode développement
+  # =========================================================================
+  service-containers:
+    build:
+      context: ./services/service-containers
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/service-containers/src:/app/src:ro
+      - ./services/service-containers/test:/app/test:ro
+      - ./services/service-containers/package.json:/app/package.json:ro
+    # Healthcheck plus permissif en dev
+    healthcheck:
+      interval: 30s
+      retries: 10
+      start_period: 30s
+
 # ============================================================================
 # VOLUMES pour persister les données en dev
 # ============================================================================

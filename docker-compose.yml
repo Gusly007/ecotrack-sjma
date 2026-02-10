@@ -179,23 +179,47 @@ services:
         max-file: "3"
 
   # =========================================================================
-  # SERVICES PLACEHOLDER (à implémenter)
+  # SERVICE-CONTAINERS (port 3011) - Gestion des conteneurs et zones
   # =========================================================================
   service-containers:
-    profiles: [placeholder]
     build:
       context: ./services/service-containers
       dockerfile: Dockerfile
     container_name: ecotrack-service-containers
     environment:
       APP_PORT: 3011
-      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      # Variables PostgreSQL
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-ecotrack_user}
+      PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      PGDATABASE: ${DB_NAME:-ecotrack}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3011:3011"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # SERVICES PLACEHOLDER (à implémenter)
+  # =========================================================================
 
   service-routes:
     profiles: [placeholder]

@@ -101,6 +101,45 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  # =========================================================================
+  # SERVICE-CONTAINERS (port 3011) - Gestion conteneurs et zones
+  # =========================================================================
+  service-containers:
+    build:
+      context: ./services/service-containers
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-containers
+    environment:
+      APP_PORT: 3011
+      # Connexion à Neon (cloud) - Parse DATABASE_URL
+      DATABASE_URL: ${DATABASE_URL}
+      # Variables alternatives (si DATABASE_URL non utilisée)
+      PGHOST: ${PGHOST}
+      PGPORT: ${PGPORT:-5432}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGDATABASE: ${PGDATABASE}
+      NODE_ENV: production
+    ports:
+      - "3011:3011"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - ecotrack
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
 # ============================================================================
 # RÉSEAU
 # ============================================================================
