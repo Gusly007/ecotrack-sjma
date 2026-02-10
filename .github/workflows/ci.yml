@@ -126,7 +126,7 @@ jobs:
       
       # Upload couverture vers Codecov (optionnel, visualiser la couverture)
       - name: 'Upload coverage to Codecov'
-        uses: codecov/codecov-action@5ecb98a3c6b747a27925e52e4d890e1873451664
+        uses: codecov/codecov-action@v5
         with:
           file: ./services/service-users/coverage/coverage-final.json
           flags: unittests
@@ -195,7 +195,7 @@ jobs:
       
       # Upload couverture
       - name: 'Upload coverage to Codecov'
-        uses: codecov/codecov-action@5ecb98a3c6b747a27925e52e4d890e1873451664
+        uses: codecov/codecov-action@v5
         with:
           file: ./services/service-containers/coverage/coverage-final.json
           flags: unittests-containers
