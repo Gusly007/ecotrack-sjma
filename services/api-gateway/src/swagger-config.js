@@ -28,10 +28,17 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Statistiques** : Dashboard, analytics, alertes
 - **Socket.IO** : Notifications temps réel des changements de statut
 
+### 🎮 Service Gamification (Port 3014)
+- **Actions** : Enregistrement des actions écoresponsables
+- **Badges** : Système de récompenses et badges
+- **Défis** : Challenges communautaires et participations
+- **Classement** : Leaderboard des utilisateurs
+- **Notifications** : Alertes gamification
+- **Statistiques** : Profil et stats de chaque utilisateur
+
 ### 🚚 Services à venir
 - **Routes & Planning** : Optimisation des tournées de collecte
 - **IoT** : Capteurs temps réel de niveau de remplissage
-- **Gamification** : Points, badges, classements
 - **Analytics** : Tableaux de bord et rapports avancés
 
 ## Architecture
@@ -67,6 +74,10 @@ Obtenez un token via \`POST /auth/login\`
     {
       url: 'http://localhost:3011',
       description: '🗑️ Service Containers (Direct)'
+    },
+    {
+      url: 'http://localhost:3014',
+      description: '🎮 Service Gamification (Direct)'
     }
   ],
   tags: [
@@ -116,6 +127,54 @@ Obtenez un token via \`POST /auth/login\`
       externalDocs: {
         description: 'Documentation détaillée',
         url: 'http://localhost:3011/api-docs'
+      }
+    },
+    {
+      name: '🎮 Actions',
+      description: 'Enregistrement des actions écoresponsables (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: '🏅 Badges',
+      description: 'Système de badges et récompenses (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: '🏆 Classement',
+      description: 'Leaderboard des utilisateurs (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: '🎯 Défis',
+      description: 'Challenges communautaires et participations (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: '🔔 Notifications Gamification',
+      description: 'Notifications liées à la gamification (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: '📊 Stats Gamification',
+      description: 'Statistiques de gamification par utilisateur (Service Gamification)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3014/api-docs'
       }
     }
   ],
@@ -382,6 +441,454 @@ Obtenez un token via \`POST /auth/login\`
               }
             }
           }
+        }
+      }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🎮 SERVICE GAMIFICATION — Endpoints
+    // ═══════════════════════════════════════════════════════════════
+
+    '/api/gamification/actions': {
+      post: {
+        tags: ['🎮 Actions'],
+        summary: 'Enregistrer une action écoresponsable',
+        description: 'Enregistre une action effectuée par un utilisateur et attribue des points',
+        operationId: 'createAction',
+        servers: [{ url: 'http://localhost:3000' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['id_utilisateur', 'type_action', 'points'],
+                properties: {
+                  id_utilisateur: { type: 'integer', description: 'ID de l\'utilisateur', example: 1 },
+                  type_action: { type: 'string', description: 'Type d\'action effectuée', example: 'recyclage' },
+                  points: { type: 'integer', description: 'Points attribués', example: 10 }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: {
+            description: 'Action enregistrée avec succès',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' },
+                    id_utilisateur: { type: 'integer' },
+                    type_action: { type: 'string' },
+                    points: { type: 'integer' },
+                    date_action: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          },
+          400: { description: 'Données invalides' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/badges': {
+      get: {
+        tags: ['🏅 Badges'],
+        summary: 'Lister tous les badges disponibles',
+        description: 'Récupère la liste de tous les badges définis dans le système',
+        operationId: 'getAllBadges',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Liste des badges',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      nom: { type: 'string' },
+                      description: { type: 'string' },
+                      icone: { type: 'string' },
+                      condition_type: { type: 'string' },
+                      condition_valeur: { type: 'integer' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/badges/utilisateurs/{idUtilisateur}': {
+      get: {
+        tags: ['🏅 Badges'],
+        summary: 'Badges d\'un utilisateur',
+        description: 'Récupère les badges obtenus par un utilisateur donné',
+        operationId: 'getUserBadges',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'idUtilisateur',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID de l\'utilisateur'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Badges de l\'utilisateur',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      nom: { type: 'string' },
+                      description: { type: 'string' },
+                      icone: { type: 'string' },
+                      date_obtention: { type: 'string', format: 'date-time' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          404: { description: 'Utilisateur non trouvé' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/classement': {
+      get: {
+        tags: ['🏆 Classement'],
+        summary: 'Récupérer le classement des utilisateurs',
+        description: 'Retourne le leaderboard trié par points',
+        operationId: 'getClassement',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'limite',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer', default: 10 },
+            description: 'Nombre maximum de résultats'
+          },
+          {
+            name: 'id_utilisateur',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer' },
+            description: 'ID de l\'utilisateur pour inclure son rang'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Classement des utilisateurs',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    classement: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          rang: { type: 'integer' },
+                          id_utilisateur: { type: 'integer' },
+                          points_totaux: { type: 'integer' },
+                          nombre_actions: { type: 'integer' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/defis': {
+      get: {
+        tags: ['🎯 Défis'],
+        summary: 'Lister tous les défis',
+        description: 'Récupère la liste de tous les défis communautaires',
+        operationId: 'getAllDefis',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Liste des défis',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      titre: { type: 'string' },
+                      description: { type: 'string' },
+                      objectif: { type: 'integer' },
+                      recompense_points: { type: 'integer' },
+                      date_debut: { type: 'string', format: 'date-time' },
+                      date_fin: { type: 'string', format: 'date-time' },
+                      type_defi: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      },
+      post: {
+        tags: ['🎯 Défis'],
+        summary: 'Créer un nouveau défi',
+        description: 'Crée un défi communautaire avec objectif et récompense',
+        operationId: 'createDefi',
+        servers: [{ url: 'http://localhost:3000' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['titre', 'description', 'objectif', 'recompense_points', 'date_debut', 'date_fin', 'type_defi'],
+                properties: {
+                  titre: { type: 'string', example: 'Défi recyclage semaine' },
+                  description: { type: 'string', example: 'Recycler 50 objets en une semaine' },
+                  objectif: { type: 'integer', example: 50 },
+                  recompense_points: { type: 'integer', example: 100 },
+                  date_debut: { type: 'string', format: 'date-time' },
+                  date_fin: { type: 'string', format: 'date-time' },
+                  type_defi: { type: 'string', example: 'recyclage' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: { description: 'Défi créé avec succès' },
+          400: { description: 'Données invalides' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/defis/{idDefi}/participations': {
+      post: {
+        tags: ['🎯 Défis'],
+        summary: 'Participer à un défi',
+        description: 'Inscrit un utilisateur à un défi communautaire',
+        operationId: 'participerDefi',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'idDefi',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID du défi'
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['id_utilisateur'],
+                properties: {
+                  id_utilisateur: { type: 'integer', example: 1 }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: { description: 'Participation enregistrée' },
+          400: { description: 'Données invalides' },
+          404: { description: 'Défi non trouvé' },
+          409: { description: 'Participation déjà existante' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/defis/{idDefi}/participations/{idUtilisateur}': {
+      patch: {
+        tags: ['🎯 Défis'],
+        summary: 'Mettre à jour une participation',
+        description: 'Met à jour la progression ou le statut d\'une participation à un défi',
+        operationId: 'updateParticipation',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'idDefi',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID du défi'
+          },
+          {
+            name: 'idUtilisateur',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID de l\'utilisateur'
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  progression: { type: 'integer', description: 'Progression actuelle', example: 25 },
+                  statut: { type: 'string', enum: ['en_cours', 'complete', 'abandonne'], example: 'en_cours' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'Participation mise à jour' },
+          404: { description: 'Participation non trouvée' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/notifications': {
+      get: {
+        tags: ['🔔 Notifications Gamification'],
+        summary: 'Récupérer les notifications',
+        description: 'Récupère les notifications de gamification d\'un utilisateur',
+        operationId: 'getNotifications',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'id_utilisateur',
+            in: 'query',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID de l\'utilisateur'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Liste des notifications',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      id_utilisateur: { type: 'integer' },
+                      type: { type: 'string' },
+                      titre: { type: 'string' },
+                      corps: { type: 'string' },
+                      lu: { type: 'boolean' },
+                      date_creation: { type: 'string', format: 'date-time' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      },
+      post: {
+        tags: ['🔔 Notifications Gamification'],
+        summary: 'Créer une notification',
+        description: 'Crée une nouvelle notification de gamification',
+        operationId: 'createNotification',
+        servers: [{ url: 'http://localhost:3000' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['id_utilisateur', 'type', 'titre', 'corps'],
+                properties: {
+                  id_utilisateur: { type: 'integer', example: 1 },
+                  type: { type: 'string', example: 'badge_obtenu' },
+                  titre: { type: 'string', example: 'Nouveau badge !' },
+                  corps: { type: 'string', example: 'Vous avez obtenu le badge Recycleur !' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: { description: 'Notification créée' },
+          400: { description: 'Données invalides' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/gamification/stats/utilisateurs/{idUtilisateur}/stats': {
+      get: {
+        tags: ['📊 Stats Gamification'],
+        summary: 'Statistiques d\'un utilisateur',
+        description: 'Récupère les statistiques de gamification d\'un utilisateur (points, badges, rang, etc.)',
+        operationId: 'getUserGamificationStats',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'idUtilisateur',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'ID de l\'utilisateur'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Statistiques de l\'utilisateur',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id_utilisateur: { type: 'integer' },
+                    points_totaux: { type: 'integer' },
+                    nombre_actions: { type: 'integer' },
+                    nombre_badges: { type: 'integer' },
+                    rang: { type: 'integer' },
+                    defis_completes: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          },
+          404: { description: 'Utilisateur non trouvé' },
+          500: { description: 'Erreur serveur' }
         }
       }
     }

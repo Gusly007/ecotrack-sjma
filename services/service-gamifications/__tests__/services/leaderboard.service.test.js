@@ -1,33 +1,28 @@
-import { recupererClassement } from '../../src/services/leaderboard.service.js';
-import pool, {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase
-} from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Préparation du schéma pour les tests de classement.
-  await prepareDatabase();
-});
+const mockQuery = jest.fn();
 
-beforeEach(async () => {
-  await resetDatabase();
-});
+jest.unstable_mockModule('../../src/config/database.js', () => ({
+  default: { query: mockQuery, on: jest.fn(), end: jest.fn() },
+  ensureGamificationTables: jest.fn(),
+  initGamificationDb: jest.fn()
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const { recupererClassement } = await import(
+  '../../src/services/leaderboard.service.js'
+);
 
 describe('leaderboard.service', () => {
+  afterEach(() => jest.clearAllMocks());
+
   it('renvoie un classement trié par points décroissants', async () => {
-    await pool.query(
-      `UPDATE utilisateur
-       SET points = CASE id_utilisateur
-         WHEN 1 THEN 250
-         WHEN 2 THEN 80
-         WHEN 3 THEN 500
-       END`
-    );
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { rang: '1', id_utilisateur: 3, points: 500, badges: [] },
+        { rang: '2', id_utilisateur: 1, points: 250, badges: [] },
+        { rang: '3', id_utilisateur: 2, points: 80, badges: [] }
+      ]
+    });
 
     const resultat = await recupererClassement({ limite: 3 });
 
@@ -38,22 +33,12 @@ describe('leaderboard.service', () => {
   });
 
   it('respecte la limite et expose les badges', async () => {
-    const { rows } = await pool.query(
-      "SELECT id_badge FROM badge WHERE code = 'DEBUTANT'"
-    );
-    await pool.query(
-      'INSERT INTO user_badge (id_utilisateur, id_badge) VALUES ($1, $2)',
-      [1, rows[0].id_badge]
-    );
-
-    await pool.query(
-      `UPDATE utilisateur
-       SET points = CASE id_utilisateur
-         WHEN 1 THEN 120
-         WHEN 2 THEN 90
-         WHEN 3 THEN 60
-       END`
-    );
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { rang: '1', id_utilisateur: 1, points: 120, badges: ['Débutant'] },
+        { rang: '2', id_utilisateur: 2, points: 90, badges: [] }
+      ]
+    });
 
     const resultat = await recupererClassement({ limite: 2 });
 
