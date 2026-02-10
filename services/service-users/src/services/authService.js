@@ -7,11 +7,11 @@ import * as sessionService from './sessionService.js';
 /**
  * Inscrire un nouvel utilisateur
  */
-export const registerUser = async (email, username, password, role = 'CITOYEN') => {
+export const registerUser = async (email, prenom, password, role = 'CITOYEN') => {
 // Vérifier si l'utilisateur existe déjà
     const existingUser = await pool.query(
     'SELECT id_utilisateur FROM UTILISATEUR WHERE email = $1 OR prenom = $2',
-        [email, username]
+        [email, prenom]
     );
     if (existingUser.rows.length > 0) {
         throw new Error('Utilisateur déjà existant');
@@ -27,7 +27,7 @@ export const registerUser = async (email, username, password, role = 'CITOYEN') 
     `INSERT INTO UTILISATEUR (email, nom, prenom, password_hash, role_par_defaut, est_active)
         VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id_utilisateur, email, nom, prenom, role_par_defaut, points`,
-    [email, username, username, hashedPassword, role]
+    [email, prenom, prenom, hashedPassword, role]
   );
     const newUser = result.rows[0];
     // Générer les tokens JWT
@@ -92,7 +92,7 @@ export const loginUser = async (email, password, ipAddress = null) => {
     user: {
       id: user.id_utilisateur,
       email: user.email,
-      username: user.prenom,
+      prenom: user.prenom,
       role: user.role_par_defaut
     },
     accessToken,

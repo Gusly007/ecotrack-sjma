@@ -21,7 +21,9 @@ COPY scripts ./scripts
 
 # Script d'entrée
 COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+RUN apk add --no-cache dos2unix \
+    && dos2unix docker-entrypoint.sh \
+    && chmod +x docker-entrypoint.sh
 
 # Exécuter les migrations et seeds
 ENTRYPOINT ["./docker-entrypoint.sh"]

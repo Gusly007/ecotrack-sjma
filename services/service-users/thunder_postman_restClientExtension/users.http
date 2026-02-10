@@ -6,7 +6,7 @@
 
 @baseUrl = http://localhost:3010
 @email = testuser@example.com
-@username = testuser
+@prenom = testuser
 @password = password123
 @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUwNzQsInJvbGUiOiJDSVRPWUVOIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2Nzk1NzkyOSwiZXhwIjoxNzY4MDQ0MzI5fQ.MAu7lOKaSeik8SrcgdpswvZH8HQvvnjaOK3McTxDMz0
 @refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUwNzQsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzY3OTU4MTI2LCJleHAiOjE3Njg1NjI5MjZ9.ooa9XriBuueAXgsqCN6FAphxsmwXg87ghf4Og3grXoc
@@ -24,7 +24,7 @@ Content-Type: application/json
 
 {
   "email": "{{email}}",
-  "username": "{{username}}",
+  "prenom": "{{prenom}}",
   "password": "{{password}}",
   "role": "CITOYEN"
 }

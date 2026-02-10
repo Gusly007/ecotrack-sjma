@@ -39,7 +39,7 @@ const changePasswordSchema = {
  *       properties:
  *         prenom:
  *           type: string
- *           description: "Prénom/username de l'utilisateur"
+ *           description: "Prénom de l'utilisateur"
  *           minLength: 2
  *           maxLength: 50
  *           example: "John Doe"
@@ -82,7 +82,7 @@ const changePasswordSchema = {
  *           example: "john.doe@example.com"
  *         prenom:
  *           type: string
- *           description: "Prénom/username"
+ *           description: "Prénom"
  *           example: "John"
  *         role_par_defaut:
  *           type: string

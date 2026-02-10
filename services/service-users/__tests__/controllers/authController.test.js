@@ -26,7 +26,7 @@ describe('Auth Controller', () => {
 
     describe('register', () => {
         it('should register a user and return tokens', async () => {
-            const req = mockRequest({ email: 'test@example.com', username: 'test', password: 'password' });
+            const req = mockRequest({ email: 'test@example.com', prenom: 'test', password: 'password' });
             const res = mockResponse();
             const serviceResult = { accessToken: 'access', refreshToken: 'refresh', user: {} };
             authService.registerUser.mockResolvedValue(serviceResult);
@@ -73,14 +73,14 @@ describe('Auth Controller', () => {
 
     describe('updateProfile', () => {
         it('should update user profile', async () => {
-            const req = mockRequest({ username: 'new' }, { id: 1 });
+            const req = mockRequest({ prenom: 'new' }, { id: 1 });
             const res = mockResponse();
-            const updatedUser = { id: 1, username: 'new' };
+            const updatedUser = { id: 1, prenom: 'new' };
             userService.updateProfile.mockResolvedValue(updatedUser);
 
             await updateProfile(req, res, mockNext);
 
-            expect(userService.updateProfile).toHaveBeenCalledWith(1, { username: 'new' });
+            expect(userService.updateProfile).toHaveBeenCalledWith(1, { prenom: 'new' });
             expect(res.json).toHaveBeenCalledWith({ message: 'Profile updated', data: updatedUser });
         });
     });

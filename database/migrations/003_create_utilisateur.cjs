@@ -11,6 +11,10 @@ exports.up = (pgm) => {
       points INT NOT NULL DEFAULT 0,
       est_active BOOLEAN NOT NULL DEFAULT TRUE,
       date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      avatar_url VARCHAR(255),
+      avatar_thumbnail VARCHAR(255),
+      avatar_mini VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT uk_utilisateur_email UNIQUE(email),
       CONSTRAINT ck_email_format CHECK (email LIKE '%@%'),
       CONSTRAINT ck_points_non_negatifs CHECK (points >= 0),
@@ -20,6 +24,7 @@ exports.up = (pgm) => {
     CREATE INDEX idx_utilisateur_role ON utilisateur(role_par_defaut);
     CREATE INDEX idx_utilisateur_actif ON utilisateur(est_active);
     CREATE INDEX idx_utilisateur_points ON utilisateur(points DESC);
+    CREATE INDEX idx_utilisateur_avatar ON utilisateur(avatar_url);
   `);
 
   // Table de jonction utilisateur-rôle
