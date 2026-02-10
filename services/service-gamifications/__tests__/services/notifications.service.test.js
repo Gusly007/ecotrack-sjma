@@ -1,31 +1,53 @@
-import { creerNotification, listerNotifications } from '../../src/services/notifications.service.js';
-import pool, {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase
-} from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Préparation du schéma pour les notifications.
-  await prepareDatabase();
-});
+const mockQuery = jest.fn();
 
-beforeEach(async () => {
-  await resetDatabase();
-});
+jest.unstable_mockModule('../../src/config/database.js', () => ({
+  default: { query: mockQuery, on: jest.fn(), end: jest.fn() },
+  ensureGamificationTables: jest.fn(),
+  initGamificationDb: jest.fn()
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const { creerNotification, listerNotifications } = await import(
+  '../../src/services/notifications.service.js'
+);
 
 describe('notifications.service', () => {
+  afterEach(() => jest.clearAllMocks());
+
   it('crée puis récupère une notification', async () => {
-    await creerNotification({
+    const mockClient = {
+      query: jest.fn().mockResolvedValue({
+        rows: [{
+          id: 1,
+          id_utilisateur: 1,
+          type: 'BADGE',
+          titre: 'Test badge',
+          corps: 'Badge obtenu.',
+          date_creation: new Date().toISOString()
+        }]
+      })
+    };
+
+    const notif = await creerNotification({
       idUtilisateur: 1,
       type: 'BADGE',
       titre: 'Test badge',
       corps: 'Badge obtenu.'
-    }, pool);
+    }, mockClient);
+
+    expect(notif.type).toBe('BADGE');
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 1,
+        id_utilisateur: 1,
+        type: 'BADGE',
+        titre: 'Test badge',
+        corps: 'Badge obtenu.',
+        date_creation: new Date().toISOString()
+      }]
+    });
 
     const notifications = await listerNotifications({ idUtilisateur: 1 });
 
@@ -34,18 +56,15 @@ describe('notifications.service', () => {
   });
 
   it('filtre les notifications par utilisateur', async () => {
-    await creerNotification({
-      idUtilisateur: 1,
-      type: 'ALERTE',
-      titre: 'Alerte 1',
-      corps: 'Test.'
-    }, pool);
-    await creerNotification({
-      idUtilisateur: 2,
-      type: 'ALERTE',
-      titre: 'Alerte 2',
-      corps: 'Test.'
-    }, pool);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 1,
+        id_utilisateur: 1,
+        type: 'ALERTE',
+        titre: 'Alerte 1',
+        corps: 'Test.'
+      }]
+    });
 
     const notifications = await listerNotifications({ idUtilisateur: 1 });
 

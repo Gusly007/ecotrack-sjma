@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -202,6 +202,45 @@ jobs:
         continue-on-error: true
 
   # =========================================================================
+  # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
+  # =========================================================================
+  # Lance Jest pour service-gamifications (tests mockés, pas besoin de DB)
+  
+  test-gamifications:
+    name: 'Unit Tests - service-gamifications'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-gamifications
+      
+      # Lance Jest avec couverture (pas besoin de PostgreSQL, tout est mocké)
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: services/service-gamifications
+        env:
+          NODE_ENV: test
+      
+      # Upload couverture
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./services/service-gamifications/coverage/coverage-final.json
+          flags: unittests-gamifications
+        continue-on-error: true
+
+  # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
   # =========================================================================
   # Détecte les vulnérabilités dans les dépendances
@@ -212,7 +251,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
     
     steps:
       - name: 'Checkout code'
@@ -261,9 +300,12 @@ jobs:
           - service: service-containers
             image-name: ecotrack-service-containers
             port: 3011
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
     
     # Attend que tous les tests réussissent
-    needs: [test, test-containers]
+    needs: [test, test-containers, test-gamifications]
     
     # Permissions pour pousser sur le registry
     permissions:
@@ -329,6 +371,10 @@ jobs:
             image-name: ecotrack-api-gateway
             port: 3000
             env-vars: '-e GATEWAY_PORT=3000 -e USERS_SERVICE_URL=http://localhost:3010'
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
+            env-vars: '-e PORT=3014 -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack_test'
     
     needs: build
     if: github.event_name == 'pull_request'  # Seulement en PR

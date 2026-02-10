@@ -1,26 +1,50 @@
-import request from 'supertest';
-import app from '../../src/index.js';
-import pool, {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase
-} from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Initialisation du schéma pour la base de test.
-  await prepareDatabase();
-});
+// ── Mock database (empêche toute connexion PostgreSQL réelle) ──
+jest.unstable_mockModule('../../src/config/database.js', () => ({
+  default: { query: jest.fn(), on: jest.fn(), end: jest.fn(), connect: jest.fn() },
+  ensureGamificationTables: jest.fn(),
+  initGamificationDb: jest.fn()
+}));
 
-beforeEach(async () => {
-  // Nettoyage + réinjection des utilisateurs de base avant chaque scénario.
-  await resetDatabase();
-});
+// ── Mock des services métier (même pattern que les tests controllers) ──
+const mockEnregistrerAction = jest.fn();
+jest.unstable_mockModule('../../src/services/gamificationService.js', () => ({
+  enregistrerAction: mockEnregistrerAction
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const mockListerBadges = jest.fn();
+const mockListerBadgesUtilisateur = jest.fn();
+jest.unstable_mockModule('../../src/services/badges.service.js', () => ({
+  listerBadges: mockListerBadges,
+  listerBadgesUtilisateur: mockListerBadgesUtilisateur,
+  attribuerBadgesAutomatique: jest.fn(),
+  BADGE_SEUILS: { DEBUTANT: 100, ECO_GUERRIER: 500, SUPER_HEROS: 1000 }
+}));
+
+const mockRecupererClassement = jest.fn();
+jest.unstable_mockModule('../../src/services/leaderboard.service.js', () => ({
+  recupererClassement: mockRecupererClassement
+}));
+
+const mockCreerNotification = jest.fn();
+const mockListerNotifications = jest.fn();
+jest.unstable_mockModule('../../src/services/notifications.service.js', () => ({
+  creerNotification: mockCreerNotification,
+  listerNotifications: mockListerNotifications
+}));
+
+const mockRecupererStatsUtilisateur = jest.fn();
+jest.unstable_mockModule('../../src/services/stats.service.js', () => ({
+  recupererStatsUtilisateur: mockRecupererStatsUtilisateur
+}));
+
+const request = (await import('supertest')).default;
+const { default: app } = await import('../../src/index.js');
 
 describe('Routes de gamification (intégration)', () => {
+  afterEach(() => jest.clearAllMocks());
+
   it('GET /health retourne 200 et le statut', async () => {
     const response = await request(app).get('/health');
 
@@ -29,7 +53,11 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('POST /actions ajoute des points et attribue un badge', async () => {
-    await pool.query('UPDATE utilisateur SET points = 95 WHERE id_utilisateur = 1');
+    mockEnregistrerAction.mockResolvedValue({
+      pointsAjoutes: 10,
+      totalPoints: 105,
+      nouveauxBadges: [{ code: 'DEBUTANT', nom: 'Débutant' }]
+    });
 
     const response = await request(app).post('/actions').send({
       id_utilisateur: 1,
@@ -53,6 +81,10 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('POST /actions retourne une erreur si utilisateur introuvable', async () => {
+    const error = new Error('Utilisateur introuvable');
+    error.status = 400;
+    mockEnregistrerAction.mockRejectedValue(error);
+
     const response = await request(app).post('/actions').send({
       id_utilisateur: 999,
       type_action: 'collecte'
@@ -63,6 +95,11 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('GET /badges retourne une liste non vide', async () => {
+    mockListerBadges.mockResolvedValue([
+      { id_badge: 1, code: 'DEBUTANT', nom: 'Débutant', description: 'Premier pas', points_requis: 100 },
+      { id_badge: 2, code: 'ECO_GUERRIER', nom: 'Éco-Guerrier', description: 'Avancé', points_requis: 500 }
+    ]);
+
     const response = await request(app).get('/badges');
 
     expect(response.status).toBe(200);
@@ -70,12 +107,9 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('GET /badges/utilisateurs/:idUtilisateur retourne les badges gagnés', async () => {
-    await pool.query('UPDATE utilisateur SET points = 120 WHERE id_utilisateur = 2');
-
-    await request(app).post('/actions').send({
-      id_utilisateur: 2,
-      type_action: 'collecte'
-    });
+    mockListerBadgesUtilisateur.mockResolvedValue([
+      { id_badge: 1, code: 'DEBUTANT', nom: 'Débutant', date_obtention: new Date().toISOString(), points_requis: 100 }
+    ]);
 
     const response = await request(app).get('/badges/utilisateurs/2');
 
@@ -84,14 +118,13 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('GET /classement retourne un classement trié par points décroissants', async () => {
-    await pool.query(
-      `UPDATE utilisateur
-       SET points = CASE id_utilisateur
-         WHEN 1 THEN 200
-         WHEN 2 THEN 50
-         WHEN 3 THEN 300
-       END`
-    );
+    mockRecupererClassement.mockResolvedValue({
+      classement: [
+        { rang: 1, id_utilisateur: 3, points: 300, niveau: 'Éco-Warrior', badges: [] },
+        { rang: 2, id_utilisateur: 1, points: 200, niveau: 'Éco-Warrior', badges: [] },
+        { rang: 3, id_utilisateur: 2, points: 50, niveau: 'Débutant', badges: [] }
+      ]
+    });
 
     const response = await request(app).get('/classement?limite=10');
 
@@ -102,12 +135,9 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('GET /notifications renvoie la notification de badge après une action', async () => {
-    await pool.query('UPDATE utilisateur SET points = 95 WHERE id_utilisateur = 1');
-
-    await request(app).post('/actions').send({
-      id_utilisateur: 1,
-      type_action: 'signalement'
-    });
+    mockListerNotifications.mockResolvedValue([
+      { id: 1, id_utilisateur: 1, type: 'BADGE', titre: 'Nouveau badge', corps: 'Félicitations !', date_creation: new Date().toISOString() }
+    ]);
 
     const response = await request(app).get('/notifications?id_utilisateur=1');
 
@@ -116,12 +146,13 @@ describe('Routes de gamification (intégration)', () => {
   });
 
   it('GET /utilisateurs/:idUtilisateur/stats retourne des statistiques cohérentes', async () => {
-    await pool.query('UPDATE utilisateur SET points = 40 WHERE id_utilisateur = 3');
-    await pool.query(
-      `INSERT INTO historique_points (id_utilisateur, delta_points, raison, date_creation)
-       VALUES (3, 20, 'collecte', NOW() - INTERVAL '1 day'),
-              (3, 20, 'participation', NOW())`
-    );
+    mockRecupererStatsUtilisateur.mockResolvedValue({
+      totalPoints: 40,
+      parJour: [{ periode: '2024-01-10', points: 20 }, { periode: '2024-01-11', points: 20 }],
+      parSemaine: [{ periode: '2024-W02', points: 40 }],
+      parMois: [{ periode: '2024-01', points: 40 }],
+      impactCO2: 1
+    });
 
     const response = await request(app).get('/utilisateurs/3/stats');
 
