@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
+import swaggerUi from 'swagger-ui-express';
+import { unifiedSwaggerSpec, swaggerOptions } from './swagger-config.js';
 
 dotenv.config();
 
@@ -50,8 +52,16 @@ const services = {
   },
   containers: {
     displayName: 'Containers Service',
-    status: 'pending', // to be implemented later and set to 'ready' when done, the same for other services below
-    routes: [{ mountPath: '/api/containers' }]
+    status: 'ready',
+    port: parseInt(process.env.CONTAINERS_PORT, 10) || 3011,
+    baseUrl: process.env.CONTAINERS_SERVICE_URL,
+    swaggerPath: '/api-docs',
+    routes: [
+      { mountPath: '/api/containers' },
+      { mountPath: '/api/zones' },
+      { mountPath: '/api/typecontainers' },
+      { mountPath: '/api/stats' }
+    ]
   },
   routes: {
     displayName: 'Routes & Planning Service',
@@ -118,6 +128,24 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
 app.use(cors());
 app.use(globalRateLimit);
 
+// =========================================================================
+// DOCUMENTATION API UNIFIÉE
+// =========================================================================
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(unifiedSwaggerSpec, swaggerOptions));
+
+// Documentation individuelle des services (proxies)
+// Conservés pour accès direct aux specs détaillées
+Object.entries(services).forEach(([key, svc]) => {
+  if (svc.status === 'ready' && svc.swaggerPath) {
+    const docsMount = `/docs/${key}`;
+    svc.swaggerGatewayPath = docsMount;
+    app.use(
+      docsMount,
+      createProxy(svc.baseUrl, () => svc.swaggerPath)
+    );
+  }
+});
+
 app.get('/health', (req, res) => {
   const serviceStatus = Object.fromEntries(
     Object.entries(services).map(([key, svc]) => [key, { status: svc.status, target: svc.baseUrl || 'pending' }])
@@ -140,15 +168,6 @@ Object.entries(services).forEach(([key, svc]) => {
     svc.routes.forEach(({ mountPath, rewrite }) => {
       app.use(mountPath, createProxy(svc.baseUrl, rewrite));
     });
-
-    if (svc.swaggerPath) {
-      const docsMount = `/docs/${key}`;
-      svc.swaggerGatewayPath = docsMount;
-      app.use(
-        docsMount,
-        createProxy(svc.baseUrl, () => svc.swaggerPath)
-      );
-    }
   } else {
     svc.routes.forEach(({ mountPath }) => {
       app.use(mountPath, (req, res) => {
@@ -161,7 +180,7 @@ Object.entries(services).forEach(([key, svc]) => {
   }
 });
 
-app.get('/api-docs', (req, res) => {
+app.get('/api-overview', (req, res) => {
   const baseUrl = `http://localhost:${gatewayPort}`;
 
   const docs = Object.entries(services).map(([key, svc]) => ({
@@ -173,6 +192,8 @@ app.get('/api-docs', (req, res) => {
   }));
 
   res.json({
+    message: 'Documentation unifiée disponible sur /api-docs',
+    unifiedDocs: `${baseUrl}/api-docs`,
     gatewayBaseUrl: baseUrl,
     services: docs
   });
