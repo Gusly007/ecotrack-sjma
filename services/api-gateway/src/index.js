@@ -2,9 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import swaggerUi from 'swagger-ui-express';
 import { unifiedSwaggerSpec, swaggerOptions } from './swagger-config.js';
+import { jwtValidationMiddleware } from './middleware/auth.js';
+import { requestLogger, detailedRequestLogger, errorLogger } from './middleware/logger.js';
+import healthCheckService from './services/healthCheck.js';
 
 dotenv.config();
 
@@ -101,12 +105,32 @@ Object.values(services).forEach((svc) => {
   }
 });
 
+// Enregistrer les services pour le health check
+Object.entries(services).forEach(([key, svc]) => {
+  if (svc.baseUrl) {
+    healthCheckService.registerService(key, {
+      displayName: svc.displayName,
+      baseUrl: svc.baseUrl,
+      healthEndpoint: '/health'
+    });
+  }
+});
+
 const globalRateLimit = rateLimit({
   windowMs: parseInt(process.env.GATEWAY_RATE_WINDOW_MS, 10) || 60 * 1000,
   max: parseInt(process.env.GATEWAY_RATE_MAX, 10) || 100,
-  message: 'Too many requests, please try again later',
+  message: {
+    error: 'Too many requests',
+    message: 'Please try again later',
+    retryAfter: Math.ceil((parseInt(process.env.GATEWAY_RATE_WINDOW_MS, 10) || 60 * 1000) / 1000)
+  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Logging des rate limit hits
+  handler: (req, res, next, options) => {
+    console.warn(`⚠️ Rate limit exceeded for IP: ${req.ip}`);
+    res.status(429).json(options.message);
+  }
 });
 
 const createProxy = (target, pathRewrite) => createProxyMiddleware({
@@ -141,7 +165,37 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// =========================================================================
+// SÉCURITÉ
+// =========================================================================
+// Headers de sécurité Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false // Désactivé pour Swagger UI
+}));
+
+// Rate limiting global
 app.use(globalRateLimit);
+
+// =========================================================================
+// LOGGING
+// =========================================================================
+app.use(requestLogger);
+app.use(detailedRequestLogger);
+
+// =========================================================================
+// AUTHENTIFICATION
+// =========================================================================
+// Validation JWT sur toutes les routes (sauf publiques)
+app.use(jwtValidationMiddleware);
 
 // =========================================================================
 // DOCUMENTATION API UNIFIÉE
@@ -161,17 +215,65 @@ Object.entries(services).forEach(([key, svc]) => {
   }
 });
 
-app.get('/health', (req, res) => {
-  const serviceStatus = Object.fromEntries(
-    Object.entries(services).map(([key, svc]) => [key, { status: svc.status, target: svc.baseUrl || 'pending' }])
-  );
+// =========================================================================
+// HEALTH CHECKS
+// =========================================================================
 
+// Health check basique
+app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    gateway: 'multi-service (users ready, others pending)',
-    services: serviceStatus,
+    gateway: 'up',
     timestamp: new Date().toISOString()
   });
+});
+
+// Health check détaillé avec vérification des services
+app.get('/health/detailed', async (req, res) => {
+  try {
+    const status = await healthCheckService.getOverallStatus();
+    
+    // Déterminer le code de statut HTTP
+    let statusCode = 200;
+    if (status.status === 'unhealthy') {
+      statusCode = 503;
+    } else if (status.status === 'degraded') {
+      statusCode = 200; // Toujours 200 mais avec warning
+    }
+    
+    res.status(statusCode).json(status);
+  } catch (err) {
+    console.error('❌ Health check error:', err.message);
+    res.status(500).json({
+      status: 'error',
+      error: 'Failed to perform health check',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Health check d'un service spécifique
+app.get('/health/:service', async (req, res) => {
+  const { service } = req.params;
+  
+  try {
+    const result = await healthCheckService.checkService(service);
+    
+    if (!result) {
+      return res.status(404).json({
+        error: 'Service not found',
+        availableServices: Array.from(healthCheckService.services.keys())
+      });
+    }
+    
+    const statusCode = result.status === 'down' ? 503 : 200;
+    res.status(statusCode).json(result);
+  } catch (err) {
+    res.status(500).json({
+      error: 'Health check failed',
+      message: err.message
+    });
+  }
 });
 
 Object.entries(services).forEach(([key, svc]) => {
@@ -214,9 +316,18 @@ app.get('/api-overview', (req, res) => {
   });
 });
 
+app.use(errorLogger);
+
 app.use((err, req, res, next) => {
   console.error('❌ Gateway error:', err.message);
-  res.status(500).json({ error: 'Gateway error' });
+  
+  // Ne pas exposser les détails de l'erreur en production
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  res.status(err.status || 500).json({ 
+    error: isProduction ? 'Internal server error' : err.message,
+    ...(isProduction ? {} : { stack: err.stack })
+  });
 });
 
 app.use((req, res) => {

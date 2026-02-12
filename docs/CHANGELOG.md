@@ -15,15 +15,45 @@
 - Normalisation des extensions (.jpeg → .jpg)
 - Prevention des attaques par traversée de répertoire
 
+### API Gateway - Phase 3 : Sécurité et Monitoring (Complété)
+
+**Sécurité centralisée :**
+- Validation JWT sur toutes les routes protégées
+- Rate limiting global configurable (100 req/min par défaut)
+- Headers de sécurité Helmet (XSS, clickjacking, etc.)
+- Middleware `jwtValidationMiddleware` avec vérification Bearer token
+- Forward des headers `x-user-id` et `x-user-role` aux services
+
+**Health checks avancés :**
+- Endpoint `/health/detailed` avec vérification de tous les services
+- Endpoint `/health/:service` pour vérifier un service spécifique
+- Vérification périodique automatique (toutes les 30s)
+- Mesure de la latence pour chaque service
+- Détection des services down (3 échecs consécutifs)
+- Status : healthy / degraded / unhealthy
+
+**Logging centralisé :**
+- Winston pour logs structurés JSON
+- Morgan pour logs HTTP
+- Logger de sécurité pour événements critiques
+- Logs détaillés avec timing et user ID
+
+**Nouvelles dépendances :**
+- `jsonwebtoken` - Validation JWT
+- `helmet` - Headers de sécurité
+- `morgan` - Logging HTTP
+- `winston` - Logging avancé
+- `axios` - Health checks
+
 ### Documentation
 
 **API Gateway**
 - Documentation complete des phases de developpement
-- Phase 1 : Structure de Base (Realise)
+- Phase 1 : Structure de Base (Complété)
 - Phase 2 : Gestion des Requêtes (En cours)
-- Phase 3 : Sécurité et Monitoring (A venir)
+- Phase 3 : Sécurité et Monitoring (Complété)
 - Roadmap avec versions 1.1.0 à 2.0.0
-- Architecture et endpoints documentes
+- Architecture et endpoints documentés
 
 ---
 
