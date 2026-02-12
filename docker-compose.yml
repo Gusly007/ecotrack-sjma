@@ -116,6 +116,7 @@ services:
       ANALYTICS_SERVICE_URL: http://service-analytics:3015
       GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3000:3000"
@@ -254,20 +255,30 @@ services:
     restart: unless-stopped
 
   service-gamifications:
-    profiles: [placeholder]
     build:
       context: ./services/service-gamifications
       dockerfile: Dockerfile
     container_name: ecotrack-service-gamifications
     environment:
-      APP_PORT: 3014
+      PORT: 3014
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3014:3014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   service-analytics:
     profiles: [placeholder]

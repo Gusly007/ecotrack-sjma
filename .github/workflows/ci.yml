@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -227,7 +227,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -269,7 +268,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
     
     steps:
       - name: 'Checkout code'
@@ -318,9 +317,12 @@ jobs:
           - service: service-containers
             image-name: ecotrack-service-containers
             port: 3011
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
     
     # Attend que tous les tests réussissent
-    needs: [test, test-containers]
+    needs: [test, test-containers, test-gamifications]
     
     # Permissions pour pousser sur le registry
     permissions:
@@ -386,6 +388,10 @@ jobs:
             image-name: ecotrack-api-gateway
             port: 3000
             env-vars: '-e GATEWAY_PORT=3000 -e USERS_SERVICE_URL=http://localhost:3010'
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
+            env-vars: '-e PORT=3014 -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack_test'
     
     needs: build
     if: github.event_name == 'pull_request'  # Seulement en PR

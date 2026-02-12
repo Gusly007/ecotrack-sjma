@@ -70,8 +70,18 @@ const services = {
   },
   gamification: {
     displayName: 'Gamification Service',
-    status: 'pending',
-    routes: [{ mountPath: '/api/gamification' }]
+    status: 'ready',
+    port: parseInt(process.env.GAMIFICATIONS_PORT, 10) || 3014,
+    baseUrl: process.env.GAMIFICATIONS_SERVICE_URL,
+    swaggerPath: '/api-docs',
+    routes: [
+      { mountPath: '/api/gamification/actions', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/gamification/badges', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/gamification/defis', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/gamification/classement', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/gamification/notifications', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/gamification/stats', rewrite: (path) => path.replace(/^\/api\/gamification\/stats/, '') }
+    ]
   },
   analytics: {
     displayName: 'Analytics Service',
@@ -125,7 +135,12 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(globalRateLimit);
 
 // =========================================================================
