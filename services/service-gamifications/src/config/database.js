@@ -17,6 +17,37 @@ pool.on('connect', () => {
 });
 
 export const ensureGamificationTables = async () => {
+  const requiredTables = [
+    'utilisateur',
+    'badge',
+    'user_badge',
+    'historique_points',
+    'notification',
+    'gamification_defi',
+    'gamification_participation_defi'
+  ];
+
+  if (!env.autoSchema) {
+    const result = await pool.query(
+      `SELECT table_name
+       FROM information_schema.tables
+       WHERE table_schema = 'public'
+       AND table_name = ANY($1)`
+      , [requiredTables]
+    );
+
+    const present = new Set(result.rows.map((row) => row.table_name));
+    const missing = requiredTables.filter((name) => !present.has(name));
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing tables: ${missing.join(', ')}. Run migrations or set GAMIFICATIONS_AUTO_SCHEMA=true.`
+      );
+    }
+
+    return;
+  }
+
   // Tables de base : utilisateurs + points pour le service de gamification.
   await pool.query(
     `CREATE TABLE IF NOT EXISTS utilisateur (

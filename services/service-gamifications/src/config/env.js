@@ -32,6 +32,9 @@ const env = {
   },
   get databaseUrl() {
     return process.env.GAMIFICATIONS_DATABASE_URL || process.env.DATABASE_URL;
+  },
+  get autoSchema() {
+    return (process.env.GAMIFICATIONS_AUTO_SCHEMA || '').toLowerCase() === 'true';
   }
 };
 
