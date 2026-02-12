@@ -5,19 +5,28 @@ export const prepareDatabase = async () => {
 };
 
 export const resetDatabase = async () => {
-  await pool.query(
-    `TRUNCATE gamification_participation_defi,
-      gamification_defi,
-      user_badge,
-      notification,
-      historique_points,
-      utilisateur
-     RESTART IDENTITY CASCADE`
-  );
+  try {
+    await pool.query(
+      `TRUNCATE gamification_participation_defi,
+        gamification_defi,
+        user_badge,
+        notification,
+        historique_points,
+        utilisateur
+       RESTART IDENTITY CASCADE`
+    );
+  } catch (err) {
+    // Ignore truncate errors (tables might not exist yet)
+    if (!err.message.includes('does not exist')) {
+      throw err;
+    }
+  }
 
+  // Insert users with ON CONFLICT to handle race conditions
   await pool.query(
     `INSERT INTO utilisateur (id_utilisateur, points)
-     VALUES (1, 0), (2, 0), (3, 0)`
+     VALUES (1, 0), (2, 0), (3, 0)
+     ON CONFLICT (id_utilisateur) DO UPDATE SET points = EXCLUDED.points`
   );
 };
 
