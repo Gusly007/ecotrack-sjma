@@ -34,6 +34,10 @@ const env = {
     return process.env.GAMIFICATIONS_DATABASE_URL || process.env.DATABASE_URL;
   },
   get autoSchema() {
+    if (this.nodeEnv === 'test') {
+      return true;
+    }
+
     return (process.env.GAMIFICATIONS_AUTO_SCHEMA || '').toLowerCase() === 'true';
   }
 };
