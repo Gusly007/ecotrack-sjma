@@ -9,9 +9,9 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
 
-    "test": "cross-env NODE_ENV=test GAMIFICATIONS_DATABASE_URL=postgresql://ecotrack:ecotrack@127.0.0.1:5435/ecotrack_test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
-    "test:watch": "cross-env NODE_ENV=test GAMIFICATIONS_DATABASE_URL=postgresql://ecotrack:ecotrack@127.0.0.1:5435/ecotrack_test NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "test:coverage": "cross-env NODE_ENV=test GAMIFICATIONS_DATABASE_URL=postgresql://ecotrack:ecotrack@127.0.0.1:5435/ecotrack_test NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:watch": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "dependencies": {
     "cors": "^2.8.5",
