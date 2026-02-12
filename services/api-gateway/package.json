@@ -1,15 +1,17 @@
 {
     "name": "api-gateway",
     "version": "1.0.0",
-    "description": "",
+    "description": "API Gateway for EcoTrack microservices",
     "main": "src/index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+        "test:watch": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --watch",
+        "test:coverage": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --coverage",
         "dev": "node src/index.js",
         "start": "node src/index.js"
     },
-    "keywords": [],
-    "author": "",
+    "keywords": ["api-gateway", "microservices", "proxy"],
+    "author": "EcoTrack Team",
     "license": "ISC",
     "type": "module",
     "dependencies": {
@@ -24,6 +26,10 @@
         "morgan": "^1.10.1",
         "swagger-ui-express": "^5.0.1",
         "winston": "^3.19.0"
+    },
+    "devDependencies": {
+        "cross-env": "^7.0.3",
+        "jest": "^30.2.0"
     },
     "overrides": {
         "qs@<=6.14.2": "6.14.2"

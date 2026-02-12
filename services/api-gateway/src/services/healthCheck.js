@@ -65,7 +65,18 @@ class HealthCheckService {
     
     // Valider l'URL pour prévenir les attaques SSRF
     if (!this.isUrlAllowed(fullUrl)) {
-      throw new Error(`URL not allowed: ${fullUrl}`);
+      service.consecutiveFailures++;
+      service.status = 'down';
+      service.lastCheck = new Date().toISOString();
+      service.error = `URL not allowed: ${fullUrl}`;
+      
+      return {
+        name: service.displayName || name,
+        status: 'down',
+        lastCheck: service.lastCheck,
+        error: service.error,
+        consecutiveFailures: service.consecutiveFailures
+      };
     }
     
     try {

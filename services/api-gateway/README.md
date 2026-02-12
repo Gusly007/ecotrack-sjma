@@ -255,7 +255,7 @@ Toutes les routes sont protégées par JWT (sauf routes publiques listées ci-de
 |----------|-------------|---------|
 | `GATEWAY_PORT` | Port du serveur | 3000 |
 | `USERS_SERVICE_URL` | URL service users | http://localhost:3010 |
-| `CONTAINERS_SERVICE_URL` | URL service containers | http://localhost:3004 |
+| `CONTAINERS_SERVICE_URL` | URL service containers | http://localhost:3011 |
 | `GAMIFICATIONS_SERVICE_URL` | URL service gamifications | http://localhost:3014 |
 | `JWT_SECRET` | Clé secrète pour JWT | votre_secret_jwt_a_changer_en_production |
 | `GATEWAY_RATE_WINDOW_MS` | Fenêtre de rate limiting (ms) | 60000 |
