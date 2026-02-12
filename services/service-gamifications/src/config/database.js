@@ -13,7 +13,9 @@ pool.on('error', (err) => {
 });
 
 pool.on('connect', () => {
-  console.log('✓ Connected to PostgreSQL');
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('✓ Connected to PostgreSQL');
+  }
 });
 
 export const ensureGamificationTables = async () => {
