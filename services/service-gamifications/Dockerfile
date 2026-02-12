@@ -23,6 +23,9 @@ COPY --from=builder /app/healthcheck.cjs ./
 USER appuser
 EXPOSE 3014
 
+# Enable auto schema creation for Docker environments (creates tables on startup)
+ENV GAMIFICATIONS_AUTO_SCHEMA=true
+
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=10s \
   CMD node healthcheck.cjs
 
