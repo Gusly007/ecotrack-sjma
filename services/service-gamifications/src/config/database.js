@@ -13,12 +13,58 @@ pool.on('error', (err) => {
 });
 
 pool.on('connect', () => {
-  console.log('✓ Connected to PostgreSQL');
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('✓ Connected to PostgreSQL');
+  }
 });
 
+const runQuerySafe = async (query, params = []) => {
+  try {
+    await pool.query(query, params);
+  } catch (err) {
+    // Ignore duplicate table/index errors in parallel test execution
+    if (err.message.includes('duplicate key value violates unique constraint') ||
+        err.message.includes('already exists')) {
+      return;
+    }
+    throw err;
+  }
+};
+
 export const ensureGamificationTables = async () => {
+  const requiredTables = [
+    'utilisateur',
+    'badge',
+    'user_badge',
+    'historique_points',
+    'notification',
+    'gamification_defi',
+    'gamification_participation_defi'
+  ];
+
+  if (!env.autoSchema) {
+    const result = await pool.query(
+      `SELECT table_name
+       FROM information_schema.tables
+       WHERE table_schema = 'public'
+       AND table_name = ANY($1)`
+      , [requiredTables]
+    );
+
+    const present = new Set(result.rows.map((row) => row.table_name));
+    const missing = requiredTables.filter((name) => !present.has(name));
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing tables: ${missing.join(', ')}. Run migrations or set GAMIFICATIONS_AUTO_SCHEMA=true.`
+      );
+    }
+
+    return;
+  }
+
   // Tables de base : utilisateurs + points pour le service de gamification.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS utilisateur (
       id_utilisateur SERIAL PRIMARY KEY,
       points INT NOT NULL DEFAULT 0
@@ -26,7 +72,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Catalogue des badges disponibles.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS badge (
       id_badge SERIAL PRIMARY KEY,
       code VARCHAR(50) UNIQUE NOT NULL,
@@ -36,7 +82,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Lien utilisateur <-> badge (historique d'obtention).
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS user_badge (
       id_utilisateur INT NOT NULL,
       id_badge INT NOT NULL,
@@ -54,7 +100,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Historique des points pour les stats.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS historique_points (
       id_historique SERIAL PRIMARY KEY,
       id_utilisateur INT NOT NULL,
@@ -69,7 +115,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Notifications internes de gamification.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS notification (
       id_notification SERIAL PRIMARY KEY,
       id_utilisateur INT NOT NULL,
@@ -85,7 +131,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Défis : structure minimale pour les routes /defis.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS gamification_defi (
       id_defi SERIAL PRIMARY KEY,
       titre VARCHAR(100) NOT NULL,
@@ -101,7 +147,7 @@ export const ensureGamificationTables = async () => {
   );
 
   // Participation aux défis, avec suivi de progression.
-  await pool.query(
+  await runQuerySafe(
     `CREATE TABLE IF NOT EXISTS gamification_participation_defi (
       id_participation SERIAL PRIMARY KEY,
       id_defi INT NOT NULL,
@@ -122,10 +168,10 @@ export const ensureGamificationTables = async () => {
   );
 
   // Index pour accélérer la recherche sur les participations.
-  await pool.query('CREATE INDEX IF NOT EXISTS idx_gamification_participation_defi ON gamification_participation_defi(id_defi, id_utilisateur)');
+  await runQuerySafe('CREATE INDEX IF NOT EXISTS idx_gamification_participation_defi ON gamification_participation_defi(id_defi, id_utilisateur)');
 
   // Seed minimal des badges de base.
-  await pool.query(
+  await runQuerySafe(
     `INSERT INTO badge (code, nom, description)
      VALUES
       ('DEBUTANT', 'Débutant', 'Premier palier de points atteint'),

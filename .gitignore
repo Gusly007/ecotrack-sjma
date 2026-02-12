@@ -1,6 +1,8 @@
 .env
 *.env.local
 node_modules/
+coverage/
+**/coverage/
 docs/
 infra/kubernetes/
 infra/terraform/  

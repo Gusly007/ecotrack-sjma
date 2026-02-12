@@ -2,7 +2,9 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config();
+const isTest = process.env.NODE_ENV === 'test';
+
+dotenv.config({ quiet: isTest });
 const candidates = [
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), '..', '.env'),
@@ -11,7 +13,7 @@ const candidates = [
 
 for (const candidate of candidates) {
   try {
-    dotenv.config({ path: candidate });
+    dotenv.config({ path: candidate, quiet: isTest });
   } catch (_) {
     // ignore
   }
@@ -32,6 +34,13 @@ const env = {
   },
   get databaseUrl() {
     return process.env.GAMIFICATIONS_DATABASE_URL || process.env.DATABASE_URL;
+  },
+  get autoSchema() {
+    if (this.nodeEnv === 'test') {
+      return true;
+    }
+
+    return (process.env.GAMIFICATIONS_AUTO_SCHEMA || '').toLowerCase() === 'true';
   }
 };
 

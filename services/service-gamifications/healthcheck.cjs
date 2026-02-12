@@ -1,4 +1,4 @@
-import http from 'http';
+const http = require('http');
 
 const port = process.env.GAMIFICATIONS_PORT || process.env.PORT || 3014;
 

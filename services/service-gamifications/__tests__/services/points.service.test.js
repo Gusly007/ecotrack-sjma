@@ -1,20 +1,24 @@
-import { jest } from '@jest/globals';
+import { calculerPoints, incrementerPoints } from '../../src/services/points.service.js';
+import pool, {
+  prepareDatabase,
+  resetDatabase,
+  closeDatabase
+} from '../helpers/testDatabase.js';
 
-const mockQuery = jest.fn();
+beforeAll(async () => {
+  // Mise en place du schéma minimal pour les tests unitaires.
+  await prepareDatabase();
+});
 
-jest.unstable_mockModule('../../src/config/database.js', () => ({
-  default: { query: mockQuery, on: jest.fn(), end: jest.fn() },
-  ensureGamificationTables: jest.fn(),
-  initGamificationDb: jest.fn()
-}));
+beforeEach(async () => {
+  await resetDatabase();
+});
 
-const { calculerPoints, incrementerPoints } = await import(
-  '../../src/services/points.service.js'
-);
+afterAll(async () => {
+  await closeDatabase();
+});
 
 describe('points.service', () => {
-  afterEach(() => jest.clearAllMocks());
-
   it('calculerPoints utilise les valeurs par défaut', () => {
     expect(calculerPoints('signalement')).toBe(10);
     expect(calculerPoints('defi_reussi')).toBe(50);
@@ -32,30 +36,22 @@ describe('points.service', () => {
   });
 
   it('incrementerPoints cumule les points', async () => {
-    const mockClient = {
-      query: jest.fn().mockResolvedValue({ rows: [{ points: 15 }] })
-    };
-
     const total = await incrementerPoints({
-      client: mockClient,
+      client: pool,
       idUtilisateur: 1,
       points: 15
     });
 
     expect(total).toBe(15);
-    expect(mockClient.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE utilisateur SET points'),
-      [15, 1]
-    );
   });
 
   it('incrementerPoints rejette un utilisateur introuvable', async () => {
-    const mockClient = {
-      query: jest.fn().mockResolvedValue({ rows: [] })
-    };
-
     await expect(
-      incrementerPoints({ client: mockClient, idUtilisateur: 999, points: 10 })
+      incrementerPoints({
+        client: pool,
+        idUtilisateur: 999,
+        points: 10
+      })
     ).rejects.toThrow('Utilisateur introuvable');
   });
 });

@@ -128,7 +128,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          file: ./services/service-users/coverage/coverage-final.json
+          files: ./services/service-users/coverage/coverage-final.json
           flags: unittests
         continue-on-error: true
 
@@ -197,14 +197,14 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          file: ./services/service-containers/coverage/coverage-final.json
+          files: ./services/service-containers/coverage/coverage-final.json
           flags: unittests-containers
         continue-on-error: true
 
   # =========================================================================
   # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
   # =========================================================================
-  # Lance Jest pour service-gamifications (tests mockés, pas besoin de DB)
+  # Lance Jest pour service-gamifications avec PostgreSQL
   
   test-gamifications:
     name: 'Unit Tests - service-gamifications'
@@ -212,6 +212,21 @@ jobs:
     
     needs: lint
     
+    services:
+      # Service PostgreSQL pour les tests
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -225,18 +240,20 @@ jobs:
         run: npm ci
         working-directory: services/service-gamifications
       
-      # Lance Jest avec couverture (pas besoin de PostgreSQL, tout est mocké)
+      # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
         working-directory: services/service-gamifications
         env:
           NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+          GAMIFICATIONS_AUTO_SCHEMA: true
       
       # Upload couverture
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          file: ./services/service-gamifications/coverage/coverage-final.json
+          files: ./services/service-gamifications/coverage/coverage-final.json
           flags: unittests-gamifications
         continue-on-error: true
 
