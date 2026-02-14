@@ -3,10 +3,10 @@
  * Tests isolés de chaque méthode du service des zones
  */
 
-const ZoneServices = require('../../src/services/zone-services');
-const Validators = require('../../src/utils/Validators');
+const ZoneServices = require('../../../src/services/zone-services');
+const Validators = require('../../../src/utils/Validators');
 
-jest.mock('../../src/utils/Validators');
+jest.mock('../../../src/utils/Validators');
 
 describe('ZoneServices - Unit Tests', () => {
   let zoneService;

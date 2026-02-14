@@ -1,4 +1,4 @@
-const ZoneRepository = require('../../src/repositories/zone-repository');
+const ZoneRepository = require('../../../src/repositories/zone-repository');
 
 function createMockDb(returnSequence = []) {
   let callIndex = 0;

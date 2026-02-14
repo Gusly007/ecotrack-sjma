@@ -3,7 +3,7 @@
  * Tests isoles avec mock du StatsModel
  */
 
-const StatsService = require('../../src/services/stats-service');
+const StatsService = require('../../../src/services/stats-service');
 
 describe('StatsService - Unit Tests', () => {
   let statsService;

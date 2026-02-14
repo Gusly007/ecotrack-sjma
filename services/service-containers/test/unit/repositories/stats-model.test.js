@@ -3,7 +3,7 @@
  * Tests isoles avec mock de la connexion DB (pool.query)
  */
 
-const StatsRepository = require('../../src/repositories/stats-repository');
+const StatsRepository = require('../../../src/repositories/stats-repository');
 
 describe('StatsRepository - Unit Tests', () => {
   let statsRepository;
@@ -72,7 +72,7 @@ describe('StatsRepository - Unit Tests', () => {
       ];
       mockDb.query.mockResolvedValue({ rows: mockRows });
 
-      const result = await statsModel.getStatsByZone();
+      const result = await statsRepository.getStatsByZone();
 
       expect(result).toEqual(mockRows);
       expect(result).toHaveLength(2);
@@ -81,7 +81,7 @@ describe('StatsRepository - Unit Tests', () => {
     it('doit retourner un tableau vide si aucune zone', async () => {
       mockDb.query.mockResolvedValue({ rows: [] });
 
-      const result = await statsModel.getStatsByZone();
+      const result = await statsRepository.getStatsByZone();
 
       expect(result).toEqual([]);
     });
@@ -113,7 +113,7 @@ describe('StatsRepository - Unit Tests', () => {
       };
       mockDb.query.mockResolvedValue({ rows: [mockResult] });
 
-      const result = await statsModel.getAlertsSummary();
+      const result = await statsRepository.getAlertsSummary();
 
       expect(result).toEqual(mockResult);
     });
@@ -128,7 +128,7 @@ describe('StatsRepository - Unit Tests', () => {
       };
       mockDb.query.mockResolvedValue({ rows: [mockResult] });
 
-      const result = await statsModel.getAlertsSummary();
+      const result = await statsRepository.getAlertsSummary();
 
       expect(result.total_alertes_actives).toBe(0);
       expect(result.alertes).toBeNull();
@@ -232,7 +232,7 @@ describe('StatsRepository - Unit Tests', () => {
         .mockResolvedValueOnce({ rows: mockEnCours })
         .mockResolvedValueOnce({ rows: [mockDurees] });
 
-      const result = await statsModel.getMaintenanceStats();
+      const result = await statsRepository.getMaintenanceStats();
 
       expect(mockDb.query).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
@@ -247,7 +247,7 @@ describe('StatsRepository - Unit Tests', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ nb_maintenances_terminees: 0, duree_moyenne_heures: null, duree_max_heures: null }] });
 
-      const result = await statsModel.getMaintenanceStats();
+      const result = await statsRepository.getMaintenanceStats();
 
       expect(result.nb_en_cours).toBe(0);
       expect(result.en_cours).toEqual([]);

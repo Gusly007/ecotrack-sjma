@@ -3,7 +3,7 @@
  * Tests de la classe de réponse standardisée
  */
 
-const ApiResponse = require('../../src/utils/api-response');
+const ApiResponse = require('../../../src/utils/api-response');
 
 describe('ApiResponse - Unit Tests', () => {
   describe('success', () => {

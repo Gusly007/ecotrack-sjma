@@ -1,4 +1,4 @@
-const ContainerRepository = require('../../src/repositories/container-repository');
+const ContainerRepository = require('../../../src/repositories/container-repository');
 const db = {}; // Mock database object for testing
 
 describe('ContainerRepository', () => {

@@ -1,4 +1,4 @@
-const StatsController = require('../../src/controllers/stats-controller');
+const StatsController = require('../../../src/controllers/stats-controller');
 
 describe('StatsController', () => {
   let controller;

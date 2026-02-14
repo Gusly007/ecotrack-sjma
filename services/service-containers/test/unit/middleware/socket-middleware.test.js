@@ -3,7 +3,7 @@
  * Tests du middleware d'injection Socket.IO
  */
 
-const socketMiddleware = require('../../src/middleware/socket-middleware');
+const socketMiddleware = require('../../../src/middleware/socket-middleware');
 
 describe('Socket Middleware - Unit Tests', () => {
   let mockReq, mockRes, mockNext, mockSocketService;

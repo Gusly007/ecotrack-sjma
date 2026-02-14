@@ -3,10 +3,10 @@
  * Tests isolés du service de types de conteneurs
  */
 
-const TypeConteneurServices = require('../../src/services/type-conteneur-services');
-const Validators = require('../../src/utils/Validators');
+const TypeConteneurServices = require('../../../src/services/type-conteneur-services');
+const Validators = require('../../../src/utils/Validators');
 
-jest.mock('../../src/utils/Validators');
+jest.mock('../../../src/utils/Validators');
 
 describe('TypeConteneurServices - Unit Tests', () => {
   let typeService;

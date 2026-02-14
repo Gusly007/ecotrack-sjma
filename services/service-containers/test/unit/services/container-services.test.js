@@ -3,11 +3,11 @@
  * Tests isolés de chaque méthode du service avec mocks
  */
 
-const ContainerServices = require('../../src/services/container-services');
-const Validators = require('../../src/utils/Validators');
+const ContainerServices = require('../../../src/services/container-services');
+const Validators = require('../../../src/utils/Validators');
 
 // Mock des validateurs
-jest.mock('../../src/utils/Validators');
+jest.mock('../../../src/utils/Validators');
 
 describe('ContainerServices - Unit Tests', () => {
   let containerService;

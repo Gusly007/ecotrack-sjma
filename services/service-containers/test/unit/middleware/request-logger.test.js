@@ -3,7 +3,7 @@
  * Tests du middleware de logging des requêtes
  */
 
-const requestLogger = require('../../src/middleware/request-logger');
+const requestLogger = require('../../../src/middleware/request-logger');
 
 describe('Request Logger Middleware - Unit Tests', () => {
   let mockReq, mockRes, mockNext;

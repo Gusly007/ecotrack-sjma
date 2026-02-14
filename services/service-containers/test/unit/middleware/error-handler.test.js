@@ -3,11 +3,11 @@
  * Tests du middleware de gestion d'erreurs
  */
 
-const errorHandler = require('../../src/middleware/error-handler');
-const ApiError = require('../../src/utils/api-error');
-const ApiResponse = require('../../src/utils/api-response');
+const errorHandler = require('../../../src/middleware/error-handler');
+const ApiError = require('../../../src/utils/api-error');
+const ApiResponse = require('../../../src/utils/api-response');
 
-jest.mock('../../src/utils/api-response');
+jest.mock('../../../src/utils/api-response');
 
 describe('Error Handler Middleware - Unit Tests', () => {
   let mockReq, mockRes, mockNext;

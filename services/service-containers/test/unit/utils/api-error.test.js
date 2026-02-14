@@ -3,7 +3,7 @@
  * Tests de la classe d'erreur personnalisée
  */
 
-const ApiError = require('../../src/utils/api-error');
+const ApiError = require('../../../src/utils/api-error');
 
 describe('ApiError - Unit Tests', () => {
   describe('constructor', () => {
