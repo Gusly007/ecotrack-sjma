@@ -2,6 +2,39 @@
 
 Microservice de gamification pour EcoTrack : gestion des points, badges, défis, classement et notifications.
 
+---
+
+## Architecture du service
+
+### Structure des dossiers principaux
+
+```
+service-gamifications/
+├── README.md
+├── package.json
+├── src/
+│   ├── controllers/         # Contrôleurs Express (API)
+│   ├── services/            # Logique métier (orchestration, calculs)
+│   ├── repositories/        # Accès aux données (SQL, Postgres)
+│   ├── middleware/          # Middlewares Express (validation, etc.)
+│   ├── config/              # Configurations (DB, rate limit, etc.)
+│   └── ...
+├── __tests__/               # Tests unitaires et d'intégration
+│   ├── repositories/        # Tests unitaires des repositories
+│   ├── services/            # Tests unitaires des services
+│   └── controllers/         # Tests d'intégration des routes
+├── sql/                     # Scripts SQL (création des tables, etc.)
+└── ...
+```
+
+- `controllers/` : endpoints Express, validation des entrées, appels aux services
+- `services/` : logique métier, orchestration, validation métier
+- `repositories/` : accès aux données, requêtes SQL, mapping
+- `middleware/` : middlewares Express (validation, rate limiting, etc.)
+- `__tests__/repositories/` : tests unitaires des repositories (mock SQL)
+
+---
+
 ## Phases couvertes
 
 ### Phase 1 — Système de points
@@ -57,6 +90,12 @@ Autres commandes utiles :
 npm run test:watch
 npm run test:coverage
 ```
+
+### Couverture des tests
+
+- **Services** : chaque service métier possède des tests unitaires (logique d'attribution, calculs, orchestration, etc.).
+- **Repositories** : chaque repository (`src/repositories/`) est couvert par des tests unitaires dédiés (mock SQL, vérification des requêtes et retours). Les tests vérifient l'intégrité des accès aux données et la robustesse des requêtes.
+- **Contrôleurs** : les endpoints principaux sont testés via des tests d'intégration.
 
 ---
 
