@@ -1,28 +1,38 @@
 import { jest } from '@jest/globals';
 
+const mockAxiosGet = jest.fn();
+
+jest.unstable_mockModule('axios', () => ({
+  default: {
+    get: mockAxiosGet
+  },
+  get: mockAxiosGet
+}));
+
+jest.unstable_mockModule('../../src/middleware/logger.js', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn()
+  },
+  info: jest.fn(),
+  error: jest.fn()
+}));
+
+const { HealthCheckService } = await import('../../src/services/healthCheck.js');
+
 describe('HealthCheck Service', () => {
-  let HealthCheckService;
   let healthCheckService;
-  let mockAxios;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-
-    // Mock axios
-    mockAxios = {
-      get: jest.fn()
-    };
-
-    jest.unstable_mockModule('axios', () => ({
-      default: mockAxios,
-      get: mockAxios.get
-    }));
-
-    const module = await import('../../src/services/healthCheck.js');
-    HealthCheckService = module.HealthCheckService;
     
-    // Create a fresh instance for each test
+    mockAxiosGet.mockClear();
+    
+    process.env.HEALTH_CHECK_INTERVAL = '30000';
+    process.env.HEALTH_CHECK_TIMEOUT = '5000';
+    process.env.ALLOWED_HEALTH_CHECK_HOSTS = 'localhost,127.0.0.1';
+    
     healthCheckService = new HealthCheckService();
   });
 
@@ -31,6 +41,9 @@ describe('HealthCheck Service', () => {
     if (healthCheckService) {
       healthCheckService.stopPeriodicChecks();
     }
+    delete process.env.HEALTH_CHECK_INTERVAL;
+    delete process.env.HEALTH_CHECK_TIMEOUT;
+    delete process.env.ALLOWED_HEALTH_CHECK_HOSTS;
   });
 
   describe('registerService', () => {
@@ -70,7 +83,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockResolvedValue({
+      mockAxiosGet.mockResolvedValue({
         status: 200,
         data: { status: 'ok' }
       });
@@ -89,7 +102,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockResolvedValue({
+      mockAxiosGet.mockResolvedValue({
         status: 404,
         data: { error: 'Not found' }
       });
@@ -105,7 +118,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockRejectedValue(new Error('Connection refused'));
+      mockAxiosGet.mockRejectedValue(new Error('Connection refused'));
 
       // First failure - degraded
       let result = await healthCheckService.checkService('failing-service');
@@ -130,11 +143,11 @@ describe('HealthCheck Service', () => {
       });
 
       // First failure
-      mockAxios.get.mockRejectedValue(new Error('Connection refused'));
+      mockAxiosGet.mockRejectedValue(new Error('Connection refused'));
       await healthCheckService.checkService('recovering-service');
 
       // Then success
-      mockAxios.get.mockResolvedValue({
+      mockAxiosGet.mockResolvedValue({
         status: 200,
         data: { status: 'ok' }
       });
@@ -151,7 +164,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockRejectedValue(new Error('Network timeout'));
+      mockAxiosGet.mockRejectedValue(new Error('Network timeout'));
 
       // Trigger 3 failures
       await healthCheckService.checkService('error-service');
@@ -175,14 +188,14 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3002'
       });
 
-      mockAxios.get
+      mockAxiosGet
         .mockResolvedValueOnce({ status: 200, data: {} })
         .mockResolvedValueOnce({ status: 200, data: {} });
 
       const results = await healthCheckService.checkAllServices();
       
       expect(results).toHaveLength(2);
-      expect(mockAxios.get).toHaveBeenCalledTimes(2);
+      expect(mockAxiosGet).toHaveBeenCalledTimes(2);
     });
 
     it('should return empty array if no services registered', async () => {
@@ -199,7 +212,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3001'
       });
 
-      mockAxios.get.mockResolvedValue({ status: 200, data: {} });
+      mockAxiosGet.mockResolvedValue({ status: 200, data: {} });
 
       const status = await healthCheckService.getOverallStatus();
       
@@ -221,7 +234,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3002'
       });
 
-      mockAxios.get
+      mockAxiosGet
         .mockResolvedValueOnce({ status: 200, data: {} })
         .mockRejectedValueOnce(new Error('Timeout'));
 
@@ -236,7 +249,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3001'
       });
 
-      mockAxios.get.mockRejectedValue(new Error('Connection refused'));
+      mockAxiosGet.mockRejectedValue(new Error('Connection refused'));
 
       // Trigger 3 failures to mark as down
       await healthCheckService.checkService('failing-service');
@@ -256,24 +269,24 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockResolvedValue({ status: 200, data: {} });
+      mockAxiosGet.mockResolvedValue({ status: 200, data: {} });
 
       // Fast-forward timers to trigger periodic checks
       jest.advanceTimersByTime(30000);
       
       // Should have been called at least once
-      expect(mockAxios.get).toHaveBeenCalled();
+      expect(mockAxiosGet).toHaveBeenCalled();
     });
 
     it('should allow stopping periodic checks', () => {
       healthCheckService.stopPeriodicChecks();
       
-      const initialCalls = mockAxios.get.mock.calls.length;
+      const initialCalls = mockAxiosGet.mock.calls.length;
       
       jest.advanceTimersByTime(60000);
       
       // Should not have been called after stopping
-      expect(mockAxios.get.mock.calls.length).toBe(initialCalls);
+      expect(mockAxiosGet.mock.calls.length).toBe(initialCalls);
     });
   });
 
@@ -284,7 +297,7 @@ describe('HealthCheck Service', () => {
         baseUrl: 'http://localhost:3000'
       });
 
-      mockAxios.get.mockResolvedValue({ status: 200, data: {} });
+      mockAxiosGet.mockResolvedValue({ status: 200, data: {} });
       await healthCheckService.checkService('test-service');
 
       const status = healthCheckService.getServiceStatus('test-service');

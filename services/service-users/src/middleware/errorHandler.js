@@ -1,11 +1,13 @@
+import logger from '../utils/logger.js';
+
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.stack);
-  if (err?.code) {
-    console.error('Error code:', err.code);
-  }
-  if (err?.message) {
-    console.error('Error message:', err.message);
-  }
+  logger.error({
+    message: err?.message,
+    code: err?.code,
+    stack: err?.stack,
+    path: req.path,
+    method: req.method
+  }, 'Request error');
   if (err.code === '23005' || err.code === '23505') {
     return res.status(409).json({ message: 'Conflit : Ressource déjà existante.' });
   }
@@ -14,15 +16,15 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(409).json({ message: 'Conflit : Ressource déjà existante.' });
   }
 
-  if(err.message.includes('not found')) {
+   if (err.message.includes('not found')) {
     return res.status(404).json({ message: err.message });
   }
 
-  if(err.message.includes('token')) {
+    if (err.message.includes('token')) {
     return res.status(401).json({ message: 'Token invalide ou expiré.' });
   }
 
-  if(err.message.includes('Validation')) {
+    if (err.message.includes('Validation')) {
     return res.status(400).json({ message: 'Données invalides.' });
   }
   const isProd = (process.env.NODE_ENV || 'development') === 'production';

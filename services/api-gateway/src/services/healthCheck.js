@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../middleware/logger.js';
 
 /**
  * Service de Health Check avancé pour l'API Gateway
@@ -102,6 +103,7 @@ class HealthCheckService {
         status: 'up',
         latency: `${latency}ms`,
         lastCheck: service.lastCheck,
+        consecutiveFailures: 0,
         details: response.data
       };
     } catch (err) {
@@ -176,8 +178,8 @@ class HealthCheckService {
    * Démarrer les vérifications périodiques
    */
   startPeriodicChecks() {
-    setInterval(async () => {
-      console.log('🔍 Running periodic health checks...');
+    this.intervalId = setInterval(async () => {
+      logger.info('Running periodic health checks');
       await this.checkAllServices();
     }, this.checkInterval);
   }

@@ -4,6 +4,7 @@ import swaggerSpec from './config/swagger.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import cors from 'cors';
+import morgan from 'morgan';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
@@ -14,6 +15,7 @@ import path from 'path';
 import env from './config/env.js';
 import { validateEnv } from './config/env.js';
 import helmet from 'helmet';
+import logger from './utils/logger.js';
 
 
 const app = express();
@@ -39,6 +41,13 @@ app.use(helmet({
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => {
+      logger.info({ type: 'access', message: message.trim() }, 'HTTP request');
+    }
+  }
+}));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -67,15 +76,15 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const server = app.listen(env.port, () => {
-  console.log(`Server is running on port ${env.port}`);
-  console.log(`Swagger docs available at http://localhost:${env.port}/api-docs`);
+  logger.info({ port: env.port }, 'Service users ready');
+  logger.info({ url: `http://localhost:${env.port}/api-docs` }, 'Swagger docs ready');
 });
 
 process.on('SIGINT', async () => {
-  console.log('\n⛔ Shutting down...');
+  logger.info('Shutting down service users');
   await pool.end();
   server.close(() => {
-    console.log('✓ Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });

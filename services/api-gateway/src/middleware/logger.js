@@ -1,71 +1,46 @@
-import winston from 'winston';
 import morgan from 'morgan';
+import pino from 'pino';
 
-/**
- * Configuration du logging pour l'API Gateway
- * Logs structurés en JSON pour centralisation
- */
+const nodeEnv = process.env.NODE_ENV;
+const isProduction = nodeEnv === 'production';
+const isTest = nodeEnv === 'test' || nodeEnv === undefined || process.env.JEST_WORKER_ID !== undefined;
 
-// Configuration Winston
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  defaultMeta: { 
-    service: 'api-gateway',
-    environment: process.env.NODE_ENV || 'development'
-  },
-  transports: [
-    // Logs console en développement
-    new winston.transports.Console({
-      format: process.env.NODE_ENV === 'development' 
-        ? winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-          )
-        : winston.format.json()
-    })
-  ]
-});
+const logger = isTest
+  ? console
+  : pino(
+      {
+        level: process.env.LOG_LEVEL || 'info',
+        base: {
+          service: 'api-gateway',
+          environment: process.env.NODE_ENV || 'development'
+        }
+      },
+      isProduction
+        ? undefined
+        : pino.transport({
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'SYS:standard',
+              ignore: 'pid,hostname'
+            }
+          })
+    );
 
-// Ajouter fichier de logs en production
-if (process.env.NODE_ENV === 'production') {
-  logger.add(new winston.transports.File({ 
-    filename: 'logs/error.log', 
-    level: 'error' 
-  }));
-  logger.add(new winston.transports.File({ 
-    filename: 'logs/combined.log' 
-  }));
-}
-
-/**
- * Middleware Morgan personnalisé pour logger les requêtes HTTP
- */
 const morganFormat = ':method :url :status :response-time ms - :res[content-length] - :remote-addr';
 
 export const requestLogger = morgan(morganFormat, {
   stream: {
     write: (message) => {
-      logger.info('HTTP Request', {
-        type: 'access',
-        message: message.trim()
-      });
+      logger.info({ type: 'access', message: message.trim() }, 'HTTP request');
     }
   }
 });
 
-/**
- * Middleware de logging détaillé des requêtes
- */
 export const detailedRequestLogger = (req, res, next) => {
   const start = Date.now();
-  
-  // Log au début de la requête
-  logger.info('Request started', {
+
+  logger.info({
     type: 'request_start',
     method: req.method,
     url: req.url,
@@ -74,40 +49,36 @@ export const detailedRequestLogger = (req, res, next) => {
     userAgent: req.get('user-agent'),
     ip: req.ip || req.connection.remoteAddress,
     userId: req.user?.id || 'anonymous'
-  });
+  }, 'Request started');
 
-  // Intercepter la fin de la réponse
   res.on('finish', () => {
     const duration = Date.now() - start;
-    
     const logData = {
       type: 'request_complete',
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,
-      duration: duration,
+      duration,
       userId: req.user?.id || 'anonymous',
       contentLength: res.get('content-length')
     };
 
-    // Log différent selon le statut
     if (res.statusCode >= 500) {
-      logger.error('Server error response', logData);
-    } else if (res.statusCode >= 400) {
-      logger.warn('Client error response', logData);
-    } else {
-      logger.info('Request completed', logData);
+      logger.error(logData, 'Server error response');
+      return;
     }
+    if (res.statusCode >= 400) {
+      logger.warn(logData, 'Client error response');
+      return;
+    }
+    logger.info(logData, 'Request completed');
   });
 
   next();
 };
 
-/**
- * Logger des erreurs
- */
 export const errorLogger = (err, req, res, next) => {
-  logger.error('Error occurred', {
+  logger.error({
     type: 'error',
     message: err.message,
     stack: err.stack,
@@ -115,21 +86,18 @@ export const errorLogger = (err, req, res, next) => {
     url: req.url,
     userId: req.user?.id || 'anonymous',
     ip: req.ip || req.connection.remoteAddress
-  });
-  
+  }, 'Error occurred');
+
   next(err);
 };
 
-/**
- * Logger de sécurité (tentatives d'accès non autorisé, etc.)
- */
 export const securityLogger = (event, details) => {
-  logger.warn('Security event', {
+  logger.warn({
     type: 'security',
     event,
     ...details,
     timestamp: new Date().toISOString()
-  });
+  }, 'Security event');
 };
 
 export { logger };

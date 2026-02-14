@@ -4,6 +4,24 @@
 
 ---
 
+## [1.3.2] - 2026-02-13
+
+### Logging
+
+- Standardise le logging avec `pino` + `pino-pretty` et `morgan` dans les services.
+- Remplace les `console.*` par le logger (API Gateway, users, containers, gamifications, scripts DB, healthchecks).
+- Ajoute des loggers dedies par service avec format uniforme.
+
+### Documentation
+
+- Nettoie les emojis/icone dans la documentation et les commentaires.
+- Met a jour README racine et [services/README.md](services/README.md).
+- Supprime l'audit d'endpoints obsolete.
+
+### Outils
+
+- Ajoute un script `database/run-migrations.cjs` pour lancer les migrations manuellement.
+
 ## [1.3.1] - 2026-02-12
 
 ### Securite

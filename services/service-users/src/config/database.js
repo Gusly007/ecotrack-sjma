@@ -1,5 +1,6 @@
 import pg from 'pg';
 import env from './env.js';
+import logger from '../utils/logger.js';
 
 const { Pool } = pg;
 
@@ -8,11 +9,11 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Database error:', err);
+  logger.error({ error: err }, 'Database error');
 });
 
 pool.on('connect', () => {
-  console.log('✓ Connected to PostgreSQL');
+  logger.info('Connected to PostgreSQL');
 });
 
 export const ensureAuthTables = async () => {

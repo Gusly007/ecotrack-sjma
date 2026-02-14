@@ -1,24 +1,25 @@
-import { calculerPoints, incrementerPoints } from '../../src/services/points.service.js';
-import pool, {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase
-} from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Mise en place du schéma minimal pour les tests unitaires.
-  await prepareDatabase();
-});
+const mockPool = {
+  query: jest.fn(),
+  end: jest.fn(),
+  on: jest.fn()
+};
 
-beforeEach(async () => {
-  await resetDatabase();
-});
+jest.unstable_mockModule('pg', () => ({
+  default: {
+    Pool: jest.fn(() => mockPool)
+  },
+  Pool: jest.fn(() => mockPool)
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const { calculerPoints, incrementerPoints } = await import('../../src/services/points.service.js');
 
 describe('points.service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('calculerPoints utilise les valeurs par défaut', () => {
     expect(calculerPoints('signalement')).toBe(10);
     expect(calculerPoints('defi_reussi')).toBe(50);
@@ -36,8 +37,12 @@ describe('points.service', () => {
   });
 
   it('incrementerPoints cumule les points', async () => {
+    mockPool.query.mockResolvedValueOnce({
+      rows: [{ points: 15 }]
+    });
+
     const total = await incrementerPoints({
-      client: pool,
+      client: mockPool,
       idUtilisateur: 1,
       points: 15
     });
@@ -46,9 +51,13 @@ describe('points.service', () => {
   });
 
   it('incrementerPoints rejette un utilisateur introuvable', async () => {
+    mockPool.query.mockResolvedValueOnce({
+      rows: []
+    });
+
     await expect(
       incrementerPoints({
-        client: pool,
+        client: mockPool,
         idUtilisateur: 999,
         points: 10
       })

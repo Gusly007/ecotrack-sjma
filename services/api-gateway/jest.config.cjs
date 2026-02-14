@@ -7,12 +7,5 @@ module.exports = {
     '!src/swagger-config.js'
   ],
   testTimeout: 10000,
-  maxWorkers: 1,
-  transform: {},
-  extensionsToTreatAsEsm: ['.js'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  }
+  maxWorkers: 1
 };

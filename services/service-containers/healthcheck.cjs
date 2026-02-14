@@ -6,6 +6,25 @@
 // ============================================================================
 
 const http = require('http');
+const pino = require('pino');
+
+const isProduction = process.env.NODE_ENV === 'production';
+const logger = pino(
+  {
+    level: process.env.LOG_LEVEL || 'info',
+    base: { service: 'service-containers-healthcheck' }
+  },
+  isProduction
+    ? undefined
+    : pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:standard',
+          ignore: 'pid,hostname'
+        }
+      })
+);
 
 const options = {
   host: 'localhost',
@@ -15,7 +34,7 @@ const options = {
 };
 
 const healthCheck = http.request(options, (res) => {
-  console.log(`HEALTHCHECK STATUS: ${res.statusCode}`);
+  logger.info({ statusCode: res.statusCode }, 'Health check response');
   if (res.statusCode === 200) {
     process.exit(0);
   } else {
@@ -24,7 +43,7 @@ const healthCheck = http.request(options, (res) => {
 });
 
 healthCheck.on('error', (err) => {
-  console.error('HEALTHCHECK ERROR:', err.message);
+  logger.error({ error: err.message }, 'Health check error');
   process.exit(1);
 });
 

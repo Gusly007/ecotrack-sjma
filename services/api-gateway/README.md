@@ -278,35 +278,6 @@ docker run -p 3000:3000 \
   ecotrack-api-gateway
 ```
 
----
-
-## Roadmap
-
-### Version 1.1.0 (Mars 2026) - Complété ✅
-- [x] Intégration Service Routes
-- [x] Rate limiting global
-- [x] Validation JWT centralisée
-- [x] Health checks avancés
-
-### Version 1.2.0 (Avril 2026) - En cours 🚧
-- [ ] Cache Redis
-- [ ] Agrégation de réponses (endpoints composite)
-- [x] Logs centralisés (Winston)
-- [ ] Circuit breaker pattern
-
-### Version 1.3.0 (Mai 2026) - À venir 📅
-- [ ] Monitoring Prometheus/Grafana
-- [ ] Alertes automatiques (Slack/Email)
-- [ ] Dashboard d'administration
-
-### Version 2.0.0 (Juin 2026) - Futur 🔮
-- [ ] Load balancing multi-instance
-- [ ] Service Mesh (Istio)
-- [ ] Web Application Firewall (WAF)
-- [ ] Protection DDoS
-
----
-
 ## Technologies
 
 - **Node.js** 20+
@@ -344,6 +315,3 @@ docker run -p 3000:3000 \
    - Swagger : `http://localhost:3000/api-docs`
 
 ---
-
-**Dernière mise à jour** : 2026-02-12
-**Maintenu par** : Équipe EcoTrack

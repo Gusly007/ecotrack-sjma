@@ -1,12 +1,12 @@
 import { jest } from '@jest/globals';
-import jwt from 'jsonwebtoken';
 
-// Mock jwt
+const mockVerify = jest.fn();
+
 jest.unstable_mockModule('jsonwebtoken', () => ({
   default: {
-    verify: jest.fn()
+    verify: mockVerify
   },
-  verify: jest.fn()
+  verify: mockVerify
 }));
 
 const { jwtValidationMiddleware, requireRole } = await import('../../src/middleware/auth.js');
@@ -18,6 +18,7 @@ describe('Auth Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockVerify.mockClear();
     
     req = {
       path: '/api/users/profile',
@@ -87,7 +88,7 @@ describe('Auth Middleware', () => {
       req.headers.authorization = 'Bearer expired_token';
       const error = new Error('Token expired');
       error.name = 'TokenExpiredError';
-      jwt.verify.mockImplementation(() => {
+      mockVerify.mockImplementation(() => {
         throw error;
       });
       
@@ -102,7 +103,7 @@ describe('Auth Middleware', () => {
 
     it('should return 401 if token is invalid', () => {
       req.headers.authorization = 'Bearer invalid_token';
-      jwt.verify.mockImplementation(() => {
+      mockVerify.mockImplementation(() => {
         throw new Error('Invalid token');
       });
       
@@ -122,7 +123,7 @@ describe('Auth Middleware', () => {
         role: 'CITOYEN',
         email: 'test@example.com'
       };
-      jwt.verify.mockReturnValue(decodedToken);
+      mockVerify.mockReturnValue(decodedToken);
       
       jwtValidationMiddleware(req, res, next);
       
@@ -143,7 +144,7 @@ describe('Auth Middleware', () => {
         id: 456,
         role: 'ADMIN'
       };
-      jwt.verify.mockReturnValue(decodedToken);
+      mockVerify.mockReturnValue(decodedToken);
       
       jwtValidationMiddleware(req, res, next);
       
@@ -155,7 +156,7 @@ describe('Auth Middleware', () => {
   describe('requireRole', () => {
     beforeEach(() => {
       req.headers.authorization = 'Bearer valid_token';
-      jwt.verify.mockReturnValue({
+      mockVerify.mockReturnValue({
         userId: 123,
         role: 'CITOYEN'
       });

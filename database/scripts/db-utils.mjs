@@ -7,8 +7,27 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import pino from 'pino';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const isProduction = process.env.NODE_ENV === 'production';
+const logger = pino(
+  {
+    level: process.env.LOG_LEVEL || 'info',
+    base: { service: 'database-scripts' }
+  },
+  isProduction
+    ? undefined
+    : pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:standard',
+          ignore: 'pid,hostname'
+        }
+      })
+);
 
 // Charger les variables d'environnement
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -72,31 +91,22 @@ export function listSqlFiles(directory) {
 /**
  * Afficher un message coloré dans la console
  */
-export const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-};
-
-export function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
+export function log(message) {
+  logger.info(message);
 }
 
 export function logSuccess(message) {
-  log(`✅ ${message}`, 'green');
+  logger.info(message);
 }
 
 export function logError(message) {
-  log(`❌ ${message}`, 'red');
+  logger.error(message);
 }
 
 export function logInfo(message) {
-  log(`ℹ️  ${message}`, 'blue');
+  logger.info(message);
 }
 
 export function logWarning(message) {
-  log(`⚠️  ${message}`, 'yellow');
+  logger.warn(message);
 }

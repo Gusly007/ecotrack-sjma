@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const path = require('path');
 const envPath = path.resolve(__dirname, '..', '..', '.env');
 require('dotenv').config({ path: envPath });
+const logger = require('../utils/logger');
 
 const password = process.env.PGPASSWORD !== undefined ? String(process.env.PGPASSWORD) : '';
 const pool = new Pool({
@@ -19,7 +20,7 @@ const pool = new Pool({
 });
 // Gérer les erreurs inattendues sur les clients inactifs
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client', err);
+  logger.error({ error: err }, 'Unexpected error on idle PostgreSQL client');
   process.exit(-1);
 });
 
@@ -31,10 +32,10 @@ async function query(text, params) {
 async function testConnection() {
   try {
     const res = await pool.query('SELECT NOW() as now');
-    console.log('Postgres connected:', res.rows[0].now);
+    logger.info({ time: res.rows[0].now }, 'Postgres connected');
     return true;
   } catch (err) {
-    console.error('Postgres connection error:', err);
+    logger.error({ error: err }, 'Postgres connection error');
     return false;
   }
 }

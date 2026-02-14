@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import pool from '../config/database.js';
+import logger from '../utils/logger.js';
 
 const AVATARS_DIR = 'storage/avatars';
 const ORIGINAL_DIR = path.join(AVATARS_DIR, 'original');
@@ -117,7 +118,7 @@ export const deleteOldAvatars = async (userId) => {
       await fs.unlink(path.join(MINI_DIR, file));
     }
   } catch (error) {
-    console.error('Error deleting old avatars:', error);
+    logger.error({ error }, 'Error deleting old avatars');
   }
 };
 

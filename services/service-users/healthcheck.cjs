@@ -1,4 +1,23 @@
 const http = require('http');
+const pino = require('pino');
+
+const isProduction = process.env.NODE_ENV === 'production';
+const logger = pino(
+  {
+    level: process.env.LOG_LEVEL || 'info',
+    base: { service: 'service-users-healthcheck' }
+  },
+  isProduction
+    ? undefined
+    : pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:standard',
+          ignore: 'pid,hostname'
+        }
+      })
+);
 
 const options = {
   hostname: 'localhost',
@@ -12,18 +31,18 @@ const req = http.request(options, (res) => {
   if (res.statusCode === 200) {
     process.exit(0);
   } else {
-    console.error(`Health check failed with status: ${res.statusCode}`);
+    logger.error({ statusCode: res.statusCode }, 'Health check failed');
     process.exit(1);
   }
 });
 
 req.on('error', (err) => {
-  console.error('Health check error:', err.message);
+  logger.error({ error: err.message }, 'Health check error');
   process.exit(1);
 });
 
 req.on('timeout', () => {
-  console.error('Health check timeout');
+  logger.error('Health check timeout');
   req.destroy();
   process.exit(1);
 });

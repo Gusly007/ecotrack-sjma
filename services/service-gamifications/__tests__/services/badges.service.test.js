@@ -1,27 +1,41 @@
-import { attribuerBadgesAutomatique } from '../../src/services/badges.service.js';
-import pool, {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase
-} from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Initialisation des tables requises pour les badges.
-  await prepareDatabase();
-});
+const mockPool = {
+  query: jest.fn(),
+  end: jest.fn(),
+  on: jest.fn()
+};
 
-beforeEach(async () => {
-  await resetDatabase();
-});
+jest.unstable_mockModule('pg', () => ({
+  default: {
+    Pool: jest.fn(() => mockPool)
+  },
+  Pool: jest.fn(() => mockPool)
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const { attribuerBadgesAutomatique } = await import('../../src/services/badges.service.js');
 
 describe('badges.service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('attribue un badge dès que le seuil est atteint', async () => {
+    mockPool.query
+      .mockResolvedValueOnce({
+        rows: [
+          { id_badge: 1, code: 'DEBUTANT', nom: 'Débutant', points_requis: 100 }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      });
+
     const nouveaux = await attribuerBadgesAutomatique({
-      client: pool,
+      client: mockPool,
       idUtilisateur: 1,
       totalPoints: 120
     });
@@ -31,14 +45,37 @@ describe('badges.service', () => {
   });
 
   it('ne réattribue pas deux fois le même badge', async () => {
+    mockPool.query
+      .mockResolvedValueOnce({
+        rows: [
+          { id_badge: 1, code: 'DEBUTANT', nom: 'Débutant', points_requis: 100 }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      });
+
     await attribuerBadgesAutomatique({
-      client: pool,
+      client: mockPool,
       idUtilisateur: 1,
       totalPoints: 120
     });
 
+    mockPool.query
+      .mockResolvedValueOnce({
+        rows: [
+          { id_badge: 1, code: 'DEBUTANT', nom: 'Débutant', points_requis: 100 }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: [{ id_badge: 1 }]
+      });
+
     const nouveaux = await attribuerBadgesAutomatique({
-      client: pool,
+      client: mockPool,
       idUtilisateur: 1,
       totalPoints: 120
     });

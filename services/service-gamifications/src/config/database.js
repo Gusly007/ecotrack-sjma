@@ -1,6 +1,7 @@
 // Rôle du fichier : accès PostgreSQL + création du schéma minimal de gamification.
 import pg from 'pg';
 import env from './env.js';
+import logger from '../utils/logger.js';
 
 const { Pool } = pg;
 
@@ -9,12 +10,12 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Database error:', err);
+  logger.error({ error: err }, 'Database error');
 });
 
 pool.on('connect', () => {
   if (process.env.NODE_ENV !== 'test') {
-    console.log('✓ Connected to PostgreSQL');
+    logger.info('Connected to PostgreSQL');
   }
 });
 

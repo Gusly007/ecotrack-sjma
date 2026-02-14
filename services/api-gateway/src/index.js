@@ -7,7 +7,7 @@ import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import swaggerUi from 'swagger-ui-express';
 import { unifiedSwaggerSpec, swaggerOptions } from './swagger-config.js';
 import { jwtValidationMiddleware } from './middleware/auth.js';
-import { requestLogger, detailedRequestLogger, errorLogger } from './middleware/logger.js';
+import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
 import healthCheckService from './services/healthCheck.js';
 
 dotenv.config();
@@ -128,7 +128,7 @@ const globalRateLimit = rateLimit({
   legacyHeaders: false,
   // Logging des rate limit hits
   handler: (req, res, next, options) => {
-    console.warn(`⚠️ Rate limit exceeded for IP: ${req.ip}`);
+    logger.warn({ ip: req.ip }, 'Rate limit exceeded');
     res.status(429).json(options.message);
   }
 });
@@ -152,7 +152,7 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
   // Best-effort fix for body forwarding when other middleware consumed it.
   onProxyReq: fixRequestBody,
   onError: (err, req, res) => {
-    console.error('❌ Proxy error:', err.message);
+    logger.error({ error: err.message }, 'Proxy error');
     if (!res.headersSent) {
       res.status(502).json({ error: 'Upstream service unavailable' });
     }
@@ -243,7 +243,7 @@ app.get('/health/detailed', async (req, res) => {
     
     res.status(statusCode).json(status);
   } catch (err) {
-    console.error('❌ Health check error:', err.message);
+    logger.error({ error: err.message }, 'Health check error');
     res.status(500).json({
       status: 'error',
       error: 'Failed to perform health check',
@@ -319,7 +319,7 @@ app.get('/api-overview', (req, res) => {
 app.use(errorLogger);
 
 app.use((err, req, res, next) => {
-  console.error('❌ Gateway error:', err.message);
+  logger.error({ error: err.message }, 'Gateway error');
   
   // Ne pas exposser les détails de l'erreur en production
   const isProduction = process.env.NODE_ENV === 'production';
@@ -335,7 +335,7 @@ app.use((req, res) => {
 });
 
 const server = app.listen(gatewayPort, () => {
-  console.log(`🚪 API Gateway ready on port ${gatewayPort}`);
+  logger.info({ port: gatewayPort }, 'API Gateway ready');
   console.table(
     Object.entries(services).map(([key, svc]) => ({
       service: key,
@@ -346,9 +346,9 @@ const server = app.listen(gatewayPort, () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('\n⛔ Shutting down gateway...');
+  logger.info('Shutting down gateway');
   server.close(() => {
-    console.log('✓ Gateway closed');
+    logger.info('Gateway closed');
     process.exit(0);
   });
 });

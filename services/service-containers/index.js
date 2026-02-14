@@ -5,6 +5,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const http = require('http');
 require('dotenv').config();
+const logger = require('./src/utils/logger');
 
 // Socket.IO
 const SocketService = require('./src/socket/socket-service');
@@ -164,11 +165,11 @@ app.use(errorHandler);
 // ========== DÉMARRAGE DU SERVEUR ==========
 const port = config.PORT;
 server.listen(port, () => {
-  console.log(`EcoTrack Containers API started`);
-  console.log(`  API:    http://localhost:${port}/api`);
-  console.log(`  Docs:   http://localhost:${port}/api-docs`);
-  console.log(`  Env:    ${config.NODE_ENV}`);
-  console.log(`  Socket: ws://localhost:${port}`);
+  logger.info({ port }, 'EcoTrack Containers API ready');
+  logger.info({ url: `http://localhost:${port}/api` }, 'API base URL');
+  logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
+  logger.info({ env: config.NODE_ENV }, 'Environment');
+  logger.info({ url: `ws://localhost:${port}` }, 'Socket endpoint');
 });
 
 module.exports = app;

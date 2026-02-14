@@ -15,20 +15,20 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 
 ## Services Disponibles
 
-### 🔐 Service Users (Port 3010)
+### Service Users (Port 3010)
 - **Authentification** : Connexion, inscription, tokens JWT
 - **Gestion utilisateurs** : Profils, rôles, permissions
 - **Avatars** : Upload et gestion des images de profil
 - **Notifications** : Système de notifications temps réel
 
-### 🗑️ Service Containers (Port 3011)
+### Service Containers (Port 3011)
 - **Conteneurs** : CRUD complet des conteneurs de collecte
 - **Zones** : Gestion des zones géographiques
 - **Types** : Types de conteneurs (recyclage, ordures, verre, etc.)
 - **Statistiques** : Dashboard, analytics, alertes
 - **Socket.IO** : Notifications temps réel des changements de statut
 
-### 🎮 Service Gamification (Port 3014)
+### Service Gamification (Port 3014)
 - **Actions** : Enregistrement des actions écoresponsables
 - **Badges** : Système de récompenses et badges
 - **Défis** : Challenges communautaires et participations
@@ -36,7 +36,7 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Notifications** : Alertes gamification
 - **Statistiques** : Profil et stats de chaque utilisateur
 
-### 🚚 Services à venir
+### Services à venir
 - **Routes & Planning** : Optimisation des tournées de collecte
 - **IoT** : Capteurs temps réel de niveau de remplissage
 - **Analytics** : Tableaux de bord et rapports avancés
@@ -65,24 +65,24 @@ Obtenez un token via \`POST /auth/login\`
   servers: [
     {
       url: 'http://localhost:3000',
-      description: '🌐 API Gateway (Point d\'entrée unifié)'
+      description: 'API Gateway (Point d\'entree unifie)'
     },
     {
       url: 'http://localhost:3010',
-      description: '🔐 Service Users (Direct)'
+      description: 'Service Users (Direct)'
     },
     {
       url: 'http://localhost:3011',
-      description: '🗑️ Service Containers (Direct)'
+      description: 'Service Containers (Direct)'
     },
     {
       url: 'http://localhost:3014',
-      description: '🎮 Service Gamification (Direct)'
+      description: 'Service Gamification (Direct)'
     }
   ],
   tags: [
     {
-      name: '🔐 Authentication',
+      name: 'Authentication',
       description: 'Endpoints d\'authentification (Service Users)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -90,7 +90,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '👤 Users',
+      name: 'Users',
       description: 'Gestion des utilisateurs (Service Users)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -98,7 +98,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🗑️ Containers',
+      name: 'Containers',
       description: 'Gestion des conteneurs de collecte (Service Containers)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -106,7 +106,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '📍 Zones',
+      name: 'Zones',
       description: 'Zones géographiques (Service Containers)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -114,7 +114,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '📦 Types',
+      name: 'Types',
       description: 'Types de conteneurs (Service Containers)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -122,7 +122,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '📊 Statistics',
+      name: 'Statistics',
       description: 'Statistiques et analytics (Service Containers)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -130,7 +130,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🎮 Actions',
+      name: 'Actions',
       description: 'Enregistrement des actions écoresponsables (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -138,7 +138,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🏅 Badges',
+      name: 'Badges',
       description: 'Système de badges et récompenses (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -146,7 +146,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🏆 Classement',
+      name: 'Classement',
       description: 'Leaderboard des utilisateurs (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -154,7 +154,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🎯 Défis',
+      name: 'Défis',
       description: 'Challenges communautaires et participations (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -162,7 +162,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '🔔 Notifications Gamification',
+      name: 'Notifications Gamification',
       description: 'Notifications liées à la gamification (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -170,7 +170,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: '📊 Stats Gamification',
+      name: 'Stats Gamification',
       description: 'Statistiques de gamification par utilisateur (Service Gamification)',
       externalDocs: {
         description: 'Documentation détaillée',
@@ -181,7 +181,7 @@ Obtenez un token via \`POST /auth/login\`
   paths: {
     '/auth/register': {
       post: {
-        tags: ['🔐 Authentication'],
+        tags: ['Authentication'],
         summary: 'Créer un nouveau compte utilisateur',
         description: 'Inscription d\'un nouvel utilisateur avec validation des données',
         operationId: 'register',
@@ -214,7 +214,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/auth/login': {
       post: {
-        tags: ['🔐 Authentication'],
+        tags: ['Authentication'],
         summary: 'Se connecter et obtenir un token JWT',
         operationId: 'login',
         servers: [{ url: 'http://localhost:3000' }],
@@ -255,7 +255,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/containers': {
       get: {
-        tags: ['🗑️ Containers'],
+        tags: ['Containers'],
         summary: 'Liste paginée des conteneurs',
         description: 'Récupère tous les conteneurs avec pagination',
         operationId: 'getContainers',
@@ -306,7 +306,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       },
       post: {
-        tags: ['🗑️ Containers'],
+        tags: ['Containers'],
         summary: 'Créer un nouveau conteneur',
         operationId: 'createContainer',
         servers: [{ url: 'http://localhost:3000' }],
@@ -340,7 +340,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/zones': {
       get: {
-        tags: ['📍 Zones'],
+        tags: ['Zones'],
         summary: 'Liste des zones géographiques',
         operationId: 'getZones',
         servers: [{ url: 'http://localhost:3000' }],
@@ -376,7 +376,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/typecontainers': {
       get: {
-        tags: ['📦 Types'],
+        tags: ['Types'],
         summary: 'Liste des types de conteneurs',
         operationId: 'getTypeContainers',
         servers: [{ url: 'http://localhost:3000' }],
@@ -411,7 +411,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/stats/dashboard': {
       get: {
-        tags: ['📊 Statistics'],
+        tags: ['Statistics'],
         summary: 'Dashboard de statistiques globales',
         description: 'Vue d\'ensemble complète des statistiques système',
         operationId: 'getDashboard',
@@ -446,12 +446,12 @@ Obtenez un token via \`POST /auth/login\`
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // 🎮 SERVICE GAMIFICATION — Endpoints
+    //  SERVICE GAMIFICATION — Endpoints
     // ═══════════════════════════════════════════════════════════════
 
     '/api/gamification/actions': {
       post: {
-        tags: ['🎮 Actions'],
+        tags: ['Actions'],
         summary: 'Enregistrer une action écoresponsable',
         description: 'Enregistre une action effectuée par un utilisateur et attribue des points',
         operationId: 'createAction',
@@ -498,7 +498,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/badges': {
       get: {
-        tags: ['🏅 Badges'],
+        tags: ['Badges'],
         summary: 'Lister tous les badges disponibles',
         description: 'Récupère la liste de tous les badges définis dans le système',
         operationId: 'getAllBadges',
@@ -532,7 +532,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/badges/utilisateurs/{idUtilisateur}': {
       get: {
-        tags: ['🏅 Badges'],
+        tags: ['Badges'],
         summary: 'Badges d\'un utilisateur',
         description: 'Récupère les badges obtenus par un utilisateur donné',
         operationId: 'getUserBadges',
@@ -575,7 +575,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/classement': {
       get: {
-        tags: ['🏆 Classement'],
+        tags: ['Classement'],
         summary: 'Récupérer le classement des utilisateurs',
         description: 'Retourne le leaderboard trié par points',
         operationId: 'getClassement',
@@ -628,7 +628,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/defis': {
       get: {
-        tags: ['🎯 Défis'],
+        tags: ['Défis'],
         summary: 'Lister tous les défis',
         description: 'Récupère la liste de tous les défis communautaires',
         operationId: 'getAllDefis',
@@ -661,7 +661,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       },
       post: {
-        tags: ['🎯 Défis'],
+        tags: ['Défis'],
         summary: 'Créer un nouveau défi',
         description: 'Crée un défi communautaire avec objectif et récompense',
         operationId: 'createDefi',
@@ -696,7 +696,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/defis/{idDefi}/participations': {
       post: {
-        tags: ['🎯 Défis'],
+        tags: ['Défis'],
         summary: 'Participer à un défi',
         description: 'Inscrit un utilisateur à un défi communautaire',
         operationId: 'participerDefi',
@@ -736,7 +736,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/defis/{idDefi}/participations/{idUtilisateur}': {
       patch: {
-        tags: ['🎯 Défis'],
+        tags: ['Défis'],
         summary: 'Mettre à jour une participation',
         description: 'Met à jour la progression ou le statut d\'une participation à un défi',
         operationId: 'updateParticipation',
@@ -781,7 +781,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/notifications': {
       get: {
-        tags: ['🔔 Notifications Gamification'],
+        tags: ['Notifications Gamification'],
         summary: 'Récupérer les notifications',
         description: 'Récupère les notifications de gamification d\'un utilisateur',
         operationId: 'getNotifications',
@@ -822,7 +822,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       },
       post: {
-        tags: ['🔔 Notifications Gamification'],
+        tags: ['Notifications Gamification'],
         summary: 'Créer une notification',
         description: 'Crée une nouvelle notification de gamification',
         operationId: 'createNotification',
@@ -854,7 +854,7 @@ Obtenez un token via \`POST /auth/login\`
 
     '/api/gamification/stats/utilisateurs/{idUtilisateur}/stats': {
       get: {
-        tags: ['📊 Stats Gamification'],
+        tags: ['Stats Gamification'],
         summary: 'Statistiques d\'un utilisateur',
         description: 'Récupère les statistiques de gamification d\'un utilisateur (points, badges, rang, etc.)',
         operationId: 'getUserGamificationStats',
