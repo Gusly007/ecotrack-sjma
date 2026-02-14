@@ -1,4 +1,5 @@
 const Validators = require('../utils/Validators');
+const logger = require('../utils/logger');
 
 class ContainerServices {
   constructor(containerModel, socketService = null) {
@@ -39,7 +40,7 @@ class ContainerServices {
           this.socketService.emitStatusChange(container.id_zone, result);
         }
       } catch (error) {
-        console.error('[Socket] Erreur lors de l\'émission du changement de statut:', error.message);
+        logger.error({ error: error.message }, 'Socket emission error');
       }
     }
     

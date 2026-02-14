@@ -12,8 +12,7 @@ import {
   logSuccess,
   logError,
   logInfo,
-  logWarning,
-  colors,
+  logWarning
 } from './db-utils.mjs';
 
 async function main() {
@@ -33,9 +32,9 @@ async function main() {
       WHERE extname IN ('postgis', 'uuid-ossp', 'pgcrypto', 'pg_trgm')
       ORDER BY extname
     `);
-    console.log('\n📦 Extensions:');
+    logInfo('Extensions:');
     extResult.rows.forEach(row => {
-      console.log(`   ${row.extname} v${row.extversion}`);
+      logInfo(`- ${row.extname} v${row.extversion}`);
     });
 
     // Tables
@@ -45,9 +44,9 @@ async function main() {
       AND tablename != 'spatial_ref_sys'
       ORDER BY tablename
     `);
-    console.log(`\n📋 Tables (${tablesResult.rows.length}):`);
+    logInfo(`Tables (${tablesResult.rows.length}):`);
     tablesResult.rows.forEach(row => {
-      console.log(`   ${row.tablename}`);
+      logInfo(`- ${row.tablename}`);
     });
 
     // Migrations appliquées
@@ -55,17 +54,17 @@ async function main() {
       const migrationsResult = await client.query(`
         SELECT name, run_on FROM pgmigrations ORDER BY run_on DESC LIMIT 10
       `);
-      console.log(`\n🔄 Dernières migrations (${migrationsResult.rows.length}):`);
+      logInfo(`Dernieres migrations (${migrationsResult.rows.length}):`);
       migrationsResult.rows.forEach(row => {
         const date = new Date(row.run_on).toLocaleString();
-        console.log(`   ${row.name} (${date})`);
+        logInfo(`- ${row.name} (${date})`);
       });
     } catch {
       logWarning('\nTable de migrations non trouvée (aucune migration exécutée)');
     }
 
     // Stats
-    console.log('\n📊 Statistiques:');
+    logInfo('Statistiques:');
     const stats = [
       { table: 'utilisateur', label: 'Utilisateurs' },
       { table: 'conteneur', label: 'Conteneurs' },
@@ -77,9 +76,9 @@ async function main() {
     for (const { table, label } of stats) {
       try {
         const result = await client.query(`SELECT COUNT(*) FROM ${table}`);
-        console.log(`   ${label}: ${result.rows[0].count}`);
+        logInfo(`${label}: ${result.rows[0].count}`);
       } catch {
-        console.log(`   ${label}: (table non créée)`);
+        logInfo(`${label}: (table non creee)`);
       }
     }
 

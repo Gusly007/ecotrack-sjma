@@ -1,8 +1,9 @@
 const socketIO = require('socket.io');
+const logger = require('../utils/logger');
 
 class SocketService {
     constructor(server) {
-        console.log('[Socket] Initialisation de Socket.IO...');
+        logger.info('Socket.IO initialization');
         
         // Configuration CORS basée sur l'environnement
         const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -16,13 +17,13 @@ class SocketService {
             },
             transports: ['websocket', 'polling']
         });
-        console.log('[Socket] Socket.IO initialisé avec succès');
+        logger.info('Socket.IO ready');
         this.setupConnections();
     }
 
     setupConnections() {
         this.io.on('connection', (socket) => {
-            console.log(`[Socket] Client connected: ${socket.id}`);
+            logger.info({ socketId: socket.id }, 'Socket client connected');
 
             // Le client s'abonne à une zone
             socket.on('subscribe-zone', (data) => {
@@ -30,7 +31,7 @@ class SocketService {
                 const idZone = data.id_zone || data;
                 const roomName = `zone-${idZone}`;
                 socket.join(roomName);
-                console.log(`[Socket] Client ${socket.id} joined room: ${roomName}`);
+                logger.info({ socketId: socket.id, room: roomName }, 'Socket client joined room');
             });
 
             // Le client se désabonne d'une zone
@@ -39,15 +40,15 @@ class SocketService {
                 const idZone = data.id_zone || data;
                 const roomName = `zone-${idZone}`;
                 socket.leave(roomName);
-                console.log(`[Socket] Client ${socket.id} left room: ${roomName}`);
+                logger.info({ socketId: socket.id, room: roomName }, 'Socket client left room');
             });
 
             socket.on('disconnect', () => {
-                console.log(`[Socket] Client disconnected: ${socket.id}`);
+                logger.info({ socketId: socket.id }, 'Socket client disconnected');
             });
 
             socket.on('error', (error) => {
-                console.error(`[Socket] Error: ${error}`);
+                logger.error({ error: String(error) }, 'Socket error');
             });
         });
     }
@@ -65,7 +66,10 @@ class SocketService {
             date_changement: new Date().toISOString(),
             id_zone: idZone
         });
-        console.log(`[Socket] Emitted status change for container ${containerData.id_conteneur} in zone ${idZone}`);
+        logger.info({
+            containerId: containerData.id_conteneur,
+            zoneId: idZone
+        }, 'Socket status change emitted');
     }
 
     /**

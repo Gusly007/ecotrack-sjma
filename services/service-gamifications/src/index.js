@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { ZodError } from 'zod';
+import morgan from 'morgan';
 import swaggerSpec from './config/swagger.js';
 import env, { validateEnv } from './config/env.js';
 import pool, { ensureGamificationTables } from './config/database.js';
@@ -13,6 +14,7 @@ import defisRoutes from './routes/defis.js';
 import classementRoutes from './routes/classement.js';
 import notificationsRoutes from './routes/notifications.js';
 import statsRoutes from './routes/stats.js';
+import logger from './utils/logger.js';
 
 const app = express();
 
@@ -34,6 +36,13 @@ app.use(
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => {
+      logger.info({ type: 'access', message: message.trim() }, 'HTTP request');
+    }
+  }
+}));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'gamifications' });
@@ -75,14 +84,14 @@ app.use((req, res) => {
 let server;
 if (env.nodeEnv !== 'test') {
   server = app.listen(env.port, () => {
-    console.log(`Service gamification démarré sur le port ${env.port}`);
+    logger.info({ port: env.port }, 'Service gamification ready');
   });
 
   process.on('SIGINT', async () => {
-    console.log('\n⛔ Arrêt du service...');
+    logger.info('Shutting down service gamification');
     await pool.end();
     server.close(() => {
-      console.log('✓ Service arrêté');
+      logger.info('Service gamification stopped');
       process.exit(0);
     });
   });

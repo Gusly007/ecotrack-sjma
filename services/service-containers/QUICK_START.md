@@ -75,10 +75,10 @@ http://localhost:3011/api-docs
 
 ### Fonctionnalités Swagger
 
-- 📖 **Documentation complète** de tous les endpoints
-- 🧪 **Tester les API** directement depuis l'interface
-- 📝 **Schémas JSON** des requêtes/réponses
-- 🔍 **Exemples** pour chaque endpoint
+-  **Documentation complète** de tous les endpoints
+-  **Tester les API** directement depuis l'interface
+-  **Schémas JSON** des requêtes/réponses
+-  **Exemples** pour chaque endpoint
 
 ### Endpoints Disponibles dans Swagger
 

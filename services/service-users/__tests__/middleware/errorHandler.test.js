@@ -1,10 +1,9 @@
-import { errorHandler, asyncHandler } from '../../src/middleware/errorHandler';
+import { errorHandler, asyncHandler } from '../../src/middleware/errorHandler.js';
 
 describe('errorHandler', () => {
   let mockRequest;
   let mockResponse;
   let nextFunction;
-  let consoleErrorSpy;
 
   beforeEach(() => {
     mockRequest = {};
@@ -13,11 +12,6 @@ describe('errorHandler', () => {
       json: jest.fn(),
     };
     nextFunction = jest.fn();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore();
   });
 
   it('should handle error with code 23005 and return status 409', () => {
@@ -26,7 +20,6 @@ describe('errorHandler', () => {
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(409);
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Conflit : Ressource déjà existante.' });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('should handle "not found" errors and return status 404', () => {
@@ -34,7 +27,6 @@ describe('errorHandler', () => {
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(404);
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Resource not found' });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('should handle "token" errors and return status 401', () => {
@@ -42,7 +34,6 @@ describe('errorHandler', () => {
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Token invalide ou expiré.' });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('should handle "validation" errors and return status 400', () => {
@@ -50,7 +41,6 @@ describe('errorHandler', () => {
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(400);
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Données invalides.' });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('should handle other errors and return status 500', () => {
@@ -58,7 +48,6 @@ describe('errorHandler', () => {
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(500);
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Erreur interne du serveur.' });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });
 

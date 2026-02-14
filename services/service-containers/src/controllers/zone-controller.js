@@ -2,7 +2,7 @@ class ZoneController {
     constructor(service) {
         this.service = service;
 
-        // 🔒 Binding pour Express - assure que 'this' est correct dans les route handlers
+        //  Binding pour Express - assure que 'this' est correct dans les route handlers
         this.create = this.create.bind(this);
         this.getAll = this.getAll.bind(this);
         this.getById = this.getById.bind(this);

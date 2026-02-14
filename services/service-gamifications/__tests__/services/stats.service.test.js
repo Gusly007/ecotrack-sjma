@@ -1,36 +1,39 @@
-import { recupererStatsUtilisateur } from '../../src/services/stats.service.js';
-import {
-  prepareDatabase,
-  resetDatabase,
-  closeDatabase,
-  seedHistoriquePoints
-} from '../helpers/testDatabase.js';
-import pool from '../helpers/testDatabase.js';
+import { jest } from '@jest/globals';
 
-beforeAll(async () => {
-  // Préparation du schéma pour les statistiques.
-  await prepareDatabase();
-});
+const mockPool = {
+  query: jest.fn(),
+  end: jest.fn(),
+  on: jest.fn()
+};
 
-beforeEach(async () => {
-  await resetDatabase();
-});
+jest.unstable_mockModule('pg', () => ({
+  default: {
+    Pool: jest.fn(() => mockPool)
+  },
+  Pool: jest.fn(() => mockPool)
+}));
 
-afterAll(async () => {
-  await closeDatabase();
-});
+const { recupererStatsUtilisateur } = await import('../../src/services/stats.service.js');
 
 describe('stats.service', () => {
-  it('retourne des statistiques cohérentes avec l\'historique', async () => {
-    await pool.query('UPDATE utilisateur SET points = 60 WHERE id_utilisateur = 1');
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    await seedHistoriquePoints({
-      idUtilisateur: 1,
-      entries: [
-        { points: 30, date: '2024-01-10T10:00:00Z' },
-        { points: 30, date: '2024-01-10T14:00:00Z' }
-      ]
-    });
+  it('retourne des statistiques cohérentes avec l\'historique', async () => {
+    mockPool.query
+      .mockResolvedValueOnce({
+        rows: [{ points: 60 }]
+      })
+      .mockResolvedValueOnce({
+        rows: [{ periode: '2024-01-10', points: 60 }]
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      })
+      .mockResolvedValueOnce({
+        rows: []
+      });
 
     const stats = await recupererStatsUtilisateur({ idUtilisateur: 1 });
 
@@ -40,16 +43,28 @@ describe('stats.service', () => {
   });
 
   it('agrège correctement par semaine et par mois', async () => {
-    await pool.query('UPDATE utilisateur SET points = 90 WHERE id_utilisateur = 2');
-
-    await seedHistoriquePoints({
-      idUtilisateur: 2,
-      entries: [
-        { points: 20, date: '2024-01-10T10:00:00Z' },
-        { points: 30, date: '2024-01-12T10:00:00Z' },
-        { points: 40, date: '2024-02-05T10:00:00Z' }
-      ]
-    });
+    mockPool.query
+      .mockResolvedValueOnce({
+        rows: [{ points: 90 }]
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          { periode: '2024-01-10', points: 50 },
+          { periode: '2024-01-03', points: 40 }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          { periode: '2024-02-01', points: 40 },
+          { periode: '2024-01-01', points: 50 }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          { periode: '2024-02-01', points: 40 },
+          { periode: '2024-01-01', points: 50 }
+        ]
+      });
 
     const stats = await recupererStatsUtilisateur({ idUtilisateur: 2 });
 

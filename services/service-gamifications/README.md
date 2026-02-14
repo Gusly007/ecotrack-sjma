@@ -2,7 +2,7 @@
 
 Microservice de gamification pour EcoTrack : gestion des points, badges, défis, classement et notifications.
 
-## ✅ Phases couvertes
+## Phases couvertes
 
 ### Phase 1 — Système de points
 - Enregistrement d'actions utilisateur (`/actions`).
@@ -45,26 +45,6 @@ NODE_ENV=development
 
 ## Tests automatisés
 
-### Lancer une base PostgreSQL de test
-
-```bash
-docker compose -f docker-compose.test.yml up -d
-```
-
-### Définir la variable de connexion
-
-Linux/macOS :
-
-```bash
-export GAMIFICATIONS_DATABASE_URL=postgresql://ecotrack:ecotrack@localhost:5435/ecotrack_test
-```
-
-Windows PowerShell :
-
-```powershell
-$env:GAMIFICATIONS_DATABASE_URL = "postgresql://ecotrack:ecotrack@localhost:5435/ecotrack_test"
-```
-
 ### Exécuter les tests
 
 ```bash
@@ -76,14 +56,6 @@ Autres commandes utiles :
 ```bash
 npm run test:watch
 npm run test:coverage
-```
-
-> Astuce : vous pouvez également utiliser `DATABASE_URL` au lieu de `GAMIFICATIONS_DATABASE_URL` en environnement de test.
-
-Arrêter la base de test :
-
-```bash
-docker compose -f docker-compose.test.yml down -v
 ```
 
 ---

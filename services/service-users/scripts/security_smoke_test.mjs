@@ -9,6 +9,8 @@
  *   BASE_URL=http://localhost:3010 node scripts/security_smoke_test.mjs
  */
 
+import logger from '../src/utils/logger.js';
+
 const argBaseUrl = process.argv.find((a) => a.startsWith('--baseUrl='))?.split('=')[1];
 const BASE_URL = argBaseUrl || process.env.BASE_URL || 'http://localhost:3010';
 
@@ -40,7 +42,7 @@ const requestJson = async (method, path, { body, headers } = {}) => {
 const header = (res, name) => res.headers.get(name);
 
 const run = async () => {
-  console.log(`Running security smoke test against: ${BASE_URL}`);
+  logger.info({ baseUrl: BASE_URL }, 'Running security smoke test');
 
   // 1) Health + Helmet headers
   {
@@ -136,23 +138,23 @@ const run = async () => {
     assert(res.status === 403, `Expected 403 on refresh after logout (revoked), got ${res.status}`);
   }
 
-  console.log('OK: Security smoke test passed.');
+  logger.info('Security smoke test passed');
 };
 
 run().catch((err) => {
   const message = err?.message || String(err);
-  console.error('FAILED:', message);
+  logger.error({ error: message }, 'Security smoke test failed');
 
   // Helpful details for fetch/network errors
   if (err?.cause) {
     const cause = err.cause;
     const code = cause?.code ? ` (code: ${cause.code})` : '';
     const syscall = cause?.syscall ? ` (syscall: ${cause.syscall})` : '';
-    console.error('CAUSE:', (cause?.message || String(cause)) + code + syscall);
+    logger.error({ error: (cause?.message || String(cause)) + code + syscall }, 'Failure cause');
   }
 
   if (message.toLowerCase().includes('fetch failed')) {
-    console.error(
+    logger.error(
       'HINT: make sure the service is running and BASE_URL is correct.\n' +
         `      Example (PowerShell): $env:BASE_URL='http://localhost:3000'; npm run test:smoke\n` +
         `      Or: node scripts/security_smoke_test.mjs --baseUrl=http://localhost:3000`

@@ -1,4 +1,5 @@
 import pool from '../src/config/database.js';
+import logger from '../src/utils/logger.js';
 
 /**
  * Script d'inspection de la base de données.
@@ -17,14 +18,14 @@ const main = async () => {
       [table]
     );
 
-    console.log(`TABLE: ${table}`);
-    console.table(columns.rows);
+    logger.info({ table }, 'DB inspect table');
+    logger.info({ columns: columns.rows }, 'DB inspect columns');
   } finally {
     await pool.end();
   }
 };
 
 main().catch((err) => {
-  console.error('DB_INSPECT_FAILED', err.code, err.message);
+  logger.error({ code: err.code, message: err.message }, 'DB inspect failed');
   process.exitCode = 1;
 });

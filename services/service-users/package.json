@@ -25,10 +25,13 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "pg": "^8.16.3",
+    "pino": "^9.9.0",
+    "pino-pretty": "^11.3.0",
     "sharp": "^0.34.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "zod": "^4.3.5"
+    "zod": "^4.3.5",
+    "morgan": "^1.10.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
@@ -36,5 +39,8 @@
     "babel-jest": "^30.2.0",
     "jest": "^30.2.0",
     "nodemon": "^3.1.11"
+  },
+  "overrides": {
+    "qs@<=6.14.2": "6.14.2"
   }
 }

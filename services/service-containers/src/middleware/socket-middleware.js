@@ -2,7 +2,7 @@
  * Middleware pour injecter le socketService dans la requête
  * Rend Socket.IO accessible à tous les contrôleurs
  * 
- * ✅ Optimisé: Réutilise l'instance Socket.IO globale au lieu de la recréer
+ * Optimise: réutilise l'instance Socket.IO globale au lieu de la recréer
  */
 
 const socketMiddleware = (req, res, next) => {

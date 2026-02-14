@@ -20,9 +20,22 @@ const storage = multer.diskStorage({
     cb(null, tempDir);
   },
   filename: (req, file, cb) => {
-    // Générer un nom unique : {userId}-{timestamp}.ext
-    const ext = path.extname(file.originalname);
-    const name = `${req.user.id}-${Date.now()}${ext}`;
+    // Security: Validate and sanitize file extension to prevent path traversal
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    // Security check: Only allow whitelisted extensions
+    if (!allowedExtensions.includes(ext)) {
+      return cb(new Error('Invalid file extension'));
+    }
+    
+    // Security: Generate safe filename without user-controlled input
+    // Format: {userId}-{timestamp}-{random}.{safeExt}
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 10);
+    const safeExt = ext === '.jpeg' ? '.jpg' : ext; // Normalize jpeg to jpg
+    const name = `${req.user.id}-${timestamp}-${randomSuffix}${safeExt}`;
+    
     cb(null, name);
   }
 });

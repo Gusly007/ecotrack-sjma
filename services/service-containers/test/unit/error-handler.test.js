@@ -93,7 +93,7 @@ describe('Error Handler Middleware - Unit Tests', () => {
     errorHandler(error, mockReq, mockRes, mockNext);
 
     expect(console.error).toHaveBeenCalledWith(
-      '❌ Error:',
+      ' Error:',
       expect.objectContaining({
         message: 'Bad request',
         statusCode: 400,

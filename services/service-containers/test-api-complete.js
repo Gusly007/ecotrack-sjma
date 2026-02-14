@@ -11,15 +11,7 @@ const BASE_URL = 'localhost';
 const PORT = 3011;
 const API_PREFIX = '/api';
 
-// Couleurs pour le terminal
-const colors = {
-  reset: '\x1b[0m',
-  green: '\x1b[32m',
-  red: '\x1b[31m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m'
-};
+const logger = require('./src/utils/logger');
 
 // Fonction pour faire une requête HTTP
 function makeRequest(method, path, data = null) {
@@ -146,9 +138,7 @@ const tests = [
 
 // Fonction principale
 async function runTests() {
-  console.log(`${colors.cyan}╔════════════════════════════════════════╗${colors.reset}`);
-  console.log(`${colors.cyan}║  Test Complet - Service Containers     ║${colors.reset}`);
-  console.log(`${colors.cyan}╚════════════════════════════════════════╝${colors.reset}\n`);
+  logger.info('Test complet - Service Containers');
 
   let passed = 0;
   let failed = 0;
@@ -158,17 +148,22 @@ async function runTests() {
       const result = await makeRequest(test.method, test.path);
       
       if (result.statusCode === test.expectedStatus) {
-        console.log(`${colors.green}✓${colors.reset} ${test.name} ${colors.blue}(${result.statusCode})${colors.reset}`);
+        logger.info({ statusCode: result.statusCode }, `PASS ${test.name}`);
         if (result.data && typeof result.data === 'object') {
-          console.log(`  ${colors.cyan}→${colors.reset} ${JSON.stringify(result.data).substring(0, 100)}...`);
+          logger.info({
+            preview: JSON.stringify(result.data).substring(0, 100)
+          }, 'Response preview');
         }
         passed++;
       } else {
-        console.log(`${colors.red}✗${colors.reset} ${test.name} ${colors.red}(Expected ${test.expectedStatus}, got ${result.statusCode})${colors.reset}`);
+        logger.warn({
+          expected: test.expectedStatus,
+          received: result.statusCode
+        }, `FAIL ${test.name}`);
         failed++;
       }
     } catch (error) {
-      console.log(`${colors.red}✗${colors.reset} ${test.name} ${colors.red}(Error: ${error.message})${colors.reset}`);
+      logger.error({ error: error.message }, `ERROR ${test.name}`);
       failed++;
     }
     
@@ -176,20 +171,17 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  console.log(`\n${colors.cyan}╔════════════════════════════════════════╗${colors.reset}`);
-  console.log(`${colors.cyan}║  Résultats                             ║${colors.reset}`);
-  console.log(`${colors.cyan}╚════════════════════════════════════════╝${colors.reset}`);
-  console.log(`${colors.green}Réussis:${colors.reset} ${passed}`);
-  console.log(`${colors.red}Échoués:${colors.reset} ${failed}`);
-  console.log(`${colors.yellow}Total:${colors.reset} ${passed + failed}\n`);
+  logger.info({ passed, failed, total: passed + failed }, 'Resultats');
 
   if (failed === 0) {
-    console.log(`${colors.green}🎉 Tous les tests ont réussi !${colors.reset}\n`);
+    logger.info('Tous les tests ont reussi');
   } else {
-    console.log(`${colors.yellow}⚠️  Certains tests ont échoué. Vérifiez que le service est démarré.${colors.reset}\n`);
+    logger.warn('Certains tests ont echoue. Verifiez que le service est demarre');
   }
 }
 
 // Exécution
-console.log(`${colors.yellow}Démarrage des tests sur ${BASE_URL}:${PORT}...${colors.reset}\n`);
-runTests().catch(console.error);
+logger.info({ baseUrl: BASE_URL, port: PORT }, 'Demarrage des tests');
+runTests().catch((error) => {
+  logger.error({ error: error.message }, 'Tests failed');
+});

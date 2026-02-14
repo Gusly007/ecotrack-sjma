@@ -3,15 +3,29 @@
  */
 const ApiResponse = require('../utils/api-response');
 const ApiError = require('../utils/api-error');
+const logger = require('../utils/logger');
+const nodeEnv = process.env.NODE_ENV;
+const hasJest = typeof globalThis !== 'undefined' && !!globalThis.jest;
+const isTest = nodeEnv === 'test' || nodeEnv === undefined || process.env.JEST_WORKER_ID !== undefined || hasJest;
 
 const errorHandler = (err, req, res, next) => {
-  console.error('❌ Error:', {
-    message: err.message,
-    statusCode: err.statusCode || 500,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
+  if (isTest) {
+    console.error(' Error:', {
+      message: err.message,
+      statusCode: err.statusCode || 500,
+      stack: err.stack,
+      path: req.path,
+      method: req.method
+    });
+  } else {
+    logger.error({
+      message: err.message,
+      statusCode: err.statusCode || 500,
+      stack: err.stack,
+      path: req.path,
+      method: req.method
+    }, 'Request error');
+  }
 
   // Erreur personnalisée
   if (err instanceof ApiError) {
