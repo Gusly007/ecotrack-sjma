@@ -1,12 +1,12 @@
 /**
- * Stats Model — Phase 5 : Statistiques & Monitoring
+ * Stats Repository — Phase 5 : Statistiques & Monitoring
  *
  * Toutes les requêtes SQL de statistiques sont centralisées ici.
  * Elles exploitent les tables existantes du schéma EcoTrack.sql :
  *   conteneur, type_conteneur, zone, capteur, mesure,
  *   collecte, tournee, alerte_capteur, historique_statut
  */
-class StatsModel {
+class StatsRepository {
   constructor(db) {
     this.db = db;
   }
@@ -301,4 +301,4 @@ class StatsModel {
   }
 }
 
-module.exports = StatsModel;
+module.exports = StatsRepository;

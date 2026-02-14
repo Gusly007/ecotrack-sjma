@@ -1,29 +1,29 @@
-const ConteneurModel = require('../../src/models/container-model');
+const ContainerRepository = require('../../src/repositories/container-repository');
 const db = {}; // Mock database object for testing
 
-describe('ConteneurModel', () => {
-  let model;
+describe('ContainerRepository', () => {
+  let repository;
   beforeAll(() => {
-    model = new ConteneurModel(db);
+    repository = new ContainerRepository(db);
   });
 
   describe('createContainer', () => {
     it('should throw an error if required fields are missing', async () => {
-      await expect(model.createContainer({ capacite_l: null, statut: 'active', latitude: 48.8, longitude: 2.3 }))
+      await expect(repository.createContainer({ capacite_l: null, statut: 'active', latitude: 48.8, longitude: 2.3 }))
         .rejects.toThrow('Champs requis manquants: capacite_l, statut, latitude, longitude');
       
-      await expect(model.createContainer({ capacite_l: 100, statut: null, latitude: 48.8, longitude: 2.3 }))
+      await expect(repository.createContainer({ capacite_l: 100, statut: null, latitude: 48.8, longitude: 2.3 }))
         .rejects.toThrow('Champs requis manquants: capacite_l, statut, latitude, longitude');
       
-      await expect(model.createContainer({ capacite_l: 100, statut: 'active', latitude: null, longitude: 2.3 }))
+      await expect(repository.createContainer({ capacite_l: 100, statut: 'active', latitude: null, longitude: 2.3 }))
         .rejects.toThrow('Champs requis manquants: capacite_l, statut, latitude, longitude');
     });
 
     it('should throw an error for invalid GPS coordinates', async () => {
-      await expect(model.createContainer({ capacite_l: 100, statut: 'active', latitude: 91, longitude: 2.3 }))
+      await expect(repository.createContainer({ capacite_l: 100, statut: 'active', latitude: 91, longitude: 2.3 }))
         .rejects.toThrow('Coordonnées GPS invalides');
       
-      await expect(model.createContainer({ capacite_l: 100, statut: 'active', latitude: 48.8, longitude: 181 }))
+      await expect(repository.createContainer({ capacite_l: 100, statut: 'active', latitude: 48.8, longitude: 181 }))
         .rejects.toThrow('Coordonnées GPS invalides');
     });
 
@@ -42,7 +42,7 @@ describe('ConteneurModel', () => {
         }] 
       });
 
-      const result = await model.createContainer({ 
+      const result = await repository.createContainer({ 
         capacite_l: 100, 
         statut: 'active', 
         latitude: 48.8566, 
@@ -56,23 +56,23 @@ describe('ConteneurModel', () => {
   });
   describe('updateContainer', () => {
     it('should throw an error if id is missing', async () => {
-      await expect(model.updateContainer(null, { capacite_l: 100 }))
+      await expect(repository.updateContainer(null, { capacite_l: 100 }))
         .rejects.toThrow('Champ requis manquant: id');
     });
 
     it('should throw an error if no fields to update', async () => {
       db.query = jest.fn();
-      await expect(model.updateContainer(1, {}))
+      await expect(repository.updateContainer(1, {}))
         .rejects.toThrow('Aucun champ à mettre à jour');
     });
 
     it('should throw an error if trying to update statut', async () => {
-      await expect(model.updateContainer(1, { statut: 'inactive' }))
+      await expect(repository.updateContainer(1, { statut: 'inactive' }))
         .rejects.toThrow('Le statut doit être modifié via la méthode updateStatus dédiée');
     });
 
     it('should throw an error for invalid GPS coordinates', async () => {
-      await expect(model.updateContainer(1, { latitude: 91, longitude: 2.3 }))
+      await expect(repository.updateContainer(1, { latitude: 91, longitude: 2.3 }))
         .rejects.toThrow();
     });
   
@@ -91,7 +91,7 @@ describe('ConteneurModel', () => {
         }] 
       });
   
-      const result = await model.updateContainer(1, { capacite_l: 150, id_zone: 1, id_type: 1 });
+      const result = await repository.updateContainer(1, { capacite_l: 150, id_zone: 1, id_type: 1 });
       expect(result).toHaveProperty('id_conteneur');
       expect(result.capacite_l).toBe(150);
     });
@@ -110,7 +110,7 @@ describe('ConteneurModel', () => {
           }] 
         });
   
-        const result = await model.getContainerById(1);
+        const result = await repository.getContainerById(1);
         expect(result).toHaveProperty('id_conteneur');
         expect(result.id_conteneur).toBe(1);
       });
@@ -118,19 +118,19 @@ describe('ConteneurModel', () => {
       it('should return undefined for non-existent container', async () => {
         db.query = jest.fn().mockResolvedValue({ rows: [] });
         
-        const result = await model.getContainerById(999);
+        const result = await repository.getContainerById(999);
         expect(result).toBeUndefined();
       });
 
       it('should throw an error if id is missing', async () => {
-        await expect(model.getContainerById(null))
+        await expect(repository.getContainerById(null))
           .rejects.toThrow();
       });
     });
   
     describe('deleteContainer', () => {
       it('should throw an error if id is missing', async () => {
-        await expect(model.deleteContainer(null))
+        await expect(repository.deleteContainer(null))
           .rejects.toThrow('Champ requis manquant: id');
       });
   
@@ -145,7 +145,7 @@ describe('ConteneurModel', () => {
           }] 
         });
   
-        const result = await model.deleteContainer(1);
+        const result = await repository.deleteContainer(1);
         expect(result).toHaveProperty('id_conteneur');
         expect(result.id_conteneur).toBe(1);
       });
@@ -153,17 +153,17 @@ describe('ConteneurModel', () => {
       it('should return undefined for non-existent container', async () => {
         db.query = jest.fn().mockResolvedValue({ rows: [] });
         
-        const result = await model.deleteContainer(999);
+        const result = await repository.deleteContainer(999);
         expect(result).toBeUndefined();
       });
     });
 
     describe('updateStatus', () => {
       it('should throw an error if id or statut is missing', async () => {
-        await expect(model.updateStatus(null, 'ACTIF'))
+        await expect(repository.updateStatus(null, 'ACTIF'))
           .rejects.toThrow('Le paramètre id est requis');
         
-        await expect(model.updateStatus(1, null))
+        await expect(repository.updateStatus(1, null))
           .rejects.toThrow('Le paramètre statut est requis');
       });
 
@@ -175,7 +175,7 @@ describe('ConteneurModel', () => {
         };
         db.connect = jest.fn().mockResolvedValue(mockClient);
         
-        await expect(model.updateStatus(1, 'INVALID_STATUS'))
+        await expect(repository.updateStatus(1, 'INVALID_STATUS'))
           .rejects.toThrow('Statut invalide');
       });
 
@@ -191,7 +191,7 @@ describe('ConteneurModel', () => {
         };
         db.connect = jest.fn().mockResolvedValue(mockClient);
 
-        const result = await model.updateStatus(1, 'EN_MAINTENANCE');
+        const result = await repository.updateStatus(1, 'EN_MAINTENANCE');
         expect(result).toHaveProperty('id_conteneur');
         expect(result.statut).toBe('EN_MAINTENANCE');
         expect(result.ancien_statut).toBe('ACTIF');
@@ -209,7 +209,7 @@ describe('ConteneurModel', () => {
         };
         db.connect = jest.fn().mockResolvedValue(mockClient);
 
-        const result = await model.updateStatus(1, 'ACTIF');
+        const result = await repository.updateStatus(1, 'ACTIF');
         expect(result.statut).toBe('ACTIF');
         expect(result.changed).toBe(false);
         expect(result.message).toBe('Le statut est déjà à jour');
@@ -224,7 +224,7 @@ describe('ConteneurModel', () => {
         };
         db.connect = jest.fn().mockResolvedValue(mockClient);
 
-        await expect(model.updateStatus(999, 'ACTIF'))
+        await expect(repository.updateStatus(999, 'ACTIF'))
           .rejects.toThrow("Conteneur avec l'ID 999 introuvable");
         expect(mockClient.release).toHaveBeenCalled();
       });
@@ -238,7 +238,7 @@ describe('ConteneurModel', () => {
         ];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.deleteAllContainers();
+        const result = await repository.deleteAllContainers();
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBe(2);
       });
@@ -248,7 +248,7 @@ describe('ConteneurModel', () => {
       it('should count containers without filters', async () => {
         db.query = jest.fn().mockResolvedValue({ rows: [{ count: '10' }] });
 
-        const result = await model.countContainers();
+        const result = await repository.countContainers();
         expect(typeof result).toBe('number');
         expect(result).toBe(10);
       });
@@ -256,7 +256,7 @@ describe('ConteneurModel', () => {
       it('should count containers with status filter', async () => {
         db.query = jest.fn().mockResolvedValue({ rows: [{ count: '5' }] });
 
-        const result = await model.countContainers({ statut: 'ACTIF' });
+        const result = await repository.countContainers({ statut: 'ACTIF' });
         expect(result).toBe(5);
       });
     });
@@ -265,19 +265,19 @@ describe('ConteneurModel', () => {
       it('should return true if container exists', async () => {
         db.query = jest.fn().mockResolvedValue({ rowCount: 1, rows: [{ '1': 1 }] });
 
-        const result = await model.existContainer(1);
+        const result = await repository.existContainer(1);
         expect(result).toBe(true);
       });
 
       it('should return false if container does not exist', async () => {
         db.query = jest.fn().mockResolvedValue({ rowCount: 0, rows: [] });
 
-        const result = await model.existContainer(999);
+        const result = await repository.existContainer(999);
         expect(result).toBe(false);
       });
 
       it('should throw an error if id is missing', async () => {
-        await expect(model.existContainer(null))
+        await expect(repository.existContainer(null))
           .rejects.toThrow('Champ requis manquant: id');
       });
     });
@@ -286,19 +286,19 @@ describe('ConteneurModel', () => {
       it('should return true if container with uid exists', async () => {
         db.query = jest.fn().mockResolvedValue({ rowCount: 1, rows: [{ '1': 1 }] });
 
-        const result = await model.existByUid('CNT-123456789');
+        const result = await repository.existByUid('CNT-123456789');
         expect(result).toBe(true);
       });
 
       it('should return false if container with uid does not exist', async () => {
         db.query = jest.fn().mockResolvedValue({ rowCount: 0, rows: [] });
 
-        const result = await model.existByUid('INVALID-UID');
+        const result = await repository.existByUid('INVALID-UID');
         expect(result).toBe(false);
       });
 
       it('should throw an error if uid is missing', async () => {
-        await expect(model.existByUid(null))
+        await expect(repository.existByUid(null))
           .rejects.toThrow('Champ requis manquant: uid');
       });
     });
@@ -309,7 +309,7 @@ describe('ConteneurModel', () => {
           rows: [{ id_conteneur: 1, uid: 'CNT-123456789', capacite_l: 100 }]
         });
 
-        const result = await model.getContainerByUid('CNT-123456789');
+        const result = await repository.getContainerByUid('CNT-123456789');
         expect(result).toHaveProperty('id_conteneur');
         expect(result.uid).toBe('CNT-123456789');
       });
@@ -317,12 +317,12 @@ describe('ConteneurModel', () => {
       it('should return undefined if container with uid not found', async () => {
         db.query = jest.fn().mockResolvedValue({ rows: [] });
 
-        const result = await model.getContainerByUid('INVALID-UID');
+        const result = await repository.getContainerByUid('INVALID-UID');
         expect(result).toBeUndefined();
       });
 
       it('should throw an error if uid is missing', async () => {
-        await expect(model.getContainerByUid(null))
+        await expect(repository.getContainerByUid(null))
           .rejects.toThrow();
       });
     });
@@ -335,7 +335,7 @@ describe('ConteneurModel', () => {
         ];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.getAllContainers();
+        const result = await repository.getAllContainers();
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBe(2);
       });
@@ -344,7 +344,7 @@ describe('ConteneurModel', () => {
         const mockContainers = [{ id_conteneur: 1, capacite_l: 100 }];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.getAllContainers({ limit: 10, offset: 0 });
+        const result = await repository.getAllContainers({ limit: 10, offset: 0 });
         expect(result.length).toBe(1);
       });
     });
@@ -354,13 +354,13 @@ describe('ConteneurModel', () => {
         const mockContainers = [{ id_conteneur: 1, statut: 'ACTIF' }];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.getContainersByStatus('ACTIF');
+        const result = await repository.getContainersByStatus('ACTIF');
         expect(Array.isArray(result)).toBe(true);
         expect(result[0].statut).toBe('ACTIF');
       });
 
       it('should throw an error if status is missing', async () => {
-        await expect(model.getContainersByStatus(null))
+        await expect(repository.getContainersByStatus(null))
           .rejects.toThrow();
       });
     });
@@ -370,13 +370,13 @@ describe('ConteneurModel', () => {
         const mockContainers = [{ id_conteneur: 1, id_zone: 1 }];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.getContainersByZone(1);
+        const result = await repository.getContainersByZone(1);
         expect(Array.isArray(result)).toBe(true);
         expect(result[0].id_zone).toBe(1);
       });
 
       it('should throw an error if id_zone is missing', async () => {
-        await expect(model.getContainersByZone(null))
+        await expect(repository.getContainersByZone(null))
           .rejects.toThrow();
       });
     });
@@ -386,12 +386,12 @@ describe('ConteneurModel', () => {
         const mockContainers = [{ id_conteneur: 1, latitude: 48.8566, longitude: 2.3522 }];
         db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
 
-        const result = await model.getContainersInRadius(48.8566, 2.3522, 5);
+        const result = await repository.getContainersInRadius(48.8566, 2.3522, 5);
         expect(Array.isArray(result)).toBe(true);
       });
 
       it('should throw an error if required parameters are missing', async () => {
-        await expect(model.getContainersInRadius(null, 2.3522, 5))
+        await expect(repository.getContainersInRadius(null, 2.3522, 5))
           .rejects.toThrow();
       });
     });
@@ -407,7 +407,7 @@ describe('ConteneurModel', () => {
         };
         db.query = jest.fn().mockResolvedValue({ rows: [stats] });
 
-        const result = await model.getStatistics();
+        const result = await repository.getStatistics();
         expect(result).toHaveProperty('total');
         expect(result.total).toBe(10);
     });

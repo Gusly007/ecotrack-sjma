@@ -1,34 +1,8 @@
-const Joi = require('joi');
-
-const zoneCreateSchema = Joi.object({
-    code: Joi.string().min(2).max(50).required(),
-    nom: Joi.string().min(2).required(),
-    population: Joi.number().integer().min(0).required(),
-    superficie_km2: Joi.number().min(0).required(),
-    latitude: Joi.number().min(-90).max(90).required(),
-    longitude: Joi.number().min(-180).max(180).required(),
-}).and('latitude', 'longitude').unknown(false);
-
-const zoneUpdateSchema = Joi.object({
-    code: Joi.string().min(2).max(50),
-    nom: Joi.string().min(2),
-    population: Joi.number().integer().min(0),
-    superficie_km2: Joi.number().min(0),
-    latitude: Joi.number().min(-90).max(90),
-    longitude: Joi.number().min(-180).max(180),
-}).and('latitude', 'longitude').unknown(false);
-
-function validateSchema(schema, data) {
-    const { error } = schema.validate(data, { abortEarly: false });
-    if (error) {
-        const message = error.details.map((detail) => detail.message).join(', ');
-        const err = new Error(`Validation invalide: ${message}`);
-        err.name = 'ValidationError';
-        throw err;
-    }
-}
-
-class ZoneModel {
+/**
+ * Zone Repository - Data Access Layer
+ * Handles all database queries for zones
+ */
+class ZoneRepository {
     constructor(db) {
         this.db = db;
     }
@@ -70,10 +44,7 @@ class ZoneModel {
             throw new Error('La population et la superficie doivent être positives');
         }
 
-        // Validation de schéma (types et champs autorisés)
-        validateSchema(zoneCreateSchema, zoneData);
-
-                // Construire un polygone (cercle) autour du point en fonction de la superficie (km²)
+        // Construire un polygone (cercle) autour du point en fonction de la superficie (km²)
                 // Rayon en km = sqrt(superficie_km2 / pi)
                 const radiusKm = Math.sqrt(superficie_km2 / Math.PI);
                 const radiusMeters = radiusKm * 1000;
@@ -190,9 +161,6 @@ class ZoneModel {
         if (!id) {
             throw new Error('ID de zone requis');
         }
-
-        // Validation de schéma (types et champs autorisés)
-        validateSchema(zoneUpdateSchema, zoneData);
 
         const { code, nom, population, superficie_km2, latitude, longitude } = zoneData;
 
@@ -404,4 +372,4 @@ class ZoneModel {
     }
 }
 
-module.exports = ZoneModel;
+module.exports = ZoneRepository;

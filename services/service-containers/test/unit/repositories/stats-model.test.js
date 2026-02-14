@@ -1,18 +1,18 @@
 /**
- * Tests Unitaires - StatsModel
+ * Tests Unitaires - StatsRepository
  * Tests isoles avec mock de la connexion DB (pool.query)
  */
 
-const StatsModel = require('../../src/models/stats-model');
+const StatsRepository = require('../../src/repositories/stats-repository');
 
-describe('StatsModel - Unit Tests', () => {
-  let statsModel;
+describe('StatsRepository - Unit Tests', () => {
+  let statsRepository;
   let mockDb;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockDb = { query: jest.fn() };
-    statsModel = new StatsModel(mockDb);
+    statsRepository = new StatsRepository(mockDb);
   });
 
   // ── getGlobalStats ──
@@ -29,7 +29,7 @@ describe('StatsModel - Unit Tests', () => {
       };
       mockDb.query.mockResolvedValue({ rows: [mockResult] });
 
-      const result = await statsModel.getGlobalStats();
+      const result = await statsRepository.getGlobalStats();
 
       expect(mockDb.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
@@ -38,7 +38,7 @@ describe('StatsModel - Unit Tests', () => {
     it('doit propager une erreur DB', async () => {
       mockDb.query.mockRejectedValue(new Error('DB error'));
 
-      await expect(statsModel.getGlobalStats()).rejects.toThrow('DB error');
+      await expect(statsRepository.getGlobalStats()).rejects.toThrow('DB error');
     });
   });
 
@@ -56,7 +56,7 @@ describe('StatsModel - Unit Tests', () => {
       };
       mockDb.query.mockResolvedValue({ rows: [mockResult] });
 
-      const result = await statsModel.getFillLevelDistribution();
+      const result = await statsRepository.getFillLevelDistribution();
 
       expect(mockDb.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
@@ -95,7 +95,7 @@ describe('StatsModel - Unit Tests', () => {
       ];
       mockDb.query.mockResolvedValue({ rows: mockRows });
 
-      const result = await statsModel.getStatsByType();
+      const result = await statsRepository.getStatsByType();
 
       expect(result).toEqual(mockRows);
     });
@@ -143,7 +143,7 @@ describe('StatsModel - Unit Tests', () => {
       ];
       mockDb.query.mockResolvedValue({ rows: mockRows });
 
-      const result = await statsModel.getCriticalContainers();
+      const result = await statsRepository.getCriticalContainers();
 
       expect(mockDb.query).toHaveBeenCalledWith(expect.any(String), [90]);
       expect(result).toEqual(mockRows);
@@ -152,7 +152,7 @@ describe('StatsModel - Unit Tests', () => {
     it('doit utiliser un seuil personnalise', async () => {
       mockDb.query.mockResolvedValue({ rows: [] });
 
-      await statsModel.getCriticalContainers(75);
+      await statsRepository.getCriticalContainers(75);
 
       expect(mockDb.query).toHaveBeenCalledWith(expect.any(String), [75]);
     });
@@ -167,7 +167,7 @@ describe('StatsModel - Unit Tests', () => {
       ];
       mockDb.query.mockResolvedValue({ rows: mockRows });
 
-      const result = await statsModel.getFillHistory(1);
+      const result = await statsRepository.getFillHistory(1);
 
       expect(mockDb.query).toHaveBeenCalledWith(expect.any(String), [1, 30, 500]);
       expect(result).toEqual(mockRows);
@@ -176,7 +176,7 @@ describe('StatsModel - Unit Tests', () => {
     it('doit accepter des options days et limit personnalisees', async () => {
       mockDb.query.mockResolvedValue({ rows: [] });
 
-      await statsModel.getFillHistory(5, { days: 7, limit: 100 });
+      await statsRepository.getFillHistory(5, { days: 7, limit: 100 });
 
       expect(mockDb.query).toHaveBeenCalledWith(expect.any(String), [5, 7, 100]);
     });
@@ -194,7 +194,7 @@ describe('StatsModel - Unit Tests', () => {
         .mockResolvedValueOnce({ rows: mockByZone })
         .mockResolvedValueOnce({ rows: mockByType });
 
-      const result = await statsModel.getCollectionStats({ days: 30 });
+      const result = await statsRepository.getCollectionStats({ days: 30 });
 
       expect(mockDb.query).toHaveBeenCalledTimes(3);
       expect(result).toEqual({
@@ -210,7 +210,7 @@ describe('StatsModel - Unit Tests', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
-      await statsModel.getCollectionStats();
+      await statsRepository.getCollectionStats();
 
       expect(mockDb.query).toHaveBeenNthCalledWith(1, expect.any(String), [30]);
     });
