@@ -1,4 +1,12 @@
+
 # Phase 1 : Authentification & Setup
+
+## Architecture
+
+Le code est organisé selon le pattern **Service/Repository** :
+- `src/services/` : logique métier
+- `src/repositories/` : accès aux données (PostgreSQL)
+- `src/controllers/` : endpoints Express
 
 ## Dépendances
 
@@ -21,7 +29,6 @@
 - GESTIONNAIRE : superviseur
 - ADMIN : administrateur système
 
-## Tests Unitaires
 
 ### `utils/crypto.js`
 
