@@ -30,6 +30,9 @@ const options = {
 const req = http.request(options, (res) => {
   if (res.statusCode === 200) {
     process.exit(0);
+  } else if (res.statusCode === 503) {
+    logger.error('Health check failed: Service Unavailable (503)');
+    process.exit(1);
   } else {
     logger.error({ statusCode: res.statusCode }, 'Health check failed');
     process.exit(1);
