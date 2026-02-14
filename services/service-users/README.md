@@ -1,7 +1,35 @@
+
 # Service Users
 
-Service d'authentification, de notifications et de gestion des rôles pour EcoTrack.
+Service d'authentification, notifications et gestion des rôles pour EcoTrack.
 
+## Architecture & Structure
+
+Le service suit une architecture **Service/Repository** :
+
+- `src/services/` : logique métier (appelle les repositories)
+- `src/repositories/` : accès aux données (PostgreSQL)
+- `src/controllers/` : endpoints Express
+- `src/middleware/` : middlewares Express (auth, validation, erreurs)
+- `src/utils/` : utilitaires (crypto, jwt, etc.)
+
+Arborescence simplifiée :
+
+```
+src/
+	controllers/
+	middleware/
+	repositories/
+	services/
+	utils/
+	config/
+	...
+__tests__/
+	controllers/
+	middleware/
+	services/
+	utils/
+```
 ## Installation
 
 \`\`\`bash
@@ -76,6 +104,9 @@ Swagger est disponible sur `http://localhost:3010/api-docs` et l'endpoint de san
 ```bash
 npm test
 ```
+Les tests unitaires couvrent :
+- Les services (logique métier, mocks des repositories)
+- Les controllers (mocks des services)
 
 Le guide détaillé des scénarios manuels est disponible dans `TESTING_GUIDE.md`.
 
@@ -118,5 +149,3 @@ curl http://localhost:3010/health
 ```bash
 docker compose --profile migrate run --rm db-migrate
 ```
-
-Ces commandes couvrent l'essentiel de ce que la CI exécute lors d'un push ou d'une PR.

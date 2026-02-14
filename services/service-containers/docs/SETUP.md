@@ -142,7 +142,8 @@ service-containers/
 ├─ src/
 │  ├─ controllers/       # Logique requête/réponse
 │  ├─ services/         # Logique métier
-│  ├─ models/           # Requêtes DB
+│  ├─ repositories/     # Accès données & requêtes DB
+│  ├─ validators/       # Schémas de validation Joi
 │  ├─ routes/           # Endpoints API
 │  ├─ middleware/       # Middleware Express
 │  ├─ config/           # Configuration

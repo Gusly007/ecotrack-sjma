@@ -534,11 +534,15 @@ service-containers/
 │   │   ├── stats-controller.js
 │   │   ├── type-conteneur-controller.js
 │   │   └── zone-controller.js
-│   ├── models/           # Modèles de données
-│   │   ├── container-model.js
-│   │   ├── stats-model.js
-│   │   ├── type-conteneur-model.js
-│   │   └── zone-model.js
+│   ├── repositories/     # Repositories (accès données)
+│   │   ├── container-repository.js
+│   │   ├── stats-repository.js
+│   │   ├── type-conteneur-repository.js
+│   │   └── zone-repository.js
+│   ├── validators/       # Validateurs (schémas Joi)
+│   │   ├── container.validator.js
+│   │   ├── zone.validator.js
+│   │   └── type-conteneur.validator.js
 │   ├── services/         # Logique métier
 │   │   ├── container-services.js
 │   │   ├── stats-service.js
@@ -581,9 +585,9 @@ service-containers/
 Le service suit le pattern Model-View-Controller:
 
 ```
-Request → Router → Controller → Service → Model → DB
+Request → Router → Controller → Service → Repository → DB
                                     ↓
-Response ← Controller ← Service ← Model ← DB
+Response ← Controller ← Service ← Repository ← DB
 ```
 
 ### Injection de dépendances
@@ -593,13 +597,13 @@ Le fichier `container-di.js` gère l'injection de dépendances:
 ```javascript
 const { pool } = require('./db/connexion');
 
-// Models
-const containerModel = new ConteneurModel(pool);
-const statsModel = new StatsModel(pool);
+// Repositories
+const containerRepository = new ContainerRepository(pool);
+const statsRepository = new StatsRepository(pool);
 
 // Services
-const containerService = new ContainerService(containerModel);
-const statsService = new StatsService(statsModel);
+const containerService = new ContainerService(containerRepository);
+const statsService = new StatsService(statsRepository);
 
 // Controllers
 const containerController = new ContainerController(containerService);

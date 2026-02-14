@@ -159,7 +159,7 @@ PATCH /api/containers/:id/status
 → socketMiddleware (injecte SocketService)
 → Controller
 → Service (injecté avec Socket)
-→ Model (UPDATE)
+→ Repository (UPDATE)
 → Si changé: socketService.emitStatusChange(zone_id, data)
   → io.to('zone-{id}').emit('container:status-changed', {...})
   → Tous les clients abonnés reçoivent l'événement

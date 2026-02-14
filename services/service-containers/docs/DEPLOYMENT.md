@@ -24,7 +24,7 @@ Ce microservice est prêt à être partagé avec vos collègues. Voici ce qui a 
 
 ### ✔️ Tests
 - [x] 111 tests unitaires passants
-- [x] Coverage complet des modèles
+- [x] Coverage complet des repositories
 - [x] Tests d'intégration Socket.IO
 - [x] Pas de erreurs de linting
 
@@ -75,10 +75,11 @@ service-containers/
 │   ├── config/                 # Configuration
 │   ├── controllers/            # Handlers HTTP
 │   ├── services/               # Logique métier avec Socket.IO injection
-│   ├── models/                 # Couche données (ConteneurModel, etc.)
+│   ├── repositories/           # Couche données (ContainerRepository, etc.)
+│   ├── validators/             # Schémas de validation Joi
 │   ├── socket/                 # Service Socket.IO
 │   ├── middleware/             # Socket.IO injection middleware
-│   ├── utils/                  # Validateurs et utilitaires
+│   ├── utils/                  # Utilitaires
 │   └── db/                     # Connexion et schéma
 ├── test/
 │   ├── unit/                   # Tests unitaires

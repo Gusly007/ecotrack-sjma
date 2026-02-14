@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
-import pool from '../config/database.js';
+import { AvatarRepository } from '../repositories/avatar.repository.js';
 import logger from '../utils/logger.js';
 
 const AVATARS_DIR = 'storage/avatars';
@@ -72,20 +72,13 @@ export const processAvatar = async (userId, tempFile) => {
  * Sauvegarder les URLs avatars en base de données
  */
 export const saveAvatarUrls = async (userId, urls) => {
-  const result = await pool.query(
-    `UPDATE UTILISATEUR 
-     SET avatar_url = $1, avatar_thumbnail = $2, avatar_mini = $3, updated_at = CURRENT_TIMESTAMP
-     WHERE id_utilisateur = $1
-     RETURNING id_utilisateur, avatar_url, avatar_thumbnail, avatar_mini`,
-    [userId, urls.original, urls.thumbnail, urls.mini]
-  );
-
-  if (result.rows.length === 0) {
+  const user = await AvatarRepository.saveAvatarUrls(userId, urls);
+  if (!user) {
     throw new Error('User not found');
   }
-
-  return result.rows[0];
+  return user;
 };
+
 
 /**
  * Supprimer les anciens avatars
@@ -126,17 +119,13 @@ export const deleteOldAvatars = async (userId) => {
  * Obtenir l'avatar d'un utilisateur
  */
 export const getUserAvatar = async (userId) => {
-  const result = await pool.query(
-    'SELECT avatar_url, avatar_thumbnail, avatar_mini FROM UTILISATEUR WHERE id_utilisateur = $1',
-    [userId]
-  );
-
-  if (result.rows.length === 0) {
+  const avatar = await AvatarRepository.getUserAvatar(userId);
+  if (!avatar) {
     throw new Error('User not found');
   }
-
-  return result.rows[0];
+  return avatar;
 };
+
 
 /**
  * Assurer que les répertoires existent

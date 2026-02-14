@@ -6,8 +6,8 @@
  * agrégation de résultats provenant de différentes méthodes du modèle.
  */
 class StatsService {
-  constructor(statsModel) {
-    this.model = statsModel;
+  constructor(statsRepository) {
+    this.repository = statsRepository;
   }
 
   /**
@@ -15,9 +15,9 @@ class StatsService {
    */
   async getDashboard() {
     const [global, fillLevels, alerts] = await Promise.all([
-      this.model.getGlobalStats(),
-      this.model.getFillLevelDistribution(),
-      this.model.getAlertsSummary(),
+      this.repository.getGlobalStats(),
+      this.repository.getFillLevelDistribution(),
+      this.repository.getAlertsSummary(),
     ]);
 
     return {
@@ -36,35 +36,35 @@ class StatsService {
    * Stats globales des conteneurs
    */
   async getGlobalStats() {
-    return this.model.getGlobalStats();
+    return this.repository.getGlobalStats();
   }
 
   /**
    * Distribution des niveaux de remplissage
    */
   async getFillLevelDistribution() {
-    return this.model.getFillLevelDistribution();
+    return this.repository.getFillLevelDistribution();
   }
 
   /**
    * Stats par zone
    */
   async getStatsByZone() {
-    return this.model.getStatsByZone();
+    return this.repository.getStatsByZone();
   }
 
   /**
    * Stats par type de conteneur
    */
   async getStatsByType() {
-    return this.model.getStatsByType();
+    return this.repository.getStatsByType();
   }
 
   /**
    * Résumé des alertes actives
    */
   async getAlertsSummary() {
-    return this.model.getAlertsSummary();
+    return this.repository.getAlertsSummary();
   }
 
   /**
@@ -77,7 +77,7 @@ class StatsService {
       err.name = 'ValidationError';
       throw err;
     }
-    return this.model.getCriticalContainers(seuil);
+    return this.repository.getCriticalContainers(seuil);
   }
 
   /**
@@ -93,7 +93,7 @@ class StatsService {
     }
     const days = Math.min(Math.max(Number(options.days) || 30, 1), 365);
     const limit = Math.min(Math.max(Number(options.limit) || 500, 1), 5000);
-    return this.model.getFillHistory(Number(id), { days, limit });
+    return this.repository.getFillHistory(Number(id), { days, limit });
   }
 
   /**
@@ -102,14 +102,14 @@ class StatsService {
    */
   async getCollectionStats(options = {}) {
     const days = Math.min(Math.max(Number(options.days) || 30, 1), 365);
-    return this.model.getCollectionStats({ days });
+    return this.repository.getCollectionStats({ days });
   }
 
   /**
    * Stats de maintenance
    */
   async getMaintenanceStats() {
-    return this.model.getMaintenanceStats();
+    return this.repository.getMaintenanceStats();
   }
 }
 

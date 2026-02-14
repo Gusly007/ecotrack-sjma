@@ -10,8 +10,15 @@ const req = http.request(
     timeout: 3000
   },
   (res) => {
-    const ok = res.statusCode && res.statusCode >= 200 && res.statusCode < 400;
-    process.exit(ok ? 0 : 1);
+    if (res.statusCode === 200) {
+      process.exit(0);
+    } else if (res.statusCode === 503) {
+      console.error('Health check failed: Service Unavailable (503)');
+      process.exit(1);
+    } else {
+      console.error(`Health check failed: status code ${res.statusCode}`);
+      process.exit(1);
+    }
   }
 );
 

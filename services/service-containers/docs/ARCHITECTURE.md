@@ -22,7 +22,7 @@ API RESTful professionnelle pour la gestion des conteneurs écologiques intellig
 -  **Logging des requêtes** - Traçabilité complète
 -  **Configuration externalisée** - Fichier `.env` pour les secrets
 -  **Documentation Swagger** - API interactive
--  **Tests unitaires** - Couverture complète des modèles
+-  **Tests unitaires** - Couverture complète des repositories
 -  **PostGIS intégré** - Gestion géospatiale pour les coordonnées GPS
 -  **Transactions PostgreSQL** - Garantie d'intégrité des données
 -  **Historique d'audit** - Suivi des changements de statut
@@ -104,18 +104,24 @@ service-containers/
 │   ├── middleware/             # Middleware personnalisé
 │   │   ├── errorHandler.js     # Gestion centralisée des erreurs
 │   │   └── requestLogger.js    # Logging des requêtes
-│   ├── models/                 # Modèles (accès données)
-│   │   ├── containermodel.js
-│   │   ├── zonemodel.js
-│   │   └── typeconteneurmodel.js
+│   ├── repositories/           # Repositories (accès données)
+│   │   ├── container-repository.js
+│   │   ├── zone-repository.js
+│   │   ├── type-conteneur-repository.js
+│   │   └── stats-repository.js
+│   ├── validators/             # Validateurs (schémas Joi)
+│   │   ├── container.validator.js
+│   │   ├── zone.validator.js
+│   │   └── type-conteneur.validator.js
 │   ├── services/               # Services (logique métier)
-│   │   ├── containerservices.js
-│   │   ├── zoneservices.js
-│   │   └── typeconteneurservices.js
+│   │   ├── container-services.js
+│   │   ├── zone-services.js
+│   │   ├── type-conteneur-services.js
+│   │   └── stats-service.js
 │   ├── utils/                  # Utilitaires
-│   │   ├── ApiError.js        # Classe d'erreur personnalisée
-│   │   ├── ApiResponse.js     # Formatage des réponses
-│   │   └── Validators.js      # Validateurs réutilisables
+│   │   ├── api-error.js        # Classe d'erreur personnalisée
+│   │   ├── api-response.js     # Formatage des réponses
+│   │   └── Validators.js       # Validateurs réutilisables
 │   ├── container.di.js         # Injection de dépendances
 │   └── index.js                # Point d'entrée
 ├── routes/                     # Routes Express
@@ -213,7 +219,7 @@ npm run test-db
 
 ## Architecture
 
-### Pattern MVC
+### Pattern MVC avec separation Repository/Validator
 
 ```
 Route (HTTP) 
@@ -222,10 +228,18 @@ Controller (logique HTTP, validation)
   ↓
 Service (logique métier, orchestration)
   ↓
-Model (accès données, SQL)
+Repository (accès données, SQL uniquement)
+  ↓
+Validator (schémas Joi, validation données)
   ↓
 Database (PostgreSQL)
 ```
+
+**Points clés:**
+- **Repository**: Contient uniquement les requêtes SQL (SELECT, INSERT, UPDATE, DELETE)
+- **Validator**: Contient les schémas Joi pour valider les données
+- **Service**: Orchestre la logique métier en utilisant Repository et Validator
+- **Controller**: Gère les requêtes HTTP et appelle les services
 
 ### Gestion des erreurs
 

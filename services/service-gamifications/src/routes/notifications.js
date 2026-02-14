@@ -4,6 +4,8 @@ import {
   creerNotificationHandler,
   listerNotificationsHandler
 } from '../controllers/notificationsController.js';
+import { notificationQuerySchema, notificationBodySchema } from '../validators/schemas.js';
+import { validateQuery, validateBody } from '../middleware/validation.js';
 
 const router = Router();
 
@@ -44,7 +46,7 @@ const router = Router();
  *       201:
  *         description: Notification créée
  */
-router.get('/', listerNotificationsHandler);
-router.post('/', creerNotificationHandler);
+router.get('/', validateQuery(notificationQuerySchema), listerNotificationsHandler);
+router.post('/', validateBody(notificationBodySchema), creerNotificationHandler);
 
 export default router;

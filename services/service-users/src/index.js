@@ -54,6 +54,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'users' });
 });
 
+// Health check DB
+app.get('/health/db', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'up' });
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'down', error: err.message });
+  }
+});
+
 // Routes
 app.use('/auth', publicLimiter, authRoutes);
 app.use('/users', userRoutes);
