@@ -4,6 +4,36 @@
 
 ---
 
+## [1.4.0] - 2026-02-18
+
+### RBAC - Roles et Permissions
+
+**Permissions Matrix:**
+- Mise a jour de la matrice des permissions selon spec:
+  - CITOYEN: `signaler:create`, `signaler:read`
+  - AGENT: `signaler:create`, `signaler:read`, `signaler:update`, `tournee:read`, `tournee:update`, `containers:update`
+  - GESTIONNAIRE: Toutes les permissions AGENT + `tournee:create`, `user:read`, `zone:create`, `zone:read`, `zone:update`
+  - ADMIN: `*` (toutes permissions)
+
+**Interface Guard:**
+- Ajout du middleware `interface-guard.js` pour proteger les routes mobile/desktop
+- Separation des interfaces: Mobile (CITOYEN, AGENT) vs Desktop (GESTIONNAIRE, ADMIN)
+- Nouvelles fonctions: `requireInterface()`, `requireDesktop()`, `requireMobile()`
+
+**Permissions Service:**
+- Refactoring vers pattern Repository: `permissionsRepository.js`
+- Service CRUD: `permissionsService.js`
+- API Admin: `admin-permissions.js`
+
+**Base de donnees:**
+- Migration `010_create_permissions_config` - Table de configuration des permissions
+- Seed `014_permissions_default` - Permissions par defaut
+
+**Guide:**
+- Documentation `AUTH_PERMISSIONS_GUIDE.md` avec exemples d'utilisation
+
+---
+
 ## [1.3.2] - 2026-02-13
 
 ### Logging

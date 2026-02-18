@@ -2,15 +2,27 @@ import jwt from 'jsonwebtoken';
 import env from '../config/env.js';
 
 /**
+ * Détermine le type d'interface basé sur le rôle
+ * @param {string} role - Le rôle de l'utilisateur
+ * @returns {string} - 'mobile' ou 'desktop'
+ */
+export const getInterfaceType = (role) => {
+    const desktopRoles = ['GESTIONNAIRE', 'ADMIN'];
+    return desktopRoles.includes(role) ? 'desktop' : 'mobile';
+};
+
+/**
  * Génère un token JWT pour un utilisateur donné.
  * @param {string} userId - L'ID de l'utilisateur.
  * @param {string} role - Le rôle de l'utilisateur.
+ * @param {string} interfaceType - Le type d'interface ('mobile' ou 'desktop').
  * @returns {string} - Le token JWT généré.
  */
 
-export const generateToken = (userId,role) => {
+export const generateToken = (userId, role, interfaceType) => {
+    const type = interfaceType || getInterfaceType(role);
     return jwt.sign(
-        { id: userId, role, type: 'access' },
+        { id: userId, role, interfaceType: type, type: 'access' },
         env.jwt.secret,
         { expiresIn: env.jwt.expiresIn }
     );
