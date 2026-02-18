@@ -4,8 +4,8 @@
 const Validators = require('../utils/Validators');
 
 class TypeConteneurService {
-  constructor(typeConteneurModel) {
-    this.model = typeConteneurModel;
+  constructor(typeConteneurRepository) {
+    this.repository = typeConteneurRepository;
   }
 
   /**
@@ -13,14 +13,14 @@ class TypeConteneurService {
    */
   async createTypeConteneur(data) {
     Validators.validateTypeConteneurData(data); // Validation données type conteneur
-    return this.model.createTypeConteneur(data);
+    return this.repository.createTypeConteneur(data);
   }
 
   /**
    * Récupère tous les types de conteneur
    */
   async getAllTypes() {
-    return this.model.getAllTypes();
+    return this.repository.getAllTypes();
   }
 
   /**
@@ -28,7 +28,7 @@ class TypeConteneurService {
    */
   async getTypeById(id) {
     Validators.validateTypeConteneurId(id); // Validation ID type conteneur
-    return this.model.getTypeById(id);
+    return this.repository.getTypeById(id);
   }
 
   /**
@@ -36,7 +36,7 @@ class TypeConteneurService {
    */
   async getTypeByCode(code) {
     Validators.validateCode(code, 'code'); // Validation code type conteneur
-    return this.model.getTypeByCode(code);
+    return this.repository.getTypeByCode(code);
   }
 
   /**
@@ -44,7 +44,7 @@ class TypeConteneurService {
    */
   async getTypeByNom(nom) {
     Validators.validateTypeConteneurNom(nom); // Validation nom type conteneur
-    return this.model.getTypeByNom(nom);
+    return this.repository.getTypeByNom(nom);
   }
 
   /**
@@ -53,7 +53,7 @@ class TypeConteneurService {
   async updateTypeConteneur(id, data) {
     Validators.validateTypeConteneurId(id); // Validation ID type conteneur
     Validators.validateTypeConteneurData(data, { isUpdate: true }); // Validation données type conteneur
-    return this.model.updateTypeConteneur(id, data);
+    return this.repository.updateTypeConteneur(id, data);
   }
 
   /**
@@ -61,21 +61,21 @@ class TypeConteneurService {
    */
   async deleteTypeConteneur(id) {
     Validators.validateTypeConteneurId(id); // Validation ID type conteneur
-    return this.model.deleteTypeConteneur(id);
+    return this.repository.deleteTypeConteneur(id);
   }
 
   /**
    * Supprime tous les types de conteneur
    */
   async deleteAllTypes() {
-    return this.model.deleteAllTypes();
+    return this.repository.deleteAllTypes();
   }
 
   /**
    * Compte le nombre total de types de conteneur
    */
   async countTypes() {
-    return this.model.countTypes();
+    return this.repository.countTypes();
   }
 
   /**
@@ -83,7 +83,7 @@ class TypeConteneurService {
    */
   async typeExists(id) {
     Validators.validateTypeConteneurId(id); // Validation ID type conteneur
-    return this.model.typeExists(id);
+    return this.repository.typeExists(id);
   }
 
   /**
@@ -91,7 +91,7 @@ class TypeConteneurService {
    */
   async codeExists(code) {
     Validators.validateCode(code, 'code'); // Validation code type conteneur
-    return this.model.codeExists(code);
+    return this.repository.codeExists(code);
   }
 
   /**
@@ -99,7 +99,7 @@ class TypeConteneurService {
    */
   async countContainersByType(idType) {
     Validators.validateTypeConteneurId(idType); // Validation ID type conteneur
-    return this.model.countContainersByType(idType);
+    return this.repository.countContainersByType(idType);
   }
 
   /**
@@ -107,14 +107,14 @@ class TypeConteneurService {
    */
   async getTypeWithStats(id) {
     Validators.validateTypeConteneurId(id); // Validation ID type conteneur
-    return this.model.getTypeWithStats(id);
+    return this.repository.getTypeWithStats(id);
   }
 
   /**
    * Récupère tous les types avec statistiques
    */
   async getAllTypesWithStats() {
-    return this.model.getAllTypesWithStats();
+    return this.repository.getAllTypesWithStats();
   }
 }
 

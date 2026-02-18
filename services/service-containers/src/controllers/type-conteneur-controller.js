@@ -5,7 +5,7 @@ class TypeConteneurController {
   constructor(service) {
     this.service = service;
 
-    // 🔒 Binding pour Express
+    //  Binding pour Express
     this.create = this.create.bind(this);
     this.getAll = this.getAll.bind(this);
     this.getAllWithStats = this.getAllWithStats.bind(this);

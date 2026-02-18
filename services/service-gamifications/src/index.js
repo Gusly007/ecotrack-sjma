@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import swaggerSpec from './config/swagger.js';
 import env, { validateEnv } from './config/env.js';
 import pool, { ensureGamificationTables } from './config/database.js';
+import { publicLimiter } from './config/rateLimit.js';
 import actionsRoutes from './routes/actions.js';
 import badgesRoutes from './routes/badges.js';
 import defisRoutes from './routes/defis.js';
@@ -48,11 +49,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'gamifications' });
 });
 
+// Health check DB
+app.get('/health/db', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'up' });
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'down', error: err.message });
+  }
+});
+
 app.use('/actions', actionsRoutes);
 app.use('/badges', badgesRoutes);
 app.use('/defis', defisRoutes);
-app.use('/classement', classementRoutes);
-app.use('/notifications', notificationsRoutes);
+app.use('/classement', publicLimiter, classementRoutes);
+app.use('/notifications', publicLimiter, notificationsRoutes);
 app.use('/', statsRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

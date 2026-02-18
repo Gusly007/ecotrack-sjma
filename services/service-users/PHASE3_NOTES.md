@@ -32,9 +32,10 @@ router.post('/signalements',
 );
 ```
 
-## Tests unitaires Phase 
+
+## Tests unitaires Phase
 - `__tests__/middleware/permissions.test.js` : vérifie les statuts 401/403 et l'appel à `next()` pour `requirePermission` et `requirePermissions` en simulant `hasPermission`.
-- `__tests__/services/roleService.test.js` : mock la connexion PostgreSQL (`pool.query`) pour confirmer les requêtes SQL et les valeurs retournées de `assignRoleToUser`, `removeRoleFromUser` et `getUserRoles`.
+- `__tests__/services/roleService.test.js` : mock les repositories (et non plus la DB directement) pour confirmer la logique métier.
 - `__tests__/utils/permissions.test.js` : sécurise la matrice `rolePermissions` et les cas limites de `hasPermission` (wildcard ADMIN, rôle inconnu, permissions manquantes).
 
 Exécuter uniquement ces tests :

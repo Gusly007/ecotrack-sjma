@@ -1,6 +1,8 @@
 // Rôle du fichier : routes HTTP pour le classement.
 import { Router } from 'express';
 import { obtenirClassement } from '../controllers/classementController.js';
+import { classementQuerySchema } from '../validators/schemas.js';
+import { validateQuery } from '../middleware/validation.js';
 
 const router = Router();
 
@@ -23,6 +25,6 @@ const router = Router();
  *       200:
  *         description: Classement des utilisateurs
  */
-router.get('/', obtenirClassement);
+router.get('/', validateQuery(classementQuerySchema), obtenirClassement);
 
 export default router;

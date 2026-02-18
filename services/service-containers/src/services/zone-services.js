@@ -1,8 +1,8 @@
 const Validators = require('../utils/Validators');
 
 class ZoneService {
-    constructor(zoneModel) {
-        this.zoneModel = zoneModel;
+    constructor(zoneRepository) {
+        this.zoneRepository = zoneRepository;
     }
 
     /**
@@ -10,7 +10,7 @@ class ZoneService {
      */
     async createZone(zoneData) {
         Validators.validateZoneData(zoneData); // Validation des données de zone
-        return await this.zoneModel.addZone(zoneData);
+        return await this.zoneRepository.addZone(zoneData);
     }
 
     /**
@@ -18,7 +18,7 @@ class ZoneService {
      */
     async getAllZones(page = 1, limit = 10) {
         Validators.validatePagination(page, limit); // Validation pagination
-        return await this.zoneModel.getAllZones(page, limit);
+        return await this.zoneRepository.getAllZones(page, limit);
     }
 
     /**
@@ -26,7 +26,7 @@ class ZoneService {
      */
     async getZoneById(id) {
         Validators.validateZoneId(id); // Validation ID zone
-        return await this.zoneModel.getZoneById(id);
+        return await this.zoneRepository.getZoneById(id);
     }
 
     /**
@@ -34,7 +34,7 @@ class ZoneService {
      */
     async getZoneByCode(code) {
         Validators.validateCode(code, 'code'); // Validation code zone
-        return await this.zoneModel.getZoneByCode(code);
+        return await this.zoneRepository.getZoneByCode(code);
     }
 
     /**
@@ -43,7 +43,7 @@ class ZoneService {
     async updateZone(id, zoneData) {
         Validators.validateZoneId(id); // Validation ID zone
         Validators.validateZoneData(zoneData, { isUpdate: true }); // Validation données zone
-        return await this.zoneModel.updateZone(id, zoneData);
+        return await this.zoneRepository.updateZone(id, zoneData);
     }
 
     /**
@@ -51,14 +51,14 @@ class ZoneService {
      */
     async deleteZone(id) {
         Validators.validateZoneId(id); // Validation ID zone
-        return await this.zoneModel.deleteZone(id);
+        return await this.zoneRepository.deleteZone(id);
     }
 
     /**
      * Supprime toutes les zones
      */
     async deleteAllZones() {
-        return await this.zoneModel.deleteAllZones();
+        return await this.zoneRepository.deleteAllZones();
     }
 
     /**
@@ -66,7 +66,7 @@ class ZoneService {
      */
     async searchZonesByName(nom) {
         Validators.validateNonEmptyString(nom, 'nom', 2); // Validation nom
-        return await this.zoneModel.searchZonesByName(nom);
+        return await this.zoneRepository.searchZonesByName(nom);
     }
 
     /**
@@ -75,21 +75,21 @@ class ZoneService {
     async getZonesInRadius(latitude, longitude, radiusKm) {
         Validators.validateCoordinates(latitude, longitude); // Validation coordonnées
         Validators.validateRadius(radiusKm); // Validation rayon
-        return await this.zoneModel.getZonesInRadius(latitude, longitude, radiusKm);
+        return await this.zoneRepository.getZonesInRadius(latitude, longitude, radiusKm);
     }
 
     /**
      * Récupère les statistiques des zones
      */
     async getZoneStatistics() {
-        return await this.zoneModel.getZoneStatistics();
+        return await this.zoneRepository.getZoneStatistics();
     }
 
     /**
      * Compte le nombre de zones
      */
     async countZones() {
-        return await this.zoneModel.countZones();
+        return await this.zoneRepository.countZones();
     }
 
     /**
@@ -97,7 +97,7 @@ class ZoneService {
      */
     async zoneExists(id) {
         Validators.validateZoneId(id); // Validation ID zone
-        return await this.zoneModel.zoneExists(id);
+        return await this.zoneRepository.zoneExists(id);
     }
 
     /**
@@ -105,7 +105,7 @@ class ZoneService {
      */
     async codeExists(code) {
         Validators.validateCode(code, 'code'); // Validation code zone
-        return await this.zoneModel.codeExists(code);
+        return await this.zoneRepository.codeExists(code);
     }
 }
 

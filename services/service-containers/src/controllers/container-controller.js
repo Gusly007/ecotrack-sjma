@@ -2,7 +2,7 @@ class ContainerController {
   constructor(service) {
     this.service = service;
 
-    // 🔒 binding pour Express
+    //  binding pour Express
     // It ensures that the methods have the correct 'this' context when called as route handlers in Express.
     this.create = this.create.bind(this);
     this.update = this.update.bind(this);

@@ -21,7 +21,7 @@
     "dotenv": "^16.4.5",
     "node-pg-migrate": "^7.9.1",
     "pg": "^8.11.0",
-    "pino": "^9.9.0",
+    "pino": "10.1.1",
     "pino-pretty": "^11.3.0"
   },
   "keywords": [
