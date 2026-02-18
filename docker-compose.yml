@@ -10,9 +10,10 @@
 #   docker compose logs -f postgres         # Logs PostgreSQL
 #
 # ACCÈS:
-#   - API Gateway:    http://localhost:3000
+#   - Frontend:      http://localhost:5173
+#   - API Gateway:   http://localhost:3000
 #   - Service Users:  http://localhost:3010
-#   - PgAdmin:        http://localhost:5050 (admin@ecotrack.dev / admin)
+#   - PgAdmin:       http://localhost:5050 (admin@ecotrack.dev / admin)
 #   - PostgreSQL:     localhost:5432 (ecotrack_user / ecotrack_password)
 #
 # ============================================================================
@@ -132,6 +133,36 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # FRONTEND (port 5173)
+  # =========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecotrack-frontend
+    environment:
+      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:
