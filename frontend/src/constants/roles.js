@@ -1,3 +1,5 @@
+
+// Rôles
 export const ROLES = {
   CITOYEN: 'CITOYEN',
   AGENT: 'AGENT',
@@ -5,11 +7,15 @@ export const ROLES = {
   ADMIN: 'ADMIN',
 };
 
-export const INTERFACE_TYPES = {
-  MOBILE: 'mobile',
-  DESKTOP: 'desktop',
+// Types d'interface par rôle
+export const INTERFACE_BY_ROLE = {
+  [ROLES.CITOYEN]: 'mobile',
+  [ROLES.AGENT]: 'mobile',
+  [ROLES.GESTIONNAIRE]: 'desktop',
+  [ROLES.ADMIN]: 'desktop',
 };
 
+// Labels
 export const ROLE_LABELS = {
   [ROLES.CITOYEN]: 'Citoyen',
   [ROLES.AGENT]: 'Agent',
@@ -17,48 +23,51 @@ export const ROLE_LABELS = {
   [ROLES.ADMIN]: 'Administrateur',
 };
 
+// Permissions
 export const PERMISSIONS = {
   SIGNALER_CREATE: 'signaler:create',
   SIGNALER_READ: 'signaler:read',
   SIGNALER_UPDATE: 'signaler:update',
-  CONTAINERS_READ: 'containers:read',
-  CONTAINERS_UPDATE: 'containers:update',
+  TOURNEE_CREATE: 'tournee:create',
   TOURNEE_READ: 'tournee:read',
   TOURNEE_UPDATE: 'tournee:update',
-  TOURNEE_CREATE: 'tournee:create',
-  COLLECTE_CREATE: 'collecte:create',
-  USERS_READ: 'users:read',
-  ANALYTICS_READ: 'analytics:read',
-  PROFILE_READ: 'profile:read',
-  PROFILE_UPDATE: 'profile:update',
+  CONTAINERS_UPDATE: 'containers:update',
+  USER_READ: 'user:read',
+  ZONE_CREATE: 'zone:create',
+  ZONE_READ: 'zone:read',
+  ZONE_UPDATE: 'zone:update',
+  USERS_CREATE: 'users:create',
+  USERS_DELETE: 'users:delete',
+  CONFIG_UPDATE: 'config:update',
+  LOGS_READ: 'logs:read',
 };
 
+// Matrice des permissions par rôle
 export const ROLE_PERMISSIONS = {
   [ROLES.CITOYEN]: [
     PERMISSIONS.SIGNALER_CREATE,
     PERMISSIONS.SIGNALER_READ,
-    PERMISSIONS.CONTAINERS_READ,
-    PERMISSIONS.PROFILE_READ,
-    PERMISSIONS.PROFILE_UPDATE,
   ],
   [ROLES.AGENT]: [
+    PERMISSIONS.SIGNALER_CREATE,
     PERMISSIONS.SIGNALER_READ,
     PERMISSIONS.SIGNALER_UPDATE,
-    PERMISSIONS.CONTAINERS_READ,
     PERMISSIONS.TOURNEE_READ,
     PERMISSIONS.TOURNEE_UPDATE,
-    PERMISSIONS.COLLECTE_CREATE,
+    PERMISSIONS.CONTAINERS_UPDATE,
   ],
   [ROLES.GESTIONNAIRE]: [
+    PERMISSIONS.SIGNALER_CREATE,
     PERMISSIONS.SIGNALER_READ,
     PERMISSIONS.SIGNALER_UPDATE,
-    PERMISSIONS.CONTAINERS_READ,
-    PERMISSIONS.CONTAINERS_UPDATE,
     PERMISSIONS.TOURNEE_CREATE,
     PERMISSIONS.TOURNEE_READ,
     PERMISSIONS.TOURNEE_UPDATE,
-    PERMISSIONS.USERS_READ,
-    PERMISSIONS.ANALYTICS_READ,
+    PERMISSIONS.CONTAINERS_UPDATE,
+    PERMISSIONS.USER_READ,
+    PERMISSIONS.ZONE_READ,
+    PERMISSIONS.ZONE_CREATE,
+    PERMISSIONS.ZONE_UPDATE,
   ],
   [ROLES.ADMIN]: ['*'],
 };

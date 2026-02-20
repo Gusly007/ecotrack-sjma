@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { ROLE_PERMISSIONS, ROLES } from '../constants/roles';
 
 const AuthContext = createContext(null);
 
@@ -28,23 +29,33 @@ export const AuthProvider = ({ children }) => {
     return user;
   };
 
+  const register = async (userData) => {
+    const user = await authService.register(userData);
+    setUser(authService.getCurrentUser());
+    setIsAuthenticated(true);
+    return user;
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
     setIsAuthenticated(false);
   };
 
+  const forgotPassword = async (email) => {
+    return await authService.forgotPassword(email);
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    return await authService.resetPassword(token, newPassword);
+  };
+
   const hasPermission = (permission) => {
-    if (!user) return false;
-    if (user.role === 'ADMIN') return true;
-    
-    const permissions = {
-      CITOYEN: ['signaler:create', 'signaler:read', 'containers:read', 'profile:read', 'profile:update'],
-      AGENT: ['signaler:read', 'signaler:update', 'containers:read', 'tournee:read', 'tournee:update', 'collecte:create'],
-      GESTIONNAIRE: ['signaler:read', 'signaler:update', 'containers:read', 'containers:update', 'tournee:create', 'tournee:read', 'tournee:update', 'users:read', 'analytics:read'],
-    };
-    
-    return permissions[user.role]?.includes(permission) || false;
+    if (!user || !user.role) return false;
+    if (user.role === ROLES.ADMIN) return true;
+    const perms = ROLE_PERMISSIONS[user.role] || [];
+    if (perms.includes('*')) return true;
+    return perms.includes(permission);
   };
 
   const value = {
@@ -52,7 +63,10 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
+    register,
     logout,
+    forgotPassword,
+    resetPassword,
     hasPermission,
     isMobileUser: authService.isMobileUser(),
     isDesktopUser: authService.isDesktopUser(),

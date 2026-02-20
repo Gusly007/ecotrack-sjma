@@ -1,23 +1,29 @@
 import api from './api';
 import { jwtDecode } from 'jwt-decode';
 
+const TOKEN_KEY = 'token';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+const USER_KEY = 'user';
+
 export const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password });
-    const { accessToken, refreshToken, user } = response.data;
+    const { token, refreshToken, user } = response.data;
     
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
     
     return user;
   },
 
   async register(userData) {
     const response = await api.post('/auth/register', userData);
-    const { accessToken, refreshToken, user } = response.data;
+    const { token, refreshToken, user } = response.data;
     
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
     
     return user;
   },
@@ -26,13 +32,33 @@ export const authService = {
     try {
       await api.post('/auth/logout');
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
     }
   },
 
+  async forgotPassword(email) {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(token, newPassword) {
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
+
   getCurrentUser() {
-    const token = localStorage.getItem('accessToken');
+    const userData = localStorage.getItem(USER_KEY);
+    if (userData) {
+      try {
+        return JSON.parse(userData);
+      } catch {
+        return null;
+      }
+    }
+    
+    const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return null;
     
     try {
@@ -42,8 +68,12 @@ export const authService = {
     }
   },
 
+  getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
   isAuthenticated() {
-    const token = localStorage.getItem('accessToken');
+    const token = this.getToken();
     if (!token) return false;
     
     try {
@@ -56,7 +86,7 @@ export const authService = {
 
   getUserRole() {
     const user = this.getCurrentUser();
-    return user?.role || null;
+    return user?.role || user?.role_par_defaut || null;
   },
 
   isMobileUser() {

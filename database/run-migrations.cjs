@@ -5,7 +5,7 @@ const path = require('path');
 // Database connection config
 const client = new Client({
   host: 'localhost',
-  port: 5434,
+  port: 5432,
   database: 'ecotrack',
   user: 'postgres',
   password: 'postgres'

@@ -70,6 +70,29 @@ const env = {
     get bcryptRounds() {
       return toInteger(process.env.BCRYPT_ROUNDS, 10);
     }
+  },
+  smtp: {
+    get host() {
+      return process.env.SMTP_HOST || null;
+    },
+    get port() {
+      return toInteger(process.env.SMTP_PORT, 587);
+    },
+    get secure() {
+      return process.env.SMTP_SECURE === 'true';
+    },
+    get user() {
+      return process.env.SMTP_USER || null;
+    },
+    get pass() {
+      return process.env.SMTP_PASS || null;
+    },
+    get from() {
+      return process.env.SMTP_FROM || '"EcoTrack" <noreply@ecotrack.fr>';
+    }
+  },
+  get appUrl() {
+    return process.env.APP_URL || 'http://localhost:5173';
   }
 };
 

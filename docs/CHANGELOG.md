@@ -3,6 +3,44 @@
 > Historique des versions et changements du projet EcoTrack
 
 ---
+### [1.5.0] 2026-02-19 - Authentification & Emails
+
+#### Backend (service-users)
+- **Nouveau**: Ajout du champ `nom` dans l'inscription (RegisterRequest)
+- **Nouveau**: Endpoint `/auth/forgot-password` - Demander réinitialisation mot de passe
+- **Nouveau**: Endpoint `/auth/reset-password` - Réinitialiser mot de passe avec token
+- **Nouveau**: Service SMTP intégré avec nodemailer
+- **Nouveau**: Envoi d'emails HTML stylisés (reset password, bienvenue)
+- **Fix**: Validation du champ `nom` dans le registre
+
+#### Frontend
+- **Nouveau**: Page Inscription (`RegisterPage.jsx`) avec validation nom/prénom
+- **Nouveau**: Page Mot de passe oublié (`ForgotPasswordPage.jsx`)
+- **Nouveau**: Page Réinitialisation mot de passe (`ResetPasswordPage.jsx`)
+- **Nouveau**: Page Conditions Générales (`TermsPage.jsx`)
+- **Nouveau**: Page Politique de Confidentialité (`PrivacyPage.jsx`)
+- **Nouveau**: Styles CSS globaux pour les pages d'auth
+
+#### Base de données
+- **Nouveau**: Table `password_reset_tokens` pour les tokens de reset
+
+#### Swagger
+- **Mise à jour**: Documentation avec champ `nom`
+- **Mise à jour**: Documentation forgot-password et reset-password
+
+#### Tests
+- **Nouveau**: Vitest configuré pour le frontend
+- **Nouveau**: Tests unitaires (`src/test/auth.test.js`)
+- **Commandes**: `npm test`, `npm run test:run`, `npm run test:coverage`
+
+### Rôles
+
+| Rôle | Interface | Accès | Description |
+|-------|-----------|-------|-------------|
+| CITOYEN | Mobile | /dashboard | Utilisateur standard |
+| AGENT | Mobile | /dashboard | Agent de collecte |
+| GESTIONNAIRE | Desktop | /desktop | Superviseur |
+| ADMIN | Desktop | /desktop | Administrateur |
 
 ## [1.4.0] - 2026-02-18
 

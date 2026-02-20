@@ -7,13 +7,13 @@ import * as userService from '../services/userService.js';
  */
 
 export const register = asyncHandler(async (req, res) => {
-  const { email, prenom, password, role } = req.body;
+  const { email, nom, prenom, password, role } = req.body;
 
-  if (!email || !prenom || !password) {
+  if (!email || !nom || !prenom || !password) {
     return res.status(400).json({ error: 'Champs manquants' });
   }
 
-  const result = await authService.registerUser(email, prenom, password, role);
+  const result = await authService.registerUser(email, nom, prenom, password, role);
 
   res.status(201).json({
     message: 'Registration reussie',
@@ -83,4 +83,32 @@ export const getProfileWithStats = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = await userService.getProfileWithStats(userId);
   res.json({ data: user });
+});
+
+/**
+ * POST /auth/forgot-password
+ */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email requis' });
+  }
+  
+  const result = await authService.forgotPassword(email);
+  res.json(result);
+});
+
+/**
+ * POST /auth/reset-password
+ */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+  
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token et nouveau mot de passe requis' });
+  }
+  
+  const result = await authService.resetPassword(token, newPassword);
+  res.json(result);
 });
