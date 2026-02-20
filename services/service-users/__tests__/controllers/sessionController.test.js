@@ -6,6 +6,10 @@ import * as auditService from '../../src/services/auditService.js';
 jest.mock('../../src/services/sessionService.js');
 jest.mock('../../src/services/authService.js');
 jest.mock('../../src/services/auditService.js');
+jest.mock('../../src/services/emailService.js', () => ({
+  sendPasswordResetEmail: jest.fn(),
+  sendWelcomeEmail: jest.fn(),
+}));
 
 const createRequest = ({ body = {}, user = { id: 1 } } = {}) => ({
   body,

@@ -1,4 +1,4 @@
-import { generateToken, generateRefreshToken, verifyToken } from '../../src/utils/jwt';
+import { generateToken, generateRefreshToken, verifyToken } from '../../src/utils/jwt.js';
 import jwt from 'jsonwebtoken';
 
 // Mock dotenv
