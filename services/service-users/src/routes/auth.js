@@ -11,17 +11,18 @@ const router = express.Router();
 const registerSchema = {
 	body: z.object({
 		email: z.string().email(),
+		nom: z.string().min(2).max(50),
 		prenom: z.string().min(2).max(50),
 		password: z.string().min(6),
 		role: z.enum(['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN']).optional()
-	}).strict()
+	})
 };
 
 const loginSchema = {
 	body: z.object({
 		email: z.string().email(),
 		password: z.string().min(1)
-	}).strict()
+	})
 };
 
 const refreshSchema = {
@@ -50,10 +51,17 @@ const logoutSchema = {
  *     RegisterRequest:
  *       type: object
  *       required:
+ *         - nom
  *         - prenom
  *         - email
  *         - password
  *       properties:
+ *         nom:
+ *           type: string
+ *           description: "Nom de l'utilisateur"
+ *           minLength: 2
+ *           maxLength: 50
+ *           example: "Dupont"
  *         prenom:
  *           type: string
  *           description: "Prénom de l'utilisateur"
@@ -105,6 +113,34 @@ const logoutSchema = {
  *           description: "Refresh token obtenu lors du login"
  *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *
+ *     ForgotPasswordRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: "Adresse email de l'utilisateur"
+ *           example: "john.doe@example.com"
+ *
+ *     ResetPasswordRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - newPassword
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: "Token de réinitialisation reçu par email"
+ *           example: "abc123xyz..."
+ *         newPassword:
+ *           type: string
+ *           format: password
+ *           description: "Nouveau mot de passe (min 6 caractères)"
+ *           minLength: 6
+ *           example: "newpassword123"
+ *
  *     AuthResponse:
  *       type: object
  *       properties:
@@ -128,6 +164,9 @@ const logoutSchema = {
  *             email:
  *               type: string
  *               example: "john.doe@example.com"
+ *             nom:
+ *               type: string
+ *               example: "Dupont"
  *             prenom:
  *               type: string
  *               example: "John"
@@ -148,6 +187,9 @@ const logoutSchema = {
  *         email:
  *           type: string
  *           example: "john.doe@example.com"
+ *         nom:
+ *           type: string
+ *           example: "Dupont"
  *         prenom:
  *           type: string
  *           example: "John"
@@ -225,7 +267,7 @@ const logoutSchema = {
  *             example:
  *               error: "Email already in use"
  */
-router.post('/register', publicLimiter, validate(registerSchema), authController.register);
+router.post('/register', publicLimiter, authController.register);
 
 /**
  * @swagger
@@ -397,5 +439,91 @@ router.post('/logout', authenticateToken, validate(logoutSchema), sessionControl
  *                   example: "Logged out from all devices"
  */
 router.post('/logout-all', authenticateToken, sessionController.logoutAll);
+
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Demander la réinitialisation du mot de passe
+ *     description: Envoie un email avec un lien de réinitialisation si le compte existe
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: "Adresse email de l'utilisateur"
+ *                 example: "john.doe@example.com"
+ *     responses:
+ *       200:
+ *         description: Email envoyé si le compte existe
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *             example:
+ *               message: "Si un compte existe avec cet email, vous recevrez un lien de réinitialisation"
+ *       400:
+ *         description: Email invalide
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/forgot-password', publicLimiter, authController.forgotPassword);
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Réinitialiser le mot de passe
+ *     description: Utilise le token reçu par email pour réinitialiser le mot de passe
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: "Token de réinitialisation reçu par email"
+ *                 example: "abc123xyz..."
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: "Nouveau mot de passe (min 6 caractères)"
+ *                 minLength: 6
+ *                 example: "newpassword123"
+ *     responses:
+ *       200:
+ *         description: Mot de passe réinitialisé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *             example:
+ *               message: "Mot de passe réinitialisé avec succès"
+ *       400:
+ *         description: Token invalide ou expiré
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *             example:
+ *               error: "Token invalide ou expiré"
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/reset-password', publicLimiter, authController.resetPassword);
 
 export default router;

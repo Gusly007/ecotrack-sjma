@@ -55,10 +55,12 @@ Swagger est disponible sur `http://localhost:3010/api-docs` et l'endpoint de san
 ## API Endpoints
 
 ### Authentification (publics)
-- \`POST /auth/register\` - S'inscrire
-- \`POST /auth/login\` - Se connecter
-- \`POST /auth/refresh\` - Renouveler token
-- \`POST /auth/logout\` - Se déconnecter
+- `POST /auth/register` - S'inscrire (avec nom, prenom)
+- `POST /auth/login` - Se connecter
+- `POST /auth/forgot-password` - Demander réinitialisation mot de passe
+- `POST /auth/reset-password` - Réinitialiser mot de passe
+- `POST /auth/refresh` - Renouveler token
+- `POST /auth/logout` - Se déconnecter
 
 ### Profils (protégés)
 - \`GET /auth/profile\` - Mon profil

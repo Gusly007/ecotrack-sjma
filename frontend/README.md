@@ -43,7 +43,12 @@ frontend/
 │   │
 │   ├── pages/              # Pages de l'application
 │   │   ├── auth/           # Pages d'authentification
-│   │   │   └── LoginPage.jsx
+│   │   │   ├── LoginPage.jsx
+│   │   │   ├── RegisterPage.jsx
+│   │   │   ├── ForgotPasswordPage.jsx
+│   │   │   ├── ResetPasswordPage.jsx
+│   │   │   ├── TermsPage.jsx
+│   │   │   └── PrivacyPage.jsx
 │   │   ├── desktop/        # Pages Desktop (Gestionnaire, Admin)
 │   │   │   └── Dashboard.jsx
 │   │   └── mobile/         # Pages Mobile (Citoyen, Agent)
@@ -101,7 +106,7 @@ frontend/
 Créez un fichier `.env` à la racine:
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3010
 ```
 
 ## Fonctionnalités
@@ -111,6 +116,11 @@ VITE_API_URL=http://localhost:3000
 - [x] Protection des routes par permission
 - [x] Interceptors Axios pour token refresh automatique
 - [x] Intégration Tailwind CSS
+- [x] Inscription avec nom et prénom
+- [x] Mot de passe oublié avec envoi d'email
+- [x] Réinitialisation du mot de passe
+- [x] Conditions Générales d'Utilisation
+- [x] Politique de Confidentialité
 
 ## Docker
 

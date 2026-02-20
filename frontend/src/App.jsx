@@ -2,7 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, MobileRoute, DesktopRoute } from './components/common/ProtectedRoute';
-import { LoginPage } from './pages/auth/LoginPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import TermsPage from './pages/auth/TermsPage';
+import PrivacyPage from './pages/auth/PrivacyPage';
 import { MobileDashboard } from './pages/mobile/Dashboard';
 import { DesktopDashboard } from './pages/desktop/Dashboard';
 
@@ -11,8 +16,15 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Routes publiques */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           
+          {/* Routes protégées */}
           <Route element={<MainLayout />}>
             <Route path="/" element={
               <Navigate to="/dashboard" replace />
