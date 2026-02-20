@@ -1,16 +1,21 @@
-import { registerUser, loginUser, getUserById } from '../../src/services/authService';
+import { registerUser, loginUser, getUserById } from '../../src/services/authService.js';
 import pool from '../../src/config/database.js';
-import { hashPassword, comparePassword } from '../../src/utils/crypto';
-import { generateToken, generateRefreshToken } from '../../src/utils/jwt';
+import { hashPassword, comparePassword } from '../../src/utils/crypto.js';
+import { generateToken, generateRefreshToken } from '../../src/utils/jwt.js';
 
 jest.mock('../../src/config/database.js', () => ({
   query: jest.fn(),
 }));
 
-jest.mock('../../src/utils/crypto', () => ({
+jest.mock('../../src/utils/crypto.js', () => ({
   hashPassword: jest.fn(),
   comparePassword: jest.fn(),
   hashToken: jest.fn(() => 'hashed-refresh-token'),
+}));
+
+jest.mock('../../src/services/emailService.js', () => ({
+  sendPasswordResetEmail: jest.fn(),
+  sendWelcomeEmail: jest.fn(),
 }));
 
 jest.mock('../../src/utils/jwt', () => ({
@@ -26,16 +31,16 @@ describe('Auth Service', () => {
   describe('registerUser', () => {
     it('should register a new user successfully', async () => {
       pool.query.mockResolvedValueOnce({ rows: [] }); // No existing user
-      pool.query.mockResolvedValueOnce({ rows: [{ id_utilisateur: 1, email: 'test@example.com', prenom: 'testuser', role_par_defaut: 'CITOYEN' }] });
+      pool.query.mockResolvedValueOnce({ rows: [{ id_utilisateur: 1, email: 'test@example.com', nom: 'Test', prenom: 'user', role_par_defaut: 'CITOYEN' }] });
       hashPassword.mockResolvedValue('hashedpassword');
       generateToken.mockReturnValue('accesstoken');
       generateRefreshToken.mockReturnValue('refreshtoken');
 
-      const result = await registerUser('test@example.com', 'testuser', 'password123');
+      const result = await registerUser('test@example.com', 'Test', 'user', 'password123');
 
-      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'testuser']);
+      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com']);
       expect(hashPassword).toHaveBeenCalledWith('password123');
-      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'testuser', 'testuser', 'hashedpassword', 'CITOYEN']);
+      expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['test@example.com', 'Test', 'user', 'hashedpassword', 'CITOYEN']);
       expect(generateToken).toHaveBeenCalled();
       expect(generateRefreshToken).toHaveBeenCalled();
       expect(result).toHaveProperty('accessToken', 'accesstoken');

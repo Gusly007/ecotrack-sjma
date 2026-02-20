@@ -1,4 +1,4 @@
-import { hashPassword, comparePassword } from '../../src/utils/crypto';
+import { hashPassword, comparePassword } from '../../src/utils/crypto.js';
 
 // Mock dotenv
 jest.mock('dotenv', () => ({

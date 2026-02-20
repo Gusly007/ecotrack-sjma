@@ -1,9 +1,13 @@
-import { register, login, getProfile, updateProfile, changePassword, getProfileWithStats } from '../../src/controllers/authController';
-import * as authService from '../../src/services/authService';
-import * as userService from '../../src/services/userService';
+import { register, login, getProfile, updateProfile, changePassword, getProfileWithStats } from '../../src/controllers/authController.js';
+import * as authService from '../../src/services/authService.js';
+import * as userService from '../../src/services/userService.js';
 
-jest.mock('../../src/services/authService');
-jest.mock('../../src/services/userService');
+jest.mock('../../src/services/authService.js');
+jest.mock('../../src/services/userService.js');
+jest.mock('../../src/services/emailService.js', () => ({
+  sendPasswordResetEmail: jest.fn(),
+  sendWelcomeEmail: jest.fn(),
+}));
 
 const mockRequest = (body = {}, user = null) => ({
     body,
@@ -26,14 +30,14 @@ describe('Auth Controller', () => {
 
     describe('register', () => {
         it('should register a user and return tokens', async () => {
-            const req = mockRequest({ email: 'test@example.com', prenom: 'test', password: 'password' });
+            const req = mockRequest({ email: 'test@example.com', nom: 'Test', prenom: 'test', password: 'password' });
             const res = mockResponse();
             const serviceResult = { accessToken: 'access', refreshToken: 'refresh', user: {} };
             authService.registerUser.mockResolvedValue(serviceResult);
 
             await register(req, res, mockNext);
 
-            expect(authService.registerUser).toHaveBeenCalledWith('test@example.com', 'test', 'password', undefined);
+            expect(authService.registerUser).toHaveBeenCalledWith('test@example.com', 'Test', 'test', 'password', undefined);
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 token: 'access',
