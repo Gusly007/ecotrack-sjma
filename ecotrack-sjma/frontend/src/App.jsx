@@ -3,7 +3,6 @@ import { AuthProvider } from './context/AuthContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, MobileRoute, DesktopRoute } from './components/common/ProtectedRoute';
 import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import TermsPage from './pages/auth/TermsPage';
@@ -18,7 +17,7 @@ function App() {
         <Routes>
           {/* Routes publiques */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Inscription désactivée - contacter un ADMIN */}
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/terms" element={<TermsPage />} />
