@@ -100,7 +100,7 @@
 - Mise a jour de la matrice des permissions selon spec:
   - CITOYEN: `signaler:create`, `signaler:read`
   - AGENT: `signaler:create`, `signaler:read`, `signaler:update`, `tournee:read`, `tournee:update`, `containers:update`
-  - GESTIONNAIRE: Toutes les permissions AGENT + `tournee:create`, `zone:create`, `zone:read`, `zone:update` (user:read réservé ADMIN)
+  - GESTIONNAIRE: Toutes les permissions AGENT + `tournee:create`, `zone:create`, `zone:read`, `zone:update`
   - ADMIN: `*` (toutes permissions)
 
 **Interface Guard:**
