@@ -22,7 +22,6 @@ export const rolePermissions = {
         'tournee:read',
         'tournee:update',
         'containers:update',
-        'user:read',
         'zone:read',
         'zone:create',
         'zone:update'

@@ -20,7 +20,7 @@ INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAI
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'tournee:read', true) ON CONFLICT (role, permission) DO NOTHING;
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'tournee:update', true) ON CONFLICT (role, permission) DO NOTHING;
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'containers:update', true) ON CONFLICT (role, permission) DO NOTHING;
-INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'user:read', true) ON CONFLICT (role, permission) DO NOTHING;
+-- user:read supprimé pour GESTIONNAIRE (réservé ADMIN)
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'zone:read', true) ON CONFLICT (role, permission) DO NOTHING;
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'zone:create', true) ON CONFLICT (role, permission) DO NOTHING;
 INSERT INTO permissions_config (role, permission, is_active) VALUES ('GESTIONNAIRE', 'zone:update', true) ON CONFLICT (role, permission) DO NOTHING;

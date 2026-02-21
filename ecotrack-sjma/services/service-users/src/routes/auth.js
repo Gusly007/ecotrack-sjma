@@ -267,7 +267,7 @@ const logoutSchema = {
  *             example:
  *               error: "Email already in use"
  */
-router.post('/register', publicLimiter, authController.register);
+//router.post('/register', publicLimiter, authController.register);
 
 /**
  * @swagger

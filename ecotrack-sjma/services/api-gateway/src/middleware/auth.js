@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer_en_prod
 // Routes publiques qui ne nécessitent pas d'authentification
 const publicRoutes = [
   { path: '/auth/login', methods: ['POST'] },
-  { path: '/auth/register', methods: ['POST'] },
+  // Register désactivé - inscription uniquement par ADMIN
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
   { path: '/api-docs', methods: ['GET'] },

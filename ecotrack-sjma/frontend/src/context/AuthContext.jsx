@@ -29,12 +29,15 @@ export const AuthProvider = ({ children }) => {
     return user;
   };
 
+  // Inscription désactivée - only ADMIN can create users via API
+  /*
   const register = async (userData) => {
     const user = await authService.register(userData);
     setUser(authService.getCurrentUser());
     setIsAuthenticated(true);
     return user;
   };
+  */
 
   const logout = async () => {
     await authService.logout();
@@ -63,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
-    register,
+    //register, // Désactivé
     logout,
     forgotPassword,
     resetPassword,

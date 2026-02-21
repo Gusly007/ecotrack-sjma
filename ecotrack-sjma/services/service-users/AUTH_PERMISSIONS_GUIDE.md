@@ -26,7 +26,7 @@ Le système d'authentification et d'autorisation du projet EcoTrack utilise JWT 
 | `tournee:read` | ✗ | ✓ | ✓ | ✓ |
 | `tournee:update` | ✗ | ✓ | ✓ | ✓ |
 | `containers:update` | ✗ | ✓ | ✓ | ✓ |
-| `user:read` | ✗ | ✗ | ✓ | ✓ |
+| `user:read` | ✗ | ✗ | ✗ | ✓ |  
 | `zone:create` | ✗ | ✗ | ✓ | ✓ |
 | `zone:read` | ✗ | ✗ | ✓ | ✓ |
 | `zone:update` | ✗ | ✗ | ✓ | ✓ |
