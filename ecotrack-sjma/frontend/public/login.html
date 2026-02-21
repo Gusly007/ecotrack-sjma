@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrack - Connexion & Inscription</title>
+    <link rel="stylesheet" href="styles-login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<body>
+    <div class="login-page-container">
+        <div class="login-wrapper">
+            <!-- LOGIN FORM -->
+            <div id="login-section" class="form-section active">
+                <div class="login-box">
+                    <div class="login-header" style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+                            <img src="/LogoEcoTrack.svg" alt="Logo EcoTrack" style="height: 48px; width: 48px; display: block;" />
+                            <h1 style="margin: 0; color: #fff; font-size: 2rem;">EcoTrack</h1>
+                        </div>
+                        <p style="margin-top: 10px; color: rgba(255,255,255,0.6); font-size: 0.9rem;">Plateforme Intelligente de Gestion des Déchets</p>
+                    </div>
+
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input 
+                                type="email" 
+                                id="login-email" 
+                                class="form-input" 
+                                placeholder="votre@email.com"
+                                required
+                            >
+                            <span class="error-message" id="login-email-error">Email invalide</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="login-password">Mot de passe</label>
+                            <div class="input-group">
+                                <input 
+                                    type="password" 
+                                    id="login-password" 
+                                    class="form-input" 
+                                    placeholder="••••••••"
+                                    required
+                                    minlength="6"
+                                >
+                                <i class="fas fa-eye input-icon" onclick="togglePassword('login-password', this)"></i>
+                            </div>
+                            <span class="error-message" id="login-password-error">Mot de passe requis (min 6 caractères)</span>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="login-btn">
+                            <span>Se connecter</span>
+                        </button>
+                    </form>
+
+                    <div class="login-footer">
+                        <p style="margin-bottom: 12px;">
+                            <a href="#" onclick="showSection('forgot-section')">Mot de passe oublié ?</a>
+                        </p>
+                        <p>
+                            Pas encore de compte ? 
+                            <a href="#" onclick="showSection('register-section')">Créer un compte</a>
+                        </p>
+                    </div>
+    <script src="login-functions.js"></script>

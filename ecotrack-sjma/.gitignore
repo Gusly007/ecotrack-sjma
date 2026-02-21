@@ -1,0 +1,14 @@
+.env
+*.env.local
+node_modules/
+coverage/
+**/coverage/
+docs/FRONTEND_METRICS.md
+infra/kubernetes/
+infra/terraform/  
+
+
+# Old folders at root (moved to services/)
+/service-users/
+/api-gateway/
+

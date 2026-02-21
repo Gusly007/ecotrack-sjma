@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+
+  - job_name: 'service-users'
+    static_configs:
+      - targets: ['service-users:3010']
+
+  - job_name: 'service-containers'
+    static_configs:
+      - targets: ['service-containers:3011']
+
+  - job_name: 'service-gamifications'
+    static_configs:
+      - targets: ['service-gamifications:3014']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+
+  # Pending microservices to be added
+  - job_name: 'service-IoT'
+    static_configs:
+      - targets: ['service-IoT:3013']
+
+  - job_name: 'service-analytics'
+    static_configs:
+      - targets: ['service-analytics:3015']
+
+  - job_name: 'service-routes'
+    static_configs:
+      - targets: ['service-routes:3012']

@@ -1,0 +1,24 @@
+[2026-02-21T09:48:12.539Z] [INFO] Admin Dashboard started
+[2026-02-21T09:48:12.581Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T09:48:22.614Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:01:09.289Z] [INFO] Admin Dashboard started
+[2026-02-21T10:01:09.331Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:01:19.398Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:01:53.853Z] [INFO] Admin Dashboard started
+[2026-02-21T10:01:53.899Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:02:03.930Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:02:13.964Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:02:24.001Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:02:34.027Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:02:44.092Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T10:17:24.336Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T11:41:03.677Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T11:41:13.713Z] [INFO] Dashboard refresh - 6/6 services UP
+[2026-02-21T11:41:23.763Z] [INFO] Dashboard refresh - 6/6 services UP
+{"level":30,"time":1771674596572,"pid":215392,"hostname":"Moussa","services":["API Gateway","Service Users","Service Containers","Service Gamifications","Prometheus","Grafana"],"msg":"Admin Dashboard started"}
+{"level":30,"time":1771674596618,"pid":215392,"hostname":"Moussa","servicesUp":6,"totalServices":6,"msg":"Dashboard refresh"}
+{"level":30,"time":1771674606650,"pid":215392,"hostname":"Moussa","servicesUp":6,"totalServices":6,"msg":"Dashboard refresh"}
+{"level":30,"time":1771674751898,"pid":4424,"hostname":"Moussa","services":["API Gateway","Service Users","Service Containers","Service Gamifications","Prometheus","Grafana"],"msg":"Admin Dashboard started"}
+{"level":30,"time":1771674751933,"pid":4424,"hostname":"Moussa","servicesUp":6,"totalServices":6,"msg":"Dashboard refresh"}
+{"level":30,"time":1771674761993,"pid":4424,"hostname":"Moussa","servicesUp":6,"totalServices":6,"msg":"Dashboard refresh"}
+{"level":30,"time":1771674772031,"pid":4424,"hostname":"Moussa","servicesUp":6,"totalServices":6,"msg":"Dashboard refresh"}
