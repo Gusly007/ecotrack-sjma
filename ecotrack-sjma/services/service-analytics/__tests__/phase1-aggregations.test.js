@@ -1,28 +1,25 @@
 const request = require('supertest');
 const app = require('../src/index');
-const AggregationModel = require('../src/repositories/aggregationRepository');
+const AggregationRepository = require('../src/repositories/aggregationRepository');
 
 describe('Phase 1 - Aggregations Tests', () => {
   describe('Materialized Views', () => {
     it('should create materialized views', async () => {
-      const result = await AggregationModel.createMaterializedViews();
+      const result = await AggregationRepository.createMaterializedViews();
       expect(result.success).toBe(true);
     });
 
     it('should refresh materialized views', async () => {
-      const result = await AggregationModel.refreshMaterializedViews();
+      const result = await AggregationRepository.refreshMaterializedViews();
       expect(result.success).toBe(true);
       expect(result.refreshedAt).toBeDefined();
     });
   });
 
   describe('Aggregation Endpoints', () => {
-    let authToken = 'Bearer test_token'; // Remplacer par un vrai token
-
     it('should fetch all aggregations', async () => {
       const response = await request(app)
         .get('/api/analytics/aggregations?period=month')
-        .set('Authorization', authToken)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -34,7 +31,6 @@ describe('Phase 1 - Aggregations Tests', () => {
     it('should fetch zone aggregations', async () => {
       const response = await request(app)
         .get('/api/analytics/aggregations/zones')
-        .set('Authorization', authToken)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -42,12 +38,11 @@ describe('Phase 1 - Aggregations Tests', () => {
     });
 
     it('should fetch agent performances', async () => {
-      const startDate = '2025-01-01';
-      const endDate = '2025-01-31';
+      const startDate = '2026-01-01';
+      const endDate = '2026-02-28';
 
       const response = await request(app)
         .get(`/api/analytics/aggregations/agents?startDate=${startDate}&endDate=${endDate}`)
-        .set('Authorization', authToken)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -57,7 +52,7 @@ describe('Phase 1 - Aggregations Tests', () => {
 
   describe('Data Quality', () => {
     it('should return valid daily aggregations', async () => {
-      const data = await AggregationModel.getDailyAggregations(7);
+      const data = await AggregationRepository.getDailyAggregations(7);
       
       expect(data).toBeInstanceOf(Array);
       if (data.length > 0) {
@@ -68,12 +63,14 @@ describe('Phase 1 - Aggregations Tests', () => {
     });
 
     it('should calculate zone statistics correctly', async () => {
-      const zones = await AggregationModel.getZoneAggregations();
+      const zones = await AggregationRepository.getZoneAggregations();
       
       zones.forEach(zone => {
         expect(zone.containers_count).toBeGreaterThanOrEqual(0);
-        expect(zone.avg_fill_level).toBeGreaterThanOrEqual(0);
-        expect(zone.avg_fill_level).toBeLessThanOrEqual(100);
+        if (zone.avg_fill_level !== null) {
+          expect(zone.avg_fill_level).toBeGreaterThanOrEqual(0);
+          expect(zone.avg_fill_level).toBeLessThanOrEqual(100);
+        }
       });
     });
   });

@@ -21,6 +21,47 @@ class AggregationRepository {
         ORDER BY date DESC
       `);
       
+      await db.query(`
+        CREATE MATERIALIZED VIEW IF NOT EXISTS analytics_zone_stats AS
+        SELECT 
+          z.id_zone,
+          z.nom as zone_name,
+          z.code as zone_code,
+          COUNT(DISTINCT c.id_conteneur) as containers_count,
+          ROUND(AVG(latest.niveau_remplissage_pct), 2) as avg_fill_level,
+          COUNT(*) FILTER (WHERE latest.niveau_remplissage_pct > 80) as critical_count
+        FROM ZONE z
+        LEFT JOIN CONTENEUR c ON c.id_zone = z.id_zone
+        LEFT JOIN LATERAL (
+          SELECT niveau_remplissage_pct
+          FROM MESURE m
+          WHERE m.id_conteneur = c.id_conteneur
+          ORDER BY m.date_heure_mesure DESC
+          LIMIT 1
+        ) latest ON true
+        GROUP BY z.id_zone, z.nom, z.code
+      `);
+      
+      await db.query(`
+        CREATE MATERIALIZED VIEW IF NOT EXISTS analytics_type_stats AS
+        SELECT 
+          tc.id_type,
+          tc.nom as container_type,
+          COUNT(DISTINCT c.id_conteneur) as containers_count,
+          ROUND(AVG(latest.niveau_remplissage_pct), 2) as avg_fill_level,
+          COUNT(*) FILTER (WHERE latest.niveau_remplissage_pct > 80) as critical_count
+        FROM TYPE_CONTENEUR tc
+        LEFT JOIN CONTENEUR c ON c.id_type = tc.id_type
+        LEFT JOIN LATERAL (
+          SELECT niveau_remplissage_pct
+          FROM MESURE m
+          WHERE m.id_conteneur = c.id_conteneur
+          ORDER BY m.date_heure_mesure DESC
+          LIMIT 1
+        ) latest ON true
+        GROUP BY tc.id_type, tc.nom
+      `);
+      
       logger.info('Materialized views created successfully');
       return { success: true };
     } catch (error) {
