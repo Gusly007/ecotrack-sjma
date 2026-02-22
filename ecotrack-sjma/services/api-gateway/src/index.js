@@ -109,7 +109,7 @@ const services = {
   analytics: {
     displayName: 'Analytics Service',
     status: 'ready',
-    port: parseInt(process.env.ANALYTICS_PORT, 10) || 3012,
+    port: parseInt(process.env.ANALYTICS_PORT, 10) || 3015,
     baseUrl: process.env.ANALYTICS_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [{ mountPath: '/api/analytics' }]

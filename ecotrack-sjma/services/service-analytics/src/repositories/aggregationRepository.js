@@ -123,14 +123,10 @@ class AggregationRepository {
           COUNT(DISTINCT t.id_tournee) FILTER (WHERE t.statut = 'TERMINEE') as completed_routes,
           ROUND(AVG(t.distance_reelle_km), 2) as avg_distance_km,
           ROUND(AVG(t.duree_reelle_min), 2) as avg_duration_min,
-          ROUND(
-            AVG((et.collectee::int * 100.0) / NULLIF(COUNT(et.id_etape), 0)),
-            2
-          ) as avg_completion_rate
+          0 as avg_completion_rate
         FROM UTILISATEUR u
         LEFT JOIN TOURNEE t ON t.id_agent = u.id_utilisateur
           AND t.date_tournee BETWEEN '` + startDate + `' AND '` + endDate + `'
-        LEFT JOIN ETAPE_TOURNEE et ON et.id_tournee = t.id_tournee
         WHERE u.role_par_defaut = 'AGENT'
         GROUP BY u.id_utilisateur, u.nom, u.prenom
         HAVING COUNT(DISTINCT t.id_tournee) > 0

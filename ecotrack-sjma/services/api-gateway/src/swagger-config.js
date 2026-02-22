@@ -40,7 +40,7 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Routes & Planning** : Optimisation des tournées de collecte
 - **IoT** : Capteurs temps réel de niveau de remplissage
 
-### Service Analytics (Port 3012)
+### Service Analytics (Port 3015)
 - **Agrégations** : Dashboard complet, stats globales, journalières, par zone, par type
 - **Performances agents** : Suivi des agents de collecte
 - **Vues matérialisées** : Données pré-calculées pour des performances optimales
@@ -84,7 +84,7 @@ Obtenez un token via \`POST /auth/login\`
       description: 'Service Gamification (Direct)'
     },
     {
-      url: 'http://localhost:3012',
+      url: 'http://localhost:3015',
       description: 'Service Analytics (Direct)'
     }
   ],
