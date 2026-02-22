@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const AggregationModel = require('../src/models/aggregationModel');
+const AggregationModel = require('../src/repositories/aggregationRepository');
 
 describe('Phase 1 - Aggregations Tests', () => {
   describe('Materialized Views', () => {

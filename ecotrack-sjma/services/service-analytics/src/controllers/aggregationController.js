@@ -55,8 +55,8 @@ class AggregationController {
    */
   static async getZoneAggregations(req, res) {
     try {
-      const AggregationModel = require('../models/aggregationModel');
-      const zones = await AggregationModel.getZoneAggregations();
+      const AggregationRepository = require('../repositories/aggregationRepository');
+      const zones = await AggregationRepository.getZoneAggregations();
 
       res.json({
         success: true,
@@ -86,11 +86,8 @@ class AggregationController {
         });
       }
 
-      const AggregationModel = require('../models/aggregationModel');
-      const agents = await AggregationModel.getAgentPerformances(
-        new Date(startDate),
-        new Date(endDate)
-      );
+      const AggregationRepository = require('../repositories/aggregationRepository');
+      const agents = await AggregationRepository.getAgentPerformances(startDate, endDate);
 
       res.json({
         success: true,
