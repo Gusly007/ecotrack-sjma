@@ -1,22 +1,20 @@
 const { Pool } = require('pg');
+const logger = require('../utils/logger');
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  connectionString: process.env.DATABASE_URL || 
+    `postgresql://${process.env.DB_USER || 'ecotrack_user'}:${process.env.DB_PASSWORD || 'ecotrack_password'}@${process.env.DB_HOST || 'postgres'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'ecotrack'}`,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
+  logger.error({ err }, 'Unexpected database error');
 });
 
 pool.on('connect', () => {
-  console.log('✅ Database connected');
+  logger.info('Database connected');
 });
 
 module.exports = {

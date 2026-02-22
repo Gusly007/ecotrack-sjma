@@ -315,7 +315,6 @@ services:
       start_period: 10s
 
   service-analytics:
-    profiles: [placeholder]
     build:
       context: ./services/service-analytics
       dockerfile: Dockerfile

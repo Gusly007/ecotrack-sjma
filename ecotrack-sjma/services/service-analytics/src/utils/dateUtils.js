@@ -9,17 +9,30 @@ const { fr } = require('date-fns/locale');
 class DateUtils {
   static getPeriodDates(period) {
     const now = new Date();
+    let start, end;
     
     switch(period) {
       case 'day':
-        return { start: startOfDay(now), end: endOfDay(now) };
+        start = startOfDay(now);
+        end = endOfDay(now);
+        break;
       case 'week':
-        return { start: startOfWeek(now, { locale: fr }), end: endOfWeek(now, { locale: fr }) };
+        start = startOfWeek(now, { locale: fr });
+        end = endOfWeek(now, { locale: fr });
+        break;
       case 'month':
-        return { start: startOfMonth(now), end: endOfMonth(now) };
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        break;
       default:
-        return { start: startOfDay(now), end: endOfDay(now) };
+        start = startOfDay(now);
+        end = endOfDay(now);
     }
+    
+    return {
+      start: format(start, 'yyyy-MM-dd'),
+      end: format(end, 'yyyy-MM-dd')
+    };
   }
 
   static formatDate(date, formatStr = 'dd/MM/yyyy') {
