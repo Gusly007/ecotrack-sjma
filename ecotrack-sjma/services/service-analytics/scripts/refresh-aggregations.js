@@ -8,7 +8,7 @@ async function refreshAggregations() {
     
     await AggregationService.refreshAll();
     
-    logger.success('Scheduled aggregation refresh completed');
+    logger.info('Scheduled aggregation refresh completed');
     process.exit(0);
   } catch (error) {
     logger.error('Scheduled aggregation refresh failed:', error);

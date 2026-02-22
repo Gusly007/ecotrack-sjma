@@ -8,7 +8,7 @@ function setupCronJobs() {
     logger.info('Running hourly aggregation refresh...');
     try {
       await AggregationService.refreshAll();
-      logger.success('Hourly aggregation refresh completed');
+      logger.info('Hourly aggregation refresh completed');
     } catch (error) {
       logger.error('Hourly aggregation refresh failed:', error);
     }

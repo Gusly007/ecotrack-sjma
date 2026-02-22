@@ -50,45 +50,7 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 const app = express();
 const PORT = process.env.PORT || 3015;
 const aggregationRoutes = require('./routes/aggregationRoutes');
-
-
-// Middlewares
-app.use(helmet());
-app.use(cors());
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Metrics middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = (Date.now() - start) / 1000;
-    const route = req.route ? req.route.path : req.path;
-    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
-    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
-  });
-  next();
-});
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'UP', 
-    service: 'analytics',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Metrics endpoint
-app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
-});
-
+const { setupCronJobs } = require('./config/cron');
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -100,6 +62,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   logger.info(' Analytics Service running on port ' + PORT);
+  setupCronJobs();
 });
 
 // Routes

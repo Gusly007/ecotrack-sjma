@@ -10,7 +10,7 @@ class AggregationService {
     try {
       logger.info('Initializing materialized views...');
       await AggregationRepository.createMaterializedViews();
-      logger.success('Materialized views initialized');
+      logger.info('Materialized views initialized');
     } catch (error) {
       logger.error('Failed to initialize views:', error);
       throw error;
@@ -59,7 +59,7 @@ class AggregationService {
     try {
       logger.info('Refreshing all aggregations...');
       const result = await AggregationRepository.refreshMaterializedViews();
-      logger.success('All aggregations refreshed');
+      logger.info('All aggregations refreshed');
       return result;
     } catch (error) {
       logger.error('Error refreshing aggregations:', error);

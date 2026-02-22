@@ -35,9 +35,9 @@ class AggregationRepository {
   static async refreshMaterializedViews() {
     try {
       await db.query(`
-        REFRESH MATERIALIZED VIEW CONCURRENTLY analytics_daily_stats;
-        REFRESH MATERIALIZED VIEW CONCURRENTLY analytics_zone_stats;
-        REFRESH MATERIALIZED VIEW CONCURRENTLY analytics_type_stats;
+        REFRESH MATERIALIZED VIEW analytics_daily_stats;
+        REFRESH MATERIALIZED VIEW analytics_zone_stats;
+        REFRESH MATERIALIZED VIEW analytics_type_stats;
       `);
       
       logger.info('Materialized views refreshed');
