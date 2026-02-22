@@ -66,10 +66,10 @@ describe('Phase 1 - Aggregations Tests', () => {
       const zones = await AggregationRepository.getZoneAggregations();
       
       zones.forEach(zone => {
-        expect(zone.containers_count).toBeGreaterThanOrEqual(0);
+        expect(parseInt(zone.containers_count)).toBeGreaterThanOrEqual(0);
         if (zone.avg_fill_level !== null) {
-          expect(zone.avg_fill_level).toBeGreaterThanOrEqual(0);
-          expect(zone.avg_fill_level).toBeLessThanOrEqual(100);
+          expect(parseFloat(zone.avg_fill_level)).toBeGreaterThanOrEqual(0);
+          expect(parseFloat(zone.avg_fill_level)).toBeLessThanOrEqual(100);
         }
       });
     });
