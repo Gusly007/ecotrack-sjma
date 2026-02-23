@@ -35,7 +35,7 @@ node scripts/refresh-aggregations.js
 # Toutes les heures à H:00
 ```
 
-## 📡 Endpoints Disponibles
+##  Endpoints Disponibles
 
 ### GET /api/analytics/aggregations
 Récupère toutes les agrégations
@@ -66,11 +66,3 @@ Performances des agents
 **Query params:**
 - `startDate`: YYYY-MM-DD (required)
 - `endDate`: YYYY-MM-DD (required)
-
-## Critères de Validation
-
-- [x] Vues matérialisées créées
-- [x] Rafraîchissement automatique configuré
-- [x] Endpoints opérationnels
-- [x] Tests passants
-- [x] Documentation complète

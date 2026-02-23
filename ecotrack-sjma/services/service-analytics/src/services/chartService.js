@@ -1,19 +1,28 @@
-const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+let ChartJSNodeCanvas;
+try {
+  ChartJSNodeCanvas = require('chartjs-node-canvas');
+} catch (e) {
+  logger.warn('chartjs-node-canvas not available, image generation disabled');
+}
 const logger = require('../utils/logger');
 const DateUtils = require('../utils/dateUtils');
 
 class ChartService {
   constructor() {
-    this.chartJSNodeCanvas = new ChartJSNodeCanvas({ 
+    this.chartJSNodeCanvas = ChartJSNodeCanvas ? new ChartJSNodeCanvas({ 
       width: 800, 
       height: 400 
-    });
+    }) : null;
   }
 
   /**
    * Générer un graphique en ligne (évolution)
    */
   async generateLineChart(data, options = {}) {
+    if (!this.chartJSNodeCanvas) {
+      logger.warn('Chart generation not available');
+      return null;
+    }
     try {
       const configuration = {
         type: 'line',
@@ -60,6 +69,10 @@ class ChartService {
    * Générer un graphique en barres
    */
   async generateBarChart(data, options = {}) {
+    if (!this.chartJSNodeCanvas) {
+      logger.warn('Chart generation not available');
+      return null;
+    }
     try {
       const configuration = {
         type: 'bar',

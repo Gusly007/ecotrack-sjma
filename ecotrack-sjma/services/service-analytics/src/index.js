@@ -83,5 +83,11 @@ app.use('/api/analytics', aggregationRoutes);
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/analytics', dashboardRoutes);
 
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
 
 module.exports = app;
