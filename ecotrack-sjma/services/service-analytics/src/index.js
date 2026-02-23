@@ -41,6 +41,18 @@ const swaggerOptions = {
         description: 'Development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{
+      bearerAuth: [],
+    }],
   },
   apis: ['./src/routes/*.js'],
 };
@@ -67,5 +79,9 @@ app.listen(PORT, () => {
 
 // Routes
 app.use('/api/analytics', aggregationRoutes);
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/analytics', dashboardRoutes);
+
 
 module.exports = app;
