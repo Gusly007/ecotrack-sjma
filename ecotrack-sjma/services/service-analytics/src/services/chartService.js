@@ -1,11 +1,12 @@
+const logger = require('../utils/logger');
+const DateUtils = require('../utils/dateUtils');
+
 let ChartJSNodeCanvas;
 try {
   ChartJSNodeCanvas = require('chartjs-node-canvas');
 } catch (e) {
   logger.warn('chartjs-node-canvas not available, image generation disabled');
 }
-const logger = require('../utils/logger');
-const DateUtils = require('../utils/dateUtils');
 
 class ChartService {
   constructor() {
