@@ -64,6 +64,29 @@ const PORT = process.env.PORT || 3015;
 const aggregationRoutes = require('./routes/aggregationRoutes');
 const { setupCronJobs } = require('./config/cron');
 
+// Middleware to track HTTP metrics
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    const route = req.route ? req.route.path : req.path;
+    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
+    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
+  });
+  next();
+});
+
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   logger.error('Error: ' + err);
