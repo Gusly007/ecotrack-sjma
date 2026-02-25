@@ -13,7 +13,7 @@
 npm install chart.js chartjs-node-canvas
 ```
 
-## 📊 Fonctionnalités
+## Fonctionnalités
 
 ### Dashboard Principal
 - KPIs temps réel
@@ -28,7 +28,7 @@ npm install chart.js chartjs-node-canvas
 - Heatmaps géographiques
 - Données formatées pour Chart.js
 
-## 📡 Endpoints
+## Endpoints
 
 ### GET /api/analytics/dashboard
 Dashboard complet

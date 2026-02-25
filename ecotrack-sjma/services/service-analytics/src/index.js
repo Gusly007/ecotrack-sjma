@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const path = require('path');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
@@ -61,6 +62,10 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 const PORT = process.env.PORT || 3015;
+
+// Parse JSON bodies
+app.use(express.json());
+
 const aggregationRoutes = require('./routes/aggregationRoutes');
 const { setupCronJobs } = require('./config/cron');
 
@@ -98,6 +103,13 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   logger.info(' Analytics Service running on port ' + PORT);
   setupCronJobs();
+  
+  // Setup report scheduler
+  const ReportService = require('./services/reportService');
+  const SchedulerService = require('./services/schedulerService');
+  const reportService = new ReportService();
+  const scheduler = new SchedulerService(reportService);
+  scheduler.setupSchedules();
 });
 
 // Routes
@@ -112,5 +124,11 @@ app.get('/api-docs.json', (req, res) => {
   res.json(swaggerSpec);
 });
 
+// Static files for reports
+app.use('/reports', express.static(path.join(__dirname, '../..', process.env.REPORTS_DIR || './reports')));
+
+// Report routes
+const reportRoutes = require('./routes/reportRoutes');
+app.use('/api/analytics', reportRoutes);
 
 module.exports = app;
