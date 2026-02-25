@@ -183,7 +183,7 @@ class PDFService {
       .moveDown(0.5);
 
     const envKPIs = [
-      { label: 'Coûts économisés', value: `${data.costSaved || 0} €` },
+      { label: 'Coûts économisés (Total)', value: `${data.costSaved || data.totalCostSaved || 0} €`, bold: true },
       { label: 'CO2 économisé', value: `${data.co2Saved || 0} kg` },
       { label: 'Carburant économisé', value: `${data.fuelSaved || 0} L` },
       { label: 'Réduction distance', value: `${data.distanceReduction || 0}%` },
@@ -194,7 +194,7 @@ class PDFService {
     envKPIs.forEach(kpi => {
       doc
         .fontSize(10)
-        .fillColor('#000')
+        .fillColor(kpi.bold ? '#10B981' : '#000')
         .text(`${kpi.label}:`, 70, doc.y, { continued: true })
         .fillColor('#10B981')
         .text(` ${kpi.value}`, { align: 'left' });
