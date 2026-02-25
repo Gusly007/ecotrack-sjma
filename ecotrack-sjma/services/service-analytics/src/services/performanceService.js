@@ -1,5 +1,6 @@
 const AgentPerformanceRepository = require('../repositories/agentPerformanceRepository');
-const ENVIRONMENTAL = require('../utils/environmentalConstants');
+const EnvironmentalImpactRepository = require('../repositories/environmentalImpactRepository');
+const ENV = require('../utils/environmentalConstants');
 const DateUtils = require('../utils/dateUtils');
 const logger = require('../utils/logger');
 
@@ -13,11 +14,16 @@ class PerformanceService {
 
       const [
         agentsRanking,
-        environmentalImpact
+        environmentalData,
+        impactByZone
       ] = await Promise.all([
         AgentPerformanceRepository.getAgentsRanking(start, end, 10),
-        this._calculateEnvironmentalImpact(start, end)
+        EnvironmentalImpactRepository.getEnvironmentalImpact(start, end),
+        EnvironmentalImpactRepository.getImpactByZone(start, end)
       ]);
+
+      // Calculer l'impact environnemental
+      const environmental = this._calculateEnvironmentalMetrics(environmentalData);
 
       return {
         agents: {
@@ -25,7 +31,8 @@ class PerformanceService {
           topPerformer: agentsRanking[0] || null,
           averageSuccessRate: this._calculateAverageSuccessRate(agentsRanking)
         },
-        environmental: environmentalImpact,
+        environmental,
+        zones: impactByZone,
         period: { start, end },
         generatedAt: new Date()
       };
@@ -36,79 +43,74 @@ class PerformanceService {
   }
 
   /**
-   * Calculer l'impact environnemental
+   * Calculer les métriques environnementales
    */
-  static async _calculateEnvironmentalImpact(startDate, endDate) {
-    try {
-      const db = require('../config/database');
-      
-      const query = `
-        SELECT 
-          COALESCE(SUM(t.distance_prevue_km), 0) as planned_distance_km,
-          COALESCE(SUM(t.distance_reelle_km), 0) as actual_distance_km,
-          COUNT(DISTINCT t.id_tournee) FILTER (WHERE t.statut = 'TERMINEE') as completed_routes,
-          COUNT(DISTINCT et.id_conteneur) as total_containers,
-          COUNT(DISTINCT et.id_conteneur) FILTER (WHERE et.collectee = true) as collected_containers
-        FROM TOURNEE t
-        LEFT JOIN ETAPE_TOURNEE et ON et.id_tournee = t.id_tournee
-        WHERE t.date_tournee BETWEEN $1 AND $2
-          AND t.statut IN ('TERMINEE', 'EN_COURS');
-      `;
-
-      const result = await db.query(query, [startDate, endDate]);
-      const data = result.rows[0] || {};
-
-      const plannedDistance = parseFloat(data.planned_distance_km) || 0;
-      const actualDistance = parseFloat(data.actual_distance_km) || 0;
-      const distanceSaved = Math.max(0, plannedDistance - actualDistance);
-      
-      const fuelSaved = ENVIRONMENTAL.calculateFuelSaved(distanceSaved);
-      const co2Saved = ENVIRONMENTAL.calculateCO2Saved(distanceSaved, fuelSaved);
-      const reductionPct = plannedDistance > 0 
-        ? Math.round((distanceSaved / plannedDistance) * 100 * 100) / 100 
-        : 0;
-
-      const costsSaved = ENVIRONMENTAL.calculateCostsSaved(distanceSaved, fuelSaved);
-      const equivalents = ENVIRONMENTAL.calculateEquivalents(co2Saved);
-
-      return {
-        distance: {
-          planned: plannedDistance,
-          actual: actualDistance,
-          saved: Math.round(distanceSaved * 100) / 100,
-          reductionPct
-        },
-        fuel: {
-          saved: fuelSaved,
-          unit: 'L'
-        },
-        co2: {
-          saved: Math.round(co2Saved * 100) / 100,
-          unit: 'kg',
-          reductionPct,
-          equivalents
-        },
-        costs: costsSaved,
-        routes: {
-          completed: parseInt(data.completed_routes) || 0,
-          total: parseInt(data.total_routes) || 0
-        },
-        containers: {
-          collected: parseInt(data.collected_containers) || 0,
-          total: parseInt(data.total_containers) || 0
-        }
-      };
-    } catch (error) {
-      logger.error('Error calculating environmental impact:', error);
-      return {
-        distance: { planned: 0, actual: 0, saved: 0, reductionPct: 0 },
-        fuel: { saved: 0, unit: 'L' },
-        co2: { saved: 0, unit: 'kg', reductionPct: 0, equivalents: { trees: 0, carKm: 0, kWh: 0 } },
-        costs: { fuel: 0, maintenance: 0, total: 0 },
-        routes: { completed: 0, total: 0 },
-        containers: { collected: 0, total: 0 }
-      };
+  static _calculateEnvironmentalMetrics(data) {
+    if (!data) {
+      return this._getDefaultEnvironmentalData();
     }
+
+    const plannedDistance = parseFloat(data.planned_distance_km) || 0;
+    const actualDistance = parseFloat(data.actual_distance_km) || 0;
+    const distanceSaved = Math.max(0, plannedDistance - actualDistance);
+    
+    const plannedDuration = parseFloat(data.planned_duration_min) || 0;
+    const actualDuration = parseFloat(data.actual_duration_min) || 0;
+    const durationSaved = Math.max(0, plannedDuration - actualDuration);
+
+    // Calculs
+    const co2Saved = ENV.calculateCO2(distanceSaved);
+    const fuelSaved = ENV.calculateFuelConsumption(distanceSaved);
+    const totalCostSaved = ENV.calculateTotalCostSaved(distanceSaved, durationSaved);
+    const equivalents = ENV.calculateCO2Equivalents(co2Saved);
+
+    const reductionPct = plannedDistance > 0 
+      ? Math.round((distanceSaved / plannedDistance) * 100 * 100) / 100 
+      : 0;
+
+    return {
+      distance: {
+        planned: plannedDistance,
+        actual: actualDistance,
+        saved: Math.round(distanceSaved * 100) / 100,
+        reductionPct
+      },
+      fuel: {
+        saved: fuelSaved,
+        unit: 'L'
+      },
+      co2: {
+        saved: Math.round(co2Saved * 100) / 100,
+        unit: 'kg',
+        reductionPct,
+        equivalents
+      },
+      costs: {
+        total: totalCostSaved,
+        fuel: ENV.calculateFuelCost(distanceSaved),
+        labor: ENV.calculateLaborCost(durationSaved),
+        maintenance: ENV.calculateMaintenanceCost(distanceSaved)
+      },
+      routes: {
+        completed: parseInt(data.completed_routes) || 0,
+        total: parseInt(data.total_routes) || 0
+      },
+      containers: {
+        collected: parseInt(data.collected_containers) || 0,
+        total: parseInt(data.total_containers) || 0
+      }
+    };
+  }
+
+  static _getDefaultEnvironmentalData() {
+    return {
+      distance: { planned: 0, actual: 0, saved: 0, reductionPct: 0 },
+      fuel: { saved: 0, unit: 'L' },
+      co2: { saved: 0, unit: 'kg', reductionPct: 0, equivalents: { trees: 0, carKm: 0 } },
+      costs: { total: 0, fuel: 0, labor: 0, maintenance: 0 },
+      routes: { completed: 0, total: 0 },
+      containers: { collected: 0, total: 0 }
+    };
   }
 
   /**
