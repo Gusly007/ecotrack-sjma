@@ -289,16 +289,17 @@ class PDFService {
   }
 
   /**
-   * Pied de page standard
+   * Pied de page standard - ajouté après le contenu principal
    */
   static _addFooter(doc) {
+    doc.moveDown(2);
     doc
       .fontSize(8)
       .fillColor('#999')
       .text(
         'ECOTRACK - Plateforme Intelligente de Gestion des Déchets',
         50,
-        doc.page.height - 50,
+        doc.y,
         { align: 'center' }
       );
   }

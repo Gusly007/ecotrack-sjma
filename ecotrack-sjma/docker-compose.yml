@@ -332,6 +332,8 @@ services:
       REPORTS_DIR: /app/reports
     ports:
       - "3015:3015"
+    volumes:
+      - ./services/service-analytics/reports:/app/reports
     networks:
       - ecotrack
     restart: unless-stopped
