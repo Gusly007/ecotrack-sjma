@@ -210,10 +210,15 @@ class PDFService {
         .text('Détail des économies:', { underline: true })
         .moveDown(0.3);
       
+      const fuelCost = parseFloat(data.fuelCost || 0);
+      const laborCost = parseFloat(data.laborCost || 0);
+      const maintenanceCost = parseFloat(data.maintenanceCost || 0);
+      const totalCost = fuelCost + laborCost + maintenanceCost;
+      
       const costDetails = [
-        { label: 'Carburant', value: `${data.fuelCost || 0} €` },
-        { label: 'Main d\'œuvre', value: `${data.laborCost || 0} €` },
-        { label: 'Maintenance', value: `${data.maintenanceCost || 0} €` }
+        { label: 'Carburant', value: fuelCost },
+        { label: 'Main d\'œuvre', value: laborCost },
+        { label: 'Maintenance', value: maintenanceCost }
       ];
       
       costDetails.forEach(cost => {
@@ -222,8 +227,12 @@ class PDFService {
           .fillColor('#000')
           .text(`${cost.label}:`, 80, doc.y, { continued: true })
           .fillColor('#666')
-          .text(` ${cost.value}`, { align: 'left' });
+          .text(` ${cost.value.toFixed(2)} €`, { align: 'left' });
       });
+      
+      // Total
+      doc.moveDown(0.5);
+      doc.fontSize(11).fillColor('#10B981').text(`TOTAL ÉCONOMISÉ: ${totalCost.toFixed(2)} €`, { align: 'left' });
     }
 
     doc.moveDown(1.5);
@@ -387,17 +396,24 @@ class PDFService {
         // Coûts
         doc.fontSize(14).fillColor('#10B981').text('Économies', { underline: true }).moveDown(0.5);
         const costs = data.environmental?.costs || {};
+        const fuelCost = parseFloat(costs.fuel || 0);
+        const laborCost = parseFloat(costs.labor || 0);
+        const maintenanceCost = parseFloat(costs.maintenance || 0);
+        
         const costData = [
-          { label: 'Total économisé', value: `${costs.total || 0} €` },
-          { label: 'Carburant', value: `${costs.fuel || 0} €` },
-          { label: 'Main d\'œuvre', value: `${costs.labor || 0} €` },
-          { label: 'Maintenance', value: `${costs.maintenance || 0} €` }
+          { label: 'Carburant', value: fuelCost },
+          { label: 'Main d\'œuvre', value: laborCost },
+          { label: 'Maintenance', value: maintenanceCost }
         ];
+        
         costData.forEach(item => {
-          doc.fontSize(11).fillColor('#000').text(`${item.label}:`, { continued: true }).fillColor('#10B981').text(` ${item.value}`).moveDown(0.3);
+          doc.fontSize(11).fillColor('#000').text(`${item.label}:`, { continued: true }).fillColor('#10B981').text(` ${item.value.toFixed(2)} €`).moveDown(0.3);
         });
-
-        doc.moveDown(1);
+        
+        // Total
+        const totalCost = fuelCost + laborCost + maintenanceCost;
+        doc.moveDown(0.5);
+        doc.fontSize(14).fillColor('#10B981').text(`TOTAL ÉCONOMISÉ: ${totalCost.toFixed(2)} €`).moveDown(1);
 
         // Distance
         doc.fontSize(14).fillColor('#10B981').text('Distance', { underline: true }).moveDown(0.5);
