@@ -186,6 +186,121 @@ class ExcelService {
 
     sheet.columns.forEach(column => column.width = 15);
   }
+
+  /**
+   * Rapport d'Impact Environnemental Excel
+   */
+  static async generateEnvironmentalReport(data, period = 'week') {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'ECOTRACK';
+    workbook.created = new Date();
+
+    // Summary sheet
+    const summary = workbook.addWorksheet('Résumé', { properties: { tabColor: { argb: '10B981' } } });
+    summary.mergeCells('A1:C1');
+    summary.getCell('A1').value = 'ECOTRACK - Impact Environnemental';
+    summary.getCell('A1').font = { size: 16, bold: true, color: { argb: '10B981' } };
+    summary.getCell('A1').alignment = { horizontal: 'center' };
+    summary.getRow(1).height = 30;
+
+    const env = data.environmental || {};
+    const co2 = env.co2 || {};
+    const costs = env.costs || {};
+    const fuel = env.fuel || {};
+
+    summary.addRow(['Période', data.period]);
+    summary.addRow([]);
+    summary.addRow(['IMPACT CO2', '']);
+    summary.addRow(['CO2 économisé (kg)', co2.saved || 0]);
+    summary.addRow(['Réduction (%)', co2.reductionPct || 0]);
+    summary.addRow(['Équivalent arbres', co2.equivalents?.trees || 0]);
+    summary.addRow(['Équivalent km voiture', co2.equivalents?.carKm || 0]);
+    summary.addRow([]);
+    summary.addRow(['CARBURANT', '']);
+    summary.addRow(['Carburant économisé (L)', fuel.saved || 0]);
+    summary.addRow([]);
+    summary.addRow(['ÉCONOMIES', '']);
+    summary.addRow(['Total (€)', costs.total || 0]);
+    summary.addRow(['Carburant (€)', costs.fuel || 0]);
+    summary.addRow(['Main d\'œuvre (€)', costs.labor || 0]);
+    summary.addRow(['Maintenance (€)', costs.maintenance || 0]);
+
+    summary.getColumn(1).width = 25;
+    summary.getColumn(2).width = 15;
+
+    // Zones sheet
+    if (data.zones?.length > 0) {
+      const zonesSheet = workbook.addWorksheet('Zones');
+      zonesSheet.addRow(['Zone', 'Conteneurs', 'Taux Moyen', 'Status']);
+      zonesSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+      zonesSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '10B981' } };
+      data.zones.forEach(zone => {
+        zonesSheet.addRow([zone.zone_name, zone.containers_count, zone.avg_fill_level, zone.status]);
+      });
+    }
+
+    const fileName = `environmental_${period}_${Date.now()}.xlsx`;
+    const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    await workbook.xlsx.writeFile(filePath);
+
+    return { filePath, fileName, url: `/reports/${fileName}`, size: fs.statSync(filePath).size };
+  }
+
+  /**
+   * Rapport Performance des Tournées Excel
+   */
+  static async generateRoutesPerformanceReport(data, period = 'week') {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'ECOTRACK';
+    workbook.created = new Date();
+
+    // Summary sheet
+    const summary = workbook.addWorksheet('Résumé', { properties: { tabColor: { argb: '6366F1' } } });
+    summary.mergeCells('A1:C1');
+    summary.getCell('A1').value = 'ECOTRACK - Performance des Tournées';
+    summary.getCell('A1').font = { size: 16, bold: true, color: { argb: '6366F1' } };
+    summary.getCell('A1').alignment = { horizontal: 'center' };
+    summary.getRow(1).height = 30;
+
+    const routes = data.environmental?.routes || {};
+    const agents = data.agents || {};
+
+    summary.addRow(['Période', data.period]);
+    summary.addRow([]);
+    summary.addRow(['STATISTIQUES TOURNÉES', '']);
+    summary.addRow(['Tournées complétées', routes.completed || 0]);
+    summary.addRow(['Tournées totales', routes.total || 0]);
+    summary.addRow(['Conteneurs collectés', data.environmental?.containers?.collected || 0]);
+    summary.addRow([]);
+    summary.addRow(['PERFORMANCE AGENTS', '']);
+    summary.addRow(['Nombre d\'agents', agents.totalAgents || 0]);
+    summary.addRow(['Taux de réussite moyen (%)', agents.averageSuccessRate || 0]);
+    summary.addRow(['Taux de complétion (%)', agents.completionRate || 0]);
+
+    summary.getColumn(1).width = 25;
+    summary.getColumn(2).width = 15;
+
+    // Top agents sheet
+    if (agents.ranking?.length > 0) {
+      const agentsSheet = workbook.addWorksheet('Classement Agents');
+      agentsSheet.addRow(['Rang', 'Nom', 'Tournées', 'Score', 'Taux Collecte']);
+      agentsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+      agentsSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6366F1' } };
+      agents.ranking.forEach(agent => {
+        agentsSheet.addRow([agent.rank, agent.name, agent.completedRoutes, agent.overallScore, agent.collectionRate]);
+      });
+    }
+
+    const fileName = `routes_performance_${period}_${Date.now()}.xlsx`;
+    const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    await workbook.xlsx.writeFile(filePath);
+
+    return { filePath, fileName, url: `/reports/${fileName}`, size: fs.statSync(filePath).size };
+  }
 }
 
 module.exports = ExcelService;

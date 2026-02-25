@@ -131,9 +131,5 @@ app.use('/reports', express.static(path.join(__dirname, '../..', process.env.REP
 const reportRoutes = require('./routes/reportRoutes');
 app.use('/api/analytics', reportRoutes);
 
-const performanceRoutes = require('./routes/performanceRoutes');
-
-app.use('/api/analytics', performanceRoutes);
-
 
 module.exports = app;

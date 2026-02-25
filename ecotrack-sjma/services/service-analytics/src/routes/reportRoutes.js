@@ -95,4 +95,66 @@ router.post('/reports/generate', authMiddleware, ReportController.generateReport
  */
 router.get('/reports/download/:filename', authMiddleware, ReportController.downloadReport);
 
+/**
+ * @swagger
+ * /api/analytics/reports/environmental:
+ *   post:
+ *     summary: Générer un rapport d'impact environnemental
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               format:
+ *                 type: string
+ *                 enum: [pdf, excel]
+ *                 default: pdf
+ *               period:
+ *                 type: string
+ *                 enum: [day, week, month]
+ *                 default: week
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Rapport généré
+ */
+router.post('/reports/environmental', authMiddleware, ReportController.generateEnvironmentalReport);
+
+/**
+ * @swagger
+ * /api/analytics/reports/routes-performance:
+ *   post:
+ *     summary: Générer un rapport de performance des tournées
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               format:
+ *                 type: string
+ *                 enum: [pdf, excel]
+ *                 default: pdf
+ *               period:
+ *                 type: string
+ *                 enum: [day, week, month]
+ *                 default: week
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Rapport généré
+ */
+router.post('/reports/routes-performance', authMiddleware, ReportController.generateRoutesPerformanceReport);
+
 module.exports = router;

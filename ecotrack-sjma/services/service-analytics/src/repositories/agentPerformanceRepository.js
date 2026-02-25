@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const WEIGHTS = require('../utils/agentPerformanceConstants').WEIGHTS;
 
 class AgentPerformanceRepository {
   /**
@@ -73,12 +74,12 @@ class AgentPerformanceRepository {
         )
         SELECT 
           *,
-          -- Score global de réussite (moyenne pondérée)
+          -- Score global de réussite (moyenne pondérée avec WEIGHTS)
           ROUND(
-            (collection_rate * 0.4 +           -- 40% : collecte effective
-             completion_rate * 0.3 +            -- 30% : complétion tournées
-             time_efficiency_score * 0.15 +     -- 15% : respect temps
-             distance_efficiency_score * 0.15   -- 15% : respect distance
+            (collection_rate * ${WEIGHTS.COLLECTION_RATE} +           
+             completion_rate * ${WEIGHTS.COMPLETION_RATE} +            
+             time_efficiency_score * ${WEIGHTS.TIME_EFFICIENCY} +     
+             distance_efficiency_score * ${WEIGHTS.DISTANCE_EFFICIENCY}  
             ), 
             2
           ) as overall_success_rate
@@ -132,16 +133,16 @@ class AgentPerformanceRepository {
             -- Économies
             ROUND(SUM(t.distance_prevue_km - t.distance_reelle_km), 2) as distance_saved,
             
-            -- Score global
+            -- Score global avec WEIGHTS
             ROUND(
               (COALESCE(
                 COUNT(DISTINCT et.id_conteneur) FILTER (WHERE et.collectee = true)::numeric / 
                 NULLIF(COUNT(DISTINCT et.id_conteneur), 0) * 100, 0
-              ) * 0.5 +
+              ) * ${WEIGHTS.COLLECTION_RATE} +
               COALESCE(
                 COUNT(DISTINCT t.id_tournee) FILTER (WHERE t.statut = 'TERMINEE')::numeric / 
                 NULLIF(COUNT(DISTINCT t.id_tournee), 0) * 100, 0
-              ) * 0.5),
+              ) * ${WEIGHTS.COMPLETION_RATE}),
               2
             ) as overall_score
             
