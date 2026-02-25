@@ -1,0 +1,282 @@
+const db = require('../config/database');
+const logger = require('../utils/logger');
+
+/**
+ * Constantes pour calculs environnementaux
+ */
+const ENVIRONMENTAL_CONSTANTS = {
+  // Émissions CO2 en kg par km (camion benne à ordures)
+  CO2_PER_KM: 0.85, // 850g CO2/km
+  
+  // Consommation carburant en litres par 100km
+  FUEL_CONSUMPTION_PER_100KM: 35,
+  
+  // Prix du carburant en € par litre
+  FUEL_PRICE_PER_LITER: 1.65,
+  
+  // Coût main d'œuvre en € par heure
+  LABOR_COST_PER_HOUR: 50,
+  
+  // Coût maintenance par km
+  MAINTENANCE_COST_PER_KM: 0.15,
+  
+  // Équivalence arbres plantés (1 arbre absorbe ~20kg CO2/an)
+  CO2_PER_TREE_PER_YEAR: 20,
+  
+  // Équivalence voiture (voiture moyenne = 120g CO2/km)
+  CO2_PER_KM_CAR: 0.12
+};
+
+class EnvironmentalImpactRepository {
+  /**
+   * Calcul de l'impact environnemental sur une période
+   */
+  static async getEnvironmentalImpact(startDate, endDate) {
+    try {
+      const query = `
+        WITH current_period AS (
+          SELECT 
+            COALESCE(SUM(distance_reelle_km), 0) as total_distance,
+            COALESCE(SUM(duree_reelle_min), 0) as total_duration,
+            COUNT(DISTINCT id_tournee) as total_routes
+          FROM TOURNEE
+          WHERE statut = 'TERMINEE'
+            AND date_tournee BETWEEN $1 AND $2
+        ),
+        previous_period AS (
+          SELECT 
+            COALESCE(SUM(distance_reelle_km), 0) as total_distance,
+            COALESCE(SUM(duree_reelle_min), 0) as total_duration,
+            COUNT(DISTINCT id_tournee) as total_routes
+          FROM TOURNEE
+          WHERE statut = 'TERMINEE'
+            AND date_tournee BETWEEN $3 AND $4
+        ),
+        optimized_distance AS (
+          -- Distance qui aurait été parcourue sans optimisation (estimation +20%)
+          SELECT 
+            COALESCE(SUM(distance_prevue_km), 0) as unoptimized_distance
+          FROM TOURNEE
+          WHERE statut = 'TERMINEE'
+            AND date_tournee BETWEEN $1 AND $2
+        )
+        SELECT 
+          -- Période actuelle
+          cp.total_distance as current_distance_km,
+          cp.total_duration as current_duration_min,
+          cp.total_routes,
+          
+          -- Période précédente
+          pp.total_distance as previous_distance_km,
+          
+          -- Distance économisée grâce à l'optimisation
+          ROUND(od.unoptimized_distance - cp.total_distance, 2) as distance_saved_km,
+          ROUND(
+            ((od.unoptimized_distance - cp.total_distance) / NULLIF(od.unoptimized_distance, 0) * 100),
+            2
+          ) as distance_reduction_pct,
+          
+          -- Réduction vs période précédente
+          ROUND(pp.total_distance - cp.total_distance, 2) as distance_reduced_vs_previous,
+          ROUND(
+            ((pp.total_distance - cp.total_distance) / NULLIF(pp.total_distance, 0) * 100),
+            2
+          ) as reduction_vs_previous_pct
+          
+        FROM current_period cp, previous_period pp, optimized_distance od;
+      `;
+
+      // Calculer les dates de la période précédente (même durée)
+      const periodDuration = new Date(endDate) - new Date(startDate);
+      const previousEndDate = new Date(startDate);
+      const previousStartDate = new Date(startDate.getTime() - periodDuration);
+
+      const result = await db.query(query, [
+        startDate, endDate,
+        previousStartDate, previousEndDate
+      ]);
+
+      const data = result.rows[0];
+
+      // Calculs environnementaux
+      const distanceSaved = data.distance_saved_km || 0;
+      
+      return {
+        // Distances
+        distance: {
+          current: data.current_distance_km,
+          previous: data.previous_distance_km,
+          saved: distanceSaved,
+          reductionPct: data.distance_reduction_pct
+        },
+        
+        // CO2
+        co2: {
+          // Émissions actuelles
+          emitted: this._calculateCO2(data.current_distance_km),
+          
+          // CO2 économisé grâce à l'optimisation
+          saved: this._calculateCO2(distanceSaved),
+          
+          // Réduction en %
+          reductionPct: data.distance_reduction_pct,
+          
+          // Équivalences
+          equivalents: {
+            trees: Math.round(this._calculateCO2(distanceSaved) / ENVIRONMENTAL_CONSTANTS.CO2_PER_TREE_PER_YEAR),
+            carKm: Math.round(this._calculateCO2(distanceSaved) / ENVIRONMENTAL_CONSTANTS.CO2_PER_KM_CAR)
+          }
+        },
+        
+        // Carburant
+        fuel: {
+          // Litres consommés
+          consumed: this._calculateFuelConsumption(data.current_distance_km),
+          
+          // Litres économisés
+          saved: this._calculateFuelConsumption(distanceSaved),
+          
+          // Coût carburant économisé
+          costSaved: this._calculateFuelCost(distanceSaved)
+        },
+        
+        // Coûts économisés
+        costs: {
+          // Carburant
+          fuel: this._calculateFuelCost(distanceSaved),
+          
+          // Main d'œuvre (basé sur temps économisé)
+          labor: this._calculateLaborCost(data.current_duration_min - (data.previous_duration_min || data.current_duration_min)),
+          
+          // Maintenance
+          maintenance: this._calculateMaintenanceCost(distanceSaved),
+          
+          // Total
+          total: this._calculateTotalCostSaved(data)
+        },
+        
+        // Métadonnées
+        period: {
+          start: startDate,
+          end: endDate,
+          routesCount: data.total_routes
+        }
+      };
+    } catch (error) {
+      logger.error('Error calculating environmental impact:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Impact environnemental par zone
+   */
+  static async getImpactByZone(startDate, endDate) {
+    try {
+      const query = `
+        SELECT 
+          z.id_zone,
+          z.nom as zone_name,
+          COUNT(DISTINCT t.id_tournee) as routes_count,
+          ROUND(SUM(t.distance_reelle_km), 2) as total_distance,
+          ROUND(SUM(t.distance_prevue_km - t.distance_reelle_km), 2) as distance_saved
+        FROM ZONE z
+        LEFT JOIN TOURNEE t ON t.id_zone = z.id_zone
+          AND t.statut = 'TERMINEE'
+          AND t.date_tournee BETWEEN $1 AND $2
+        GROUP BY z.id_zone, z.nom
+        HAVING COUNT(DISTINCT t.id_tournee) > 0
+        ORDER BY distance_saved DESC;
+      `;
+
+      const result = await db.query(query, [startDate, endDate]);
+      
+      return result.rows.map(zone => ({
+        ...zone,
+        co2_saved: this._calculateCO2(zone.distance_saved),
+        fuel_saved: this._calculateFuelConsumption(zone.distance_saved),
+        cost_saved: this._calculateTotalCostSaved({
+          current_distance_km: zone.total_distance,
+          distance_saved_km: zone.distance_saved
+        })
+      }));
+    } catch (error) {
+      logger.error('Error getting impact by zone:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Évolution de l'impact sur plusieurs mois
+   */
+  static async getImpactEvolution(months = 6) {
+    try {
+      const query = `
+        SELECT 
+          DATE_TRUNC('month', t.date_tournee) as month,
+          ROUND(SUM(t.distance_reelle_km), 2) as total_distance,
+          ROUND(SUM(t.distance_prevue_km - t.distance_reelle_km), 2) as distance_saved,
+          COUNT(DISTINCT t.id_tournee) as routes_count
+        FROM TOURNEE t
+        WHERE t.statut = 'TERMINEE'
+          AND t.date_tournee >= CURRENT_DATE - INTERVAL '${months} months'
+        GROUP BY DATE_TRUNC('month', t.date_tournee)
+        ORDER BY month;
+      `;
+
+      const result = await db.query(query);
+      
+      return result.rows.map(row => ({
+        month: row.month,
+        distance: row.total_distance,
+        distanceSaved: row.distance_saved,
+        co2Saved: this._calculateCO2(row.distance_saved),
+        costSaved: this._calculateTotalCostSaved({
+          distance_saved_km: row.distance_saved
+        }),
+        routesCount: row.routes_count
+      }));
+    } catch (error) {
+      logger.error('Error getting impact evolution:', error);
+      throw error;
+    }
+  }
+
+  // ========== Méthodes de calcul ==========
+
+  static _calculateCO2(distanceKm) {
+    return parseFloat((distanceKm * ENVIRONMENTAL_CONSTANTS.CO2_PER_KM).toFixed(2));
+  }
+
+  static _calculateFuelConsumption(distanceKm) {
+    return parseFloat((distanceKm * ENVIRONMENTAL_CONSTANTS.FUEL_CONSUMPTION_PER_100KM / 100).toFixed(2));
+  }
+
+  static _calculateFuelCost(distanceKm) {
+    const liters = this._calculateFuelConsumption(distanceKm);
+    return parseFloat((liters * ENVIRONMENTAL_CONSTANTS.FUEL_PRICE_PER_LITER).toFixed(2));
+  }
+
+  static _calculateLaborCost(durationMin) {
+    const hours = durationMin / 60;
+    return parseFloat((hours * ENVIRONMENTAL_CONSTANTS.LABOR_COST_PER_HOUR).toFixed(2));
+  }
+
+  static _calculateMaintenanceCost(distanceKm) {
+    return parseFloat((distanceKm * ENVIRONMENTAL_CONSTANTS.MAINTENANCE_COST_PER_KM).toFixed(2));
+  }
+
+  static _calculateTotalCostSaved(data) {
+    const distanceSaved = data.distance_saved_km || 0;
+    const durationSaved = data.current_duration_min ? 
+      (data.current_duration_min - (data.previous_duration_min || data.current_duration_min)) : 0;
+
+    const fuelCost = this._calculateFuelCost(distanceSaved);
+    const laborCost = this._calculateLaborCost(Math.abs(durationSaved));
+    const maintenanceCost = this._calculateMaintenanceCost(distanceSaved);
+
+    return parseFloat((fuelCost + laborCost + maintenanceCost).toFixed(2));
+  }
+}
+
+module.exports = { EnvironmentalImpactRepository, ENVIRONMENTAL_CONSTANTS };

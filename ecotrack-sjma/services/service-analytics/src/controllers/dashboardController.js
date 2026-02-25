@@ -1,10 +1,12 @@
 const DashboardService = require('../services/dashboardService');
 const ChartService = require('../services/chartService');
+const PerformanceService = require('../services/performanceService');
 const logger = require('../utils/logger');
+
 
 class DashboardController {
   /**
-   * GET /api/analytics/dashboard
+   * GET /api/analytics/dashboard - AVEC PERFORMANCE AGENTS + CO2
    */
   static async getDashboard(req, res) {
     try {
@@ -12,16 +14,63 @@ class DashboardController {
 
       logger.info(`Dashboard requested for period: ${period}`);
 
-      const data = await DashboardService.getDashboardData(period);
-      const insights = DashboardService.generateInsights(data);
+      // Récupérer toutes les données en parallèle
+      const [
+        dashboardData,
+        performanceData
+      ] = await Promise.all([
+        DashboardService.getDashboardData(period),
+        PerformanceService.getCompleteDashboard(period)
+      ]);
 
-      // Préparer les données pour les graphiques
-      const chartData = ChartService.prepareChartData(data.evolution.data);
+      // Fusionner les données
+      const completeData = {
+        ...dashboardData,
+        
+        // Ajouter les KPIs agents
+        agents: performanceData.agents,
+        
+        // Ajouter l'impact environnemental
+        environmental: performanceData.environmental,
+        
+        // KPIs enrichis pour l'affichage
+        kpis: {
+          ...dashboardData.kpis,
+          
+          // Taux de réussite moyen des agents
+          avgAgentSuccessRate: performanceData.agents.averageSuccessRate,
+          
+          // Meilleur agent
+          topAgent: performanceData.agents.topPerformer ? {
+            name: `${performanceData.agents.topPerformer.prenom} ${performanceData.agents.topPerformer.nom}`,
+            score: performanceData.agents.topPerformer.overall_score,
+            routes: performanceData.agents.topPerformer.completed_routes
+          } : null,
+          
+          // Impact CO2
+          co2Saved: performanceData.environmental.co2.saved,
+          co2ReductionPct: performanceData.environmental.co2.reductionPct,
+          
+          // Équivalences CO2
+          treesEquivalent: performanceData.environmental.co2.equivalents.trees,
+          carKmEquivalent: performanceData.environmental.co2.equivalents.carKm,
+          
+          // Coûts économisés
+          totalCostSaved: performanceData.environmental.costs.total,
+          fuelCostSaved: performanceData.environmental.costs.fuel,
+          
+          // Carburant économisé
+          fuelSavedLiters: performanceData.environmental.fuel.saved
+        }
+      };
+
+      const insights = DashboardService.generateInsights(completeData);
+      const chartData = ChartService.prepareChartData(dashboardData.evolution?.data || []);
 
       res.json({
         success: true,
         data: {
-          ...data,
+          ...completeData,
           insights,
           chartData
         }
