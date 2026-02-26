@@ -96,11 +96,12 @@ class AggregationRepository {
     try {
       const query = `
         SELECT * FROM analytics_daily_stats
-        WHERE date >= CURRENT_DATE - INTERVAL '` + days + ` days'
+        WHERE date >= CURRENT_DATE - INTERVAL $1
         ORDER BY date DESC;
       `;
       
-      const result = await db.query(query);
+      const interval = `${days} days`;
+      const result = await db.query(query, [interval]);
       return result.rows;
     } catch (error) {
       logger.error({ err: error }, 'Error fetching daily aggregations');
@@ -167,14 +168,14 @@ class AggregationRepository {
           0 as avg_completion_rate
         FROM UTILISATEUR u
         LEFT JOIN TOURNEE t ON t.id_agent = u.id_utilisateur
-          AND t.date_tournee BETWEEN '` + startDate + `' AND '` + endDate + `'
+          AND t.date_tournee BETWEEN $1 AND $2
         WHERE u.role_par_defaut = 'AGENT'
         GROUP BY u.id_utilisateur, u.nom, u.prenom
         HAVING COUNT(DISTINCT t.id_tournee) > 0
         ORDER BY completed_routes DESC;
       `;
       
-      const result = await db.query(query);
+      const result = await db.query(query, [startDate, endDate]);
       return result.rows;
     } catch (error) {
       logger.error({ err: error }, 'Error fetching agent performances');
