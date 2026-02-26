@@ -22,7 +22,11 @@ SELECT
   z.nom as zone_name,
   z.code as zone_code,
   COUNT(DISTINCT c.id_conteneur) as containers_count,
-  ROUND(AVG(latest.niveau_remplissage_pct), 2) as avg_fill_level,
+  CASE 
+    WHEN COUNT(latest.niveau_remplissage_pct) > 0 
+    THEN ROUND(AVG(latest.niveau_remplissage_pct), 2)
+    ELSE NULL
+  END as avg_fill_level,
   COUNT(*) FILTER (WHERE latest.niveau_remplissage_pct > 80) as critical_count
 FROM ZONE z
 LEFT JOIN CONTENEUR c ON c.id_zone = z.id_zone
@@ -44,7 +48,11 @@ SELECT
   tc.id_type,
   tc.nom as container_type,
   COUNT(DISTINCT c.id_conteneur) as containers_count,
-  ROUND(AVG(latest.niveau_remplissage_pct), 2) as avg_fill_level,
+  CASE 
+    WHEN COUNT(latest.niveau_remplissage_pct) > 0 
+    THEN ROUND(AVG(latest.niveau_remplissage_pct), 2)
+    ELSE NULL
+  END as avg_fill_level,
   COUNT(*) FILTER (WHERE latest.niveau_remplissage_pct > 80) as critical_count
 FROM TYPE_CONTENEUR tc
 LEFT JOIN CONTENEUR c ON c.id_type = tc.id_type
