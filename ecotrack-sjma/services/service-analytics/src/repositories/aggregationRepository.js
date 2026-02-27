@@ -96,12 +96,11 @@ class AggregationRepository {
     try {
       const query = `
         SELECT * FROM analytics_daily_stats
-        WHERE date >= CURRENT_DATE - INTERVAL $1
+        WHERE date >= CURRENT_DATE - (($1 || ' days')::interval)
         ORDER BY date DESC;
       `;
       
-      const interval = `${days} days`;
-      const result = await db.query(query, [interval]);
+      const result = await db.query(query, [String(days)]);
       return result.rows;
     } catch (error) {
       logger.error({ err: error }, 'Error fetching daily aggregations');

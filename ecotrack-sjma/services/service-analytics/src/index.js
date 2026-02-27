@@ -132,6 +132,9 @@ app.use('/api/analytics', aggregationRoutes);
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/analytics', dashboardRoutes);
 
+const performanceRoutes = require('./routes/performanceRoutes');
+app.use('/api/analytics', performanceRoutes);
+
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api-docs.json', (req, res) => {

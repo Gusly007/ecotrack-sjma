@@ -1,6 +1,6 @@
 const PerformanceService = require('../services/performanceService');
 const AgentPerformanceRepository = require('../repositories/agentPerformanceRepository');
-const { EnvironmentalImpactRepository } = require('../repositories/environmentalImpactRepositoryjs');
+const { EnvironmentalImpactRepository } = require('../repositories/environmentalImpactRepository.js');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 
