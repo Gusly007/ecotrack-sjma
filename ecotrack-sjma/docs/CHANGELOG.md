@@ -4,6 +4,61 @@
 
 ---
 
+### [2.1.0] 2026-02-27 - Service Analytics
+
+#### Phase 1-3 - Agrégations, Dashboard, Rapports
+- **Nouveau**: Service Analytics (port 3015)
+- **Nouveau**: Vues matérialisées (analytics_daily_stats, analytics_zone_stats, analytics_type_stats)
+- **Nouveau**: Endpoints agrégations avec filtres période
+- **Nouveau**: Dashboard complet avec KPIs
+- **Nouveau**: Heatmap GeoJSON
+- **Nouveau**: Évolutions
+- **Nouveau**: Génération PDF/Excel rapports
+- **Nouveau**: Rapports environnementaux (économie carburant, CO2)
+- **Nouveau**: Rapports performance tournées
+
+#### Phase 4 - ML Predictions
+- **Nouveau**: Prédiction remplissage (régression linéaire)
+- **Nouveau**: Détection anomalies (Z-score)
+- **Nouveau**: Capteurs défaillants detection
+- **Nouveau**: Intégration météo (Open-Meteo API)
+- **Nouveau**: Alertes automatiques depuis anomalies
+- **Nouveau**: Table predictions en DB
+- **Nouveau**: Seed données ML test
+
+#### Phase 5 - Infrastructure
+- **Nouveau**: Rate limiting (express-rate-limit)
+  - General: 100 req/15min
+  - Reports: 10 req/heure
+  - ML: 50 req/15min
+- **Nouveau**: Validation Joi middleware
+- **Nouveau**: WebSocket temps réel (socket.io)
+- **Nouveau**: Cache service (node-cache)
+- **Nouveau**: Redis dans docker-compose
+- **Fix**: logger.success → logger.info
+
+#### Documentation
+- **Nouveau**: PHASE4_GUIDE.md - ML Predictions
+- **Nouveau**: PHASE5_GUIDE.md - Cache, Middleware, WebSocket
+- **Mise à jour**: README.md - Documentation complète
+
+#### Services Disponibles
+| Service | Port | Status |
+|---------|------|--------|
+| Frontend | 5173 | ✅ |
+| API Gateway | 3000 | ✅ |
+| Service Users | 3010 | ✅ |
+| Service Containers | 3011 | ✅ |
+| Service Gamifications | 3014 | ✅ |
+| Service Analytics | 3015 | ✅ |
+| PostgreSQL | 5432 | ✅ |
+| Redis | 6379 | ✅ |
+| PgAdmin | 5052 | ✅ |
+| Prometheus | 9090 | ✅ |
+| Grafana | 3001 | ✅ |
+
+---
+
 ### [2.0.0] 2026-02-21 - Monitoring
 
 #### Infrastructure
@@ -631,5 +686,5 @@ La table `pgmigrations` garde la trace des migrations executees :
 
 
 **Format de date** : AAAA-MM-JJ (ISO 8601)
-**Derniere mise a jour** : 2026-02-12
+**Derniere mise a jour** : 2026-02-27
 **Maintenu par** : Equipe EcoTrack

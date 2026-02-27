@@ -39,7 +39,11 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 ### Services à venir
 - **Routes & Planning** : Optimisation des tournées de collecte
 - **IoT** : Capteurs temps réel de niveau de remplissage
-- **Analytics** : Tableaux de bord et rapports avancés
+
+### Service Analytics (Port 3015)
+- **Agrégations** : Dashboard complet, stats globales, journalières, par zone, par type
+- **Performances agents** : Suivi des agents de collecte
+- **Vues matérialisées** : Données pré-calculées pour des performances optimales
 
 ## Architecture
 
@@ -78,6 +82,10 @@ Obtenez un token via \`POST /auth/login\`
     {
       url: 'http://localhost:3014',
       description: 'Service Gamification (Direct)'
+    },
+    {
+      url: 'http://localhost:3015',
+      description: 'Service Analytics (Direct)'
     }
   ],
   tags: [
@@ -175,6 +183,14 @@ Obtenez un token via \`POST /auth/login\`
       externalDocs: {
         description: 'Documentation détaillée',
         url: 'http://localhost:3014/api-docs'
+      }
+    },
+    {
+      name: 'Analytics',
+      description: 'Agrégations et analytics (Service Analytics)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3015/api-docs'
       }
     }
   ],
@@ -888,6 +904,260 @@ Obtenez un token via \`POST /auth/login\`
             }
           },
           404: { description: 'Utilisateur non trouvé' },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SERVICE ANALYTICS — Endpoints
+    // ═══════════════════════════════════════════════════════════════
+
+    '/api/analytics/aggregations/dashboard': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Dashboard complet d\'analytics',
+        description: 'Récupère toutes les agrégations pour le dashboard (stats globales, quotidiennes, zones, types, performances agents)',
+        operationId: 'getAnalyticsDashboard',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'period',
+            in: 'query',
+            schema: { type: 'string', enum: ['day', 'week', 'month'], default: 'month' },
+            description: 'Période d\'analyse (day, week, month)'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Dashboard complet',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    global: { type: 'object', description: 'Statistiques globales' },
+                    daily: { type: 'array', description: 'Statistiques quotidiennes' },
+                    zones: { type: 'array', description: 'Statistiques par zone' },
+                    types: { type: 'array', description: 'Statistiques par type' },
+                    agents: { type: 'array', description: 'Performances des agents' },
+                    period: { type: 'object', description: 'Période analysée' }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/aggregations/global': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Agrégation globale',
+        description: 'Statistiques globales du système (total conteneurs, niveau moyen, alertes, etc.)',
+        operationId: 'getGlobalAggregation',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Statistiques globales',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    total_containers: { type: 'integer' },
+                    containers_with_data: { type: 'integer' },
+                    avg_fill_level: { type: 'number' },
+                    critical_containers: { type: 'integer' },
+                    total_zones: { type: 'integer' },
+                    active_routes: { type: 'integer' },
+                    open_reports: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/aggregations/daily': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Agrégations quotidiennes',
+        description: 'Statistiques quotidiennes des mesures sur une période donnée',
+        operationId: 'getDailyAggregations',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'days',
+            in: 'query',
+            schema: { type: 'integer', default: 30 },
+            description: 'Nombre de jours à analyser'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Statistiques quotidiennes',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      date: { type: 'string', format: 'date' },
+                      containers_measured: { type: 'integer' },
+                      avg_fill_level: { type: 'number' },
+                      critical_count: { type: 'integer' },
+                      total_measurements: { type: 'integer' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/aggregations/zones': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Agrégations par zone',
+        description: 'Statistiques agrégées par zone géographique',
+        operationId: 'getZoneAggregations',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Statistiques par zone',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id_zone: { type: 'integer' },
+                      zone_name: { type: 'string' },
+                      containers_count: { type: 'integer' },
+                      avg_fill_level: { type: 'number' },
+                      superficie_km2: { type: 'number' },
+                      population: { type: 'integer' },
+                      containers_per_km2: { type: 'number' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/aggregations/types': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Agrégations par type',
+        description: 'Statistiques agrégées par type de conteneur',
+        operationId: 'getTypeAggregations',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Statistiques par type',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id_type: { type: 'integer' },
+                      type_name: { type: 'string' },
+                      containers_count: { type: 'integer' },
+                      avg_fill_level: { type: 'number' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/aggregations/agents': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Performances des agents',
+        description: 'Statistiques de performance des agents de collecte',
+        operationId: 'getAgentPerformances',
+        servers: [{ url: 'http://localhost:3000' }],
+        parameters: [
+          {
+            name: 'period',
+            in: 'query',
+            schema: { type: 'string', enum: ['day', 'week', 'month'], default: 'month' },
+            description: 'Période d\'analyse'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Performances des agents',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id_utilisateur: { type: 'integer' },
+                      nom: { type: 'string' },
+                      prenom: { type: 'string' },
+                      total_routes: { type: 'integer' },
+                      completed_routes: { type: 'integer' },
+                      avg_distance_km: { type: 'number' },
+                      avg_duration_min: { type: 'number' },
+                      avg_completion_rate: { type: 'number' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: { description: 'Erreur serveur' }
+        }
+      }
+    },
+
+    '/api/analytics/refresh': {
+      post: {
+        tags: ['Analytics'],
+        summary: 'Rafraîchir les agrégations',
+        description: 'Rafraîchit toutes les vues matérialisées',
+        operationId: 'refreshAggregations',
+        servers: [{ url: 'http://localhost:3000' }],
+        responses: {
+          200: {
+            description: 'Vues rafraîchies',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    refreshedAt: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          },
           500: { description: 'Erreur serveur' }
         }
       }
