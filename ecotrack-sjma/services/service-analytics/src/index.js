@@ -9,6 +9,7 @@ require('dotenv').config();
 
 const logger = require('./utils/logger');
 const client = require('prom-client');
+const { generalLimiter, reportLimiter, mlLimiter } = require('./middleware/rateLimitMiddleware');
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -63,8 +64,18 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 const app = express();
 const PORT = process.env.PORT || 3015;
 
+// Create HTTP server for WebSocket
+const httpServer = require('http').createServer(app);
+
+// Setup WebSocket
+const WebSocketService = require('./services/websocketService');
+let wsService = null;
+
 // Parse JSON bodies
 app.use(express.json());
+
+// Apply rate limiting
+app.use(generalLimiter);
 
 const aggregationRoutes = require('./routes/aggregationRoutes');
 const { setupCronJobs } = require('./config/cron');
@@ -100,9 +111,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   logger.info(' Analytics Service running on port ' + PORT);
   setupCronJobs();
+  
+  // Initialize WebSocket
+  wsService = new WebSocketService(httpServer);
   
   // Setup report scheduler
   const ReportService = require('./services/reportService');

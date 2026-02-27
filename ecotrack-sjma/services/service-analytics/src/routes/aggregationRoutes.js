@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const AggregationController = require('../controllers/aggregationController');
+const authMiddleware = require('../middleware/authMiddleware');
+const ValidationMiddleware = require('../middleware/validationMiddleware');
+const { generalLimiter } = require('../middleware/rateLimitMiddleware');
 
 /**
  * @swagger

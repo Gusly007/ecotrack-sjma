@@ -83,6 +83,21 @@ services:
         max-file: "3"
 
   # =========================================================================
+  # REDIS (Cache & Sessions)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ecotrack-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # =========================================================================
   # MIGRATIONS (s'exécute automatiquement au démarrage)
   # =========================================================================
   migrations:
@@ -399,6 +414,8 @@ volumes:
   pgadmin_data:
     driver: local
   prometheus_data:
+    driver: local
+  redis_data:
     driver: local
   grafana_data:
     driver: local

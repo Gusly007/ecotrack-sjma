@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const PredictionService = require('../services/predictionService');
 const AnomalyService = require('../services/anomalyService');
 const logger = require('../utils/logger');
+const ValidationMiddleware = require('../middleware/validationMiddleware');
+const { mlLimiter } = require('../middleware/rateLimitMiddleware');
 
 /**
  * @swagger
@@ -111,7 +113,7 @@ const authMiddleware = (req, res, next) => {
  *       404:
  *         description: Données insuffisantes
  */
-router.post('/ml/predict', authMiddleware, async (req, res) => {
+router.post('/ml/predict', authMiddleware, mlLimiter, ValidationMiddleware.validatePrediction(), async (req, res) => {
   try {
     const { containerId, daysAhead = 1, includeWeather = false } = req.body;
     if (!containerId) {

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const ReportController = require('../controllers/reportController');
 const authMiddleware = require('../middleware/authMiddleware');
+const ValidationMiddleware = require('../middleware/validationMiddleware');
+const { reportLimiter } = require('../middleware/rateLimitMiddleware');
 
 /**
  * @swagger
@@ -59,7 +61,7 @@ const authMiddleware = require('../middleware/authMiddleware');
  *       401:
  *         description: Non autorisé
  */
-router.post('/reports/generate', authMiddleware, ReportController.generateReport);
+router.post('/reports/generate', authMiddleware, reportLimiter, ValidationMiddleware.validateReportRequest(), ReportController.generateReport);
 
 /**
  * @swagger
