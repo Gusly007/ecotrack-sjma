@@ -1,6 +1,21 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
-const WEIGHTS = require('../utils/agentPerformanceConstants').WEIGHTS;
+const ConstantsRepository = require('./constantsRepository');
+
+let cachedWeights = null;
+
+async function getWeights() {
+  if (!cachedWeights) {
+    const constants = await ConstantsRepository.getAgentPerformanceConstants();
+    cachedWeights = {
+      COLLECTION_RATE: constants.COLLECTION_RATE_WEIGHT || 0.4,
+      COMPLETION_RATE: constants.COMPLETION_RATE_WEIGHT || 0.3,
+      TIME_EFFICIENCY: constants.TIME_EFFICIENCY_WEIGHT || 0.15,
+      DISTANCE_EFFICIENCY: constants.DISTANCE_EFFICIENCY_WEIGHT || 0.15
+    };
+  }
+  return cachedWeights;
+}
 
 class AgentPerformanceRepository {
   /**
@@ -14,6 +29,7 @@ class AgentPerformanceRepository {
    */
   static async getAgentSuccessRate(agentId, startDate, endDate) {
     try {
+      const WEIGHTS = await getWeights();
       const query = `
         WITH agent_stats AS (
           -- Statistiques des tournées
@@ -99,6 +115,7 @@ class AgentPerformanceRepository {
    */
   static async getAgentsRanking(startDate, endDate, limit = 10) {
     try {
+      const WEIGHTS = await getWeights();
       const query = `
         WITH agent_performance AS (
           SELECT 

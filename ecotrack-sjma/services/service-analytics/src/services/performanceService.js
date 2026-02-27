@@ -1,8 +1,26 @@
 const AgentPerformanceRepository = require('../repositories/agentPerformanceRepository');
 const EnvironmentalImpactRepository = require('../repositories/environmentalImpactRepository');
-const ENV = require('../utils/environmentalConstants');
+const ConstantsRepository = require('../repositories/constantsRepository');
 const DateUtils = require('../utils/dateUtils');
 const logger = require('../utils/logger');
+
+let cachedEnvConstants = null;
+
+async function getEnvConstants() {
+  if (!cachedEnvConstants) {
+    const constants = await ConstantsRepository.getEnvironmentalConstants();
+    cachedEnvConstants = {
+      CO2_PER_KM: constants.CO2_PER_KM || 0.85,
+      FUEL_CONSUMPTION_PER_100KM: constants.FUEL_CONSUMPTION_PER_100KM || 35,
+      FUEL_PRICE_PER_LITER: constants.FUEL_PRICE_PER_LITER || 1.65,
+      LABOR_COST_PER_HOUR: constants.LABOR_COST_PER_HOUR || 50,
+      MAINTENANCE_COST_PER_KM: constants.MAINTENANCE_COST_PER_KM || 0.15,
+      CO2_PER_TREE_PER_YEAR: constants.CO2_PER_TREE_PER_YEAR || 20,
+      CO2_PER_KM_CAR: constants.CO2_PER_KM_CAR || 0.12
+    };
+  }
+  return cachedEnvConstants;
+}
 
 class PerformanceService {
   /**
@@ -23,7 +41,7 @@ class PerformanceService {
       ]);
 
       // Calculer l'impact environnemental
-      const environmental = this._calculateEnvironmentalMetrics(environmentalData);
+      const environmental = await this._calculateEnvironmentalMetrics(environmentalData);
 
       return {
         agents: {
@@ -45,7 +63,9 @@ class PerformanceService {
   /**
    * Calculer les métriques environnementales
    */
-  static _calculateEnvironmentalMetrics(data) {
+  static async _calculateEnvironmentalMetrics(data) {
+    const ENV = await getEnvConstants();
+    
     if (!data) {
       return this._getDefaultEnvironmentalData();
     }
@@ -58,11 +78,17 @@ class PerformanceService {
     const actualDuration = parseFloat(data.actual_duration_min) || 0;
     const durationSaved = Math.max(0, plannedDuration - actualDuration);
 
-    // Calculs
-    const co2Saved = ENV.calculateCO2(distanceSaved);
-    const fuelSaved = ENV.calculateFuelConsumption(distanceSaved);
-    const totalCostSaved = ENV.calculateTotalCostSaved(distanceSaved, durationSaved);
-    const equivalents = ENV.calculateCO2Equivalents(co2Saved);
+    const co2Saved = parseFloat((distanceSaved * ENV.CO2_PER_KM).toFixed(2));
+    const fuelSaved = parseFloat((distanceSaved * ENV.FUEL_CONSUMPTION_PER_100KM / 100).toFixed(2));
+    const fuelCost = parseFloat((fuelSaved * ENV.FUEL_PRICE_PER_LITER).toFixed(2));
+    const laborCost = parseFloat((durationSaved / 60 * ENV.LABOR_COST_PER_HOUR).toFixed(2));
+    const maintenanceCost = parseFloat((distanceSaved * ENV.MAINTENANCE_COST_PER_KM).toFixed(2));
+    const totalCostSaved = parseFloat((fuelCost + laborCost + maintenanceCost).toFixed(2));
+    
+    const equivalents = {
+      trees: Math.round(co2Saved / ENV.CO2_PER_TREE_PER_YEAR),
+      carKm: Math.round(co2Saved / ENV.CO2_PER_KM_CAR)
+    };
 
     const reductionPct = plannedDistance > 0 
       ? Math.round((distanceSaved / plannedDistance) * 100 * 100) / 100 
@@ -87,9 +113,9 @@ class PerformanceService {
       },
       costs: {
         total: totalCostSaved,
-        fuel: ENV.calculateFuelCost(distanceSaved),
-        labor: ENV.calculateLaborCost(durationSaved),
-        maintenance: ENV.calculateMaintenanceCost(distanceSaved)
+        fuel: fuelCost,
+        labor: laborCost,
+        maintenance: maintenanceCost
       },
       routes: {
         completed: parseInt(data.completed_routes) || 0,
