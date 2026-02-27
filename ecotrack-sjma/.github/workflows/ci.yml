@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-analytics']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-analytics', 'service-iot']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -268,7 +268,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-analytics']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-analytics', 'service-iot']
     
     steps:
       - name: 'Checkout code'
@@ -323,6 +323,9 @@ jobs:
           - service: service-analytics
             image-name: ecotrack-service-analytics
             port: 3015
+          - service: service-iot
+            image-name: ecotrack-service-iot
+            port: 3016
     
     # Attend que tous les tests réussissent
     needs: [test, test-containers, test-gamifications]
@@ -399,6 +402,10 @@ jobs:
             image-name: ecotrack-service-analytics
             port: 3015
             env-vars: '-e PORT=3015 -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack -e JWT_SECRET=test'
+          - service: service-iot
+            image-name: ecotrack-service-iot
+            port: 3016
+            env-vars: '-e PORT=3016 -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack -e JWT_SECRET=test'
     
     needs: build
     if: github.event_name == 'pull_request'  # Seulement en PR
