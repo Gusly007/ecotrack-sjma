@@ -1,6 +1,7 @@
 const DashboardService = require('../services/dashboardService');
 const ChartService = require('../services/chartService');
 const PerformanceService = require('../services/performanceService');
+const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 
 
@@ -11,61 +12,46 @@ class DashboardController {
   static async getDashboard(req, res) {
     try {
       const { period = 'week' } = req.query;
+      const cacheKey = `dashboard:${period}`;
 
       logger.info(`Dashboard requested for period: ${period}`);
 
-      // Récupérer toutes les données en parallèle
-      const [
-        dashboardData,
-        performanceData
-      ] = await Promise.all([
-        DashboardService.getDashboardData(period),
-        PerformanceService.getCompleteDashboard(period)
-      ]);
+      // Utiliser le cache
+      const completeData = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const [dashboardData, performanceData] = await Promise.all([
+            DashboardService.getDashboardData(period),
+            PerformanceService.getCompleteDashboard(period)
+          ]);
 
-      // Fusionner les données
-      const completeData = {
-        ...dashboardData,
-        
-        // Ajouter les KPIs agents
-        agents: performanceData.agents,
-        
-        // Ajouter l'impact environnemental
-        environmental: performanceData.environmental,
-        
-        // KPIs enrichis pour l'affichage
-        kpis: {
-          ...dashboardData.kpis,
-          
-          // Taux de réussite moyen des agents
-          avgAgentSuccessRate: performanceData.agents.averageSuccessRate,
-          
-          // Meilleur agent
-          topAgent: performanceData.agents.topPerformer ? {
-            name: `${performanceData.agents.topPerformer.prenom} ${performanceData.agents.topPerformer.nom}`,
-            score: performanceData.agents.topPerformer.overall_score,
-            routes: performanceData.agents.topPerformer.completed_routes
-          } : null,
-          
-          // Impact CO2
-          co2Saved: performanceData.environmental.co2.saved,
-          co2ReductionPct: performanceData.environmental.co2.reductionPct,
-          
-          // Équivalences CO2
-          treesEquivalent: performanceData.environmental.co2.equivalents.trees,
-          carKmEquivalent: performanceData.environmental.co2.equivalents.carKm,
-          
-          // Coûts économisés
-          totalCostSaved: performanceData.environmental.costs.total,
-          fuelCostSaved: performanceData.environmental.costs.fuel,
-          
-          // Carburant économisé
-          fuelSavedLiters: performanceData.environmental.fuel.saved
-        }
-      };
+          return {
+            ...dashboardData,
+            agents: performanceData.agents,
+            environmental: performanceData.environmental,
+            kpis: {
+              ...dashboardData.kpis,
+              avgAgentSuccessRate: performanceData.agents.averageSuccessRate,
+              topAgent: performanceData.agents.topPerformer ? {
+                name: `${performanceData.agents.topPerformer.prenom} ${performanceData.agents.topPerformer.nom}`,
+                score: performanceData.agents.topPerformer.overall_score,
+                routes: performanceData.agents.topPerformer.completed_routes
+              } : null,
+              co2Saved: performanceData.environmental.co2.saved,
+              co2ReductionPct: performanceData.environmental.co2.reductionPct,
+              treesEquivalent: performanceData.environmental.co2.equivalents.trees,
+              carKmEquivalent: performanceData.environmental.co2.equivalents.carKm,
+              totalCostSaved: performanceData.environmental.costs.total,
+              fuelCostSaved: performanceData.environmental.costs.fuel,
+              fuelSavedLiters: performanceData.environmental.fuel.saved
+            }
+          };
+        },
+        180 // TTL: 3 minutes
+      );
 
       const insights = DashboardService.generateInsights(completeData);
-      const chartData = ChartService.prepareChartData(dashboardData.evolution?.data || []);
+      const chartData = ChartService.prepareChartData(completeData.evolution?.data || []);
 
       res.json({
         success: true,
@@ -90,20 +76,31 @@ class DashboardController {
    */
   static async getRealTimeStats(req, res) {
     try {
-      const KPIRepository = require('../repositories/kpiRepository');
+      const cacheKey = 'realtime:stats';
       
-      const [kpis, topCritical] = await Promise.all([
-        KPIRepository.getRealTimeKPIs(),
-        KPIRepository.getTopCriticalContainers(5)
-      ]);
+      // Cache court pour données temps réel
+      const data = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const KPIRepository = require('../repositories/kpiRepository');
+          
+          const [kpis, topCritical] = await Promise.all([
+            KPIRepository.getRealTimeKPIs(),
+            KPIRepository.getTopCriticalContainers(5)
+          ]);
+
+          return {
+            kpis,
+            criticalContainers: topCritical,
+            timestamp: new Date().toISOString()
+          };
+        },
+        30 // TTL: 30 secondes
+      );
 
       res.json({
         success: true,
-        data: {
-          kpis,
-          criticalContainers: topCritical,
-          timestamp: new Date().toISOString()
-        }
+        data
       });
     } catch (error) {
       logger.error('Error in getRealTimeStats:', error);
@@ -119,26 +116,34 @@ class DashboardController {
    */
   static async getHeatmap(req, res) {
     try {
-      const KPIRepository = require('../repositories/kpiRepository');
-      const zones = await KPIRepository.getZoneHeatmap();
+      const cacheKey = 'heatmap:zones';
 
-      // Convertir en GeoJSON pour les cartes
-      const geojson = {
-        type: 'FeatureCollection',
-        features: zones.map(zone => ({
-          type: 'Feature',
-          geometry: zone.geometry,
-          properties: {
-            id: zone.id_zone,
-            name: zone.zone_name,
-            code: zone.zone_code,
-            containersCount: zone.containers_count,
-            avgFillLevel: zone.avg_fill_level,
-            criticalCount: zone.critical_count,
-            status: zone.status
-          }
-        }))
-      };
+      // Cache plus long pour heatmap (rarement changé)
+      const geojson = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const KPIRepository = require('../repositories/kpiRepository');
+          const zones = await KPIRepository.getZoneHeatmap();
+
+          return {
+            type: 'FeatureCollection',
+            features: zones.map(zone => ({
+              type: 'Feature',
+              geometry: zone.geometry,
+              properties: {
+                id: zone.id_zone,
+                name: zone.zone_name,
+                code: zone.zone_code,
+                containersCount: zone.containers_count,
+                avgFillLevel: zone.avg_fill_level,
+                criticalCount: zone.critical_count,
+                status: zone.status
+              }
+            }))
+          };
+        },
+        600 // TTL: 10 minutes
+      );
 
       res.json({
         success: true,
@@ -159,17 +164,27 @@ class DashboardController {
   static async getEvolution(req, res) {
     try {
       const { days = 7 } = req.query;
-      const KPIRepository = require('../repositories/kpiRepository');
-      
-      const evolution = await KPIRepository.getFillLevelEvolution(parseInt(days));
-      const chartData = ChartService.prepareChartData(evolution);
+      const cacheKey = `evolution:${days}`;
+
+      const data = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const KPIRepository = require('../repositories/kpiRepository');
+          
+          const evolution = await KPIRepository.getFillLevelEvolution(parseInt(days));
+          const chartData = ChartService.prepareChartData(evolution);
+
+          return {
+            evolution,
+            chartData
+          };
+        },
+        300 // TTL: 5 minutes
+      );
 
       res.json({
         success: true,
-        data: {
-          evolution,
-          chartData
-        }
+        data
       });
     } catch (error) {
       logger.error('Error in getEvolution:', error);

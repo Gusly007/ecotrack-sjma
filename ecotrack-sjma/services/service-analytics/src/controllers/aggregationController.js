@@ -1,4 +1,5 @@
 const AggregationService = require('../services/aggregationService');
+const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
 
 class AggregationController {
@@ -8,10 +9,15 @@ class AggregationController {
   static async getAggregations(req, res) {
     try {
       const { period = 'month' } = req.query;
+      const cacheKey = `aggregations:${period}`;
 
       logger.info(`Fetching aggregations for period: ${period}`);
 
-      const data = await AggregationService.getCompleteAggregations(period);
+      const data = await cacheService.getOrSet(
+        cacheKey,
+        () => AggregationService.getCompleteAggregations(period),
+        300 // TTL: 5 minutes
+      );
 
       res.json({
         success: true,
@@ -34,6 +40,9 @@ class AggregationController {
     try {
       logger.info('Manual refresh requested');
 
+      // Invalider le cache avant le refresh
+      cacheService.invalidate('aggregations:');
+
       const result = await AggregationService.refreshAll();
 
       res.json({
@@ -55,12 +64,20 @@ class AggregationController {
    */
   static async getZoneAggregations(req, res) {
     try {
-      const AggregationRepository = require('../repositories/aggregationRepository');
-      const zones = await AggregationRepository.getZoneAggregations();
+      const cacheKey = 'aggregations:zones';
+
+      const data = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const AggregationRepository = require('../repositories/aggregationRepository');
+          return await AggregationRepository.getZoneAggregations();
+        },
+        300 // TTL: 5 minutes
+      );
 
       res.json({
         success: true,
-        data: zones
+        data
       });
     } catch (error) {
       logger.error('Error in getZoneAggregations:', error);
@@ -77,7 +94,6 @@ class AggregationController {
   static async getAgentPerformances(req, res) {
     try {
       const { startDate, endDate } = req.query;
-      const DateUtils = require('../utils/dateUtils');
 
       if (!startDate || !endDate) {
         return res.status(400).json({
@@ -86,6 +102,7 @@ class AggregationController {
         });
       }
 
+      // Ne pas cacher les données agents (trop spécifiques)
       const AggregationRepository = require('../repositories/aggregationRepository');
       const agents = await AggregationRepository.getAgentPerformances(startDate, endDate);
 
