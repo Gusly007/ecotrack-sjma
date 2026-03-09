@@ -719,6 +719,88 @@ Le `docker-compose.override.yml` utilise `Dockerfile.dev` avec :
 
 ---
 
+## Simulation de capteurs
+
+Un script de simulation permet de publier des mesures réalistes via MQTT, qui sont ensuite réceptionnées, traitées et insérées en base automatiquement par le service.
+
+### Prérequis
+
+- Le service-iot doit tourner (Docker ou local) pour que le broker MQTT écoute sur le port 1883
+- Les capteurs doivent exister en base (seed `007_conteneurs_demo.sql` appliqué)
+
+### Lancer la simulation
+
+```bash
+cd services/service-iot
+
+# Mode normal (5 capteurs, 10 cycles, intervalle 5s)
+node scripts/simulate-sensors.js
+
+# Scénario critique → déclenche des alertes DEBORDEMENT (fill >= 90%)
+node scripts/simulate-sensors.js --scenario critical
+
+# Scénario batterie faible → déclenche des alertes BATTERIE_FAIBLE (battery <= 20%)
+node scripts/simulate-sensors.js --scenario low-battery
+
+# Scénario mixte (mélange normal + critical + low-battery)
+node scripts/simulate-sensors.js --scenario mixed --sensors-count 8 --count 20
+
+# Capteurs spécifiques, 5 cycles, intervalle 2s
+node scripts/simulate-sensors.js --sensors CAP-0001,CAP-0003 --count 5 --interval 2000
+
+# Mode continu (Ctrl+C pour arrêter)
+node scripts/simulate-sensors.js --count 0 --interval 10000
+```
+
+### Options CLI
+
+| Option | Défaut | Description |
+|--------|--------|-------------|
+| `--broker <url>` | `mqtt://localhost:1883` | URL du broker MQTT |
+| `--interval <ms>` | `5000` | Intervalle entre les cycles (ms) |
+| `--count <n>` | `10` | Nombre de cycles (0 = infini) |
+| `--sensors-count <n>` | `5` | Nombre de capteurs à simuler |
+| `--sensors <list>` | — | Liste spécifique (ex: `CAP-0001,CAP-0003`) |
+| `--scenario <name>` | `normal` | `normal`, `critical`, `low-battery`, `mixed` |
+| `--quiet` | — | Mode silencieux |
+
+### Scénarios
+
+| Scénario | Remplissage | Batterie | Effet |
+|----------|-------------|----------|-------|
+| `normal` | Augmente de 5-35% lentement | Diminue lentement depuis 70-95% | Aucune alerte |
+| `critical` | Démarre à 80-90%, monte vite | Normal | Alerte **DEBORDEMENT** après quelques cycles |
+| `low-battery` | Normal | Démarre à 15-30%, descend vite | Alerte **BATTERIE_FAIBLE** après quelques cycles |
+| `mixed` | Mélange par capteur | Mélange par capteur | Les deux types d'alertes |
+
+### Flux des données
+
+```
+simulate-sensors.js publie sur MQTT
+  → mqtt-broker.js reçoit le message
+    → mqtt-handler.js parse et valide
+      → mesure INSERT dans table mesure
+      → capteur UPDATE derniere_communication
+      → alert-service vérifie les seuils
+        → alerte_capteur INSERT si seuil dépassé
+```
+
+### Vérifier les résultats
+
+Via l'API REST :
+```bash
+# Dernières mesures
+curl http://localhost:3013/iot/measurements?limit=10
+
+# Alertes actives
+curl http://localhost:3013/iot/alerts?statut=ACTIVE
+
+# Statistiques globales
+curl http://localhost:3013/iot/stats
+```
+
+---
+
 ## Dépannage
 
 ### Le service ne démarre pas
