@@ -272,21 +272,52 @@ services:
       - ecotrack
     restart: unless-stopped
 
+  # =========================================================================
+  # SERVICE-IOT (port 3013) - Capteurs IoT et alertes automatiques
+  # =========================================================================
   service-iot:
-    profiles: [placeholder]
     build:
       context: ./services/service-iot
       dockerfile: Dockerfile
     container_name: ecotrack-service-iot
     environment:
       APP_PORT: 3013
-      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      # Variables PostgreSQL
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-ecotrack_user}
+      PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      PGDATABASE: ${DB_NAME:-ecotrack}
+      # MQTT
+      MQTT_PORT: 1883
+      MQTT_HOST: 0.0.0.0
+      # Seuils d'alerte
+      ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
+      ALERT_BATTERY_LOW: ${ALERT_BATTERY_LOW:-20}
+      ALERT_SENSOR_TIMEOUT_HOURS: ${ALERT_SENSOR_TIMEOUT_HOURS:-24}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3013:3013"
+      - "${MQTT_PORT:-1883}:1883"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   service-gamifications:
     build:

@@ -80,6 +80,24 @@ services:
       retries: 10
       start_period: 30s
 
+  # =========================================================================
+  # SERVICE-IOT - Mode développement
+  # =========================================================================
+  service-iot:
+    build:
+      context: ./services/service-iot
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/service-iot/src:/app/src:ro
+      - ./services/service-iot/package.json:/app/package.json:ro
+    # Healthcheck plus permissif en dev
+    healthcheck:
+      interval: 30s
+      retries: 10
+      start_period: 30s
+
 # ============================================================================
 # VOLUMES pour persister les données en dev
 # ============================================================================
