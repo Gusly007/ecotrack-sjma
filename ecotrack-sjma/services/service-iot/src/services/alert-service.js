@@ -4,6 +4,7 @@
  */
 const logger = require('../utils/logger');
 const config = require('../config/config');
+const ApiError = require('../utils/api-error');
 
 class AlertService {
   constructor(alertRepository, sensorRepository) {
@@ -142,11 +143,9 @@ class AlertService {
   async updateAlertStatus(idAlerte, statut) {
     const alert = await this.alertRepository.findById(idAlerte);
     if (!alert) {
-      const ApiError = require('../utils/api-error');
       throw new ApiError(404, `Alerte ${idAlerte} non trouvée`);
     }
     if (alert.statut !== 'ACTIVE') {
-      const ApiError = require('../utils/api-error');
       throw new ApiError(400, `L'alerte ${idAlerte} n'est pas active (statut: ${alert.statut})`);
     }
     return this.alertRepository.updateStatus(idAlerte, statut);

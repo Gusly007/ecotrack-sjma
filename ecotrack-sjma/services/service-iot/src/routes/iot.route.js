@@ -12,7 +12,22 @@
  */
 
 const router = require('express').Router();
-const { validate, validateQuery, simulateSchema, alertUpdateSchema, paginationSchema } = require('../validators/iot.validator');
+const rateLimit = require('express-rate-limit');
+const { validate, validateQuery, validateParamId, simulateSchema, alertUpdateSchema, paginationSchema } = require('../validators/iot.validator');
+
+// Rate limiter pour les routes d'administration (10 req/min)
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    statusCode: 429,
+    message: 'Trop de requêtes, réessayez dans 1 minute',
+    timestamp: new Date().toISOString()
+  }
+});
 
 // Le contrôleur est injecté via le DI container
 let controller;
@@ -87,7 +102,7 @@ router.get('/iot/measurements/latest', (req, res, next) => controller.getLatestM
  *       404:
  *         description: Aucune mesure trouvée
  */
-router.get('/iot/measurements/container/:id', (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
+router.get('/iot/measurements/container/:id', validateParamId, (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
 
 // ========== CAPTEURS ==========
 
@@ -127,7 +142,7 @@ router.get('/iot/sensors', validateQuery(paginationSchema), (req, res, next) => 
  *       404:
  *         description: Capteur non trouvé
  */
-router.get('/iot/sensors/:id', (req, res, next) => controller.getSensorById(req, res, next));
+router.get('/iot/sensors/:id', validateParamId, (req, res, next) => controller.getSensorById(req, res, next));
 
 // ========== ALERTES ==========
 
@@ -189,7 +204,7 @@ router.get('/iot/alerts', validateQuery(paginationSchema), (req, res, next) => c
  *       400:
  *         description: Alerte déjà traitée
  */
-router.patch('/iot/alerts/:id', validate(alertUpdateSchema), (req, res, next) => controller.updateAlertStatus(req, res, next));
+router.patch('/iot/alerts/:id', validateParamId, validate(alertUpdateSchema), (req, res, next) => controller.updateAlertStatus(req, res, next));
 
 // ========== ADMINISTRATION ==========
 
@@ -223,7 +238,7 @@ router.patch('/iot/alerts/:id', validate(alertUpdateSchema), (req, res, next) =>
  *       201:
  *         description: Données simulées traitées
  */
-router.post('/iot/simulate', validate(simulateSchema), (req, res, next) => controller.simulate(req, res, next));
+router.post('/iot/simulate', adminLimiter, validate(simulateSchema), (req, res, next) => controller.simulate(req, res, next));
 
 /**
  * @swagger
@@ -235,7 +250,7 @@ router.post('/iot/simulate', validate(simulateSchema), (req, res, next) => contr
  *       200:
  *         description: Résultat de la vérification
  */
-router.post('/iot/check-silent', (req, res, next) => controller.checkSilentSensors(req, res, next));
+router.post('/iot/check-silent', adminLimiter, (req, res, next) => controller.checkSilentSensors(req, res, next));
 
 /**
  * @swagger

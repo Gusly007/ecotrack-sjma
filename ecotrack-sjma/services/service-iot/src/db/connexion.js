@@ -1,22 +1,23 @@
 /**
  * Connexion PostgreSQL via pg.
- * Variables d'environnement dans .env (voir .env.example).
+ * Utilise la configuration centralisée de config.js.
  */
 const { Pool } = require('pg');
 const path = require('path');
 const envPath = path.resolve(__dirname, '..', '..', '.env');
 require('dotenv').config({ path: envPath });
 const logger = require('../utils/logger');
+const config = require('../config/config');
 
-const password = process.env.PGPASSWORD !== undefined ? String(process.env.PGPASSWORD) : '';
 const pool = new Pool({
-  host: process.env.PGHOST || 'localhost',
-  port: Number(process.env.PGPORT) || 5432,
-  user: process.env.PGUSER || 'postgres',
-  password,
-  database: process.env.PGDATABASE || 'ecotrack',
-  max: 10,
-  idleTimeoutMillis: 30000,
+  host: config.DB.host,
+  port: config.DB.port,
+  user: config.DB.user,
+  password: config.DB.password !== undefined ? String(config.DB.password) : '',
+  database: config.DB.database,
+  max: config.DB.max,
+  idleTimeoutMillis: config.DB.idleTimeoutMillis,
+  connectionTimeoutMillis: config.DB.connectionTimeoutMillis,
 });
 
 pool.on('error', (err) => {
