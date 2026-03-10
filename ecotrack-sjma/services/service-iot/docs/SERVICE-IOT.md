@@ -16,7 +16,9 @@
 8. [Métriques Prometheus](#métriques-prometheus)
 9. [Tests](#tests)
 10. [Docker](#docker)
-11. [Dépannage](#dépannage)
+11. [Simulation de capteurs](#simulation-de-capteurs)
+12. [Sécurité](#sécurité)
+13. [Dépannage](#dépannage)
 
 ---
 
@@ -863,3 +865,44 @@ curl http://localhost:3013/iot/stats
 | **PostgreSQL** (port 5432) | Base de données partagée `ecotrack` |
 | **Prometheus** (port 9090) | Scrape les métriques sur `/metrics` |
 | **Grafana** (port 3001) | Visualisation des métriques IoT |
+
+---
+
+## Sécurité
+
+### Middleware
+
+| Middleware | Position | Description |
+|-----------|----------|-------------|
+| **Helmet** | 1er | Headers HTTP sécurisés (CSP désactivé pour Swagger) |
+| **CORS** | 2e | Cross-Origin configuré |
+| **express.json** | 3e | Parse le body JSON (limite 10 Mo) |
+| **requestLogger** | 4e | Log des requêtes (Morgan/Pino) |
+| **Prometheus metrics** | 5e | Compteurs HTTP avant les routes |
+
+### Validation des entrées
+
+| Cible | Validateur | Description |
+|-------|-----------|-------------|
+| `req.query` | `validateQuery(paginationSchema)` | Pagination, filtres (page, limit, dates, statut) |
+| `req.body` | `validate(simulateSchema)` | Données de simulation (uid, fill_level, battery) |
+| `req.body` | `validate(alertUpdateSchema)` | Mise à jour alerte (statut: RESOLUE/IGNOREE) |
+| `req.params.id` | `validateParamId` | Entier positif obligatoire (rejette NaN, négatifs, strings) |
+
+### Rate Limiting
+
+Les routes d'administration sont protégées par `express-rate-limit` :
+
+| Route | Limite | Fenêtre |
+|-------|--------|---------|
+| `POST /iot/simulate` | 10 requêtes | 1 minute |
+| `POST /iot/check-silent` | 10 requêtes | 1 minute |
+
+Réponse en cas de dépassement (HTTP 429) :
+```json
+{
+  "success": false,
+  "statusCode": 429,
+  "message": "Trop de requêtes, réessayez dans 1 minute"
+}
+```
