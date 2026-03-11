@@ -142,6 +142,8 @@ services:
     depends_on:
       service-users:
         condition: service_healthy
+      service-routes:
+        condition: service_healthy
     networks:
       - ecotrack
     restart: unless-stopped
@@ -268,11 +270,10 @@ services:
         max-file: "3"
 
   # =========================================================================
-  # SERVICES PLACEHOLDER (à implémenter)
+  # SERVICE-ROUTES (port 3012) - Gestion des tournées et collectes
   # =========================================================================
 
   service-routes:
-    profiles: [placeholder]
     build:
       context: ./services/service-routes
       dockerfile: Dockerfile
@@ -281,11 +282,28 @@ services:
       APP_PORT: 3012
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
       NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "3012:3012"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   service-iot:
     profiles: [placeholder]
