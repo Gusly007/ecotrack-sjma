@@ -790,13 +790,13 @@ simulate-sensors.js publie sur MQTT
 Via l'API REST :
 ```bash
 # Dernières mesures
-curl http://localhost:3013/iot/measurements?limit=10
+curl http://localhost:3013/api/iot/measurements?limit=10
 
 # Alertes actives
-curl http://localhost:3013/iot/alerts?statut=ACTIVE
+curl http://localhost:3013/api/iot/alerts?statut=ACTIVE
 
 # Statistiques globales
-curl http://localhost:3013/iot/stats
+curl http://localhost:3013/api/iot/stats
 ```
 
 ---
@@ -831,7 +831,7 @@ curl http://localhost:3013/iot/stats
    ```
 3. **Utiliser l'endpoint de simulation** :
    ```bash
-   curl -X POST http://localhost:3013/iot/simulate \
+   curl -X POST http://localhost:3013/api/iot/simulate \
      -H "Content-Type: application/json" \
      -d '{"uid_capteur":"CAP-001","fill_level":50,"battery":80}'
    ```
@@ -848,7 +848,7 @@ curl http://localhost:3013/iot/stats
 2. **Regarder les logs** : Les messages invalides sont loggés avec le motif de rejet
 3. **Vérifier les stats** :
    ```bash
-   curl http://localhost:3013/iot/stats
+   curl http://localhost:3013/api/iot/stats
    ```
    Le champ `mqtt.errors` indique le nombre de messages rejetés.
 
