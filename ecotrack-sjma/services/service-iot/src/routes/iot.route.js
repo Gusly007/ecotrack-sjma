@@ -13,7 +13,7 @@
 
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
-const { validate, validateQuery, validateParamId, simulateSchema, alertUpdateSchema, paginationSchema } = require('../validators/iot.validator');
+const { validate, validateQuery, validateParamId, simulateSchema, alertUpdateSchema, paginationSchema, containerQuerySchema } = require('../validators/iot.validator');
 
 // Rate limiter pour les routes d'administration (10 req/min)
 const adminLimiter = rateLimit({
@@ -21,11 +21,13 @@ const adminLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    statusCode: 429,
-    message: 'Trop de requêtes, réessayez dans 1 minute',
-    timestamp: new Date().toISOString()
+  handler: (req, res, next, options) => {
+    res.status(429).json({
+      success: false,
+      statusCode: 429,
+      message: 'Trop de requêtes, réessayez dans 1 minute',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -102,7 +104,7 @@ router.get('/iot/measurements/latest', (req, res, next) => controller.getLatestM
  *       404:
  *         description: Aucune mesure trouvée
  */
-router.get('/iot/measurements/container/:id', validateParamId, (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
+router.get('/iot/measurements/container/:id', validateParamId, validateQuery(containerQuerySchema), (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
 
 // ========== CAPTEURS ==========
 

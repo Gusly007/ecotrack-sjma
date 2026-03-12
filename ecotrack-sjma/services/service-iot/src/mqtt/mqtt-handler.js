@@ -3,7 +3,6 @@
  * Parse, valide et traite les données des capteurs IoT
  */
 const logger = require('../utils/logger');
-const config = require('../config/config');
 
 class MqttHandler {
   constructor(measurementService, alertService) {

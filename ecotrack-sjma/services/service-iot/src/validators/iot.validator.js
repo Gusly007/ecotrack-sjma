@@ -29,6 +29,10 @@ const paginationSchema = Joi.object({
   date_fin: Joi.date().iso().optional()
 }).unknown(false);
 
+const containerQuerySchema = Joi.object({
+  limit: Joi.number().integer().min(1).max(1000).default(100)
+}).unknown(false);
+
 /**
  * Valide req.params.id comme entier positif
  */
@@ -87,6 +91,7 @@ module.exports = {
   simulateSchema,
   alertUpdateSchema,
   paginationSchema,
+  containerQuerySchema,
   validate,
   validateQuery,
   validateParamId

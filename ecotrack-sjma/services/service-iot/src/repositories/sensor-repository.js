@@ -104,7 +104,7 @@ class SensorRepository {
       WHERE cnt.statut = 'ACTIF'
         AND (
           c.derniere_communication IS NULL
-          OR c.derniere_communication < NOW() - ($1 || ' hours')::INTERVAL
+          OR c.derniere_communication < NOW() - ($1 * INTERVAL '1 hour')
         )
     `;
     const result = await this.pool.query(sql, [timeoutHours]);

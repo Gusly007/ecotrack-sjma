@@ -26,20 +26,6 @@ const httpRequestDuration = new client.Histogram({
   registers: [register]
 });
 
-const mqttMessagesTotal = new client.Counter({
-  name: 'mqtt_messages_total',
-  help: 'Total number of MQTT messages received',
-  labelNames: ['status'],
-  registers: [register]
-});
-
-const alertsCreatedTotal = new client.Counter({
-  name: 'alerts_created_total',
-  help: 'Total number of alerts created',
-  labelNames: ['type'],
-  registers: [register]
-});
-
 // Utilitaires
 const errorHandler = require('./src/middleware/error-handler');
 const requestLogger = require('./src/middleware/request-logger');

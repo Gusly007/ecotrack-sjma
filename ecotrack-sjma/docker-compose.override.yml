@@ -92,6 +92,7 @@ services:
     volumes:
       - ./services/service-iot/src:/app/src:ro
       - ./services/service-iot/package.json:/app/package.json:ro
+      - ./services/service-iot/index.js:/app/index.js:ro
     # Healthcheck plus permissif en dev
     healthcheck:
       interval: 30s

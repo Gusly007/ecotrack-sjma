@@ -257,7 +257,7 @@ mosquitto_pub -h localhost -p 1883 \
 
 ## API REST
 
-Base URL : `http://localhost:3013`
+Base URL : `http://localhost:3013/api`
 Documentation Swagger : `http://localhost:3013/api-docs`
 
 ### Endpoints
@@ -324,23 +324,21 @@ Liste les mesures avec pagination et filtres optionnels.
 ```json
 {
   "success": true,
-  "data": {
-    "measurements": [
-      {
-        "id_mesure": 1,
-        "id_capteur": 3,
-        "id_conteneur": 10,
-        "niveau_remplissage_pct": 75.5,
-        "batterie_pct": 92.0,
-        "temperature": 22.3,
-        "date_mesure": "2026-03-09T14:30:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 50,
-      "total": 150
+  "data": [
+    {
+      "id_mesure": 1,
+      "id_capteur": 3,
+      "id_conteneur": 10,
+      "niveau_remplissage_pct": 75.5,
+      "batterie_pct": 92.0,
+      "temperature": 22.3,
+      "date_mesure": "2026-03-09T14:30:00.000Z"
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 150
   }
 }
 ```
@@ -651,7 +649,7 @@ npx jest --coverage
 
 ```
 services/service-iot/
-└── __tests__/
+└── test/
     └── unit/
         ├── mqtt-handler.test.js
         ├── alert-service.test.js

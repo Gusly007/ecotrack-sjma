@@ -21,6 +21,11 @@
       "name": "service-users",
       "rootPath": "services/service-users",
       "jestCommandLine": "npx jest"
+    },
+    {
+      "name": "service-iot",
+      "rootPath": "services/service-iot",
+      "jestCommandLine": "npx jest"
     }
   ]
 }
