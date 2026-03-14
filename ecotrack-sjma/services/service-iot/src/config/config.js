@@ -25,7 +25,26 @@ module.exports = {
     topics: {
       SENSOR_DATA: 'containers/+/data',
       SENSOR_STATUS: 'containers/+/status'
+    },
+    tls: {
+      enabled: process.env.MQTT_TLS_ENABLED === 'true',
+      keyPath: process.env.MQTT_TLS_KEY_PATH || './certs/server.key',
+      certPath: process.env.MQTT_TLS_CERT_PATH || './certs/server.crt',
+      caPath: process.env.MQTT_TLS_CA_PATH || null,
+      requestCert: process.env.MQTT_TLS_REQUEST_CERT === 'true',
+      rejectUnauthorized: process.env.MQTT_TLS_REJECT_UNAUTHORIZED !== 'false'
+    },
+    auth: {
+      enabled: process.env.MQTT_AUTH_ENABLED === 'true',
+      username: process.env.MQTT_USERNAME || 'ecotrack',
+      password: process.env.MQTT_PASSWORD || ''
     }
+  },
+
+  // Service Users (pour notifications)
+  USERS_SERVICE: {
+    baseUrl: process.env.USERS_SERVICE_URL || 'http://service-users:3010',
+    timeout: parseInt(process.env.USERS_SERVICE_TIMEOUT, 10) || 5000
   },
 
   // Seuils d'alerte
@@ -35,7 +54,8 @@ module.exports = {
     BATTERY_LOW: parseInt(process.env.ALERT_BATTERY_LOW, 10) || 20,
     TEMPERATURE_MIN: parseInt(process.env.ALERT_TEMPERATURE_MIN, 10) || -10,
     TEMPERATURE_MAX: parseInt(process.env.ALERT_TEMPERATURE_MAX, 10) || 60,
-    SENSOR_TIMEOUT_HOURS: parseInt(process.env.ALERT_SENSOR_TIMEOUT_HOURS, 10) || 24
+    SENSOR_TIMEOUT_HOURS: parseInt(process.env.ALERT_SENSOR_TIMEOUT_HOURS, 10) || 24,
+    NOTIFICATIONS_ENABLED: process.env.ALERT_NOTIFICATIONS_ENABLED !== 'false'
   },
 
   // Pagination par défaut

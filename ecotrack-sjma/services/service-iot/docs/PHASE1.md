@@ -29,10 +29,40 @@ MQTT: {
 | `containers/{uid_capteur}/data` | Données de mesure |
 | `containers/{uid_capteur}/status` | Statut du capteur |
 
-### Sécurité (TLS)
-⚠️ **Non implémenté** - Le broker utilise TCP plain. Pour production:
-- Utiliser un broker externe (Mosquitto) avec TLS
-- Ou configurer TLS dans Aedes
+### Sécurité (TLS) et Authentification
+
+#### TLS (Production)
+Le broker supporte TLS. Pour activer en production:
+
+```bash
+# .env
+MQTT_TLS_ENABLED=true
+MQTT_TLS_KEY_PATH=./certs/server.key
+MQTT_TLS_CERT_PATH=./certs/server.crt
+MQTT_TLS_CA_PATH=./certs/ca.crt
+MQTT_TLS_REQUEST_CERT=false
+MQTT_TLS_REJECT_UNAUTHORIZED=false
+```
+
+#### Authentification
+Le broker supporte l'authentification par username/password:
+
+```bash
+# .env
+MQTT_AUTH_ENABLED=true
+MQTT_USERNAME=ecotrack
+MQTT_PASSWORD=ecotrack_mqtt_password
+```
+
+#### Connexion avec auth
+```javascript
+const mqtt = require('mqtt');
+
+const client = mqtt.connect('mqtt://localhost:1883', {
+  username: 'ecotrack',
+  password: 'ecotrack_mqtt_password'
+});
+```
 
 ---
 
@@ -52,9 +82,9 @@ MQTT: {
 
 | Champ | Type | Obligatoire | Plage |
 |-------|------|:-----------:|-------|
-| `fill_level` | number | ✅ | 0-100 |
-| `battery` | number | ✅ | 0-100 |
-| `temperature` | number | ❌ | -50 à 100 |
+| `fill_level` | number | oui | 0-100 |
+| `battery` | number | oui | 0-100 |
+| `temperature` | number | non | -50 à 100 |
 
 ### Validation des données
 
@@ -127,4 +157,5 @@ curl http://localhost:3013/iot/measurements?limit=5
 | Topics configurés | ✅ |
 | Parse JSON | ✅ |
 | Validation données | ✅ |
-| TLS/Auth | ⚠️ Non |
+| TLS | ✅ |
+| Authentification | ✅ |

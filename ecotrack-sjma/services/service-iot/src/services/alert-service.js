@@ -1,15 +1,17 @@
 /**
  * Service de gestion des alertes automatiques
  * Vérifie les seuils et crée des alertes si nécessaire
+ * Envoie des notifications au service-users
  */
 const logger = require('../utils/logger');
 const config = require('../config/config');
 const ApiError = require('../utils/api-error');
 
 class AlertService {
-  constructor(alertRepository, sensorRepository) {
+  constructor(alertRepository, sensorRepository, notificationService) {
     this.alertRepository = alertRepository;
     this.sensorRepository = sensorRepository;
+    this.notificationService = notificationService;
   }
 
   /**
@@ -59,6 +61,15 @@ class AlertService {
           `Température anormale : ${measurement.temperature}°C (plage normale: ${config.ALERTS.TEMPERATURE_MIN}°C - ${config.ALERTS.TEMPERATURE_MAX}°C)`
         );
         if (alert) alerts.push(alert);
+      }
+    }
+
+    // Envoyer les notifications
+    for (const alert of alerts) {
+      try {
+        await this.notificationService.sendAlertNotification(alert, measurement);
+      } catch (error) {
+        logger.error({ alertId: alert.id_alerte, error: error.message }, 'Failed to send notification');
       }
     }
 

@@ -116,7 +116,7 @@ CREATE TABLE alerte_capteur (
 ```
 
 ### Déduplication
-⚠️ **Important** : Le service ne crée PAS de doublons.
+ **Important** : Le service ne crée PAS de doublons.
 
 ```javascript
 // Vérifie si une alerte active existe déjà
@@ -162,11 +162,11 @@ PATCH /api/iot/alerts/:id
 
 ## 3.6 Notifications push
 
-⚠️ **Non implémenté** dans la version actuelle.
+ **Non implémenté** dans la version actuelle.
 
 ### Pour implémenter
 1. Après création d'alerte, appeler le **service-users**
-2. Utiliser WebSockets ou SSE pour推送
+2. Utiliser WebSockets ou SSE 
 3. Stocker les tokens des utilisateurs
 
 ```javascript
@@ -225,6 +225,61 @@ GET /api/iot/alerts?statut=ACTIVE&type_alerte=DEBORDEMENT
 
 ---
 
+## 3.6 Notifications push
+
+### Service de notifications
+
+Le service IoT envoie automatiquement les alertes au **service-users** pour notifier les gestionnaires.
+
+#### Configuration
+```bash
+# .env
+USERS_SERVICE_URL=http://service-users:3010
+USERS_SERVICE_TIMEOUT=5000
+ALERT_NOTIFICATIONS_ENABLED=true
+```
+
+#### Format de notification
+```json
+{
+  "type": "ALERTE_IOT",
+  "titre": "⚠️ Conteneur presque plein",
+  "corps": "Niveau de remplissage critique : 95.5%",
+  "id_conteneur": 10,
+  "priorite": "haute",
+  "data": {
+    "id_alerte": 1,
+    "type_alerte": "DEBORDEMENT",
+    "valeur_detectee": 95.5,
+    "seuil": 90,
+    "id_zone": 2
+  }
+}
+```
+
+#### Priorités par type d'alerte
+| Type | Priorité |
+|------|----------|
+| DEBORDEMENT | haute |
+| BATTERIE_FAIBLE | moyenne |
+| CAPTEUR_DEFAILLANT | basse |
+
+#### Flux de notification
+```
+Alerte créée
+    │
+    ▼
+NotificationService.sendAlertNotification()
+    │
+    ▼
+POST http://service-users:3010/api/notifications
+    │
+    ▼
+Service-users notifie les gestionnaires (WebSocket/SSE)
+```
+
+---
+
 ## Résumé Phase 3
 
 | Tâche | Status |
@@ -232,7 +287,7 @@ GET /api/iot/alerts?statut=ACTIVE&type_alerte=DEBORDEMENT
 | Seuil fill_level > 90% | ✅ |
 | Pas de données 24h | ✅ |
 | Température anormale | ✅ |
-| Notifications push | ⚠️ Non |
+| Notifications push | ✅ |
 | Logs table `alerte_capteur` | ✅ |
 | Déduplication alertes | ✅ |
 | Mise à jour statut | ✅ |

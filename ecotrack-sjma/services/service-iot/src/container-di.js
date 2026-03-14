@@ -12,6 +12,7 @@ const AlertRepository = require('./repositories/alert-repository');
 const MeasurementService = require('./services/measurement-service');
 const SensorService = require('./services/sensor-service');
 const AlertService = require('./services/alert-service');
+const NotificationService = require('./services/notification-service');
 
 // MQTT
 const MqttHandler = require('./mqtt/mqtt-handler');
@@ -26,9 +27,10 @@ const sensorRepository = new SensorRepository(pool);
 const alertRepository = new AlertRepository(pool);
 
 // Instanciation des services
+const notificationService = new NotificationService();
 const measurementService = new MeasurementService(measurementRepository, sensorRepository);
 const sensorService = new SensorService(sensorRepository);
-const alertService = new AlertService(alertRepository, sensorRepository);
+const alertService = new AlertService(alertRepository, sensorRepository, notificationService);
 
 // MQTT Handler
 const mqttHandler = new MqttHandler(measurementService, alertService);
@@ -44,6 +46,7 @@ module.exports = {
   measurementService,
   sensorService,
   alertService,
+  notificationService,
   mqttHandler,
   mqttBroker,
   // Pour les tests
