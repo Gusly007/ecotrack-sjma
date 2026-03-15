@@ -112,6 +112,7 @@ services:
     environment:
       GATEWAY_PORT: 3000
       USERS_PORT: 3010
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
       USERS_SERVICE_URL: http://service-users:3010
       CONTAINERS_SERVICE_URL: http://service-containers:3011
       ROUTES_SERVICE_URL: http://service-routes:3012
