@@ -258,7 +258,7 @@ jobs:
         continue-on-error: true
 
   # =========================================================================
-  # JOB 2D: UNIT TESTS - SERVICE-IOT
+  # JOB 2D: UNIT TESTS - SERVICE-IOT (NEW!)
   # =========================================================================
   # Lance Jest pour service-iot avec PostgreSQL
   
