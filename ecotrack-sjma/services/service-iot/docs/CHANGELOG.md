@@ -4,32 +4,7 @@
 
 ---
 
-### [3.1.0] 2026-03-15 - TLS, Auth & Notifications
-
-#### MQTT Avancé
-- **Nouveau**: Support TLS pour broker MQTT
-  - Variables: `MQTT_TLS_ENABLED`, `MQTT_TLS_KEY_PATH`, `MQTT_TLS_CERT_PATH`
-  - Mode production sécurisé
-- **Nouveau**: Authentification MQTT
-  - Variables: `MQTT_AUTH_ENABLED`, `MQTT_USERNAME`, `MQTT_PASSWORD`
-  - Contrôle d'accès aux capteurs
-
-#### Notifications
-- **Nouveau**: Service de notifications push vers service-users
-  - Fichier: `src/services/notification-service.js`
-  - Envoi automatique des alertes DEBORDEMENT, BATTERIE_FAIBLE, CAPTEUR_DEFAILLANT
-  - Priorités: haute (débordement), moyenne (batterie), basse (capteur)
-- **Nouveau**: Notifications de résolution
-
-#### Intégration API Gateway
-- **Nouveau**: Documentation Swagger unifiée avec endpoints IoT
-- **Nouveau**: Tags IoT (Mesures, Capteurs, Alertes) dans swagger-config.js
-- **Nouveau**: 9 endpoints documentés dans l'API Gateway
-
-#### Documentation
-- **Nouveau**: `docs/PHASE1.md` - Réception des données (MQTT, TLS, Auth)
-- **Nouveau**: `docs/PHASE2.md` - Traitement et Stockage
-- **Nouveau**: `docs/PHASE3.md` - Alertes automatiques (seuils, notifications)
+### [3.0.1] 2026-03-10 - Qualité & Sécurité
 
 #### Corrections
 - **Fix**: Middleware Prometheus déplacé **avant** les routes (les métriques HTTP étaient toujours à 0)

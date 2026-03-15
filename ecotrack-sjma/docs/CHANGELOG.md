@@ -4,40 +4,7 @@
 
 ---
 
-### [3.1.0] 2026-03-15 - Service IoT Avancé
-
-#### MQTT Avancé
-- **Nouveau**: Support TLS pour broker MQTT (configurable via `MQTT_TLS_ENABLED`)
-- **Nouveau**: Authentification MQTT par username/password (configurable via `MQTT_AUTH_ENABLED`)
-
-#### Notifications
-- **Nouveau**: Service de notifications push vers service-users
-- **Nouveau**: Envoi automatique des alertes aux gestionnaires
-- **Nouveau**: Notifications de résolution d'alertes
-
-#### Service Analytics
-- **Nouveau**: service-analytics (port 3015)
-- **Nouveau**: Vues matérialisées pour analytics (quotidiennes, par zone, par type)
-- **Nouveau**: Performances des agents de collecte
-- **Nouveau**: Cron job pour rafraîchir les agrégations (toutes les heures)
-
-#### API Gateway
-- **Nouveau**: Intégration service-iot et service-analytics dans swagger unifié
-- **Nouveau**: Documentation Swagger unifiée (http://localhost:3000/api-docs)
-
-#### Services Disponibles
-| Service | Port | Status |
-|---------|------|--------|
-| Frontend | 5173 | ✅ |
-| API Gateway | 3000 | ✅ |
-| Service Users | 3010 | ✅ |
-| Service Containers | 3011 | ✅ |
-| Service IoT | 3013 | ✅ |
-| Service Gamifications | 3014 | ✅ |
-| Service Analytics | 3015 | ✅ |
-| PostgreSQL | 5432 | ✅ |
-| Prometheus | 9090 | ✅ |
-| Grafana | 3001 | ✅ |
+### [2.0.0] 2026-02-21 - Monitoring
 
 #### Infrastructure
 - **Nouveau**: Prometheus - Service de monitoring et collecte de métriques
