@@ -277,17 +277,3 @@ POST http://service-users:3010/api/notifications
     ▼
 Service-users notifie les gestionnaires (WebSocket/SSE)
 ```
-
----
-
-## Résumé Phase 3
-
-| Tâche | Status |
-|-------|--------|
-| Seuil fill_level > 90% | ✅ |
-| Pas de données 24h | ✅ |
-| Température anormale | ✅ |
-| Notifications push | ✅ |
-| Logs table `alerte_capteur` | ✅ |
-| Déduplication alertes | ✅ |
-| Mise à jour statut | ✅ |

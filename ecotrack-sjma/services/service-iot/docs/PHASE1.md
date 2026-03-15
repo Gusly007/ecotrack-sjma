@@ -146,16 +146,3 @@ curl http://localhost:3013/iot/measurements?limit=5
 |----------|-------------|
 | `mqtt_messages_total` | Messages MQTT traités |
 | `http_requests_total` | Requêtes HTTP |
-
----
-
-## Résumé Phase 1
-
-| Tâche | Status |
-|-------|--------|
-| MQTT Broker (Aedes) | ✅ |
-| Topics configurés | ✅ |
-| Parse JSON | ✅ |
-| Validation données | ✅ |
-| TLS | ✅ |
-| Authentification | ✅ |

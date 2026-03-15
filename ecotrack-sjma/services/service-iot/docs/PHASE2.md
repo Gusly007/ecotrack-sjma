@@ -151,16 +151,3 @@ GROUP BY DATE(m.date_mesure);
   }
 }
 ```
-
----
-
-## Résumé Phase 2
-
-| Tâche | Status |
-|-------|--------|
-| Validation plages (0-100%) | ✅ |
-| Détection valeurs aberrantes | ✅ |
-| Ignorer données corrompues | ✅ |
-| Insert table `mesure` | ✅ |
-| Update `fill_level` conteneur | ✅ |
-| Historique pour analytics | ✅ |
