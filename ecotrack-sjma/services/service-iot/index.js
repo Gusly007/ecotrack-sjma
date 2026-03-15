@@ -1,0 +1,221 @@
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+require('dotenv').config();
+const logger = require('./src/utils/logger');
+const client = require('prom-client');
+
+// ========== PROMETHEUS METRICS ==========
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+const httpRequestsTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register]
+});
+
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.1, 0.5, 1, 2, 5],
+  registers: [register]
+});
+
+// Utilitaires
+const errorHandler = require('./src/middleware/error-handler');
+const requestLogger = require('./src/middleware/request-logger');
+const config = require('./src/config/config');
+
+const app = express();
+
+// ========== MIDDLEWARE ==========
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(requestLogger);
+
+// Metrics middleware (avant les routes pour capturer toutes les requêtes)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    const route = req.route ? req.route.path : req.path;
+    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
+    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
+  });
+  next();
+});
+
+// ========== DOCUMENTATION API ==========
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'EcoTrack IoT Service API',
+      version: '1.0.0',
+      description: 'API pour la réception et le traitement des données capteurs IoT'
+    },
+    servers: [
+      {
+        url: `http://localhost:${config.PORT}/api`,
+        description: 'Development server'
+      }
+    ],
+    components: {
+      schemas: {
+        Error: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            statusCode: { type: 'integer' },
+            message: { type: 'string' },
+            details: { type: 'object' },
+            timestamp: { type: 'string' }
+          }
+        },
+        Success: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            statusCode: { type: 'integer' },
+            message: { type: 'string' },
+            data: { type: 'object' },
+            timestamp: { type: 'string' }
+          }
+        }
+      }
+    }
+  },
+  apis: ['./src/routes/*.js']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// ========== DEPENDENCY INJECTION ==========
+const di = require('./src/container-di');
+const iotRoutes = require('./src/routes/iot.route');
+iotRoutes.setController(di.iotController);
+
+// ========== ROUTES ==========
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bienvenue sur EcoTrack IoT Service API',
+    version: '1.0.0',
+    endpoints: {
+      documentation: '/api-docs',
+      health: '/health',
+      measurements: '/api/iot/measurements',
+      sensors: '/api/iot/sensors',
+      alerts: '/api/iot/alerts',
+      stats: '/api/iot/stats',
+      simulate: '/api/iot/simulate'
+    }
+  });
+});
+
+app.use('/api', iotRoutes);
+
+// ========== HEALTH CHECK ==========
+app.get('/health', async (req, res) => {
+  const healthcheck = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: config.NODE_ENV,
+    services: {
+      api: 'healthy',
+      mqtt: 'unknown',
+      database: 'unknown'
+    }
+  };
+
+  // Test connexion base de données
+  try {
+    const { pool } = require('./src/db/connexion');
+    await pool.query('SELECT 1');
+    healthcheck.services.database = 'healthy';
+  } catch (error) {
+    healthcheck.status = 'DEGRADED';
+    healthcheck.services.database = 'unhealthy';
+  }
+
+  // MQTT broker status
+  healthcheck.services.mqtt = di.mqttBroker.getAedes() ? 'healthy' : 'unavailable';
+
+  const statusCode = healthcheck.status === 'OK' ? 200 : 503;
+  res.status(statusCode).json(healthcheck);
+});
+
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+// ========== 404 ==========
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    message: 'Route non trouvée',
+    path: req.path
+  });
+});
+
+// ========== GESTION DES ERREURS ==========
+app.use(errorHandler);
+
+// ========== START SERVER ==========
+async function startServer() {
+  const { testConnection } = require('./src/db/connexion');
+
+  // Test DB connection
+  const dbConnected = await testConnection();
+  if (!dbConnected) {
+    logger.error('Failed to connect to PostgreSQL. Retrying in 5s...');
+    setTimeout(startServer, 5000);
+    return;
+  }
+
+  // Start MQTT Broker
+  try {
+    await di.mqttBroker.start();
+    logger.info({ mqttPort: config.MQTT.port }, 'MQTT Broker started');
+  } catch (err) {
+    logger.error({ error: err.message }, 'Failed to start MQTT Broker');
+  }
+
+  // Start silent sensor check interval (every hour)
+  setInterval(async () => {
+    try {
+      await di.alertService.checkSilentSensors();
+    } catch (err) {
+      logger.error({ error: err.message }, 'Error checking silent sensors');
+    }
+  }, 60 * 60 * 1000);
+
+  // Start HTTP server
+  app.listen(config.PORT, () => {
+    logger.info({
+      port: config.PORT,
+      mqttPort: config.MQTT.port,
+      env: config.NODE_ENV
+    }, `Service IoT started on port ${config.PORT}`);
+  });
+}
+
+startServer();
+
+module.exports = app;

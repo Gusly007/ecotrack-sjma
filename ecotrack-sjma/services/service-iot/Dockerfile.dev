@@ -1,0 +1,31 @@
+# ============================================================================
+# DOCKERFILE.DEV - SERVICE IOT (Développement)
+# ============================================================================
+# Version développement avec nodemon pour le hot-reload.
+# Utilisé par docker-compose.override.yml
+# ============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Installer nodemon globalement pour le hot-reload
+RUN npm install -g nodemon
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer toutes les dépendances (y compris devDependencies)
+RUN npm install
+
+# Copier le code source
+COPY . .
+
+# Port exposé
+EXPOSE 3013
+
+# Port MQTT
+EXPOSE 1883
+
+# Démarrage avec nodemon (hot-reload)
+CMD ["nodemon", "--watch", "src", "--watch", "index.js", "--ext", "js,json", "index.js"]

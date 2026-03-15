@@ -4,58 +4,62 @@
 
 ---
 
-### [2.1.0] 2026-02-27 - Service Analytics
+### [3.0.0] 2026-03 - Service IoT
 
-#### Phase 1-3 - Agrégations, Dashboard, Rapports
-- **Nouveau**: Service Analytics (port 3015)
-- **Nouveau**: Vues matérialisées (analytics_daily_stats, analytics_zone_stats, analytics_type_stats)
-- **Nouveau**: Endpoints agrégations avec filtres période
-- **Nouveau**: Dashboard complet avec KPIs
-- **Nouveau**: Heatmap GeoJSON
-- **Nouveau**: Évolutions
-- **Nouveau**: Génération PDF/Excel rapports
-- **Nouveau**: Rapports environnementaux (économie carburant, CO2)
-- **Nouveau**: Rapports performance tournées
+#### Nouveau Microservice : service-iot (port 3013)
+- **Nouveau**: Broker MQTT embarqué (Aedes) sur port 1883
+  - Réception temps réel des données capteurs (topic: `containers/{uid}/data`)
+  - Parsing, validation et stockage automatique des mesures
+- **Nouveau**: Alertes automatiques avec seuils configurables
+  - `DEBORDEMENT` : remplissage ≥ 90%
+  - `BATTERIE_FAIBLE` : batterie ≤ 20%
+  - `CAPTEUR_DEFAILLANT` : température hors plage ou-capteur silencieux > 24h
+  - Déduplication (pas de doublon d'alerte ACTIVE par conteneur/type)
+- **Nouveau**: API REST complète (10 endpoints)
+  - Mesures : liste, filtres, dernières mesures, par conteneur
+  - Capteurs : liste, détails
+  - Alertes : liste, filtres, mise à jour statut
+  - Administration : simulation, vérification capteurs silencieux, statistiques
+- **Nouveau**: Endpoint de simulation `POST /iot/simulate` pour tests sans MQTT
+- **Nouveau**: Métriques Prometheus (mqtt_messages_total, alerts_created_total)
+- **Nouveau**: Documentation Swagger sur `/api-docs`
 
-#### Phase 4 - ML Predictions
-- **Nouveau**: Prédiction remplissage (régression linéaire)
-- **Nouveau**: Détection anomalies (Z-score)
-- **Nouveau**: Capteurs défaillants detection
-- **Nouveau**: Intégration météo (Open-Meteo API)
-- **Nouveau**: Alertes automatiques depuis anomalies
-- **Nouveau**: Table predictions en DB
-- **Nouveau**: Seed données ML test
+#### MQTT Avancé (Évolutions récentes)
+- Support TLS pour broker MQTT (variables: `MQTT_TLS_ENABLED`, `MQTT_TLS_KEY_PATH`, `MQTT_TLS_CERT_PATH`)
+- Authentification MQTT par username/password (variables: `MQTT_AUTH_ENABLED`, `MQTT_USERNAME`, `MQTT_PASSWORD`)
 
-#### Phase 5 - Infrastructure
-- **Nouveau**: Rate limiting (express-rate-limit)
-  - General: 100 req/15min
-  - Reports: 10 req/heure
-  - ML: 50 req/15min
-- **Nouveau**: Validation Joi middleware
-- **Nouveau**: WebSocket temps réel (socket.io)
-- **Nouveau**: Cache service (node-cache)
-- **Nouveau**: Redis dans docker-compose
-- **Fix**: logger.success → logger.info
+#### Notifications Push
+- Service de notifications automatique vers service-users
+- Envoi des alertes (DEBORDEMENT, BATTERIE_FAIBLE, CAPTEUR_DEFAILLANT)
+- Notifications de résolution d'alertes
+
+#### Sécurité
+- Validation `validateParamId` pour tous les `req.params.id`
+- Rate limiting (`express-rate-limit`) sur les routes admin (10 req/min)
+
+#### Intégration
+- `docker-compose.yml` - Activation service-iot (ports 3013 + 1883)
+- `docker-compose.override.yml` - Configuration dev avec hot-reload
+- API Gateway - Route `/iot/*` activée
+
+#### Service Analytics (port 3015)
+- Nouveau microservice analytics
+- Vues matérialisées (quotidiennes, par zone, par type)
+- Performances des agents de collecte
+- Cron job rafraîchissement (toutes les heures)
+
+#### API Gateway
+- Intégration service-iot et service-analytics dans swagger unifié
+- Documentation Swagger unifiée (http://localhost:3000/api-docs)
 
 #### Documentation
-- **Nouveau**: PHASE4_GUIDE.md - ML Predictions
-- **Nouveau**: PHASE5_GUIDE.md - Cache, Middleware, WebSocket
-- **Mise à jour**: README.md - Documentation complète
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
 
-#### Services Disponibles
-| Service | Port | Status |
-|---------|------|--------|
-| Frontend | 5173 | ✅ |
-| API Gateway | 3000 | ✅ |
-| Service Users | 3010 | ✅ |
-| Service Containers | 3011 | ✅ |
-| Service Gamifications | 3014 | ✅ |
-| Service Analytics | 3015 | ✅ |
-| PostgreSQL | 5432 | ✅ |
-| Redis | 6379 | ✅ |
-| PgAdmin | 5052 | ✅ |
-| Prometheus | 9090 | ✅ |
-| Grafana | 3001 | ✅ |
+#### Tests
+- tests unitaires complets (4 Suites, aucune régression)
 
 ---
 
