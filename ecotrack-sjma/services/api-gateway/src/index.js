@@ -88,7 +88,10 @@ const services = {
   },
   routes: {
     displayName: 'Routes & Planning Service',
-    status: 'pending',
+    status: 'ready',
+    port: parseInt(process.env.ROUTES_PORT, 10) || 3012,
+    baseUrl: process.env.ROUTES_SERVICE_URL,
+    swaggerPath: '/api-docs',
     routes: [{ mountPath: '/api/routes' }]
   },
   gamification: {
