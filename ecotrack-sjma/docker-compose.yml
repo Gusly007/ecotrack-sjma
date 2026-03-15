@@ -346,7 +346,6 @@ services:
       start_period: 10s
 
   service-analytics:
-    profiles: [placeholder]
     build:
       context: ./services/service-analytics
       dockerfile: Dockerfile
@@ -357,6 +356,9 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3015:3015"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - ecotrack
     restart: unless-stopped
