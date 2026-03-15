@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -258,6 +258,110 @@ jobs:
         continue-on-error: true
 
   # =========================================================================
+  # JOB 2D: UNIT TESTS - SERVICE-IOT
+  # =========================================================================
+  # Lance Jest pour service-iot avec PostgreSQL
+  
+  test-iot:
+    name: 'Unit Tests - service-iot'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-iot
+      
+      - name: 'Run Jest tests'
+        run: npm test
+        working-directory: services/service-iot
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+      
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./services/service-iot/coverage/coverage-final.json
+          flags: unittests-iot
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2E: UNIT TESTS - SERVICE-ANALYTICS
+  # =========================================================================
+  # Lance Jest pour service-analytics avec PostgreSQL
+  
+  test-analytics:
+    name: 'Unit Tests - service-analytics'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-analytics
+      
+      - name: 'Run Jest tests'
+        run: npm test
+        working-directory: services/service-analytics
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+      
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./services/service-analytics/coverage/coverage-final.json
+          flags: unittests-analytics
+        continue-on-error: true
+
+  # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
   # =========================================================================
   # Détecte les vulnérabilités dans les dépendances
@@ -268,7 +372,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics']
     
     steps:
       - name: 'Checkout code'
@@ -299,7 +403,7 @@ jobs:
   # =========================================================================
   # JOB 4: BUILD DOCKER - TOUS LES SERVICES
   # =========================================================================
-  # Construit les images Docker pour service-users et api-gateway
+  # Construit les images Docker pour tous les services
   
   build:
     name: 'Build Docker - ${{ matrix.service }}'
@@ -320,9 +424,15 @@ jobs:
           - service: service-gamifications
             image-name: ecotrack-service-gamifications
             port: 3014
+          - service: service-iot
+            image-name: ecotrack-service-iot
+            port: 3013
+          - service: service-analytics
+            image-name: ecotrack-service-analytics
+            port: 3015
     
     # Attend que tous les tests réussissent
-    needs: [test, test-containers, test-gamifications]
+    needs: [test, test-containers, test-gamifications, test-iot, test-analytics]
     
     # Permissions pour pousser sur le registry
     permissions:
