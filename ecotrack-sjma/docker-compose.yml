@@ -83,6 +83,21 @@ services:
         max-file: "3"
 
   # =========================================================================
+  # REDIS (Cache & Sessions)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ecotrack-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # =========================================================================
   # MIGRATIONS (s'exécute automatiquement au démarrage)
   # =========================================================================
   migrations:
@@ -355,6 +370,13 @@ services:
       APP_PORT: 3015
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
       NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
+      REPORTS_DIR: /app/reports
     ports:
       - "3015:3015"
     depends_on:
@@ -425,6 +447,8 @@ volumes:
   pgadmin_data:
     driver: local
   prometheus_data:
+    driver: local
+  redis_data:
     driver: local
   grafana_data:
     driver: local

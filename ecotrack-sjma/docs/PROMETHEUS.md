@@ -107,12 +107,12 @@ docker restart ecotrack-prometheus
 
 | Service | Port | Status |
 |---------|------|--------|
-| API Gateway | 3000 | ✅ |
-| Service Users | 3010 | ✅ |
-| Service Containers | 3011 | ✅ |
-| Service Gamifications | 3014 | ✅ |
+| API Gateway | 3000 |fait |
+| Service Users | 3010 | fait |
+| Service Containers | 3011 | fait |
+| Service Gamifications | 3014 | fait |
 | Service IoT | 3013 | ⏳ (à implémenter) |
-| Service Analytics | 3015 | ⏳ (à implémenter) |
+| Service Analytics | 3015 | fait |
 | Service Routes | 3012 | ⏳ (à implémenter) |
 
 ## Troubleshooting

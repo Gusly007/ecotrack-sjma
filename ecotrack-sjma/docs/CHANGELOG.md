@@ -690,5 +690,5 @@ La table `pgmigrations` garde la trace des migrations executees :
 
 
 **Format de date** : AAAA-MM-JJ (ISO 8601)
-**Derniere mise a jour** : 2026-02-12
+**Derniere mise a jour** : 2026-02-27
 **Maintenu par** : Equipe EcoTrack

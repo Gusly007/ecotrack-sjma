@@ -17,6 +17,7 @@ const publicRoutes = [
   { path: '/docs/', methods: ['GET'] }, // Swagger docs
   { path: '/metrics', methods: ['GET'] }, // Prometheus metrics
   { path: '/api/metrics/status', methods: ['GET'] }, // Frontend metrics
+  { path: '/api/analytics', methods: ['GET'] }, // Analytics (public for now)
 ];
 
 /**
