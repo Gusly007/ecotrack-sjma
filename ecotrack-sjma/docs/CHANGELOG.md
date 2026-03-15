@@ -4,6 +4,65 @@
 
 ---
 
+### [3.0.0] 2026-03 - Service IoT
+
+#### Nouveau Microservice : service-iot (port 3013)
+- **Nouveau**: Broker MQTT embarqué (Aedes) sur port 1883
+  - Réception temps réel des données capteurs (topic: `containers/{uid}/data`)
+  - Parsing, validation et stockage automatique des mesures
+- **Nouveau**: Alertes automatiques avec seuils configurables
+  - `DEBORDEMENT` : remplissage ≥ 90%
+  - `BATTERIE_FAIBLE` : batterie ≤ 20%
+  - `CAPTEUR_DEFAILLANT` : température hors plage ou-capteur silencieux > 24h
+  - Déduplication (pas de doublon d'alerte ACTIVE par conteneur/type)
+- **Nouveau**: API REST complète (10 endpoints)
+  - Mesures : liste, filtres, dernières mesures, par conteneur
+  - Capteurs : liste, détails
+  - Alertes : liste, filtres, mise à jour statut
+  - Administration : simulation, vérification capteurs silencieux, statistiques
+- **Nouveau**: Endpoint de simulation `POST /iot/simulate` pour tests sans MQTT
+- **Nouveau**: Métriques Prometheus (mqtt_messages_total, alerts_created_total)
+- **Nouveau**: Documentation Swagger sur `/api-docs`
+
+#### MQTT Avancé (Évolutions récentes)
+- Support TLS pour broker MQTT (variables: `MQTT_TLS_ENABLED`, `MQTT_TLS_KEY_PATH`, `MQTT_TLS_CERT_PATH`)
+- Authentification MQTT par username/password (variables: `MQTT_AUTH_ENABLED`, `MQTT_USERNAME`, `MQTT_PASSWORD`)
+
+#### Notifications Push
+- Service de notifications automatique vers service-users
+- Envoi des alertes (DEBORDEMENT, BATTERIE_FAIBLE, CAPTEUR_DEFAILLANT)
+- Notifications de résolution d'alertes
+
+#### Sécurité
+- Validation `validateParamId` pour tous les `req.params.id`
+- Rate limiting (`express-rate-limit`) sur les routes admin (10 req/min)
+
+#### Intégration
+- `docker-compose.yml` - Activation service-iot (ports 3013 + 1883)
+- `docker-compose.override.yml` - Configuration dev avec hot-reload
+- API Gateway - Route `/iot/*` activée
+
+#### Service Analytics (port 3015)
+- Nouveau microservice analytics
+- Vues matérialisées (quotidiennes, par zone, par type)
+- Performances des agents de collecte
+- Cron job rafraîchissement (toutes les heures)
+
+#### API Gateway
+- Intégration service-iot et service-analytics dans swagger unifié
+- Documentation Swagger unifiée (http://localhost:3000/api-docs)
+
+#### Documentation
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
+
+#### Tests
+- tests unitaires complets (4 Suites, aucune régression)
+
+---
+
 ### [2.0.0] 2026-02-21 - Monitoring
 
 #### Infrastructure
