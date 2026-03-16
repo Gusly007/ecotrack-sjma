@@ -3,6 +3,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const logger = require('./src/utils/logger');
@@ -85,6 +87,13 @@ const tourneeRoutes = require('./src/routes/tournee.route');
 const vehiculeRoutes = require('./src/routes/vehicule.route');
 const collecteRoutes = require('./src/routes/collecte.route');
 const statsRoutes = require('./src/routes/stats.route');
+
+// Servir les PDF générés
+const reportsDir = process.env.REPORTS_DIR || './reports';
+if (!fs.existsSync(reportsDir)) {
+  fs.mkdirSync(reportsDir, { recursive: true });
+}
+app.use('/reports', express.static(reportsDir));
 
 app.use('/api/routes', tourneeRoutes);
 app.use('/api/routes', vehiculeRoutes);

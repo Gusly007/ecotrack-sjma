@@ -1161,6 +1161,293 @@ Obtenez un token via \`POST /auth/login\`
           500: { description: 'Erreur serveur' }
         }
       }
+    },
+  },
+
+  // ========================================================================
+  // ROUTES SERVICE - Service de gestion des tournées
+  // ========================================================================
+  '/api/routes/tournees': {
+    get: {
+      tags: ['Routes - Tournées'],
+      summary: 'Liste toutes les tournées',
+      parameters: [
+        { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+        { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        { name: 'statut', in: 'query', schema: { type: 'string', enum: ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE'] } },
+        { name: 'id_zone', in: 'query', schema: { type: 'integer' } },
+        { name: 'id_agent', in: 'query', schema: { type: 'integer' } }
+      ],
+      responses: {
+        200: { description: 'Liste des tournées' },
+        500: { description: 'Erreur serveur' }
+      }
+    },
+    post: {
+      tags: ['Routes - Tournées'],
+      summary: 'Créer une tournée',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['date_tournee', 'duree_prevue_min', 'id_zone', 'id_agent'],
+              properties: {
+                date_tournee: { type: 'string', format: 'date' },
+                statut: { type: 'string', default: 'PLANIFIEE' },
+                distance_prevue_km: { type: 'number' },
+                duree_prevue_min: { type: 'integer' },
+                id_vehicule: { type: 'integer' },
+                id_zone: { type: 'integer' },
+                id_agent: { type: 'integer' }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Tournée créée' },
+        400: { description: 'Données invalides' }
+      }
+    }
+  },
+  '/api/routes/tournees/active': {
+    get: {
+      tags: ['Routes - Tournées'],
+      summary: 'Liste les tournées actives (EN_COURS)',
+      responses: {
+        200: { description: 'Tournées en cours' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}': {
+    get: {
+      tags: ['Routes - Tournées'],
+      summary: 'Récupère une tournée par ID',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Tournée trouvée' },
+        404: { description: 'Tournée introuvable' }
+      }
+    },
+    patch: {
+      tags: ['Routes - Tournées'],
+      summary: 'Met à jour une tournée',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Tournée mise à jour' },
+        404: { description: 'Tournée introuvable' }
+      }
+    },
+    delete: {
+      tags: ['Routes - Tournées'],
+      summary: 'Supprime une tournée',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Tournée supprimée' },
+        400: { description: 'Impossible de supprimer une tournée EN_COURS' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/statut': {
+    patch: {
+      tags: ['Routes - Tournées'],
+      summary: 'Change le statut dune tournée',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['statut'],
+              properties: { statut: { type: 'string', enum: ['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE'] } }
+            }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Statut mis à jour' },
+        400: { description: 'Statut invalide' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/etapes': {
+    get: {
+      tags: ['Routes - Tournées'],
+      summary: 'Récupère les étapes dune tournée',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Liste des étapes avec coordonnées conteneurs' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/progress': {
+    get: {
+      tags: ['Routes - Tournées'],
+      summary: 'Progression dune tournée',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Détails de progression' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/pdf': {
+    get: {
+      tags: ['Routes - Export'],
+      summary: 'Génère une feuille de route PDF',
+      produces: ['application/pdf'],
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: {
+          description: 'PDF de la feuille de route',
+          content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } }
+        },
+        404: { description: 'Tournée introuvable' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/map': {
+    get: {
+      tags: ['Routes - Export'],
+      summary: 'Données cartographiques GeoJSON pour affichage sur carte',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: {
+        200: { description: 'Données GeoJSON' },
+        404: { description: 'Tournée introuvable' }
+      }
+    }
+  },
+  '/api/routes/optimize': {
+    post: {
+      tags: ['Routes - Optimisation'],
+      summary: 'Génère une tournée optimisée',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['id_zone', 'date_tournee', 'id_agent'],
+              properties: {
+                id_zone: { type: 'integer' },
+                date_tournee: { type: 'string', format: 'date' },
+                seuil_remplissage: { type: 'number', default: 70 },
+                id_agent: { type: 'integer' },
+                id_vehicule: { type: 'integer' },
+                algorithme: { type: 'string', enum: ['nearest_neighbor', '2opt'], default: '2opt' }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Tournée optimisée créée' },
+        400: { description: 'Données invalides ou aucun conteneur éligible' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/collecte': {
+    post: {
+      tags: ['Routes - Collectes'],
+      summary: 'Enregistre une collecte',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['id_conteneur', 'quantite_kg'],
+              properties: {
+                id_conteneur: { type: 'integer' },
+                quantite_kg: { type: 'number' }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Collecte enregistrée' },
+        400: { description: 'Tournée non EN_COURS ou conteneur absent' }
+      }
+    }
+  },
+  '/api/routes/tournees/{id}/anomalie': {
+    post: {
+      tags: ['Routes - Collectes'],
+      summary: 'Signale une anomalie sur un conteneur',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['id_conteneur', 'type_anomalie', 'description'],
+              properties: {
+                id_conteneur: { type: 'integer' },
+                type_anomalie: { type: 'string', enum: ['CONTENEUR_INACCESSIBLE', 'CONTENEUR_ENDOMMAGE', 'CAPTEUR_DEFAILLANT'] },
+                description: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Anomalie signalée' }
+      }
+    }
+  },
+  '/api/routes/vehicules': {
+    get: {
+      tags: ['Routes - Véhicules'],
+      summary: 'Liste des véhicules',
+      responses: { 200: { description: 'Liste des véhicules' } }
+    },
+    post: {
+      tags: ['Routes - Véhicules'],
+      summary: 'Créer un véhicule',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['numero_immatriculation', 'modele', 'capacite_kg'],
+              properties: {
+                numero_immatriculation: { type: 'string' },
+                modele: { type: 'string' },
+                capacite_kg: { type: 'integer' }
+              }
+            }
+          }
+        }
+      },
+      responses: { 201: { description: 'Véhicule créé' } }
+    }
+  },
+  '/api/routes/vehicules/{id}': {
+    get: {
+      tags: ['Routes - Véhicules'],
+      summary: 'Détail dun véhicule',
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      responses: { 200: { description: 'Véhicule trouvé' } }
+    }
+  },
+  '/api/routes/stats/dashboard': {
+    get: {
+      tags: ['Routes - Statistiques'],
+      summary: 'Compteurs globaux',
+      responses: { 200: { description: 'Dashboard avec compteurs' } }
+    }
+  },
+  '/api/routes/stats/kpis': {
+    get: {
+      tags: ['Routes - Statistiques'],
+      summary: 'KPIs de performance',
+      responses: { 200: { description: 'KPIs' } }
     }
   },
   components: {

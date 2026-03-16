@@ -297,4 +297,69 @@ router.get('/tournees/:id/etapes', (req, res, next) => req.controllers.tournee.g
  */
 router.get('/tournees/:id/progress', (req, res, next) => req.controllers.tournee.getProgress(req, res, next));
 
+/**
+ * @swagger
+ * /routes/tournees/{id}/pdf:
+ *   get:
+ *     summary: Génère une feuille de route PDF
+ *     tags: [Tournées]
+ *     produces:
+ *       - application/pdf
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *         description: ID de la tournée
+ *     responses:
+ *       200:
+ *         description: PDF de la feuille de route
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Tournée introuvable
+ */
+router.get('/tournees/:id/pdf', (req, res, next) => req.controllers.export.generatePDF(req, res, next));
+
+/**
+ * @swagger
+ * /routes/tournees/{id}/map:
+ *   get:
+ *     summary: Données cartographiques GeoJSON pour affichage sur carte
+ *     tags: [Tournées]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *         description: ID de la tournée
+ *     responses:
+ *       200:
+ *         description: Données GeoJSON avec les points des conteneurs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     tournee:
+ *                       type: object
+ *                     agent:
+ *                       type: object
+ *                     vehicule:
+ *                       type: object
+ *                     geojson:
+ *                       type: object
+ *       404:
+ *         description: Tournée introuvable
+ */
+router.get('/tournees/:id/map', (req, res, next) => req.controllers.export.getMapData(req, res, next));
+
 module.exports = router;

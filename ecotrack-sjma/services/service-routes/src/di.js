@@ -17,6 +17,7 @@ const TourneeController = require('./controllers/tournee-controller');
 const VehiculeController = require('./controllers/vehicule-controller');
 const CollecteController = require('./controllers/collecte-controller');
 const StatsController = require('./controllers/stats-controller');
+const ExportController = require('./controllers/export-controller');
 
 // Instantiation
 const tourneeRepo = new TourneeRepository(pool);
@@ -33,6 +34,7 @@ const tourneeController = new TourneeController(tourneeService, pool);
 const vehiculeController = new VehiculeController(vehiculeService);
 const collecteController = new CollecteController(collecteService);
 const statsController = new StatsController(statsService, pool);
+const exportController = ExportController;
 
 // Middleware qui injecte les controllers dans req
 function controllersMiddleware(req, res, next) {
@@ -40,7 +42,8 @@ function controllersMiddleware(req, res, next) {
     tournee: tourneeController,
     vehicule: vehiculeController,
     collecte: collecteController,
-    stats: statsController
+    stats: statsController,
+    export: exportController
   };
   next();
 }

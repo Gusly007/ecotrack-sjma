@@ -1,6 +1,6 @@
-# 🐳 Déploiement - Service Routes
+#  Déploiement - Service Routes
 
-## Status : Production Ready ✅
+## Status : Production Ready 
 
 ### Checklist
 

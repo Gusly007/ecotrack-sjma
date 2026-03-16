@@ -1,4 +1,4 @@
-# 🔌 API Reference - Service Routes
+#  API Reference - Service Routes
 
 **Base URL (direct)**  : `http://localhost:3012/api/routes`
 **Base URL (gateway)** : `http://localhost:3000/api/routes`
@@ -290,6 +290,58 @@ Progression en temps réel.
     "progression_pct": 73.3,
     "quantite_totale_kg": 1250.5,
     "etapes": [...]
+  }
+}
+```
+
+---
+
+### GET /tournees/:id/pdf
+
+Génère une feuille de route PDF pour une tournée.
+
+**Réponse** : `application/pdf`
+
+Télécharge un fichier PDF contenant :
+- Informations de la tournée (code, date, statut, distance, durée)
+- Agent assigné
+- Véhicule
+- Itinéraire complet avec liste des conteneurs
+
+---
+
+### GET /tournees/:id/map
+
+Retourne les données cartographiques GeoJSON pour affichage sur une carte.
+
+**Réponse 200**
+
+```json
+{
+  "success": true,
+  "data": {
+    "tournee": { "id_tournee": 1, "code": "T-2026-001", ... },
+    "agent": { "id": 5, "prenom": "Jean", "nom": "Dupont" },
+    "vehicule": { "immatriculation": "AB-123-CD", "modele": "Renault Master" },
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "id_conteneur": 10,
+            "uid_conteneur": "CNT-0010",
+            "sequence": 1,
+            "collectee": false,
+            "niveau_remplissage": 85.5
+          },
+          "geometry": {
+            "type": "Point",
+            "coordinates": [2.3522, 48.8566]
+          }
+        }
+      ]
+    }
   }
 }
 ```

@@ -4,6 +4,136 @@
 
 ---
 
+### [3.1.0] 2026-03 - Service Routes
+
+#### Nouveau Microservice : service-routes (port 3012)
+- **Nouveau**: Gestion complète des tournées de collecte
+  - CRUD tournées avec code auto-généré (T-YYYY-NNN)
+  - Liste paginée avec filtres (statut, zone, agent, dates)
+  - Détail avec JOIN zone, agent, véhicule, progression étapes
+  - Changement de statut avec audit trail
+  - Suppression protégée (impossible si EN_COURS)
+- **Nouveau**: Optimisation des itinéraires
+  - Algorithme Nearest Neighbor (O(n²))
+  - Algorithme 2-opt (solution optimale -15% à -45%)
+  - Distance Haversine pour précision GPS
+  - Filtre par seuil de remplissage
+  - Création automatique des étapes ordonnées avec heure estimée
+- **Nouveau**: Suivi des collectes (Agent terrain)
+  - Enregistrement collecte avec quantité (transaction atomique)
+  - Clôture automatique de la tournée
+  - Signalement anomalies : CONTENEUR_INACCESSIBLE, CONTENEUR_ENDOMMAGE, CAPTEUR_DEFAILLANT
+- **Nouveau**: Statistiques & KPIs
+  - Dashboard : tournées, collectes 30j, véhicules
+  - KPIs : taux complétion, distances, quantité, CO2 économisé
+  - Comparaison algorithmes NN vs 2-opt
+
+#### Export & Visualisation (service-routes)
+- **Nouveau**: Génération PDF de feuille de route (`GET /tournees/:id/pdf`)
+  - Informations tournée, agent, véhicule
+  - Itinéraire complet avec conteneurs, adresses, ordre, statut
+  - Zone signature agent
+- **Nouveau**: Export GeoJSON pour carte (`GET /tournees/:id/map`)
+  - FeatureCollection avec points GPS des conteneurs
+  - Propriétés : id, uid, sequence, collectee, niveau_remplissage
+
+#### Intégration
+- `docker-compose.yml` - Activation service-routes (port 3012)
+- API Gateway - Route `/routes/*` activée
+- CI/CD - service-routes ajouté au pipeline
+
+#### Documentation
+- docs/service-routes/ - Documentation complète (INDEX, ARCHITECTURE, SETUP, API, ALGORITHMS, TESTING, DEPLOYMENT, CHANGELOG)
+
+#### Tests
+- 141 tests unitaires, 12 suites
+
+---
+
+### [3.0.0] 2026-03 - Service IoT
+
+#### API Gateway
+- Intégration service-iot, service-analytics et service-routes dans swagger unifié
+- Documentation Swagger unifiée (http://localhost:3000/api-docs)
+
+#### Documentation
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
+- docs/service-routes/ - Documentation complète (INDEX, ARCHITECTURE, SETUP, API, ALGORITHMS, TESTING, DEPLOYMENT)
+
+#### Tests
+- service-iot: tests unitaires complets (4 Suites, 42 tests)
+- service-routes: 141 tests unitaires, 12 suites
+
+#### Services Disponibles
+| Service | Port | Status |
+|---------|------|--------|
+| Frontend | 5173 | ✅ |
+| API Gateway | 3000 | ✅ |
+| Service Users | 3010 | ✅ |
+| Service Containers | 3011 | ✅ |
+| Service Routes | 3012 | ✅ |
+| Service IoT | 3013 | ✅ |
+| Service Gamifications | 3014 | ✅ |
+| Service Analytics | 3015 | ✅ |
+| PostgreSQL | 5432 | ✅ |
+| Redis | 6379 | ✅ |
+| PgAdmin | 5052 | ✅ |
+| Prometheus | 9090 | ✅ |
+| Grafana | 3001 | ✅ |
+
+---
+
+### [3.0.0] 2026-03 - Service IoT
+
+#### Nouveau Microservice : service-iot (port 3013)
+- **Nouveau**: Broker MQTT embarqué (Aedes) sur port 1883
+  - Réception temps réel des données capteurs (topic: `containers/{uid}/data`)
+  - Parsing, validation et stockage automatique des mesures
+- **Nouveau**: Alertes automatiques avec seuils configurables
+  - `DEBORDEMENT` : remplissage ≥ 90%
+  - `BATTERIE_FAIBLE` : batterie ≤ 20%
+  - `CAPTEUR_DEFAILLANT` : température hors plage ou-capteur silencieux > 24h
+  - Déduplication (pas de doublon d'alerte ACTIVE par conteneur/type)
+- **Nouveau**: API REST complète (10 endpoints)
+  - Mesures : liste, filtres, dernières mesures, par conteneur
+  - Capteurs : liste, détails
+  - Alertes : liste, filtres, mise à jour statut
+  - Administration : simulation, vérification capteurs silencieux, statistiques
+- **Nouveau**: Endpoint de simulation `POST /iot/simulate` pour tests sans MQTT
+- **Nouveau**: Métriques Prometheus (mqtt_messages_total, alerts_created_total)
+- **Nouveau**: Documentation Swagger sur `/api-docs`
+
+#### MQTT Avancé
+- Support TLS pour broker MQTT (variables: `MQTT_TLS_ENABLED`, `MQTT_TLS_KEY_PATH`, `MQTT_TLS_CERT_PATH`)
+- Authentification MQTT par username/password (variables: `MQTT_AUTH_ENABLED`, `MQTT_USERNAME`, `MQTT_PASSWORD`)
+
+#### Notifications Push
+- Service de notifications automatique vers service-users
+- Envoi des alertes (DEBORDEMENT, BATTERIE_FAIBLE, CAPTEUR_DEFAILLANT)
+- Notifications de résolution d'alertes
+
+#### Sécurité
+- Validation `validateParamId` pour tous les `req.params.id`
+- Rate limiting (`express-rate-limit`) sur les routes admin (10 req/min)
+
+#### Intégration
+- `docker-compose.yml` - Activation service-iot (ports 3013 + 1883)
+- API Gateway - Route `/iot/*` activée
+
+#### Documentation
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
+
+#### Tests
+- tests unitaires complets (4 Suites, 42 tests)
+
+---
+
 ### [2.1.0] 2026-02-27 - Service Analytics
 
 #### Phase 1-3 - Agrégations, Dashboard, Rapports

@@ -1,4 +1,4 @@
-# 🏗️ Architecture - Service Routes
+#  Architecture - Service Routes
 
 ## Vue d'ensemble
 

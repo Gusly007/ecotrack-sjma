@@ -1,4 +1,4 @@
-# 📚 Documentation Service Routes - EcoTrack
+#  Documentation Service Routes - EcoTrack
 
 Bienvenue dans la documentation technique du microservice de gestion des tournées de collecte.
 
@@ -86,4 +86,3 @@ Bienvenue dans la documentation technique du microservice de gestion des tourné
 
 ---
 
-**Version** : 1.0.0 | **Dernière mise à jour** : Mars 2026 | **Status** : Production Ready

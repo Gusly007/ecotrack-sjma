@@ -175,15 +175,15 @@ Même pattern que ci-dessus avec `req`, `res`, `next` mockés.
 ## Cas à toujours tester
 
 Pour chaque méthode de service :
-- ✅ **Cas nominal** — données valides, retour attendu
-- ✅ **404 Not Found** — ressource inexistante
-- ✅ **400 Bad Request** — validation Joi invalide
-- ✅ **Vérifications métier** — ex. "impossible de supprimer EN_COURS"
+-  **Cas nominal** — données valides, retour attendu
+-  **404 Not Found** — ressource inexistante
+-  **400 Bad Request** — validation Joi invalide
+-  **Vérifications métier** — ex. "impossible de supprimer EN_COURS"
 
 Pour chaque méthode de controller :
-- ✅ **Statut HTTP correct** — 200, 201
-- ✅ **Propagation erreur** — `next(err)` appelé si service lève
-- ✅ **Header X-User-Id** — si utilisé par la méthode
+-  **Statut HTTP correct** — 200, 201
+-  **Propagation erreur** — `next(err)` appelé si service lève
+-  **Header X-User-Id** — si utilisé par la méthode
 
 ---
 

@@ -1,4 +1,4 @@
-# 🚀 Setup & Installation - Service Routes
+#  Setup & Installation - Service Routes
 
 **Durée** : 10 minutes | **Audience** : Développeurs
 

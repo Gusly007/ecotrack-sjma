@@ -1,4 +1,4 @@
-# 🧮 Algorithmes d'optimisation - Service Routes
+#  Algorithmes d'optimisation - Service Routes
 
 Le service implémente deux algorithmes d'optimisation de tournées + la formule de distance Haversine. Tout est dans `src/services/optimization-service.js` (fonctions pures, zéro dépendance externe).
 

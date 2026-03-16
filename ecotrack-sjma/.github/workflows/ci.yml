@@ -48,7 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-routes']
     
     steps:
       # Étape 1: Télécharger le code du repo
@@ -268,7 +268,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-routes']
     
     steps:
       - name: 'Checkout code'
@@ -299,7 +299,7 @@ jobs:
   # =========================================================================
   # JOB 4: BUILD DOCKER - TOUS LES SERVICES
   # =========================================================================
-  # Construit les images Docker pour service-users et api-gateway
+  # Construit les images Docker pour tous les services
   
   build:
     name: 'Build Docker - ${{ matrix.service }}'
@@ -320,6 +320,9 @@ jobs:
           - service: service-gamifications
             image-name: ecotrack-service-gamifications
             port: 3014
+          - service: service-routes
+            image-name: ecotrack-service-routes
+            port: 3012
     
     # Attend que tous les tests réussissent
     needs: [test, test-containers, test-gamifications]

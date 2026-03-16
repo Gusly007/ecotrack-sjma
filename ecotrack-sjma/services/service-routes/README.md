@@ -54,6 +54,10 @@ Le Service Routes est un microservice Node.js dédié à la gestion complète de
 - Collectes par date et zone (filtrable)
 - Comparaison algorithmes NN vs 2-opt
 
+### Export & Visualisation
+- Génération PDF de la feuille de route (itinéraire, conteneurs, heures)
+- Export GeoJSON pour affichage sur carte interactive
+
 ### Gestion des véhicules
 - CRUD complet du parc de véhicules
 - Comptage des tournées actives par véhicule
@@ -152,6 +156,10 @@ GET    /stats/dashboard                 # Compteurs globaux
 GET    /stats/kpis                      # KPIs de performance
 GET    /stats/collectes                 # Stats par date et zone
 GET    /stats/algorithm-comparison      # Comparaison NN vs 2-opt
+
+# Export
+GET    /tournees/:id/pdf                # Générer feuille de route PDF
+GET    /tournees/:id/map                # Données cartographiques GeoJSON
 
 # Infrastructure
 GET    /health                          # Health check (SELECT 1)
