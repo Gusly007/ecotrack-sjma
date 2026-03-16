@@ -119,7 +119,10 @@ const services = {
   },
   iot: {
     displayName: 'IoT Service',
-    status: 'pending',
+    status: 'ready',
+    port: parseInt(process.env.IOT_PORT, 10) || 3013,
+    baseUrl: process.env.IOT_SERVICE_URL,
+    swaggerPath: '/api-docs',
     routes: [{ mountPath: '/api/iot' }]
   }
 };

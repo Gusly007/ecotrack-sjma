@@ -106,7 +106,7 @@
 - **Nouveau**: Métriques Prometheus (mqtt_messages_total, alerts_created_total)
 - **Nouveau**: Documentation Swagger sur `/api-docs`
 
-#### MQTT Avancé
+#### MQTT Avancé (Évolutions récentes)
 - Support TLS pour broker MQTT (variables: `MQTT_TLS_ENABLED`, `MQTT_TLS_KEY_PATH`, `MQTT_TLS_CERT_PATH`)
 - Authentification MQTT par username/password (variables: `MQTT_AUTH_ENABLED`, `MQTT_USERNAME`, `MQTT_PASSWORD`)
 
@@ -168,24 +168,13 @@
 - **Fix**: logger.success → logger.info
 
 #### Documentation
-- **Nouveau**: PHASE4_GUIDE.md - ML Predictions
-- **Nouveau**: PHASE5_GUIDE.md - Cache, Middleware, WebSocket
-- **Mise à jour**: README.md - Documentation complète
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
 
-#### Services Disponibles
-| Service | Port | Status |
-|---------|------|--------|
-| Frontend | 5173 | ✅ |
-| API Gateway | 3000 | ✅ |
-| Service Users | 3010 | ✅ |
-| Service Containers | 3011 | ✅ |
-| Service Gamifications | 3014 | ✅ |
-| Service Analytics | 3015 | ✅ |
-| PostgreSQL | 5432 | ✅ |
-| Redis | 6379 | ✅ |
-| PgAdmin | 5052 | ✅ |
-| Prometheus | 9090 | ✅ |
-| Grafana | 3001 | ✅ |
+#### Tests
+- tests unitaires complets (4 Suites, aucune régression)
 
 ---
 

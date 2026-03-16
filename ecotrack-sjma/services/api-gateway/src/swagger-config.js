@@ -36,14 +36,15 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Notifications** : Alertes gamification
 - **Statistiques** : Profil et stats de chaque utilisateur
 
-### Services à venir
-- **Routes & Planning** : Optimisation des tournées de collecte
-- **IoT** : Capteurs temps réel de niveau de remplissage
+### Service IoT (Port 3013)
+- **Mesures** : Réception et stockage des données capteurs
+- **Capteurs** : Gestion des capteurs IoT
+- **Alertes** : Alertes automatiques (débordement, batterie, température)
+- **MQTT Broker** : Broker Aedes embarqué (port 1883)
+- **Simulation** : Outil de test sans vrai-capteur
 
 ### Service Analytics (Port 3015)
 - **Agrégations** : Dashboard complet, stats globales, journalières, par zone, par type
-- **Performances agents** : Suivi des agents de collecte
-- **Vues matérialisées** : Données pré-calculées pour des performances optimales
 
 ## Architecture
 
@@ -84,8 +85,8 @@ Obtenez un token via \`POST /auth/login\`
       description: 'Service Gamification (Direct)'
     },
     {
-      url: 'http://localhost:3015',
-      description: 'Service Analytics (Direct)'
+      url: 'http://localhost:3013',
+      description: 'Service IoT (Direct)'
     }
   ],
   tags: [
@@ -186,11 +187,27 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: 'Analytics',
-      description: 'Agrégations et analytics (Service Analytics)',
+      name: 'IoT Mesures',
+      description: 'Données des capteurs IoT (Service IoT)',
       externalDocs: {
         description: 'Documentation détaillée',
-        url: 'http://localhost:3015/api-docs'
+        url: 'http://localhost:3013/api-docs'
+      }
+    },
+    {
+      name: 'IoT Capteurs',
+      description: 'Gestion des capteurs (Service IoT)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3013/api-docs'
+      }
+    },
+    {
+      name: 'IoT Alertes',
+      description: 'Alertes automatiques IoT (Service IoT)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3013/api-docs'
       }
     }
   ],
@@ -1450,6 +1467,172 @@ Obtenez un token via \`POST /auth/login\`
       responses: { 200: { description: 'KPIs' } }
     }
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  //  SERVICE IOT — Endpoints
+  // ═══════════════════════════════════════════════════════════════
+
+  '/api/iot/measurements': {
+    get: {
+      tags: ['IoT Mesures'],
+      summary: 'Liste des mesures avec filtres',
+      description: 'Récupère les mesures des capteurs avec pagination et filtres',
+      operationId: 'getMeasurements',
+      servers: [{ url: 'http://localhost:3000' }],
+      parameters: [
+        { name: 'page', in: 'query', schema: { type: 'integer', default: 1 }, description: 'Numéro de page' },
+        { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 }, description: 'Nombre par page' },
+        { name: 'id_conteneur', in: 'query', schema: { type: 'integer' }, description: 'Filtrer par conteneur' }
+      ],
+      responses: {
+        200: { description: 'Liste des mesures' }
+      }
+    }
+  },
+
+  '/api/iot/measurements/latest': {
+    get: {
+      tags: ['IoT Mesures'],
+      summary: 'Dernière mesure de chaque conteneur',
+      operationId: 'getLatestMeasurements',
+      servers: [{ url: 'http://localhost:3000' }],
+      responses: {
+        200: { description: 'Dernières mesures par conteneur' }
+      }
+    }
+  },
+
+  '/api/iot/measurements/container/{id}': {
+    get: {
+      tags: ['IoT Mesures'],
+      summary: 'Mesures d\'un conteneur spécifique',
+      operationId: 'getMeasurementsByContainer',
+      servers: [{ url: 'http://localhost:3000' }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'integer' }, description: 'ID du conteneur' }
+      ],
+      responses: {
+        200: { description: 'Mesures du conteneur' },
+        404: { description: 'Aucune mesure trouvée' }
+      }
+    }
+  },
+
+  '/api/iot/sensors': {
+    get: {
+      tags: ['IoT Capteurs'],
+      summary: 'Liste des capteurs',
+      operationId: 'getSensors',
+      servers: [{ url: 'http://localhost:3000' }],
+      responses: {
+        200: { description: 'Liste des capteurs' }
+      }
+    }
+  },
+
+  '/api/iot/sensors/{id}': {
+    get: {
+      tags: ['IoT Capteurs'],
+      summary: 'Détails d\'un-capteur',
+      operationId: 'getSensorById',
+      servers: [{ url: 'http://localhost:3000' }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'integer' }, description: 'ID du-capteur' }
+      ],
+      responses: {
+        200: { description: 'Détails du-capteur' },
+        404: { description: 'Capteur non trouvé' }
+      }
+    }
+  },
+
+  '/api/iot/alerts': {
+    get: {
+      tags: ['IoT Alertes'],
+      summary: 'Liste des alertes avec filtres',
+      operationId: 'getAlerts',
+      servers: [{ url: 'http://localhost:3000' }],
+      parameters: [
+        { name: 'statut', in: 'query', schema: { type: 'string', enum: ['ACTIVE', 'RESOLUE', 'IGNOREE'] }, description: 'Filtrer par statut' },
+        { name: 'type_alerte', in: 'query', schema: { type: 'string', enum: ['DEBORDEMENT', 'BATTERIE_FAIBLE', 'CAPTEUR_DEFAILLANT'] }, description: 'Filtrer par type' }
+      ],
+      responses: {
+        200: { description: 'Liste des alertes' }
+      }
+    }
+  },
+
+  '/api/iot/alerts/{id}': {
+    patch: {
+      tags: ['IoT Alertes'],
+      summary: 'Mettre à jour le statut d\'une alerte',
+      operationId: 'updateAlertStatus',
+      servers: [{ url: 'http://localhost:3000' }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'integer' }, description: 'ID de l\'alerte' }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                statut: { type: 'string', enum: ['RESOLUE', 'IGNOREE'] }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Alerte mise à jour' },
+        400: { description: 'Alerte déjà traitée' },
+        404: { description: 'Alerte non trouvée' }
+      }
+    }
+  },
+
+  '/api/iot/simulate': {
+    post: {
+      tags: ['IoT Alertes'],
+      summary: 'Simuler l\'envoi de données-capteur',
+      operationId: 'simulate',
+      servers: [{ url: 'http://localhost:3000' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['uid_capteur', 'fill_level', 'battery'],
+              properties: {
+                uid_capteur: { type: 'string', example: 'CAP-001' },
+                fill_level: { type: 'number', example: 85.5 },
+                battery: { type: 'number', example: 92.0 },
+                temperature: { type: 'number', example: 22.3 }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Données simulées traitées' }
+      }
+    }
+  },
+
+  '/api/iot/stats': {
+    get: {
+      tags: ['IoT Alertes'],
+      summary: 'Statistiques globales du service IoT',
+      operationId: 'getIotStats',
+      servers: [{ url: 'http://localhost:3000' }],
+      responses: {
+        200: { description: 'Statistiques mesures, alertes et MQTT' }
+      }
+    }
+  },
+
   components: {
     securitySchemes: {
       BearerAuth: {
