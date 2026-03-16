@@ -4,6 +4,88 @@
 
 ---
 
+### [3.1.0] 2026-03 - Service Routes
+
+#### Nouveau Microservice : service-routes (port 3012)
+- **Nouveau**: Gestion complète des tournées de collecte
+  - CRUD tournées avec code auto-généré (T-YYYY-NNN)
+  - Liste paginée avec filtres (statut, zone, agent, dates)
+  - Détail avec JOIN zone, agent, véhicule, progression étapes
+  - Changement de statut avec audit trail
+  - Suppression protégée (impossible si EN_COURS)
+- **Nouveau**: Optimisation des itinéraires
+  - Algorithme Nearest Neighbor (O(n²))
+  - Algorithme 2-opt (solution optimale -15% à -45%)
+  - Distance Haversine pour précision GPS
+  - Filtre par seuil de remplissage
+  - Création automatique des étapes ordonnées avec heure estimée
+- **Nouveau**: Suivi des collectes (Agent terrain)
+  - Enregistrement collecte avec quantité (transaction atomique)
+  - Clôture automatique de la tournée
+  - Signalement anomalies : CONTENEUR_INACCESSIBLE, CONTENEUR_ENDOMMAGE, CAPTEUR_DEFAILLANT
+- **Nouveau**: Statistiques & KPIs
+  - Dashboard : tournées, collectes 30j, véhicules
+  - KPIs : taux complétion, distances, quantité, CO2 économisé
+  - Comparaison algorithmes NN vs 2-opt
+
+#### Export & Visualisation (service-routes)
+- **Nouveau**: Génération PDF de feuille de route (`GET /tournees/:id/pdf`)
+  - Informations tournée, agent, véhicule
+  - Itinéraire complet avec conteneurs, adresses, ordre, statut
+  - Zone signature agent
+- **Nouveau**: Export GeoJSON pour carte (`GET /tournees/:id/map`)
+  - FeatureCollection avec points GPS des conteneurs
+  - Propriétés : id, uid, sequence, collectee, niveau_remplissage
+
+#### Intégration
+- `docker-compose.yml` - Activation service-routes (port 3012)
+- API Gateway - Route `/routes/*` activée
+- CI/CD - service-routes ajouté au pipeline
+
+#### Documentation
+- docs/service-routes/ - Documentation complète (INDEX, ARCHITECTURE, SETUP, API, ALGORITHMS, TESTING, DEPLOYMENT, CHANGELOG)
+
+#### Tests
+- 141 tests unitaires, 12 suites
+
+---
+
+### [3.0.0] 2026-03 - Service IoT
+
+#### API Gateway
+- Intégration service-iot, service-analytics et service-routes dans swagger unifié
+- Documentation Swagger unifiée (http://localhost:3000/api-docs)
+
+#### Documentation
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
+- docs/service-routes/ - Documentation complète (INDEX, ARCHITECTURE, SETUP, API, ALGORITHMS, TESTING, DEPLOYMENT)
+
+#### Tests
+- service-iot: tests unitaires complets (4 Suites, 42 tests)
+- service-routes: 141 tests unitaires, 12 suites
+
+#### Services Disponibles
+| Service | Port | Status |
+|---------|------|--------|
+| Frontend | 5173 | ✅ |
+| API Gateway | 3000 | ✅ |
+| Service Users | 3010 | ✅ |
+| Service Containers | 3011 | ✅ |
+| Service Routes | 3012 | ✅ |
+| Service IoT | 3013 | ✅ |
+| Service Gamifications | 3014 | ✅ |
+| Service Analytics | 3015 | ✅ |
+| PostgreSQL | 5432 | ✅ |
+| Redis | 6379 | ✅ |
+| PgAdmin | 5052 | ✅ |
+| Prometheus | 9090 | ✅ |
+| Grafana | 3001 | ✅ |
+
+---
+
 ### [3.0.0] 2026-03 - Service IoT
 
 #### Nouveau Microservice : service-iot (port 3013)
@@ -39,18 +121,51 @@
 
 #### Intégration
 - `docker-compose.yml` - Activation service-iot (ports 3013 + 1883)
-- `docker-compose.override.yml` - Configuration dev avec hot-reload
 - API Gateway - Route `/iot/*` activée
 
-#### Service Analytics (port 3015)
-- Nouveau microservice analytics
-- Vues matérialisées (quotidiennes, par zone, par type)
-- Performances des agents de collecte
-- Cron job rafraîchissement (toutes les heures)
+#### Documentation
+- `SERVICE-IOT.md` - Guide complet du service IoT
+- PHASE1.md - Réception des données (MQTT, TLS, Auth)
+- PHASE2.md - Traitement et Stockage
+- PHASE3.md - Alertes automatiques (seuils, notifications)
 
-#### API Gateway
-- Intégration service-iot et service-analytics dans swagger unifié
-- Documentation Swagger unifiée (http://localhost:3000/api-docs)
+#### Tests
+- tests unitaires complets (4 Suites, 42 tests)
+
+---
+
+### [2.1.0] 2026-02-27 - Service Analytics
+
+#### Phase 1-3 - Agrégations, Dashboard, Rapports
+- **Nouveau**: Service Analytics (port 3015)
+- **Nouveau**: Vues matérialisées (analytics_daily_stats, analytics_zone_stats, analytics_type_stats)
+- **Nouveau**: Endpoints agrégations avec filtres période
+- **Nouveau**: Dashboard complet avec KPIs
+- **Nouveau**: Heatmap GeoJSON
+- **Nouveau**: Évolutions
+- **Nouveau**: Génération PDF/Excel rapports
+- **Nouveau**: Rapports environnementaux (économie carburant, CO2)
+- **Nouveau**: Rapports performance tournées
+
+#### Phase 4 - ML Predictions
+- **Nouveau**: Prédiction remplissage (régression linéaire)
+- **Nouveau**: Détection anomalies (Z-score)
+- **Nouveau**: Capteurs défaillants detection
+- **Nouveau**: Intégration météo (Open-Meteo API)
+- **Nouveau**: Alertes automatiques depuis anomalies
+- **Nouveau**: Table predictions en DB
+- **Nouveau**: Seed données ML test
+
+#### Phase 5 - Infrastructure
+- **Nouveau**: Rate limiting (express-rate-limit)
+  - General: 100 req/15min
+  - Reports: 10 req/heure
+  - ML: 50 req/15min
+- **Nouveau**: Validation Joi middleware
+- **Nouveau**: WebSocket temps réel (socket.io)
+- **Nouveau**: Cache service (node-cache)
+- **Nouveau**: Redis dans docker-compose
+- **Fix**: logger.success → logger.info
 
 #### Documentation
 - `SERVICE-IOT.md` - Guide complet du service IoT

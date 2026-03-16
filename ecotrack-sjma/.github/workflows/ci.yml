@@ -48,8 +48,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics']
-    
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-routes','service-iot','service-analytics']    
     steps:
       # Étape 1: Télécharger le code du repo
       - name: 'Checkout code'
@@ -372,7 +371,7 @@ jobs:
     
     strategy:
       matrix:
-        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics']
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics','service-routes']
     
     steps:
       - name: 'Checkout code'
@@ -424,6 +423,9 @@ jobs:
           - service: service-gamifications
             image-name: ecotrack-service-gamifications
             port: 3014
+          - service: service-routes
+            image-name: ecotrack-service-routes
+            port: 3012
           - service: service-iot
             image-name: ecotrack-service-iot
             port: 3013
