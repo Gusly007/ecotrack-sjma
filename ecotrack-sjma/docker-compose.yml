@@ -138,6 +138,11 @@ services:
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
     ports:
       - "3000:3000"
     depends_on:

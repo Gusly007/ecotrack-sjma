@@ -1,105 +1,166 @@
-const NodeCache = require('node-cache');
+const redis = require('redis');
 const logger = require('../utils/logger');
 
 class CacheService {
   constructor() {
-    this.cache = new NodeCache({
-      stdTTL: 300, // 5 minutes par défaut
-      checkperiod: 60,
-      useClones: false
-    });
-
-    this.cache.on('expired', (key) => {
-      logger.info(`Cache expired: ${key}`);
-    });
-
-    this.cache.on('set', (key) => {
-      logger.info(`Cache set: ${key}`);
-    });
+    this.client = null;
+    this.isConnected = false;
+    this.fallbackCache = null;
   }
 
-  /**
-   * Get or set with automatic fetch
-   */
-  async getOrSet(key, fetchFunction, ttl = 300) {
-    try {
-      // Vérifier le cache
-      const cached = this.cache.get(key);
-      if (cached !== undefined) {
-        logger.info(`Cache HIT: ${key}`);
-        return cached;
-      }
+  async connect() {
+    const redisHost = process.env.REDIS_HOST || 'localhost';
+    const redisPort = process.env.REDIS_PORT || 6379;
+    const redisPassword = process.env.REDIS_PASSWORD || undefined;
 
-      // Cache MISS - récupérer les données
-      logger.info(`Cache MISS: ${key}`);
-      const data = await fetchFunction();
+    // Try Redis first, fallback to NodeCache if unavailable
+    try {
+      this.client = redis.createClient({
+        socket: {
+          host: redisHost,
+          port: parseInt(redisPort)
+        },
+        password: redisPassword
+      });
+
+      this.client.on('error', (err) => {
+        logger.error({ err: err.message }, 'Redis Client Error');
+        this.isConnected = false;
+      });
+
+      this.client.on('connect', () => {
+        logger.info({ redisHost, redisPort }, 'Redis connected');
+        this.isConnected = true;
+      });
+
+      await this.client.connect();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Redis connection failed, using in-memory fallback');
+      this.isConnected = false;
       
-      // Stocker en cache
-      this.cache.set(key, data, ttl);
-      
-      return data;
-    } catch (error) {
-      logger.error(`Cache error for key ${key}:`, error);
-      throw error;
+      // Fallback to NodeCache
+      const NodeCache = require('node-cache');
+      this.fallbackCache = new NodeCache({
+        stdTTL: 300,
+        checkperiod: 60,
+        useClones: false
+      });
     }
   }
 
-  /**
-   * Invalider par pattern
-   */
-  invalidate(pattern) {
-    const keys = this.cache.keys();
-    const matchingKeys = keys.filter(key => key.includes(pattern));
+  async get(key) {
+    if (this.isConnected && this.client) {
+      try {
+        const value = await this.client.get(key);
+        return value ? JSON.parse(value) : null;
+      } catch (err) {
+        logger.error({ err: err.message, key }, 'Redis GET error');
+        return null;
+      }
+    }
     
-    matchingKeys.forEach(key => {
-      this.cache.del(key);
-      logger.info(`Cache invalidated: ${key}`);
-    });
-
-    return matchingKeys.length;
+    // Fallback to NodeCache
+    if (this.fallbackCache) {
+      return this.fallbackCache.get(key);
+    }
+    return null;
   }
 
-  /**
-   * Clear all cache
-   */
+  async set(key, value, ttlSeconds = 300) {
+    if (this.isConnected && this.client) {
+      try {
+        await this.client.setEx(key, ttlSeconds, JSON.stringify(value));
+        return true;
+      } catch (err) {
+        logger.error({ err: err.message, key }, 'Redis SET error');
+        return false;
+      }
+    }
+    
+    // Fallback to NodeCache
+    if (this.fallbackCache) {
+      this.fallbackCache.set(key, value, ttlSeconds);
+      return true;
+    }
+    return false;
+  }
+
+  async del(key) {
+    if (this.isConnected && this.client) {
+      try {
+        await this.client.del(key);
+        return true;
+      } catch (err) {
+        logger.error({ err: err.message, key }, 'Redis DEL error');
+        return false;
+      }
+    }
+    
+    if (this.fallbackCache) {
+      this.fallbackCache.del(key);
+      return true;
+    }
+    return false;
+  }
+
+  async invalidatePattern(pattern) {
+    if (this.isConnected && this.client) {
+      try {
+        const keys = await this.client.keys(pattern);
+        if (keys.length > 0) {
+          await this.client.del(keys);
+          logger.info({ pattern, count: keys.length }, 'Redis cache invalidated');
+        }
+        return true;
+      } catch (err) {
+        logger.error({ err: err.message, pattern }, 'Redis KEYS error');
+        return false;
+      }
+    }
+    
+    if (this.fallbackCache) {
+      const keys = this.fallbackCache.keys();
+      const matchingKeys = keys.filter(key => key.includes(pattern.replace('*', '')));
+      matchingKeys.forEach(key => this.fallbackCache.del(key));
+      logger.info({ pattern, count: matchingKeys.length }, 'In-memory cache invalidated');
+      return true;
+    }
+    return false;
+  }
+
+  async getOrSet(key, fetchFn, ttlSeconds = 300) {
+    const cached = await this.get(key);
+    if (cached) {
+      return { data: cached, fromCache: true };
+    }
+
+    const data = await fetchFn();
+    if (data) {
+      await this.set(key, data, ttlSeconds);
+    }
+    return { data, fromCache: false };
+  }
+
   clear() {
-    this.cache.flushAll();
-    logger.info('Cache cleared completely');
+    if (this.fallbackCache) {
+      this.fallbackCache.flushAll();
+    }
+    logger.info('Cache cleared');
   }
 
-  /**
-   * Get cache statistics
-   */
   getStats() {
-    return this.cache.getStats();
+    if (this.fallbackCache) {
+      return this.fallbackCache.getStats();
+    }
+    return { hits: 0, misses: 0, keys: 0 };
   }
 
-  /**
-   * Warm up cache with common queries
-   */
-  async warmUp() {
-    logger.info('Warming up cache...');
-    
-    const DashboardService = require('./dashboardService');
-    const AggregationService = require('./aggregationService');
-    
-    try {
-      // Précharger les données fréquentes
-      await Promise.all([
-        this.getOrSet('dashboard:week', 
-          () => DashboardService.getDashboardData('week'), 180),
-        this.getOrSet('aggregations:global', 
-          () => AggregationService.getCompleteAggregations('month'), 300)
-      ]);
-      
-      logger.info('Cache warmed up successfully');
-    } catch (error) {
-      logger.error('Cache warm-up failed:', error);
+  async close() {
+    if (this.client) {
+      await this.client.quit();
+      this.isConnected = false;
     }
   }
 }
 
-// Singleton instance
-const cacheService = new CacheService();
-
-module.exports = cacheService;
+module.exports = new CacheService();

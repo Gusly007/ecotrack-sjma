@@ -17,6 +17,7 @@ import { validateEnv } from './config/env.js';
 import helmet from 'helmet';
 import logger from './utils/logger.js';
 import client from 'prom-client';
+import cacheService from './services/cacheService.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -49,6 +50,11 @@ if (env.nodeEnv !== 'test') {
 if (env.nodeEnv !== 'test') {
   // Ensure minimal auth tables + sequences exist before serving requests.
   await ensureAuthTables();
+}
+
+// Initialize Redis cache
+if (env.nodeEnv !== 'test') {
+  await cacheService.connect();
 }
 
 app.use(helmet({
@@ -130,6 +136,7 @@ const server = app.listen(env.port, () => {
 process.on('SIGINT', async () => {
   logger.info('Shutting down service users');
   await pool.end();
+  await cacheService.close();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);

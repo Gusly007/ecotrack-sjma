@@ -4,6 +4,97 @@
 
 ---
 
+### [3.3.0] 2026-03 - Redis Caching + Centralized Logging
+
+#### Cache Redis Multi-Services
+
+**Nouveau**: Implémentation du cache Redis pour améliorer les performances API.
+
+- **service-users** (port 3010)
+  - Cache des profils utilisateurs (`user:{id}:profile`) - TTL 5min
+  - Cache des stats utilisateur (`user:{id}:stats`) - TTL 5min
+  - Cache des rôles utilisateur (`user:{id}:roles`) - TTL 30min
+  - Invalidation automatique lors des mises à jour
+
+- **service-containers** (port 3011)
+  - Cache des détails conteneur (`container:{id}`) - TTL 2min
+  - Cache UID conteneur (`container:uid:{uid}`) - TTL 2min
+  - Cache liste conteneurs (`containers:list:*`) - TTL 1min
+  - Cache conteneurs par zone (`containers:zone:{id}`) - TTL 2min
+
+- **service-routes** (port 3012)
+  - Cache tournée par ID (`tournee:{id}`) - TTL 1min
+  - Cache liste tournées (`tournees:list:*`) - TTL 30s
+  - Cache tournées actives (`tournee:active`) - TTL 1min
+
+- **service-analytics** (port 3015)
+  - Migration NodeCache → Redis avec fallback mémoire
+  - Cache KPIs dashboard - TTL 1min
+  - Cache agrégations zones - TTL 5min
+
+- **service-gamifications** (port 3014)
+  - Cache classement (`gamification:leaderboard`) - TTL 5min
+  - Cache points utilisateurs - TTL 10min
+  - Cache badges disponibles - TTL 1h
+
+- **service-iot** (port 3013)
+  - Cache dernières mesures - TTL 30s
+  - Cache capteurs actifs - TTL 5min
+  - Cache statistiques conteneur - TTL 5min
+
+#### Configuration
+
+- **Package**: `redis@4.7.0` ajouté aux services
+- **Variables d'environnement**:
+  ```
+  REDIS_HOST=localhost
+  REDIS_PORT=6379
+  REDIS_PASSWORD=
+  REDIS_DB=0
+  ```
+- **Service**: Pattern Cache-Aside avec invalidation automatique
+- **Logging**: Utilisation du logger Pino existant
+
+#### Améliorations Performance (objectifs)
+
+- Réduction latence API (objectif < 500ms P95 - à mesurer)
+- Réduction charge PostgreSQL
+- Cache hit ratio cible > 80% (à mesurer)
+
+#### Système de Logging Centralisé
+
+**Nouveau**: Système de logs centralisé pour administration et monitoring.
+
+- **Base de données**: Table `centralized_logs` avec index sur timestamp, service, level, action
+- **Champs**:
+  - `timestamp` - Date/heure du log
+  - `level` - Niveau (info, warning, error, critical)
+  - `action` - Action (login, logout, create, update, delete, view, etc.)
+  - `service` - Service source
+  - `message` - Message du log
+  - `metadata` - Données supplémentaires (JSON)
+  - `user_id` - ID utilisateur
+  - `ip_address` - Adresse IP
+
+##### API Endpoints
+
+| Endpoint | Description |
+|---------|-------------|
+| `POST /api/logs` | Créer un log |
+| `GET /api/logs` | Liste avec filtres |
+| `GET /api/logs/filters` | Valeurs disponibles |
+| `GET /api/logs/summary` | Statistiques globales |
+| `GET /api/logs/export` | Export JSON ou CSV |
+
+##### Client de Logging
+
+```javascript
+centralLogClient.login('User logged in', { ip: req.ip }, userId);
+centralLogClient.error('Failed to connect', { error: err.message });
+```
+
+---
+
 ### [3.1.0] 2026-03 - Service Routes
 
 #### Nouveau Microservice : service-routes (port 3012)

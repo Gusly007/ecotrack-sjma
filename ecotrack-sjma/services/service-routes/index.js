@@ -14,6 +14,7 @@ const requestLogger = require('./src/middleware/request-logger');
 const { controllersMiddleware } = require('./src/di');
 const { testConnection } = require('./src/db/connexion');
 const { pool } = require('./src/db/connexion');
+const cacheService = require('./src/services/cacheService');
 
 const client = require('prom-client');
 const register = new client.Registry();
@@ -180,6 +181,13 @@ app.listen(port, async () => {
   logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
   logger.info({ env: config.NODE_ENV }, 'Environment');
   await testConnection();
+  
+  // Initialize Redis cache
+  await cacheService.connect().then(() => {
+    logger.info('Redis cache initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
+  });
 });
 
 module.exports = app;

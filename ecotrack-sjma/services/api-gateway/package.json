@@ -28,6 +28,7 @@
         "http-proxy-middleware": "^3.0.5",
         "jsonwebtoken": "^9.0.3",
         "morgan": "^1.10.1",
+        "pg": "^8.20.0",
         "pino": "10.1.1",
         "pino-pretty": "^11.3.0",
         "prom-client": "^15.1.3",
