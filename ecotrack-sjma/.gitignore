@@ -6,6 +6,7 @@ coverage/
 docs/FRONTEND_METRICS.md
 infra/kubernetes/
 infra/terraform/  
+/TASK_ANALYSIS.md
 
 
 # Old folders at root (moved to services/)
