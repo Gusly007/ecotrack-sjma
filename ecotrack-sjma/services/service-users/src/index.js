@@ -9,6 +9,7 @@ import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
 import adminConfigRoutes from './routes/admin-config.js';
+import adminEnvironmentalConstantsRoutes from './routes/admin-environmental-constants.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { publicLimiter } from './config/rateLimit.js';
 import pool, { ensureAuthTables } from './config/database.js';
@@ -119,6 +120,7 @@ app.use('/users', userRoutes);
 app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
 app.use('/admin/config', adminConfigRoutes);
+app.use('/admin/environmental-constants', adminEnvironmentalConstantsRoutes);
 app.use('/notifications', notificationRoutes);
 
 // Servir les avatars en tant que fichiers statiques
