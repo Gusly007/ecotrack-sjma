@@ -387,6 +387,7 @@ services:
       ALERT_SENSOR_TIMEOUT_HOURS: ${ALERT_SENSOR_TIMEOUT_HOURS:-24}
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
     ports:
       - "3013:3013"
       - "${MQTT_PORT:-1883}:1883"
@@ -395,8 +396,6 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
-      migrations:
-        condition: service_completed_successfully
     networks:
       - ecotrack
     restart: unless-stopped
