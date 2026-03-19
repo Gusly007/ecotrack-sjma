@@ -17,7 +17,7 @@
 
 ---
 
-## 📊 Requêtes par Catégorie
+##  Requêtes par Catégorie
 
 ### Infrastructure
 
@@ -158,7 +158,7 @@ ecotrack_db_cache_hit_ratio
 
 ---
 
-## 🚨 Alertes (Prometheus)
+##  Alertes (Prometheus)
 
 ### Service Down
 ```promql

@@ -125,18 +125,20 @@ router.get('/iot', async (req, res) => {
 
 router.get('/kafka', async (req, res) => {
   try {
-    const [messagesIn, consumerLag, brokerUp] = await Promise.all([
+    const [messagesIn, consumerLag, brokerInfo] = await Promise.all([
       queryPrometheus('rate(kafka_server_brokertopicmessages_in_total[1m]) * 60'),
       queryPrometheus('kafka_consumer_group_lag'),
-      queryPrometheus('kafka_broker_up')
+      queryPrometheus('kafka_brokers')
     ]);
 
     const getValue = (arr) => arr.length > 0 ? parseFloat(arr[0].value[1]).toFixed(2) : 0;
+    const brokerCount = brokerInfo.length > 0 ? parseInt(brokerInfo[0].value[1]) : 0;
 
     res.json({
       messages_per_min: getValue(messagesIn),
       consumer_lag: getValue(consumerLag),
-      broker_status: brokerUp.length > 0 && brokerUp[0].value[1] === '1' ? 'up' : 'down',
+      broker_status: brokerCount > 0 ? 'up' : 'down',
+      broker_count: brokerCount,
       timestamp: new Date().toISOString()
     });
   } catch (err) {
