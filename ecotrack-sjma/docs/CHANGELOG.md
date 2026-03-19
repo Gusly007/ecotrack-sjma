@@ -4,6 +4,74 @@
 
 ---
 
+### [3.5.0] 2026-03 - Kafka Message Broker
+
+#### Pourquoi Kafka ?
+
+**Contexte Scale** :
+- 2000 conteneurs avec capteurs
+- ~2000 mesures / 5 min = ~7 msg/sec (pic: 100+ msg/sec)
+- 15000 citoyens, 50 agents, 10 gestionnaires
+
+**Problèmes résolus** :
+| Problème | Solution |
+|----------|----------|
+| Pic de mesures IoT | Buffer asynchrone |
+| Découplage services | Producers/Consumers |
+| Temps réel | Streaming alerts |
+| Scalabilité | Partitionnement |
+
+#### Architecture
+
+```
+[Capteurs] → [service-iot] → [Kafka] → [service-analytics]
+                                          ↓
+                                     [service-users]
+```
+
+#### Topics Kafka
+
+| Topic | Description | Partitions |
+|-------|-------------|------------|
+| `ecotrack.sensor.data` | Données capteurs | 6 |
+| `ecotrack.alerts` | Alertes conteneurs | 3 |
+| `ecotrack.container.status` | Statut conteneurs | 3 |
+| `ecotrack.notifications` | Notifications | 3 |
+
+#### Services
+
+| Service | Rôle | Fonction |
+|---------|------|----------|
+| **service-iot** | Producer | Envoie données/alertes vers Kafka |
+| **service-analytics** | Consumer | ML predictions, stats |
+| **service-users** | Consumer | Notifications push/email |
+
+#### Docker
+
+```yaml
+# docker-compose.yml
+zookeeper:
+  image: confluentinc/cp-zookeeper:7.5.0
+kafka:
+  image: confluentinc/cp-kafka:7.5.0
+kafka-ui:
+  image: provectuslabs/kafka-ui:latest  # http://localhost:8080
+```
+
+#### Documentation
+
+- `docs/KAFKA.md` - Documentation complète avec architecture, API, monitoring
+
+#### Fichiers
+
+- `docker-compose.yml` - Ajout zookeeper, kafka, kafka-ui
+- `docs/KAFKA.md` - Documentation
+- `services/service-iot/kafkaProducer.js` - Producer
+- `services/service-analytics/kafkaConsumer.js` - Consumer
+- `services/service-users/src/services/kafkaNotificationConsumer.js` - Consumer
+
+---
+
 ### [3.4.0] 2026-03 - Configuration Dynamique & Constantes
 
 #### Système de Configuration Dynamique (Admin)
