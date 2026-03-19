@@ -107,13 +107,44 @@ docker restart ecotrack-prometheus
 
 | Service | Port | Status |
 |---------|------|--------|
-| API Gateway | 3000 |fait |
-| Service Users | 3010 | fait |
-| Service Containers | 3011 | fait |
-| Service Gamifications | 3014 | fait |
-| Service IoT | 3013 | ⏳ (à implémenter) |
-| Service Analytics | 3015 | fait |
-| Service Routes | 3012 | ⏳ (à implémenter) |
+| API Gateway | 3000 | ✅ |
+| Service Users | 3010 | ✅ |
+| Service Containers | 3011 | ✅ |
+| Service Gamifications | 3014 | ✅ |
+| Service IoT | 3013 | ✅ |
+| Service Analytics | 3015 | ✅ |
+| Service Routes | 3012 | ✅ |
+
+## Metrics API (Frontend Integration)
+
+Le service-analytics expose une API REST pour le frontend :
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/metrics/overview` | Vue d'ensemble (services + infrastructure) |
+| `GET /api/metrics/services` | Santé des services avec latence |
+| `GET /api/metrics/iot` | Métriques IoT (capteurs, conteneurs) |
+| `GET /api/metrics/kafka` | Statut Kafka |
+| `GET /api/metrics/database` | Statut PostgreSQL |
+| `GET /api/metrics/alerts` | Alertes actives Prometheus |
+| `GET /api/metrics/history?metric=cpu&period=3600` | Données historiques |
+
+### Exemple de réponse `/api/metrics/overview`:
+```json
+{
+  "services": [
+    { "name": "service-users", "status": "up", "instance": "172.18.0.5:3010" }
+  ],
+  "infrastructure": {
+    "cpu": "23.5",
+    "memory": "67.2",
+    "disk": "45.1",
+    "networkIn": "1.25",
+    "networkOut": "0.82"
+  },
+  "timestamp": "2026-03-19T10:30:00.000Z"
+}
+```
 
 ## Troubleshooting
 

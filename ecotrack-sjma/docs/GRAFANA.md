@@ -8,53 +8,60 @@
 
 ## Dashboards
 
-### Import Dashboard
+### Dashboard EcoTrack Overview
+
+Voir `monitoring/grafana/dashboards/ecotrack-overview.json`
 
 1. Aller dans **Dashboards** → **Import**
-2. Coller le JSON du dashboard (voir `monitoring/grafana/dashboards/ecotrack-overview.json`)
+2. Coller le JSON du dashboard
 3. Choisir "Prometheus" comme source de données
 
-### Métriques Clés
+### Panels Principaux
 
-#### Santé des Services (Stat Panel)
-- Vert : UP
-- Rouge : DOWN
+| Panel | Type | Source |
+|-------|------|--------|
+| **Services Health** | Stat | `up{job=~"service-.*"}` |
+| **CPU Usage** | Gauge | `node_cpu_usage` |
+| **Memory Usage** | Gauge | `node_memory_usage` |
+| **Disk Usage** | Gauge | `node_disk_usage` |
+| **HTTP Requests/s** | Graph | `rate(http_requests_total[5m])` |
+| **Error Rate 5xx** | Graph | `rate(http_requests_total{status=~"5.."}[5m])` |
+| **Latency P95** | Graph | `histogram_quantile(0.95, ...)` |
+| **Kafka Messages/min** | Graph | `kafka_server_brokertopicmessages_in_total` |
+| **Consumer Lag** | Graph | `kafka_consumer_group_lag` |
+| **DB Connections** | Stat | `ecotrack_db_connections` |
+| **Cache Hit Ratio** | Gauge | `pg_stat_database_blks_hit` |
 
-#### Uptime (Stat Panel)
-- Temps depuis le dernier redémarrage
+## IoT Metrics (PostgreSQL Exporter)
 
-#### Requêtes HTTP (Graph)
-- Requêtes par seconde
-- Codes de réponse (2xx, 4xx, 5xx)
+| Requête PromQL | Description |
+|----------------|-------------|
+| `ecotrack_iot_sensors_total` | Nombre total de capteurs |
+| `ecotrack_iot_sensors_inactive_12h` | Capteurs inactifs >12h |
+| `ecotrack_iot_sensors_low_battery` | Capteurs batterie faible |
+| `ecotrack_containers_critical` | Conteneurs critiques |
+| `ecotrack_containers_warning` | Conteneurs en warning |
+| `ecotrack_iot_last_measurement_age` | Age dernière mesure (sec) |
 
-#### Latence (Graph)
-- Latence moyenne (p50, p95, p99)
+## Kafka Metrics
 
-#### Utilisation Ressources (Gauge)
-- CPU %
-- Mémoire %
+| Requête PromQL | Description |
+|----------------|-------------|
+| `kafka_broker_up` | Broker Kafka UP (1/0) |
+| `kafka_server_brokertopicmessages_in_total` | Messages traités |
+| `kafka_consumer_group_lag` | Lag des consumers |
+| `rate(kafka_server_brokertopicmessages_in_total[1m]) * 60` | Messages/minute |
 
-## Panels Personnalisés
+## Alerts Grafana
 
-### Statut Service
-```promql
-up{job=~"service-.*"}
-```
-
-### Requêtes Totales
-```promql
-sum(rate(http_requests_total[5m]))
-```
-
-### Erreurs
-```promql
-sum(rate(http_requests_total{status=~"5.*"}[5m]))
-```
-
-### Latence P95
-```promql
-histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
-```
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| **ServiceDown** | `up == 0` pendant 2min | critical |
+| **HighCPU** | `cpu > 80%` pendant 5min | warning |
+| **HighMemory** | `memory > 85%` pendant 5min | warning |
+| **DiskSpace** | `disk > 90%` | critical |
+| **KafkaDown** | `kafka_broker_up == 0` | critical |
+| **ConsumerLag** | `lag > 1000` pendant 5min | warning |
 
 ## Commandes Utiles
 
@@ -67,6 +74,11 @@ docker logs ecotrack-grafana -f
 
 # Reset mot de passe admin
 docker exec -it ecotrack-grafana grafana-cli admin reset-admin-password nouveau_mot_de_passe
+
+# Import dashboard via API
+curl -X POST http://localhost:3001/api/dashboards/import \
+  -H "Content-Type: application/json" \
+  -d @monitoring/grafana/dashboards/ecotrack-overview.json
 ```
 
 ## Troubleshooting
@@ -82,3 +94,11 @@ docker exec -it ecotrack-grafana grafana-cli admin reset-admin-password nouveau_
 1. Vérifier le range de temps (coin haut droit)
 2. Refresher la page
 3. Vérifier les métriques avec Prometheus directement
+
+## Variables Grafana
+
+| Variable | Query | Usage |
+|----------|-------|-------|
+| `$job` | `label_values(up, job)` | Filtrer par service |
+| `$instance` | `label_values(up{job="$job"}, instance)` | Filtrer par instance |
+| `$alert_severity` | `critical,warning` | Filtrer alertes |

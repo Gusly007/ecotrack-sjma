@@ -1,5 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import logger from '../utils/logger';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const queryPrometheus = async (query) => {
     const data = await response.json();
     return data.status === 'success' ? data.data.result : [];
   } catch (err) {
-    console.error('Prometheus query failed:', err.message);
+    logger.error('Prometheus query failed:', err.message);
     return [];
   }
 };
@@ -24,7 +25,7 @@ const queryPrometheusRange = async (query, time) => {
     const data = await response.json();
     return data.status === 'success' ? data.data.result : [];
   } catch (err) {
-    console.error('Prometheus range query failed:', err.message);
+    logger.error('Prometheus range query failed:', err.message);
     return [];
   }
 };

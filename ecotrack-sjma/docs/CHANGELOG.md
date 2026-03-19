@@ -4,6 +4,47 @@
 
 ---
 
+### [3.5.1] 2026-03 - Metrics API pour Frontend
+
+#### API REST Metrics
+
+Le service-analytics expose maintenant des endpoints pour le frontend :
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/metrics/overview` | Vue d'ensemble services + infrastructure |
+| `/api/metrics/services` | Santé des services avec latence/erreur |
+| `/api/metrics/iot` | Capteurs, conteneurs, batterie |
+| `/api/metrics/kafka` | Messages, consumer lag |
+| `/api/metrics/database` | Connexions DB, cache hit ratio |
+| `/api/metrics/alerts` | Alertes actives Prometheus |
+| `/api/metrics/history` | Données historiques |
+
+#### Exemple d'utilisation Frontend
+
+```javascript
+// Vue d'ensemble
+const res = await fetch('http://localhost:3015/api/metrics/overview');
+const { services, infrastructure } = await res.json();
+
+// IoT metrics
+const iot = await fetch('http://localhost:3015/api/metrics/iot');
+const { sensors, containers } = await iot.json();
+```
+
+#### Fichiers
+
+- `services/service-analytics/src/routes/metrics.js` - Routes API
+- `services/service-analytics/src/index.js` - Routes registradas
+- `docker-compose.yml` - Ajout `PROMETHEUS_URL` env
+
+#### Documentation
+
+- `docs/PROMETHEUS.md` - Endpoints API documentés
+- `docs/GRAFANA.md` - Dashboards et panels mis à jour
+
+---
+
 ### [3.5.0] 2026-03 - Kafka Message Broker
 
 #### Pourquoi Kafka ?
