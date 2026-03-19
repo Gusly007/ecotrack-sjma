@@ -486,6 +486,7 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      - '--rule.file=/etc/prometheus/alert_rules.yml'
     logging:
       driver: "json-file"
       options:
@@ -517,6 +518,77 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # =========================================================================
+  # NODE EXPORTER (System metrics: CPU, RAM, Disk, Network)
+  # =========================================================================
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ecotrack-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  # =========================================================================
+  # POSTGRES EXPORTER (PostgreSQL metrics)
+  # =========================================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: ecotrack-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    volumes:
+      - ./monitoring/prometheus/postgres-queries.yml:/etc/postgres-exporter/queries.yml:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # =========================================================================
+  # REDIS EXPORTER (Redis cache metrics)
+  # =========================================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: ecotrack-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ""
+    ports:
+      - "9121:9121"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # =========================================================================
+  # KAFKA EXPORTER (Kafka metrics)
+  # =========================================================================
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: ecotrack-kafka-exporter
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+    ports:
+      - "9308:9308"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - kafka
 
 # ============================================================================
 # VOLUMES (Persistance des données)
