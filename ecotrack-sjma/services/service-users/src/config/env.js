@@ -1,8 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env robustly without using import.meta (keeps Jest happy)
-dotenv.config(); // current working directory
+dotenv.config();
 const candidates = [
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), '..', '.env'),
@@ -11,15 +10,61 @@ const candidates = [
 for (const p of candidates) {
   try {
     dotenv.config({ path: p });
-  } catch (_) {
-    // ignore
-  }
+  } catch (_) {}
 }
 
-// Helpers to parse integers with fallback values in case of failure (e.g. env vars not set)
 const toInteger = (value, fallback) => {
   const parsed = parseInt(value, 10);
   return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+let dbConfigCache = null;
+let dbConfigPromise = null;
+
+const loadDbConfig = async () => {
+  if (dbConfigCache) return dbConfigCache;
+  if (dbConfigPromise) return dbConfigPromise;
+
+  dbConfigPromise = (async () => {
+    try {
+      const { default: pool } = await import('../repositories/configuration.repository.js');
+      const { ConfigurationRepository } = await import('../repositories/configuration.repository.js');
+      const rows = await ConfigurationRepository.getAll();
+      const config = {};
+      rows.forEach(row => {
+        switch (row.type) {
+          case 'number':
+            config[row.cle] = parseFloat(row.valeur);
+            break;
+          case 'boolean':
+            config[row.cle] = row.valeur === 'true';
+            break;
+          case 'json':
+            try {
+              config[row.cle] = JSON.parse(row.valeur);
+            } catch {
+              config[row.cle] = row.valeur;
+            }
+            break;
+          default:
+            config[row.cle] = row.valeur;
+        }
+      });
+      dbConfigCache = config;
+      return config;
+    } catch (_) {
+      return {};
+    }
+  })();
+
+  return dbConfigPromise;
+};
+
+const getDbConfig = (key, fallback) => {
+  if (dbConfigCache && dbConfigCache[key] !== undefined) {
+    return dbConfigCache[key];
+  }
+  return fallback;
 };
 
 const env = {
@@ -34,22 +79,22 @@ const env = {
   },
   rateLimit: {
     get windowMs() {
-      return toInteger(process.env.RATE_LIMIT_WINDOW_MS, 60 * 1000);
+      return getDbConfig('rate_limit.window_ms', toInteger(process.env.RATE_LIMIT_WINDOW_MS, 60 * 1000));
     },
     get maxRequests() {
-      return toInteger(process.env.RATE_LIMIT_REQUESTS, 100);
+      return getDbConfig('rate_limit.max_requests', toInteger(process.env.RATE_LIMIT_REQUESTS, 100));
     },
     get loginWindowMs() {
-      return 15 * 60 * 1000;
+      return getDbConfig('rate_limit.auth_window_ms', 15 * 60 * 1000);
     },
     get loginMaxAttempts() {
-      return 5;
+      return getDbConfig('rate_limit.auth_max_attempts', 5);
     },
     get passwordResetWindowMs() {
-      return 60 * 60 * 1000;
+      return getDbConfig('security.lockout_duration_minutes', 60 * 60 * 1000);
     },
     get passwordResetMaxAttempts() {
-      return 3;
+      return getDbConfig('security.max_login_attempts', 3);
     }
   },
   jwt: {
@@ -57,18 +102,40 @@ const env = {
       return process.env.JWT_SECRET;
     },
     get expiresIn() {
-      return process.env.JWT_EXPIRES_IN || process.env.JWT_EXPIRY || '24h';
+      return getDbConfig('jwt.access_token_expiration', process.env.JWT_EXPIRES_IN || '24h');
     },
     get refreshSecret() {
       return process.env.JWT_REFRESH_SECRET;
     },
     get refreshExpiresIn() {
-      return process.env.JWT_REFRESH_EXPIRES_IN || process.env.REFRESH_TOKEN_EXPIRY || '7d';
+      return getDbConfig('jwt.refresh_token_expiration', process.env.JWT_REFRESH_EXPIRES_IN || '168h');
     }
   },
   security: {
     get bcryptRounds() {
-      return toInteger(process.env.BCRYPT_ROUNDS, 10);
+      return getDbConfig('security.bcrypt_rounds', toInteger(process.env.BCRYPT_ROUNDS, 10));
+    }
+  },
+  session: {
+    get maxConcurrentSessions() {
+      return getDbConfig('session.max_concurrent_sessions', 3);
+    },
+    get tokenExpirationHours() {
+      return getDbConfig('session.token_expiration_hours', 168);
+    }
+  },
+  upload: {
+    get maxFileSizeMb() {
+      return getDbConfig('upload.max_file_size_mb', 5);
+    },
+    get maxFileSizeBytes() {
+      return getDbConfig('upload.max_file_size_mb', 5) * 1024 * 1024;
+    },
+    get allowedExtensions() {
+      return getDbConfig('upload.allowed_extensions', ['jpg', 'jpeg', 'png', 'webp']);
+    },
+    get maxFilesPerRequest() {
+      return getDbConfig('upload.max_files_per_request', 5);
     }
   },
   smtp: {
@@ -93,10 +160,17 @@ const env = {
   },
   get appUrl() {
     return process.env.APP_URL || 'http://localhost:5173';
+  },
+  async refreshDbConfig() {
+    dbConfigCache = null;
+    dbConfigPromise = null;
+    await loadDbConfig();
+    return dbConfigCache;
   }
 };
 
 export default env;
+export { loadDbConfig };
 
 export const validateEnv = () => {
   const missing = [];

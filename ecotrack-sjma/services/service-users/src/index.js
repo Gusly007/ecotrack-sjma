@@ -8,11 +8,12 @@ import morgan from 'morgan';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
+import adminConfigRoutes from './routes/admin-config.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { publicLimiter } from './config/rateLimit.js';
 import pool, { ensureAuthTables } from './config/database.js';
 import path from 'path';
-import env from './config/env.js';
+import env, { loadDbConfig } from './config/env.js';
 import { validateEnv } from './config/env.js';
 import helmet from 'helmet';
 import logger from './utils/logger.js';
@@ -55,6 +56,11 @@ if (env.nodeEnv !== 'test') {
 // Initialize Redis cache
 if (env.nodeEnv !== 'test') {
   await cacheService.connect();
+}
+
+// Load configurations from database
+if (env.nodeEnv !== 'test') {
+  await loadDbConfig();
 }
 
 app.use(helmet({
@@ -112,6 +118,7 @@ app.use('/auth', publicLimiter, authRoutes);
 app.use('/users', userRoutes);
 app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
+app.use('/admin/config', adminConfigRoutes);
 app.use('/notifications', notificationRoutes);
 
 // Servir les avatars en tant que fichiers statiques

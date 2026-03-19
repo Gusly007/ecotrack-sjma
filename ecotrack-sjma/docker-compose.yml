@@ -205,7 +205,6 @@ services:
     container_name: ecotrack-service-users
     environment:
       APP_PORT: 3010
-      # Connexion à PostgreSQL local
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_in_production_refresh_secret}
@@ -214,6 +213,7 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
       NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
     ports:
       - "3010:3010"
     depends_on:
