@@ -1,6 +1,6 @@
-import express from 'express';
-import fetch from 'node-fetch';
-import logger from '../utils/logger';
+const express = require('express');
+const fetch = require('node-fetch');
+const logger = require('../utils/logger').default || require('../utils/logger');
 
 const router = express.Router();
 
@@ -211,4 +211,4 @@ router.get('/history', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
