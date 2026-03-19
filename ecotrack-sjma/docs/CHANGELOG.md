@@ -4,6 +4,121 @@
 
 ---
 
+### [3.4.0] 2026-03 - Configuration Dynamique & Constantes
+
+#### Système de Configuration Dynamique (Admin)
+
+**Nouveau**: Les administrateurs peuvent maintenant modifier les paramètres système sans redéploiement.
+
+##### Table `configurations`
+- **Migration**: `014_configurations.sql`
+- **Seed**: `017_configurations_default.sql`
+- **22 paramètres configurables** par catégorie :
+
+| Catégorie | Paramètres |
+|-----------|------------|
+| `jwt` | access_token_expiration, refresh_token_expiration |
+| `security` | bcrypt_rounds (défaut: 10), max_login_attempts, lockout_duration |
+| `session` | max_concurrent_sessions (défaut: 3), token_expiration_hours |
+| `rate_limit` | window_ms, max_requests (100/min), auth limits |
+| `upload` | max_file_size_mb (5), allowed_extensions, max_files_per_request |
+| `password` | min_length, require_uppercase, require_special, etc. |
+| `notifications` | email_enabled, push_enabled |
+
+##### API Endpoints
+```
+GET  /admin/config                 # Toutes les configs
+GET  /admin/config/:key           # Une config
+GET  /admin/config/category/:cat  # Par catégorie
+PUT  /admin/config/:key           # Modifier (ADMIN only)
+```
+
+#### Constantes Environnementales (Admin)
+
+**Nouveau**: Paramètres environnementaux pour calculs CO2 et coûts.
+
+##### Table `environmental_constants`
+- **Migration**: `015_environmental_constants.sql`
+- **Seed**: `018_environmental_constants.sql`
+
+| Clé | Valeur | Unité | Description |
+|-----|--------|-------|-------------|
+| CO2_PER_KM | 0.85 | kg/km | Émissions CO2 camion benne |
+| FUEL_CONSUMPTION_PER_100KM | 35 | L/100km | Consommation carburant |
+| FUEL_PRICE_PER_LITER | 1.65 | €/L | Prix carburant |
+| LABOR_COST_PER_HOUR | 50 | €/h | Coût main d'œuvre |
+| MAINTENANCE_COST_PER_KM | 0.15 | €/km | Coût maintenance |
+| CO2_PER_TREE_PER_YEAR | 20 | kg/an | CO2 absorbé par arbre |
+| CO2_PER_KM_CAR | 0.12 | kg/km | CO2 voiture moyenne |
+
+##### API Endpoints
+```
+GET  /admin/environmental-constants              # Toutes les constantes
+GET  /admin/environmental-constants/:key        # Une constante
+PUT  /admin/environmental-constants/:key         # Modifier (ADMIN only)
+```
+
+##### Fichier JS
+```javascript
+// src/config/ENVIRONMENTAL_CONSTANTS.js
+import {
+  calculateCO2Emissions,
+  calculateFuelCost,
+  calculateTotalCost,
+  calculateCarEquivalent
+} from './ENVIRONMENTAL_CONSTANTS.js';
+```
+
+#### Constantes Performance Agents (Admin)
+
+**Nouveau**: Pondérations pour calcul du score global des agents.
+
+##### Table `agent_performance_constants`
+- **Migration**: `016_agent_performance_constants.sql`
+- **Seed**: `019_agent_performance_constants.sql`
+
+```javascript
+AGENT_PERFORMANCE_CONSTANTS = {
+  WEIGHTS: {
+    COLLECTION_RATE: 0.4,      // 40% : collecte effective
+    COMPLETION_RATE: 0.3,      // 30% : complétion tournées
+    TIME_EFFICIENCY: 0.15,    // 15% : respect temps
+    DISTANCE_EFFICIENCY: 0.15  // 15% : respect distance
+  }
+}
+```
+
+##### Formule Score Global
+```
+Score = collection_rate * 0.4 + completion_rate * 0.3 + time_efficiency * 0.15 + distance_efficiency * 0.15
+```
+
+##### API Endpoints
+```
+GET  /admin/agent-performance              # Toutes les constantes
+GET  /admin/agent-performance/:key        # Une constante
+PUT  /admin/agent-performance/:key        # Modifier (ADMIN only)
+```
+
+#### Fichiers Créés
+- `database/migrations/014_configurations.sql`
+- `database/migrations/015_environmental_constants.sql`
+- `database/migrations/016_agent_performance_constants.sql`
+- `database/seeds/017_configurations_default.sql`
+- `database/seeds/018_environmental_constants.sql`
+- `database/seeds/019_agent_performance_constants.sql`
+- `services/service-users/src/config/ENVIRONMENTAL_CONSTANTS.js`
+- `services/service-users/src/config/AGENT_PERFORMANCE_CONSTANTS.js`
+- `services/service-users/src/repositories/configuration.repository.js`
+- `services/service-users/src/repositories/environmentalConstants.repository.js`
+- `services/service-users/src/repositories/agentPerformanceConstants.repository.js`
+- `services/service-users/src/routes/admin-config.js`
+- `services/service-users/src/routes/admin-environmental-constants.js`
+- `services/service-users/src/routes/admin-agent-performance.js`
+- `docs/CONFIGURATIONS.md`
+
+---
+
 ### [3.3.0] 2026-03 - Redis Caching + Centralized Logging
 
 #### Cache Redis Multi-Services
