@@ -159,7 +159,7 @@ groups:
     interval: 60s
     rules:
       - alert: SensorsInactive
-        expr: iot_sensors_inactive > 10
+        expr: ecotrack_iot_sensors_inactive_12h > 10
         for: 1h
         labels:
           severity: warning
@@ -169,7 +169,7 @@ groups:
           action: "Check sensor connectivity or replace"
 
       - alert: SensorsLowBattery
-        expr: iot_sensors_low_battery > 5
+        expr: ecotrack_iot_sensors_low_battery > 5
         for: 1h
         labels:
           severity: warning
@@ -179,7 +179,7 @@ groups:
           action: "Schedule battery replacement"
 
       - alert: NoRecentMeasurements
-        expr: iot_last_measurement_age_seconds > 3600
+        expr: ecotrack_iot_last_measurement_age > 3600
         for: 30m
         labels:
           severity: warning
@@ -190,7 +190,7 @@ groups:
           action: "Check IoT service connectivity"
 
       - alert: ContainerOverflowRisk
-        expr: containers_critical > 5
+        expr: ecotrack_containers_critical > 5
         for: 15m
         labels:
           severity: critical
@@ -206,7 +206,7 @@ groups:
     interval: 30s
     rules:
       - alert: KafkaBrokerDown
-        expr: kafka_broker_up == 0
+        expr: kafka_brokers == 0
         for: 1m
         labels:
           severity: critical
@@ -227,7 +227,7 @@ groups:
           action: "Scale consumers or investigate processing issue"
 
       - alert: KafkaUnderReplicatedPartitions
-        expr: kafka_server_replicamanager_underreplicatedpartitions_value > 0
+        expr: kafka_topic_partition_under_replicated_partition > 0
         for: 5m
         labels:
           severity: warning

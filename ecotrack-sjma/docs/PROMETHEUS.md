@@ -7,106 +7,232 @@
 
 ## Comment Afficher les Métriques
 
-### 1. Via l'interface Prometheus
+### Via l'interface Prometheus
 
 1. Ouvrir http://localhost:9090
 2. Cliquer sur **"Graph"** dans le menu
-3. Dans la barre de recherche, entrer une requête (voir ci-dessous)
+3. Entrer une requête (voir ci-dessous)
 4. Cliquer sur **"Execute"**
-5. Les résultats s'affichent en bas (tableau) ou en haut (graphique)
+5. Résultats en bas (tableau) ou graphique
 
-### 2. Métriques par Service
+---
 
-Chaque service expose :
+## 📊 Requêtes par Catégorie
 
-| Métrique | Type | Description |
-|----------|------|-------------|
-| `http_requests_total` | Counter | Nombre total de requêtes HTTP |
-| `http_request_duration_seconds` | Histogram | Durée des requêtes en secondes |
-| `process_*` | Gauge | Métriques Node.js (CPU, mémoire, etc.) |
+### Infrastructure
 
-### Requêtes Utiles
-
-#### Santé des Services (UP/DOWN)
 ```promql
+# CPU Usage (%)
+(1 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100
+
+# Memory Usage (%)
+(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+# Disk Usage (%)
+(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100
+
+# Network Received (Mbps)
+rate(node_network_receive_bytes_total[1m]) * 8 / 1000000
+
+# Network Transmitted (Mbps)
+rate(node_network_transmit_bytes_total[1m]) * 8 / 1000000
+```
+
+### Services Health
+
+```promql
+# Tous les services
 up{job=~"service-.*"}
-```
-**Résultat** : 1 = UP, 0 = DOWN
 
-#### Requêtes HTTP par seconde
-```promql
-sum(rate(http_requests_total[5m])) by (job)
-```
-**Résultat** : Graphique du nombre de requêtes par service
+# Service spécifique
+up{job="service-users"}
 
-#### Requêtes par méthode et status
-```promql
-http_requests_total
-```
-**Résultat** : Toutes les requêtes avec labels (method, route, status)
+# Uptime (secondes)
+time() - process_start_time_seconds{job=~"service-.*"}
 
-#### Latence P95 (95ème percentile)
-```promql
-histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
-```
-**Résultat** : Latence à 95% en secondes
-
-#### Latence P50 (médiane)
-```promql
-histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
-```
-**Résultat** : Latence médiane en secondes
-
-#### Erreurs HTTP (5xx)
-```promql
-sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
-```
-**Résultat** : Nombre d'erreurs server par service
-
-#### Erreurs HTTP (4xx)
-```promql
-sum(rate(http_requests_total{status=~"4.."}[5m])) by (job)
-```
-**Résultat** : Nombre d'erreurs client par service
-
-#### Mémoire Utilisée (bytes)
-```promql
+# Mémoire par service (bytes)
 process_resident_memory_bytes{job=~"service-.*"}
 ```
-**Résultat** : Mémoire RAM utilisée par chaque service
 
-#### Uptime (secondes)
+### HTTP Metrics
+
 ```promql
-time() - process_start_time_seconds{job=~"service-.*"}
+# Requêtes par seconde (total)
+sum(rate(http_requests_total[5m]))
+
+# Requêtes par service
+sum(rate(http_requests_total[5m])) by (job)
+
+# Erreurs 5xx par service
+sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+
+# Erreurs 4xx par service
+sum(rate(http_requests_total{status=~"4.."}[5m])) by (job)
+
+# Latence P50 (médiane)
+histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+
+# Latence P95
+histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+# Latence P99
+histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
 ```
-**Résultat** : Temps écoulé depuis le dernier démarrage
 
-## Configuration
+### Kafka
 
-- Fichier de config : `monitoring/prometheus/prometheus.yml`
-- Intervalle de scrape : 15s
-- Rétention des données : 15j
+```promql
+# Broker UP (1/0)
+kafka_brokers
 
-## Commandes Utiles
+# Messages/minute
+rate(kafka_server_brokertopicmessages_in_total[1m]) * 60
 
-```bash
-# Voir les targets et leur statut
-curl -s http://localhost:9090/api/v1/targets
+# Consumer Lag
+kafka_consumer_group_lag
 
-# Métriques brutes d'un service
-curl -s http://localhost:3010/metrics
+# Topics partitions
+kafka_topic_partitions
 
-# Recharger la config Prometheus
-curl -X POST http://localhost:9090/-/reload
-
-# Redémarrer Prometheus
-docker restart ecotrack-prometheus
+# Replicas sous-répliquées
+kafka_topic_partition_under_replicated_partition
 ```
+
+### IoT (Capteurs & Conteneurs)
+
+```promql
+# Capteurs totaux
+ecotrack_iot_sensors_total
+
+# Capteurs inactifs >12h
+ecotrack_iot_sensors_inactive_12h
+
+# Capteurs batterie faible
+ecotrack_iot_sensors_low_battery
+
+# Age dernière mesure (secondes)
+ecotrack_iot_last_measurement_age
+
+# Conteneurs critiques (>90%)
+ecotrack_containers_critical
+
+# Conteneurs warning (75-90%)
+ecotrack_containers_warning
+
+# Niveau remplissage moyen
+ecotrack_containers_avg_fill_level
+```
+
+### Tournées & Signalements
+
+```promql
+# Tournées en cours
+ecotrack_tournees_en_cours
+
+# Tournées terminées aujourd'hui
+ecotrack_tournees_terminees_aujourdhui
+
+# Signalements en attente
+ecotrack_signalements_en_attente
+
+# Signalements urgents non résolus
+ecotrack_signalements_urgents
+```
+
+### Database (PostgreSQL)
+
+```promql
+# Connexions actives
+ecotrack_db_connections
+
+# Connexions max
+ecotrack_db_max_connections
+
+# Cache hit ratio (%)
+rate(pg_stat_database_blks_hit[5m]) / 
+(rate(pg_stat_database_blks_hit[5m]) + rate(pg_stat_database_blks_read[5m])) * 100
+
+# Cache hit ratio (postgres_exporter)
+ecotrack_db_cache_hit_ratio
+```
+
+---
+
+## 🚨 Alertes (Prometheus)
+
+### Service Down
+```promql
+# Alerte si un service est DOWN pendant 2min
+up{job=~"service-.*"} == 0
+```
+
+### High CPU
+```promql
+# CPU > 80% pendant 5min
+(1 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 80
+```
+
+### High Memory
+```promql
+# Memory > 85% pendant 5min
+(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+```
+
+### Disk Space
+```promql
+# Disk > 90%
+(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+```
+
+### High Error Rate
+```promql
+# Erreurs 5xx > 1% pendant 5min
+sum(rate(http_requests_total{status=~"5.."}[5m])) 
+/ sum(rate(http_requests_total[5m])) * 100 > 1
+```
+
+### Kafka Down
+```promql
+# Kafka broker DOWN
+kafka_brokers == 0
+```
+
+### Consumer Lag
+```promql
+# Consumer lag > 1000 pendant 5min
+kafka_consumer_group_lag > 1000
+```
+
+### Conteneurs Critiques
+```promql
+# Conteneurs > 90% remplissage
+ecotrack_containers_critical > 0
+```
+
+### Batterie Faible
+```promql
+# Capteurs batterie < 20%
+ecotrack_iot_sensors_low_battery > 0
+```
+
+### Capteurs Inactifs
+```promql
+# Capteurs inactifs > 12h
+ecotrack_iot_sensors_inactive_12h > 10
+```
+
+### Signalements Urgents
+```promql
+# Signalements urgents non résolus
+ecotrack_signalements_urgents > 0
+```
+
+---
 
 ## Services Disponibles
 
-| Service | Port | Status |
-|---------|------|--------|
+| Service | Port | Metrics |
+|---------|------|---------|
 | API Gateway | 3000 | ✅ |
 | Service Users | 3010 | ✅ |
 | Service Containers | 3011 | ✅ |
@@ -114,45 +240,53 @@ docker restart ecotrack-prometheus
 | Service IoT | 3013 | ✅ |
 | Service Analytics | 3015 | ✅ |
 | Service Routes | 3012 | ✅ |
+| Kafka | 9092 | ✅ |
+| PostgreSQL | 5432 | ✅ |
+| Redis | 6379 | ✅ |
 
-## Metrics API (Frontend Integration)
+## Configuration
 
-Le service-analytics expose une API REST pour le frontend :
+- **Config** : `monitoring/prometheus/prometheus.yml`
+- **Alert rules** : `monitoring/prometheus/alert_rules.yml`
+- **PostgreSQL queries** : `monitoring/prometheus/postgres-queries.yml`
+- **Intervalle scrape** : 15s
+- **Rétention** : 15j
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/metrics/overview` | Vue d'ensemble (services + infrastructure) |
-| `GET /api/metrics/services` | Santé des services avec latence |
-| `GET /api/metrics/iot` | Métriques IoT (capteurs, conteneurs) |
-| `GET /api/metrics/kafka` | Statut Kafka |
-| `GET /api/metrics/database` | Statut PostgreSQL |
-| `GET /api/metrics/alerts` | Alertes actives Prometheus |
-| `GET /api/metrics/history?metric=cpu&period=3600` | Données historiques |
+## Commandes Utiles
 
-### Exemple de réponse `/api/metrics/overview`:
-```json
-{
-  "services": [
-    { "name": "service-users", "status": "up", "instance": "172.18.0.5:3010" }
-  ],
-  "infrastructure": {
-    "cpu": "23.5",
-    "memory": "67.2",
-    "disk": "45.1",
-    "networkIn": "1.25",
-    "networkOut": "0.82"
-  },
-  "timestamp": "2026-03-19T10:30:00.000Z"
-}
+```bash
+# Targets status
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+
+# Métriques brutes service
+curl -s http://localhost:3010/metrics | head -50
+
+# Alertes actives
+curl -s http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {name: .labels.alertname, state: .state}'
+
+# Recharger config
+curl -X POST http://localhost:9090/-/reload
+
+# Redémarrer
+docker restart ecotrack-prometheus
 ```
 
 ## Troubleshooting
 
 ### Service DOWN
-1. Vérifier le statut : `docker ps`
-2. Voir les logs : `docker logs <container-name>`
-3. Vérifier le réseau : `docker network inspect ecotrack`
+```bash
+docker ps | grep <service>
+docker logs <container>
+```
 
 ### Métriques Manquantes
-1. Vérifier `/metrics` accessible : `curl http://localhost:3010/metrics`
-2. Vérifier target dans Prometheus : Status → Targets
+```bash
+curl -s http://localhost:3010/metrics | grep http
+# Vérifier Status > Targets dans Prometheus
+```
+
+### Alertes non déclenchées
+```bash
+# Vérifier que la condition est vraie
+curl "http://localhost:9090/api/v1/query?query=<votre_requete>"
+```
