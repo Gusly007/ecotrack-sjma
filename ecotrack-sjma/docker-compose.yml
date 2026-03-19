@@ -98,6 +98,57 @@ services:
     command: redis-server --appendonly yes
 
   # =========================================================================
+  # KAFKA (Message Broker)
+  # =========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: ecotrack-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: ecotrack-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecotrack-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - ecotrack
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  # =========================================================================
   # MIGRATIONS (s'exécute automatiquement au démarrage)
   # =========================================================================
   migrations:
@@ -214,11 +265,14 @@ services:
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
       NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: redis
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
     ports:
       - "3010:3010"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
       migrations:
         condition: service_completed_successfully
     networks:
@@ -321,19 +375,17 @@ services:
     container_name: ecotrack-service-iot
     environment:
       APP_PORT: 3013
-      # Variables PostgreSQL
       PGHOST: postgres
       PGPORT: 5432
       PGUSER: ${DB_USER:-ecotrack_user}
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
-      # MQTT
       MQTT_PORT: 1883
       MQTT_HOST: 0.0.0.0
-      # Seuils d'alerte
       ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
       ALERT_BATTERY_LOW: ${ALERT_BATTERY_LOW:-20}
       ALERT_SENSOR_TIMEOUT_HOURS: ${ALERT_SENSOR_TIMEOUT_HOURS:-24}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3013:3013"
@@ -341,6 +393,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
       migrations:
         condition: service_completed_successfully
     networks:
@@ -400,11 +454,14 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
       REPORTS_DIR: /app/reports
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
     ports:
       - "3015:3015"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -472,6 +529,8 @@ volumes:
   prometheus_data:
     driver: local
   redis_data:
+    driver: local
+  kafka_data:
     driver: local
   grafana_data:
     driver: local
