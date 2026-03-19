@@ -148,6 +148,10 @@ app.use('/reports', express.static(path.join(__dirname, '../..', process.env.REP
 const reportRoutes = require('./routes/reportRoutes');
 app.use('/api/analytics', reportRoutes);
 
+// Monitoring metrics routes
+const metricsRoutes = require('./routes/metrics');
+app.use('/api/metrics', metricsRoutes);
+
 // ML/Prediction routes
 const mlRoutes = require('./routes/mlRoutes');
 app.use('/api/analytics', mlRoutes);

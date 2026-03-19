@@ -455,6 +455,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
       REPORTS_DIR: /app/reports
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
     ports:
       - "3015:3015"
     depends_on:
