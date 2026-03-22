@@ -4,6 +4,86 @@
 
 ---
 
+### [3.5.3] 2026-03 - Rate Limiting
+
+#### Service modifié
+
+| Service | Fichier |
+|---------|---------|
+| service-routes | `src/middleware/rateLimit.js` |
+
+#### Limiteurs disponibles
+
+| Limiter | Limite | Fenêtre | Usage |
+|---------|--------|---------|-------|
+| `publicLimiter` | 100 req | 60s | Endpoints publics |
+| `tourneeLimiter` | 50 req | 60s | Tournées |
+| `optimizeLimiter` | 10 req | 60s | Optimisation |
+
+#### Configuration
+
+```bash
+# Variables d'environnement
+RATE_LIMIT_WINDOW_MS=60000  # 1 minute
+RATE_LIMIT_MAX=100         # req par fenêtre
+```
+
+#### Response Headers
+
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 76
+RateLimit-Reset: 56
+```
+
+---
+
+### [3.5.2] 2026-03 - Error Handling Centralisé
+
+#### Services modifiés
+
+| Service | Fichier |
+|---------|---------|
+| service-analytics | `src/middleware/errorHandler.js` |
+| service-gamifications | `src/middleware/errorHandler.js` |
+
+#### Codes d'erreur gérés
+
+| Code PostgreSQL | Status | Message |
+|-----------------|--------|---------|
+| 23505 | 409 | Ressource déjà existante |
+| 23503 | 400 | Référence invalide |
+| 23514 | 400 | Contrainte non respectée |
+
+#### Middleware
+
+```javascript
+const { errorHandler, asyncHandler, AppError } = require('./middleware/errorHandler');
+
+app.use(errorHandler);
+
+// Avec async
+router.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await getUser(req.params.id);
+  if (!user) throw new AppError('User not found', 404);
+  res.json(user);
+}));
+```
+
+#### Codes HTTP gérés
+
+| Status | Condition |
+|--------|----------|
+| 400 | Validation, données invalides |
+| 401 | Token invalide/expiré |
+| 403 | Accès refusé |
+| 404 | Ressource non trouvée |
+| 409 | Conflit (doublon) |
+| 429 | Rate limit |
+| 500 | Erreur serveur |
+
+---
+
 ### [3.5.1] 2026-03 - Metrics API pour Frontend
 
 #### API REST Metrics
@@ -62,67 +142,6 @@ const { alerts, counts, total } = await res.json();
 // Compteurs badge
 const counts = await fetch('http://localhost:3015/api/metrics/alerts/counts');
 ```
-
----
-
-### [3.5.2] 2026-03 - Error Handling Centralisé
-
-#### Services modifiés
-
-| Service | Fichier |
-|---------|---------|
-| service-analytics | `src/middleware/errorHandler.js` |
-| service-gamifications | `src/middleware/errorHandler.js` |
-
-#### Codes d'erreur gérés
-
-| Code PostgreSQL | Status | Message |
-|-----------------|--------|---------|
-| 23505 | 409 | Ressource déjà existante |
-| 23503 | 400 | Référence invalide |
-| 23514 | 400 | Contrainte non respectée |
-
-#### Middleware
-
-```javascript
-// Utilisation
-const { errorHandler, asyncHandler, AppError } = require('./middleware/errorHandler');
-
-app.use(errorHandler);
-
-// Avec async
-router.get('/users/:id', asyncHandler(async (req, res) => {
-  const user = await getUser(req.params.id);
-  if (!user) throw new AppError('User not found', 404);
-  res.json(user);
-}));
-
-// Avec codes DB
-throw new AppError('Erreur', 500, '23505');
-```
-
-#### Codes HTTP gérés
-
-| Status | Condition |
-|--------|----------|
-| 400 | Validation, données invalides |
-| 401 | Token invalide/expiré |
-| 403 | Accès refusé |
-| 404 | Ressource non trouvée |
-| 409 | Conflit (doublon) |
-| 429 | Rate limit |
-| 500 | Erreur serveur |
-
-#### Fichiers
-
-- `services/service-analytics/src/routes/metrics.js` - Routes API
-- `services/service-analytics/src/index.js` - Routes registradas
-- `docker-compose.yml` - Ajout `PROMETHEUS_URL` env
-
-#### Documentation
-
-- `docs/PROMETHEUS.md` - Endpoints API documentés
-- `docs/GRAFANA.md` - Dashboards et panels mis à jour
 
 ---
 

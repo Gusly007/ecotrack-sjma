@@ -11,6 +11,7 @@ const logger = require('./src/utils/logger');
 const config = require('./src/config/config');
 const errorHandler = require('./src/middleware/error-handler');
 const requestLogger = require('./src/middleware/request-logger');
+const { publicLimiter } = require('./src/middleware/rateLimit');
 const { controllersMiddleware } = require('./src/di');
 const { testConnection } = require('./src/db/connexion');
 const { pool } = require('./src/db/connexion');
@@ -96,10 +97,10 @@ if (!fs.existsSync(reportsDir)) {
 }
 app.use('/reports', express.static(reportsDir));
 
-app.use('/api/routes', tourneeRoutes);
-app.use('/api/routes', vehiculeRoutes);
-app.use('/api/routes', collecteRoutes);
-app.use('/api/routes', statsRoutes);
+app.use('/api/routes', publicLimiter, tourneeRoutes);
+app.use('/api/routes', publicLimiter, vehiculeRoutes);
+app.use('/api/routes', publicLimiter, collecteRoutes);
+app.use('/api/routes', publicLimiter, statsRoutes);
 
 // Root info
 app.get('/api/routes', (req, res) => {
