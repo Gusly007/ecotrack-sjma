@@ -992,3 +992,96 @@ router.put('/users/:id', async (req, res) => {
 4. **Moyenne** : Ajouter indexes PostgreSQL
 5. **Basse** : XAI/SHAP pour ML
 
+---
+
+# 📊 État des Services Backend (2026-03-19)
+
+## Vue d'ensemble par Service
+
+| Aspect | users | routes | iot | analytics | gamif | gateway |
+|--------|:-----:|:------:|:---:|:---------:|:-----:|:-------:|
+| **Input Validation** | Zod ✅ | Joi ✅ | Joi ✅ | Joi ✅ | Zod ✅ | Delegated ✅ |
+| **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ❌ Ad-hoc | ❌ | ✅ |
+| **Logging (Pino)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Caching (Redis)** | ✅ | ✅ | ⚠️ Partial | ⚠️ Partial | ✅ | ❌ |
+| **Rate Limiting** | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| **Authentication** | JWT ✅ | ❌* | ❌* | JWT ✅ | ❌ | JWT ✅ |
+| **Authorization (RBAC)** | ✅ | ❌* | ❌* | ❌ | ❌ | Role ✅ |
+| **Pagination** | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ Limited | Delegated ✅ |
+| **DB Optimization** | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | N/A |
+| **Unit Tests** | ✅ | ✅ | ✅ | ⚠️ Integration | ✅ | ⚠️ Partial |
+
+*\*Relies on API Gateway*
+
+## Lacunes Identifiées (Backend)
+
+### 🔴 Priorité Haute
+
+| Service | Problème | Solution |
+|---------|----------|----------|
+| **service-routes** | Pas de rate limiting | Ajouter `express-rate-limit` |
+| **service-analytics** | Error handling ad-hoc | Centraliser avec middleware |
+| **service-gamifications** | Pas d'auth JWT | Ajouter middleware auth |
+| **service-analytics** | Pas de pagination complète | Uniformiser avec page/limit |
+
+### 🟡 Priorité Moyenne
+
+| Service | Problème | Solution |
+|---------|----------|----------|
+| **service-iot** | Cache Redis sous-utilisé | Implémenter `CacheService` |
+| **service-analytics** | Cache Redis partiel | Compléter avec pattern |
+| **Tous** | DB query optimization | Ajouter indexes, EXPLAIN |
+| **service-gamifications** | Pagination limitée | Ajouter `page` param |
+
+### 🟢 Priorité Basse (Post-Dev)
+
+| Service | Problème | Solution |
+|---------|----------|----------|
+| **API Gateway** | Pas de cache global | Ajouter Redis layer |
+| **API Gateway** | Pas de rate limiting | Ajouter à l'entrée |
+| **service-analytics** | Tests unitaires manquants | Ajouter Jest/Supertest |
+
+## Étapes Backend Suggérées (après Monitoring)
+
+### 1. Standardisation Error Handling
+```
+service-analytics/      → Ajouter errorHandler middleware
+service-gamifications/  → Ajouter errorHandler middleware
+```
+
+### 2. Ajouter Rate Limiting
+```
+service-routes/         → 100 req/min pour endpoints publics
+API Gateway/            → 500 req/min global
+```
+
+### 3. Authentification Uniforme
+```
+service-routes/         → JWT middleware
+service-iot/            → JWT middleware  
+service-gamifications/  → JWT middleware
+```
+
+### 4. Cache Redis Complet
+```
+service-iot/            → CacheService pattern
+service-analytics/      → Compléter getOrSet
+```
+
+### 5. Tests & Optimisation
+```
+service-analytics/      → Unit tests
+DB/                     → Indexes sur tables fréquentes
+```
+
+## Checklist Backend Avant Prod
+
+- [ ] Error handling centralisé (tous services)
+- [ ] Rate limiting (tous services)
+- [ ] Auth JWT (service-routes, service-iot, service-gamifications)
+- [ ] Pagination uniforme
+- [ ] Cache Redis complet
+- [ ] Unit tests service-analytics
+- [ ] Indexes PostgreSQL
+- [ ] Tests charge K6
+
