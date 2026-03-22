@@ -17,19 +17,50 @@ Le service-analytics expose maintenant des endpoints pour le frontend :
 | `/api/metrics/iot` | Capteurs, conteneurs, batterie |
 | `/api/metrics/kafka` | Messages, consumer lag |
 | `/api/metrics/database` | Connexions DB, cache hit ratio |
-| `/api/metrics/alerts` | Alertes actives Prometheus |
+| `/api/metrics/alerts` | Alertes actives (filtrables par sévérité/service) |
+| `/api/metrics/alerts/counts` | Compteurs alertes par sévérité |
 | `/api/metrics/history` | Données historiques |
 
-#### Exemple d'utilisation Frontend
+#### Format Alertes
+
+```json
+{
+  "alerts": [
+    {
+      "id": "ServiceDown-service-iot-1711000000000",
+      "name": "ServiceDown",
+      "severity": "critical",
+      "severityLevel": 1,
+      "service": "service-iot",
+      "summary": "Service IoT en panne",
+      "description": "Connection perdue avec le broker MQTT...",
+      "timeAgo": "il y a 35min",
+      "minutesAgo": 35
+    }
+  ],
+  "counts": { "critical": 1, "warning": 2, "info": 0 },
+  "total": 3
+}
+```
+
+#### Sevérités
+
+| Level | Severity | Couleur |
+|-------|----------|---------|
+| 1 | critical | 🔴 Rouge |
+| 2 | warning | 🟡 Jaune |
+| 3 | medium | 🟠 Orange |
+| 4 | info | 🔵 Bleu |
+
+#### Exemple Frontend
 
 ```javascript
-// Vue d'ensemble
-const res = await fetch('http://localhost:3015/api/metrics/overview');
-const { services, infrastructure } = await res.json();
+// Alertes filtrées
+const res = await fetch('http://localhost:3015/api/metrics/alerts?severity=critical');
+const { alerts, counts, total } = await res.json();
 
-// IoT metrics
-const iot = await fetch('http://localhost:3015/api/metrics/iot');
-const { sensors, containers } = await iot.json();
+// Compteurs badge
+const counts = await fetch('http://localhost:3015/api/metrics/alerts/counts');
 ```
 
 #### Fichiers

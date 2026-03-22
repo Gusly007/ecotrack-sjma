@@ -229,6 +229,85 @@ ecotrack_signalements_urgents > 0
 
 ---
 
+## API Alertes Frontend (service-analytics:3015)
+
+### Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/metrics/alerts` | Liste des alertes (filtrable) |
+| `GET /api/metrics/alerts?severity=critical` | Filtrer par sévérité |
+| `GET /api/metrics/alerts?service=service-iot` | Filtrer par service |
+| `GET /api/metrics/alerts/counts` | Compteurs par sévérité |
+
+### Paramètres de filtrage
+
+| Param | Valeurs | Description |
+|-------|---------|-------------|
+| `severity` | `critical`, `warning`, `info` | Filtrer par sévérité |
+| `service` | `service-iot`, `service-users`, etc. | Filtrer par service |
+| `status` | `firing`, `pending` | Filtrer par état |
+
+### Format de réponse
+
+```json
+{
+  "alerts": [
+    {
+      "id": "HighCPU-service-analytics-1711000000000",
+      "name": "HighCPU",
+      "severity": "warning",
+      "severityLevel": 2,
+      "status": "firing",
+      "service": "service-analytics",
+      "instance": "service-analytics:3015",
+      "summary": "CPU usage is high",
+      "description": "CPU usage is 85% (threshold: 80%)",
+      "action": "Check running processes",
+      "category": "infrastructure",
+      "activeSince": "2026-03-22T00:25:00.000Z",
+      "timeAgo": "il y a 35min",
+      "minutesAgo": 35,
+      "hoursAgo": 0,
+      "daysAgo": 0
+    }
+  ],
+  "counts": {
+    "critical": 1,
+    "warning": 3,
+    "info": 0,
+    "pending": 1,
+    "firing": 3
+  },
+  "total": 4
+}
+```
+
+### Sevérités
+
+| Level | Severity | Couleur Frontend |
+|-------|----------|-----------------|
+| 1 | critical | 🔴 Rouge |
+| 2 | warning | 🟡 Jaune |
+| 3 | medium | 🟠 Orange |
+| 4 | info | 🔵 Bleu |
+
+### Exemple Frontend
+
+```javascript
+// Récupérer toutes les alertes
+const { alerts, counts, total } = await fetch('/api/metrics/alerts').then(r => r.json());
+
+// Badge compteur (pour header/notification)
+const { counts } = await fetch('/api/metrics/alerts/counts').then(r => r.json());
+// counts = { critical: 1, warning: 3, info: 0 }
+
+// Filtrer critiques seulement
+const crit = await fetch('/api/metrics/alerts?severity=critical').then(r => r.json());
+```
+
+---
+
 ## Services Disponibles
 
 | Service | Port | Metrics |

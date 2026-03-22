@@ -171,25 +171,120 @@ router.get('/database', async (req, res) => {
 
 router.get('/alerts', async (req, res) => {
   try {
+    const { severity, service, status } = req.query;
     const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
     const data = await response.json();
     
     if (data.status === 'success') {
-      const alerts = data.data.alerts.map(a => ({
-        name: a.labels.alertname,
-        severity: a.labels.severity,
-        status: a.state,
-        description: a.annotations.description,
-        activeSince: a.activeAt
-      }));
-      res.json({ alerts, timestamp: new Date().toISOString() });
+      const now = Date.now();
+      
+      let alerts = data.data.alerts.map(a => {
+        const activeSince = new Date(a.activeAt).getTime();
+        const minutesAgo = Math.floor((now - activeSince) / 60000);
+        const hoursAgo = Math.floor(minutesAgo / 60);
+        const daysAgo = Math.floor(hoursAgo / 24);
+        
+        let timeDisplay;
+        if (daysAgo > 0) timeDisplay = `il y a ${daysAgo}j`;
+        else if (hoursAgo > 0) timeDisplay = `il y a ${hoursAgo}h`;
+        else if (minutesAgo > 0) timeDisplay = `il y a ${minutesAgo}min`;
+        else timeDisplay = "à l'instant";
+        
+        return {
+          id: `${a.labels.alertname}-${a.labels.instance || 'global'}-${activeSince}`,
+          name: a.labels.alertname,
+          severity: a.labels.severity || 'warning',
+          severityLevel: getSeverityLevel(a.labels.severity),
+          status: a.state,
+          state: a.state,
+          service: a.labels.job || a.labels.category || 'system',
+          instance: a.labels.instance || null,
+          description: a.annotations.description || a.annotations.summary || '',
+          summary: a.annotations.summary || a.labels.alertname,
+          action: a.annotations.action || '',
+          category: a.labels.category || 'system',
+          activeSince: a.activeAt,
+          timeAgo: timeDisplay,
+          minutesAgo,
+          hoursAgo,
+          daysAgo
+        };
+      });
+      
+      if (severity) alerts = alerts.filter(a => a.severity === severity);
+      if (service) alerts = alerts.filter(a => a.service === service);
+      if (status) alerts = alerts.filter(a => a.status === status);
+      
+      alerts.sort((a, b) => getSeverityOrder(a.severityLevel) - getSeverityOrder(b.severityLevel));
+      
+      const counts = {
+        critical: alerts.filter(a => a.severity === 'critical').length,
+        warning: alerts.filter(a => a.severity === 'warning').length,
+        info: alerts.filter(a => a.severity === 'info').length
+      };
+      
+      res.json({ 
+        alerts, 
+        counts,
+        total: alerts.length,
+        timestamp: new Date().toISOString() 
+      });
     } else {
-      res.json({ alerts: [], timestamp: new Date().toISOString() });
+      res.json({ alerts: [], counts: { critical: 0, warning: 0, info: 0 }, total: 0, timestamp: new Date().toISOString() });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get('/alerts/counts', async (req, res) => {
+  try {
+    const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      const counts = {
+        critical: 0,
+        warning: 0,
+        info: 0,
+        pending: 0,
+        firing: 0
+      };
+      
+      data.data.alerts.forEach(a => {
+        const sev = a.labels.severity || 'warning';
+        if (sev === 'critical' || sev === 'error') counts.critical++;
+        else if (sev === 'warning') counts.warning++;
+        else counts.info++;
+        
+        if (a.state === 'pending') counts.pending++;
+        if (a.state === 'firing') counts.firing++;
+      });
+      
+      res.json({ counts, timestamp: new Date().toISOString() });
+    } else {
+      res.json({ counts: { critical: 0, warning: 0, info: 0, pending: 0, firing: 0 }, timestamp: new Date().toISOString() });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function getSeverityLevel(severity) {
+  switch (severity) {
+    case 'critical': return 1;
+    case 'error': return 1;
+    case 'warning': return 2;
+    case 'high': return 2;
+    case 'medium': return 3;
+    case 'info': return 4;
+    default: return 3;
+  }
+}
+
+function getSeverityOrder(level) {
+  return level;
+}
 
 router.get('/history', async (req, res) => {
   try {
