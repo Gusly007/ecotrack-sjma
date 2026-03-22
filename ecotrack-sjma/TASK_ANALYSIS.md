@@ -1004,7 +1004,7 @@ router.put('/users/:id', async (req, res) => {
 | **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ✅ Centralisé | ✅ Centralisé | ✅ |
 | **Logging (Pino)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Caching (Redis)** | ✅ | ✅ | ⚠️ Partial | ⚠️ Partial | ✅ | ❌ |
-| **Rate Limiting** | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| **Rate Limiting** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Authentication** | JWT ✅ | ❌* | ❌* | JWT ✅ | ❌ | JWT ✅ |
 | **Authorization (RBAC)** | ✅ | ❌* | ❌* | ❌ | ❌ | Role ✅ |
 | **Pagination** | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ Limited | Delegated ✅ |
@@ -1019,9 +1019,6 @@ router.put('/users/:id', async (req, res) => {
 
 | Service | Problème | Status |
 |---------|----------|--------|
-| **service-routes** | Auth manquante | ⚠️ Depend Gateway* |
-| **service-iot** | Auth manquante | ⚠️ Depend Gateway* |
-| **service-gamifications** | Auth manquante | ⚠️ Depend Gateway* |
 | **service-analytics** | RBAC manquant | ❌ |
 
 ### 🟡 Priorité Moyenne
@@ -1050,8 +1047,8 @@ router.put('/users/:id', async (req, res) => {
 ## Prochaines Étapes Backend (après Monitoring)
 
 1. ✅ **Error handling centralisé** - service-analytics, service-gamifications
-2. **Rate limiting** - service-routes
-3. **Auth/RBAC** - service-analytics (RBAC), others depend on Gateway
+2. ✅ **Rate limiting** - service-routes
+3. **Auth/RBAC** - service-analytics (RBAC)
 4. **Cache Redis** - Compléter iot, analytics
 5. **Pagination uniforme** - gamifications, analytics
 6. **DB optimization** - Indexes, EXPLAIN

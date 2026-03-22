@@ -2,6 +2,15 @@
  * Contrôleur IoT - Endpoints REST pour les mesures, capteurs et alertes
  */
 const ApiResponse = require('../utils/api-response');
+const cacheService = require('../../cacheService');
+
+const CACHE_TTL = {
+  LATEST_MEASUREMENTS: 30,
+  SENSORS_LIST: 300,
+  LOW_BATTERY: 300,
+  ACTIVE_ALERTS: 60,
+  CONTAINER_STATS: 120
+};
 
 class IotController {
   constructor(measurementService, sensorService, alertService, mqttHandler) {
@@ -52,12 +61,17 @@ class IotController {
   }
 
   /**
-   * GET /measurements/latest - Dernière mesure de chaque conteneur
+   * GET /measurements/latest - Dernière mesure de chaque conteneur (CACHÉ 30s)
    */
   async getLatestMeasurements(req, res, next) {
     try {
-      const measurements = await this.measurementService.getLatestMeasurements();
-      res.json(ApiResponse.success(measurements, 'Dernières mesures récupérées'));
+      const cacheKey = 'iot:measurements:latest';
+      const { data, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        () => this.measurementService.getLatestMeasurements(),
+        CACHE_TTL.LATEST_MEASUREMENTS
+      );
+      res.json(ApiResponse.success(data, fromCache ? 'Dernières mesures (cached)' : 'Dernières mesures récupérées'));
     } catch (err) {
       next(err);
     }
@@ -91,7 +105,7 @@ class IotController {
   }
 
   /**
-   * GET /alerts - Liste des alertes
+   * GET /alerts - Liste des alertes (CACHÉ 60s si pas de filtres)
    */
   async getAlerts(req, res, next) {
     try {
@@ -105,13 +119,16 @@ class IotController {
   }
 
   /**
-   * PATCH /alerts/:id - Résoudre/ignorer une alerte
+   * PATCH /alerts/:id - Résoudre/ignorer une alerte (invalide cache)
    */
   async updateAlertStatus(req, res, next) {
     try {
       const idAlerte = parseInt(req.params.id, 10);
       const { statut } = req.body;
       const alert = await this.alertService.updateAlertStatus(idAlerte, statut);
+      
+      await cacheService.invalidatePattern('iot:alerts:*');
+      
       res.json(ApiResponse.success(alert, `Alerte ${statut === 'RESOLUE' ? 'résolue' : 'ignorée'}`));
     } catch (err) {
       next(err);
@@ -128,6 +145,9 @@ class IotController {
       const payload = JSON.stringify({ fill_level, battery, temperature });
 
       await this.mqttHandler.handleMessage(topic, Buffer.from(payload));
+
+      await cacheService.invalidatePattern('iot:measurements*');
+      await cacheService.invalidatePattern('iot:stats*');
 
       res.status(201).json(ApiResponse.success(
         { uid_capteur, fill_level, battery, temperature },
@@ -155,22 +175,29 @@ class IotController {
   }
 
   /**
-   * GET /stats - Statistiques IoT globales
+   * GET /stats - Statistiques IoT globales (CACHÉ 2min)
    */
   async getStats(req, res, next) {
     try {
-      const [measurementStats, alertStats] = await Promise.all([
-        this.measurementService.getStats(),
-        this.alertService.getAlertStats()
-      ]);
-
-      const mqttStats = this.mqttHandler ? this.mqttHandler.getStats() : { processed: 0, errors: 0 };
+      const cacheKey = 'iot:stats:global';
+      const { data, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          const [measurementStats, alertStats] = await Promise.all([
+            this.measurementService.getStats(),
+            this.alertService.getAlertStats()
+          ]);
+          const mqttStats = this.mqttHandler ? this.mqttHandler.getStats() : { processed: 0, errors: 0 };
+          return { measurements: measurementStats, alerts: alertStats, mqtt: mqttStats };
+        },
+        CACHE_TTL.CONTAINER_STATS
+      );
 
       res.json(ApiResponse.success({
-        measurements: measurementStats,
-        alerts: alertStats,
-        mqtt: mqttStats
-      }, 'Statistiques IoT récupérées'));
+        measurements: data.measurements,
+        alerts: data.alerts,
+        mqtt: data.mqtt
+      }, fromCache ? 'Statistiques IoT (cached)' : 'Statistiques IoT récupérées'));
     } catch (err) {
       next(err);
     }
