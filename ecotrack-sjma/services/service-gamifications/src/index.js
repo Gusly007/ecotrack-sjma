@@ -17,6 +17,7 @@ import notificationsRoutes from './routes/notifications.js';
 import statsRoutes from './routes/stats.js';
 import logger from './utils/logger.js';
 import client from 'prom-client';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -105,24 +106,8 @@ app.use('/', statsRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Handler d'erreurs (Zod + autres)
-app.use((err, req, res, next) => {
-  // On gère Zod proprement pour renvoyer un message clair aux tests.
-  if (err instanceof ZodError) {
-    return res.status(400).json({
-      error: 'Données invalides',
-      details: err.issues.map((issue) => ({
-        champ: Array.isArray(issue.path) ? issue.path.join('.') : '',
-        message: issue.message
-      }))
-    });
-  }
-
-  const status = err?.status || 400;
-  return res.status(status).json({
-    error: err?.message || 'Erreur serveur'
-  });
-});
+// Handler d'erreurs
+app.use(errorHandler);
 
 // 404 (si aucune route n'a matché)
 app.use((req, res) => {

@@ -1001,7 +1001,7 @@ router.put('/users/:id', async (req, res) => {
 | Aspect | users | routes | iot | analytics | gamif | gateway |
 |--------|:-----:|:------:|:---:|:---------:|:-----:|:-------:|
 | **Input Validation** | Zod ✅ | Joi ✅ | Joi ✅ | Joi ✅ | Zod ✅ | Delegated ✅ |
-| **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ❌ Ad-hoc | ❌ | ✅ |
+| **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ✅ Centralisé | ✅ Centralisé | ✅ |
 | **Logging (Pino)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Caching (Redis)** | ✅ | ✅ | ⚠️ Partial | ⚠️ Partial | ✅ | ❌ |
 | **Rate Limiting** | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
@@ -1017,71 +1017,42 @@ router.put('/users/:id', async (req, res) => {
 
 ### 🔴 Priorité Haute
 
-| Service | Problème | Solution |
-|---------|----------|----------|
-| **service-routes** | Pas de rate limiting | Ajouter `express-rate-limit` |
-| **service-analytics** | Error handling ad-hoc | Centraliser avec middleware |
-| **service-gamifications** | Pas d'auth JWT | Ajouter middleware auth |
-| **service-analytics** | Pas de pagination complète | Uniformiser avec page/limit |
+| Service | Problème | Status |
+|---------|----------|--------|
+| **service-routes** | Auth manquante | ⚠️ Depend Gateway* |
+| **service-iot** | Auth manquante | ⚠️ Depend Gateway* |
+| **service-gamifications** | Auth manquante | ⚠️ Depend Gateway* |
+| **service-analytics** | RBAC manquant | ❌ |
 
 ### 🟡 Priorité Moyenne
 
-| Service | Problème | Solution |
-|---------|----------|----------|
-| **service-iot** | Cache Redis sous-utilisé | Implémenter `CacheService` |
-| **service-analytics** | Cache Redis partiel | Compléter avec pattern |
-| **Tous** | DB query optimization | Ajouter indexes, EXPLAIN |
-| **service-gamifications** | Pagination limitée | Ajouter `page` param |
+| Service | Problème | Status |
+|---------|----------|--------|
+| **service-routes** | Rate limiting | ❌ Manquant |
+| **service-analytics** | Pagination | ⚠️ Partielle |
+| **service-gamifications** | Pagination | ⚠️ Limited |
+| **service-iot** | Cache Redis | ⚠️ Partial |
+| **service-analytics** | Cache Redis | ⚠️ Partial |
+| **Tous** | DB optimization | ⚠️ Basic |
 
-### 🟢 Priorité Basse (Post-Dev)
+### 🟢 Post-Dev
 
-| Service | Problème | Solution |
-|---------|----------|----------|
-| **API Gateway** | Pas de cache global | Ajouter Redis layer |
-| **API Gateway** | Pas de rate limiting | Ajouter à l'entrée |
-| **service-analytics** | Tests unitaires manquants | Ajouter Jest/Supertest |
+| Service | Problème | Status |
+|---------|----------|--------|
+| **API Gateway** | Cache global | ❌ |
+| **API Gateway** | Rate limiting | ❌ |
+| **service-analytics** | Unit tests | ⚠️ Integration only |
 
-## Étapes Backend Suggérées (après Monitoring)
+---
 
-### 1. Standardisation Error Handling
-```
-service-analytics/      → Ajouter errorHandler middleware
-service-gamifications/  → Ajouter errorHandler middleware
-```
+## Prochaines Étapes Backend ( après Kafka/Monitoring )
 
-### 2. Ajouter Rate Limiting
-```
-service-routes/         → 100 req/min pour endpoints publics
-API Gateway/            → 500 req/min global
-```
+## Prochaines Étapes Backend (après Monitoring)
 
-### 3. Authentification Uniforme
-```
-service-routes/         → JWT middleware
-service-iot/            → JWT middleware  
-service-gamifications/  → JWT middleware
-```
-
-### 4. Cache Redis Complet
-```
-service-iot/            → CacheService pattern
-service-analytics/      → Compléter getOrSet
-```
-
-### 5. Tests & Optimisation
-```
-service-analytics/      → Unit tests
-DB/                     → Indexes sur tables fréquentes
-```
-
-## Checklist Backend Avant Prod
-
-- [ ] Error handling centralisé (tous services)
-- [ ] Rate limiting (tous services)
-- [ ] Auth JWT (service-routes, service-iot, service-gamifications)
-- [ ] Pagination uniforme
-- [ ] Cache Redis complet
-- [ ] Unit tests service-analytics
-- [ ] Indexes PostgreSQL
-- [ ] Tests charge K6
+1. ✅ **Error handling centralisé** - service-analytics, service-gamifications
+2. **Rate limiting** - service-routes
+3. **Auth/RBAC** - service-analytics (RBAC), others depend on Gateway
+4. **Cache Redis** - Compléter iot, analytics
+5. **Pagination uniforme** - gamifications, analytics
+6. **DB optimization** - Indexes, EXPLAIN
 

@@ -63,6 +63,56 @@ const { alerts, counts, total } = await res.json();
 const counts = await fetch('http://localhost:3015/api/metrics/alerts/counts');
 ```
 
+---
+
+### [3.5.2] 2026-03 - Error Handling Centralisé
+
+#### Services modifiés
+
+| Service | Fichier |
+|---------|---------|
+| service-analytics | `src/middleware/errorHandler.js` |
+| service-gamifications | `src/middleware/errorHandler.js` |
+
+#### Codes d'erreur gérés
+
+| Code PostgreSQL | Status | Message |
+|-----------------|--------|---------|
+| 23505 | 409 | Ressource déjà existante |
+| 23503 | 400 | Référence invalide |
+| 23514 | 400 | Contrainte non respectée |
+
+#### Middleware
+
+```javascript
+// Utilisation
+const { errorHandler, asyncHandler, AppError } = require('./middleware/errorHandler');
+
+app.use(errorHandler);
+
+// Avec async
+router.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await getUser(req.params.id);
+  if (!user) throw new AppError('User not found', 404);
+  res.json(user);
+}));
+
+// Avec codes DB
+throw new AppError('Erreur', 500, '23505');
+```
+
+#### Codes HTTP gérés
+
+| Status | Condition |
+|--------|----------|
+| 400 | Validation, données invalides |
+| 401 | Token invalide/expiré |
+| 403 | Accès refusé |
+| 404 | Ressource non trouvée |
+| 409 | Conflit (doublon) |
+| 429 | Rate limit |
+| 500 | Erreur serveur |
+
 #### Fichiers
 
 - `services/service-analytics/src/routes/metrics.js` - Routes API

@@ -10,6 +10,7 @@ require('dotenv').config();
 const logger = require('./utils/logger');
 const client = require('prom-client');
 const { generalLimiter, reportLimiter, mlLimiter } = require('./middleware/rateLimitMiddleware');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -104,12 +105,7 @@ app.get('/health', (req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
-  logger.error('Error: ' + err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
-  });
-});
+app.use(errorHandler);
 
 httpServer.listen(PORT, () => {
   logger.info(' Analytics Service running on port ' + PORT);
