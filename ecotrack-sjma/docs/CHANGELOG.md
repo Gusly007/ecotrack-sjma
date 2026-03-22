@@ -8,13 +8,26 @@
 
 #### Pagination (service-gamifications)
 
-Endpoints avec pagination uniforme:
+| Endpoint | Paramètres |
+|----------|------------|
+| `GET /defis` | `page`, `limit` |
+| `GET /badges` | `page`, `limit` |
+| `GET /notifications` | `page`, `limit` |
 
-| Endpoint | Paramètres | Réponse |
-|----------|-------------|---------|
-| `GET /defis` | `page`, `limit` | `pagination` object |
-| `GET /badges` | `page`, `limit` | `pagination` object |
-| `GET /notifications` | `page`, `limit` | `pagination` object |
+#### Pagination (service-analytics)
+
+| Endpoint | Paramètres |
+|----------|------------|
+| `GET /ml/predict-critical` | `page`, `limit` |
+| `GET /ml/anomalies/:id` | `page`, `limit` |
+| `GET /ml/defective-sensors` | `page`, `limit` |
+
+#### Cache Redis (service-iot)
+
+| Endpoint | TTL | Clé |
+|----------|-----|-----|
+| `GET /measurements/latest` | 30s | `iot:measurements:latest` |
+| `GET /stats` | 2min | `iot:stats:global` |
 
 #### Format pagination
 
@@ -24,28 +37,20 @@ Endpoints avec pagination uniforme:
   "data": [...],
   "pagination": {
     "page": 1,
-    "limit": 20,
+    "limit": 50,
     "total": 100,
-    "pages": 5,
+    "pages": 2,
     "hasMore": true
   }
 }
 ```
-
-#### Cache Redis (service-iot)
-
-| Endpoint | TTL | Clé |
-|----------|-----|-----|
-| `GET /measurements/latest` | 30s | `iot:measurements:latest` |
-| `GET /stats` | 2min | `iot:stats:global` |
 
 #### Fichiers modifiés
 
 | Service | Fichier |
 |---------|---------|
 | service-gamifications | `src/controllers/*.js` - pagination |
-| service-gamifications | `src/repositories/*.js` - count queries |
-| service-gamifications | `src/utils/api-response.js` - paginated() |
+| service-analytics | `src/controllers/mlController.js` - pagination |
 | service-iot | `src/controllers/iot-controller.js` - cache |
 
 ---
