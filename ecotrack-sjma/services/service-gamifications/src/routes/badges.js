@@ -1,6 +1,8 @@
 // Rôle du fichier : routes HTTP pour les badges.
 import { Router } from 'express';
 import { obtenirBadges, obtenirBadgesUtilisateur } from '../controllers/badgesController.js';
+import { validateQuery } from '../middleware/validation.js';
+import { badgesQuerySchema } from '../validators/schemas.js';
 
 const router = Router();
 
@@ -10,9 +12,20 @@ const router = Router();
  *   get:
  *     summary: Liste des badges disponibles
  *     tags: [Badges]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
  *     responses:
  *       200:
- *         description: Liste des badges
+ *         description: Liste des badges paginée
  */
 router.get('/', obtenirBadges);
 
@@ -28,10 +41,20 @@ router.get('/', obtenirBadges);
  *         required: true
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
  *     responses:
  *       200:
- *         description: Liste des badges utilisateur
+ *         description: Liste des badges utilisateur paginée
  */
-router.get('/utilisateurs/:idUtilisateur', obtenirBadgesUtilisateur);
+router.get('/utilisateurs/:idUtilisateur', validateQuery(badgesQuerySchema), obtenirBadgesUtilisateur);
 
 export default router;

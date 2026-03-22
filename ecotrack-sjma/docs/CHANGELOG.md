@@ -4,6 +4,52 @@
 
 ---
 
+### [3.5.4] 2026-03 - Pagination & Cache IoT
+
+#### Pagination (service-gamifications)
+
+Endpoints avec pagination uniforme:
+
+| Endpoint | Paramètres | Réponse |
+|----------|-------------|---------|
+| `GET /defis` | `page`, `limit` | `pagination` object |
+| `GET /badges` | `page`, `limit` | `pagination` object |
+| `GET /notifications` | `page`, `limit` | `pagination` object |
+
+#### Format pagination
+
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 100,
+    "pages": 5,
+    "hasMore": true
+  }
+}
+```
+
+#### Cache Redis (service-iot)
+
+| Endpoint | TTL | Clé |
+|----------|-----|-----|
+| `GET /measurements/latest` | 30s | `iot:measurements:latest` |
+| `GET /stats` | 2min | `iot:stats:global` |
+
+#### Fichiers modifiés
+
+| Service | Fichier |
+|---------|---------|
+| service-gamifications | `src/controllers/*.js` - pagination |
+| service-gamifications | `src/repositories/*.js` - count queries |
+| service-gamifications | `src/utils/api-response.js` - paginated() |
+| service-iot | `src/controllers/iot-controller.js` - cache |
+
+---
+
 ### [3.5.3] 2026-03 - Rate Limiting
 
 #### Service modifié

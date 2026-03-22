@@ -1003,11 +1003,11 @@ router.put('/users/:id', async (req, res) => {
 | **Input Validation** | Zod ✅ | Joi ✅ | Joi ✅ | Joi ✅ | Zod ✅ | Delegated ✅ |
 | **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ✅ Centralisé | ✅ Centralisé | ✅ |
 | **Logging (Pino)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Caching (Redis)** | ✅ | ✅ | ⚠️ Partial | ⚠️ Partial | ✅ | ❌ |
+| **Caching (Redis)** | ✅ | ✅ | ✅ Complet | ⚠️ Partial | ✅ | ❌ |
 | **Rate Limiting** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Authentication** | JWT ✅ | ❌* | ❌* | JWT ✅ | ❌ | JWT ✅ |
 | **Authorization (RBAC)** | ✅ | ❌* | ❌* | ❌ | ❌ | Role ✅ |
-| **Pagination** | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ Limited | Delegated ✅ |
+| **Pagination** | ✅ | ✅ | ✅ | ⚠️ Partial | ✅ Complet | Delegated ✅ |
 | **DB Optimization** | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | N/A |
 | **Unit Tests** | ✅ | ✅ | ✅ | ⚠️ Integration | ✅ | ⚠️ Partial |
 
@@ -1025,11 +1025,6 @@ router.put('/users/:id', async (req, res) => {
 
 | Service | Problème | Status |
 |---------|----------|--------|
-| **service-routes** | Rate limiting | ❌ Manquant |
-| **service-analytics** | Pagination | ⚠️ Partielle |
-| **service-gamifications** | Pagination | ⚠️ Limited |
-| **service-iot** | Cache Redis | ⚠️ Partial |
-| **service-analytics** | Cache Redis | ⚠️ Partial |
 | **Tous** | DB optimization | ⚠️ Basic |
 
 ### 🟢 Post-Dev
@@ -1042,14 +1037,12 @@ router.put('/users/:id', async (req, res) => {
 
 ---
 
-## Prochaines Étapes Backend ( après Kafka/Monitoring )
-
 ## Prochaines Étapes Backend (après Monitoring)
 
 1. ✅ **Error handling centralisé** - service-analytics, service-gamifications
 2. ✅ **Rate limiting** - service-routes
 3. **Auth/RBAC** - service-analytics (RBAC)
-4. **Cache Redis** - Compléter iot, analytics
-5. **Pagination uniforme** - gamifications, analytics
+4. ✅ **Cache Redis** - service-iot (complété)
+5. ✅ **Pagination uniforme** - service-gamifications
 6. **DB optimization** - Indexes, EXPLAIN
 

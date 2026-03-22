@@ -7,8 +7,8 @@ export const creerDefi = async (defiData) => {
 };
 
 // Liste les défis disponibles, les plus récents d'abord.
-export const listerDefis = async () => {
-  return await DefisRepository.listerDefis();
+export const listerDefis = async (options = {}) => {
+  return await DefisRepository.listerDefis(options);
 };
 
 // Inscrit un utilisateur à un défi.

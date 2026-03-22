@@ -46,7 +46,7 @@ const router = Router();
  *       201:
  *         description: Notification créée
  */
-router.get('/', validateQuery(notificationQuerySchema), listerNotificationsHandler);
+router.get('/', listerNotificationsHandler);
 router.post('/', validateBody(notificationBodySchema), creerNotificationHandler);
 
 export default router;
