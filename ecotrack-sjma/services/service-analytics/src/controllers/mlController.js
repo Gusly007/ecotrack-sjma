@@ -2,6 +2,24 @@ const PredictionService = require('../services/predictionService');
 const AnomalyService = require('../services/anomalyService');
 const logger = require('../utils/logger');
 
+const paginateResponse = (data, page, limit) => {
+  const total = data.length;
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  const paginatedData = data.slice(start, end);
+  
+  return {
+    data: paginatedData,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      hasMore: end < total
+    }
+  };
+};
+
 class MLController {
   /**
    * POST /api/analytics/ml/predict
@@ -50,7 +68,9 @@ class MLController {
    */
   static async predictCritical(req, res) {
     try {
-      const { daysAhead = 1, threshold = 90 } = req.query;
+      const { daysAhead = 1, threshold = 90, page = 1, limit = 50 } = req.query;
+      const pageNum = parseInt(page, 10);
+      const limitNum = Math.min(100, parseInt(limit, 10));
 
       logger.info(`Predicting critical containers for ${daysAhead} days ahead`);
 
@@ -59,14 +79,17 @@ class MLController {
         parseInt(threshold)
       );
 
+      const { data, pagination } = paginateResponse(predictions, pageNum, limitNum);
+
       res.json({
         success: true,
         data: {
           count: predictions.length,
           daysAhead: parseInt(daysAhead),
           threshold: parseInt(threshold),
-          predictions
-        }
+          predictions: data
+        },
+        pagination
       });
     } catch (error) {
       logger.error('Error in predictCritical:', error);
@@ -83,16 +106,21 @@ class MLController {
   static async detectAnomalies(req, res) {
     try {
       const { containerId } = req.params;
-      const { threshold = 2 } = req.query;
+      const { threshold = 2, page = 1, limit = 50 } = req.query;
+      const pageNum = parseInt(page, 10);
+      const limitNum = Math.min(100, parseInt(limit, 10));
 
       const anomalies = await AnomalyService.detectAnomalies(
         containerId,
         parseFloat(threshold)
       );
 
+      const { data, pagination } = paginateResponse(anomalies, pageNum, limitNum);
+
       res.json({
         success: true,
-        data: anomalies
+        data,
+        pagination
       });
     } catch (error) {
       logger.error('Error detecting anomalies:', error);
@@ -108,11 +136,17 @@ class MLController {
    */
   static async getDefectiveSensors(req, res) {
     try {
+      const { page = 1, limit = 50 } = req.query;
+      const pageNum = parseInt(page, 10);
+      const limitNum = Math.min(100, parseInt(limit, 10));
+
       const sensors = await AnomalyService.detectDefectiveSensors();
+      const { data, pagination } = paginateResponse(sensors, pageNum, limitNum);
 
       res.json({
         success: true,
-        data: sensors
+        data,
+        pagination
       });
     } catch (error) {
       logger.error('Error getting defective sensors:', error);

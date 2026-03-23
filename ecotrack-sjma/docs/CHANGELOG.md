@@ -4,6 +4,665 @@
 
 ---
 
+### [3.6.1] 2026-03-23 - Tests Unitaires RBAC
+
+Tests unitaires pour le middleware RBAC dans tous les services.
+
+| Service | Tests | Status |
+|--------|-------|--------|
+| service-containers | 33 | ✅ Pass |
+| service-gamifications | 25 | ✅ Pass |
+| service-analytics | 127 | ✅ Pass |
+| service-iot | 97 | ✅ Pass |
+| service-routes | 237 | ✅ Pass |
+| **TOTAL** | **519** | **✅ Tous Pass** |
+
+### Fichiers de Tests Créés
+
+| Service | Fichier |
+|---------|---------|
+| service-containers | `test/unit/middleware/rbac.test.js` |
+| service-gamifications | `__tests__/middleware/rbac.test.js` |
+| service-analytics | `test/unit/middleware/rbac.test.js` |
+| service-iot | `test/unit/middleware/rbac.test.js` |
+| service-routes | `test/unit/middleware/rbac.test.js` |
+
+### Corrections
+
+- `service-containers/rbac.js` - Test corrigé (GESTIONNAIRE a containers:delete)
+- `service-routes/rbac.js` - CITOYEN n'a plus tournee:read (permission corrigée)
+
+### ✅ Lacunes Complétées
+
+| # | Problème | Service | Status |
+|---|----------|---------|--------|
+| 1-8 | Error handling, Rate limiting, Pagination, Cache, Logging | Tous | ✅ |
+| 9-13 | RBAC | Tous services | ✅ |
+
+---
+
+### [3.6.0] 2026-03 - RBAC (Role-Based Access Control)
+
+#### Permissions par Service
+
+| Service | Permission | CITOYEN | AGENT | GESTIONNAIRE | ADMIN |
+|---------|------------|---------|-------|--------------|-------|
+| containers | create | ❌ | ❌ | ✅ | ✅ |
+| containers | read | ✅ | ✅ | ✅ | ✅ |
+| containers | update | ❌ | ✅ | ✅ | ✅ |
+| containers | delete | ❌ | ❌ | ✅ | ✅ |
+| zone | create | ❌ | ❌ | ✅ | ✅ |
+| zone | read | ❌ | ❌ | ✅ | ✅ |
+| zone | update | ❌ | ❌ | ✅ | ✅ |
+| zone | delete | ❌ | ❌ | ✅ | ✅ |
+| iot | read | ❌ | ✅ | ✅ | ✅ |
+| iot | update | ❌ | ❌ | ✅ | ✅ |
+| analytics | read | ✅ | ✅ | ✅ | ✅ |
+| gamification | create | ❌ | ❌ | ✅ | ✅ |
+| gamification | read | ✅ | ✅ | ✅ | ✅ |
+| gamification | update | ❌ | ❌ | ✅ | ✅ |
+| gamification | delete | ❌ | ❌ | ✅ | ✅ |
+| badges | create | ❌ | ❌ | ✅ | ✅ |
+| badges | read | ✅ | ✅ | ✅ | ✅ |
+| badges | update | ❌ | ❌ | ✅ | ✅ |
+| badges | delete | ❌ | ❌ | ✅ | ✅ |
+| defis | create | ❌ | ❌ | ✅ | ✅ |
+| defis | read | ✅ | ✅ | ✅ | ✅ |
+| defis | update | ❌ | ❌ | ✅ | ✅ |
+| defis | delete | ❌ | ❌ | ✅ | ✅ |
+| points | read | ✅ | ✅ | ✅ | ✅ |
+| classement | read | ✅ | ✅ | ✅ | ✅ |
+| tournee | create | ❌ | ❌ | ✅ | ✅ |
+| tournee | read | ❌ | ✅ | ✅ | ✅ |
+| tournee | update | ❌ | ✅ | ✅ | ✅ |
+| tournee | delete | ❌ | ❌ | ✅ | ✅ |
+
+#### Services Modifiés
+
+| Service | Module Type | Fichier |
+|---------|-------------|---------|
+| service-containers | CommonJS | `src/middleware/rbac.js` |
+| service-analytics | CommonJS | `src/middleware/rbac.js` |
+| service-gamifications | ES Module | `src/middleware/rbac.js` |
+| service-iot | CommonJS | `src/middleware/rbac.js` |
+| service-routes | CommonJS | `src/middleware/rbac.js` |
+
+#### Routes Modifiées
+
+**service-containers**:
+- `container.route.js` - RBAC + suppression doublons
+- `zone.route.js` - RBAC pour toutes les routes
+- `typecontainer.route.js` - RBAC
+- `stats.route.js` - RBAC (`analytics:read`)
+
+**service-gamifications**:
+- `defis.js` - RBAC (déjà fait)
+- `badges.js` - RBAC
+- `classement.js` - RBAC
+- `notifications.js` - RBAC
+- `stats.js` - RBAC
+- `actions.js` - RBAC
+
+**service-analytics**:
+- `dashboardRoutes.js` - RBAC (déjà fait)
+- `aggregationRoutes.js` - RBAC (déjà fait)
+- `reportRoutes.js` - RBAC
+- `performanceRoutes.js` - RBAC
+- `mlRoutes.js` - RBAC
+- `metrics.js` - RBAC (routes ajoutées)
+
+**service-routes**:
+- `tournee.route.js` - RBAC (toutes les routes)
+
+**service-iot**:
+- `iot.route.js` - RBAC (toutes les routes)
+
+#### Pattern Middleware
+
+```javascript
+// CommonJS (service-containers, service-analytics)
+const { requirePermission } = require('../middleware/rbac');
+router.get('/endpoint', authMiddleware, requirePermission('permission'), controller);
+
+// ES Module (service-gamifications)
+import { requirePermission } from '../middleware/rbac.js';
+router.get('/endpoint', authMiddleware, requirePermission('permission'), controller);
+```
+
+#### Réponse Erreur RBAC
+
+```json
+{
+  "error": "Insufficient permissions",
+  "required": "containers:create",
+  "role": "CITOYEN"
+}
+```
+
+---
+
+### [3.5.5] 2026-03 - Centralized Logging & Cache API Gateway
+
+#### Centralized Logging
+
+Système de logs centralisé vers table `centralized_logs` en base PostgreSQL.
+
+| Service | Fichier |
+|---------|---------|
+| API Gateway | `src/services/centralizedLogging.js` |
+| service-analytics | `src/services/centralizedLogging.js` |
+| service-gamifications | `src/services/centralizedLogging.js` |
+| service-iot | `src/services/centralizedLogging.js` |
+
+#### Cache Redis (API Gateway)
+
+Cache au niveau API Gateway pour données de référence.
+
+| Endpoint | TTL | Clé |
+|----------|-----|-----|
+| `GET /api/zones` | 30 min | `apigw:/api/zones` |
+| `GET /api/typecontainers` | 30 min | `apigw:/api/typecontainers` |
+| `GET /api/containers` | 5 min | `apigw:/api/containers` |
+| `GET /api/stats` | 2 min | `apigw:/api/stats` |
+
+#### Cache Redis (Documentation)
+
+| Service | Fichier |
+|---------|---------|
+| service-analytics | `docs/CACHE.md` |
+| service-gamifications | `docs/CACHE.md` |
+| service-iot | `docs/CACHE_IOT.md` |
+| API Gateway | `docs/CACHE.md` |
+
+#### Rate Limiting (API Gateway)
+
+Limiteur global appliqué à toutes les requêtes.
+
+| Variable | Défaut | Description |
+|----------|--------|-------------|
+| `GATEWAY_RATE_WINDOW_MS` | 60000 | Fenêtre (1 min) |
+| `GATEWAY_RATE_MAX` | 100 | Requêtes max |
+
+#### Response Headers
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 76
+RateLimit-Reset: 56
+```
+
+#### Corrections
+
+- `service-iot`: cacheService.js déplacé vers `src/services/`
+- Imports corrigés dans `index.js` et `iot-controller.js`
+
+---
+
+### [3.5.4] 2026-03 - Pagination & Cache IoT
+
+#### Pagination (service-gamifications)
+
+| Endpoint | Paramètres |
+|----------|------------|
+| `GET /defis` | `page`, `limit` |
+| `GET /badges` | `page`, `limit` |
+| `GET /notifications` | `page`, `limit` |
+
+#### Pagination (service-analytics)
+
+| Endpoint | Paramètres |
+|----------|------------|
+| `GET /ml/predict-critical` | `page`, `limit` |
+| `GET /ml/anomalies/:id` | `page`, `limit` |
+| `GET /ml/defective-sensors` | `page`, `limit` |
+
+#### Cache Redis (service-iot)
+
+| Endpoint | TTL | Clé |
+|----------|-----|-----|
+| `GET /measurements/latest` | 30s | `iot:measurements:latest` |
+| `GET /stats` | 2min | `iot:stats:global` |
+
+#### Format pagination
+
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 100,
+    "pages": 2,
+    "hasMore": true
+  }
+}
+```
+
+#### Fichiers modifiés
+
+| Service | Fichier |
+|---------|---------|
+| service-gamifications | `src/controllers/*.js` - pagination |
+| service-analytics | `src/controllers/mlController.js` - pagination |
+| service-iot | `src/controllers/iot-controller.js` - cache |
+
+---
+
+### [3.5.3] 2026-03 - Rate Limiting
+
+#### Service modifié
+
+| Service | Fichier |
+|---------|---------|
+| service-routes | `src/middleware/rateLimit.js` |
+
+#### Limiteurs disponibles
+
+| Limiter | Limite | Fenêtre | Usage |
+|---------|--------|---------|-------|
+| `publicLimiter` | 100 req | 60s | Endpoints publics |
+| `tourneeLimiter` | 50 req | 60s | Tournées |
+| `optimizeLimiter` | 10 req | 60s | Optimisation |
+
+#### Configuration
+
+```bash
+# Variables d'environnement
+RATE_LIMIT_WINDOW_MS=60000  # 1 minute
+RATE_LIMIT_MAX=100         # req par fenêtre
+```
+
+#### Response Headers
+
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 76
+RateLimit-Reset: 56
+```
+
+---
+
+### [3.5.2] 2026-03 - Error Handling Centralisé
+
+#### Services modifiés
+
+| Service | Fichier |
+|---------|---------|
+| service-analytics | `src/middleware/errorHandler.js` |
+| service-gamifications | `src/middleware/errorHandler.js` |
+
+#### Codes d'erreur gérés
+
+| Code PostgreSQL | Status | Message |
+|-----------------|--------|---------|
+| 23505 | 409 | Ressource déjà existante |
+| 23503 | 400 | Référence invalide |
+| 23514 | 400 | Contrainte non respectée |
+
+#### Middleware
+
+```javascript
+const { errorHandler, asyncHandler, AppError } = require('./middleware/errorHandler');
+
+app.use(errorHandler);
+
+// Avec async
+router.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await getUser(req.params.id);
+  if (!user) throw new AppError('User not found', 404);
+  res.json(user);
+}));
+```
+
+#### Codes HTTP gérés
+
+| Status | Condition |
+|--------|----------|
+| 400 | Validation, données invalides |
+| 401 | Token invalide/expiré |
+| 403 | Accès refusé |
+| 404 | Ressource non trouvée |
+| 409 | Conflit (doublon) |
+| 429 | Rate limit |
+| 500 | Erreur serveur |
+
+---
+
+### [3.5.1] 2026-03 - Metrics API pour Frontend
+
+#### API REST Metrics
+
+Le service-analytics expose maintenant des endpoints pour le frontend :
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/metrics/overview` | Vue d'ensemble services + infrastructure |
+| `/api/metrics/services` | Santé des services avec latence/erreur |
+| `/api/metrics/iot` | Capteurs, conteneurs, batterie |
+| `/api/metrics/kafka` | Messages, consumer lag |
+| `/api/metrics/database` | Connexions DB, cache hit ratio |
+| `/api/metrics/alerts` | Alertes actives (filtrables par sévérité/service) |
+| `/api/metrics/alerts/counts` | Compteurs alertes par sévérité |
+| `/api/metrics/history` | Données historiques |
+
+#### Format Alertes
+
+```json
+{
+  "alerts": [
+    {
+      "id": "ServiceDown-service-iot-1711000000000",
+      "name": "ServiceDown",
+      "severity": "critical",
+      "severityLevel": 1,
+      "service": "service-iot",
+      "summary": "Service IoT en panne",
+      "description": "Connection perdue avec le broker MQTT...",
+      "timeAgo": "il y a 35min",
+      "minutesAgo": 35
+    }
+  ],
+  "counts": { "critical": 1, "warning": 2, "info": 0 },
+  "total": 3
+}
+```
+
+#### Sevérités
+
+| Level | Severity | Couleur |
+|-------|----------|---------|
+| 1 | critical | 🔴 Rouge |
+| 2 | warning | 🟡 Jaune |
+| 3 | medium | 🟠 Orange |
+| 4 | info | 🔵 Bleu |
+
+#### Exemple Frontend
+
+```javascript
+// Alertes filtrées
+const res = await fetch('http://localhost:3015/api/metrics/alerts?severity=critical');
+const { alerts, counts, total } = await res.json();
+
+// Compteurs badge
+const counts = await fetch('http://localhost:3015/api/metrics/alerts/counts');
+```
+
+---
+
+### [3.5.0] 2026-03 - Kafka Message Broker
+
+#### Pourquoi Kafka ?
+
+**Contexte Scale** :
+- 2000 conteneurs avec capteurs
+- ~2000 mesures / 5 min = ~7 msg/sec (pic: 100+ msg/sec)
+- 15000 citoyens, 50 agents, 10 gestionnaires
+
+**Problèmes résolus** :
+| Problème | Solution |
+|----------|----------|
+| Pic de mesures IoT | Buffer asynchrone |
+| Découplage services | Producers/Consumers |
+| Temps réel | Streaming alerts |
+| Scalabilité | Partitionnement |
+
+#### Architecture
+
+```
+[Capteurs] → [service-iot] → [Kafka] → [service-analytics]
+                                          ↓
+                                     [service-users]
+```
+
+#### Topics Kafka
+
+| Topic | Description | Partitions |
+|-------|-------------|------------|
+| `ecotrack.sensor.data` | Données capteurs | 6 |
+| `ecotrack.alerts` | Alertes conteneurs | 3 |
+| `ecotrack.container.status` | Statut conteneurs | 3 |
+| `ecotrack.notifications` | Notifications | 3 |
+
+#### Services
+
+| Service | Rôle | Fonction |
+|---------|------|----------|
+| **service-iot** | Producer | Envoie données/alertes vers Kafka |
+| **service-analytics** | Consumer | ML predictions, stats |
+| **service-users** | Consumer | Notifications push/email |
+
+#### Docker
+
+```yaml
+# docker-compose.yml
+zookeeper:
+  image: confluentinc/cp-zookeeper:7.5.0
+kafka:
+  image: confluentinc/cp-kafka:7.5.0
+kafka-ui:
+  image: provectuslabs/kafka-ui:latest  # http://localhost:8080
+```
+
+#### Documentation
+
+- `docs/KAFKA.md` - Documentation complète avec architecture, API, monitoring
+
+#### Fichiers
+
+- `docker-compose.yml` - Ajout zookeeper, kafka, kafka-ui
+- `docs/KAFKA.md` - Documentation
+- `services/service-iot/kafkaProducer.js` - Producer
+- `services/service-analytics/kafkaConsumer.js` - Consumer
+- `services/service-users/src/services/kafkaNotificationConsumer.js` - Consumer
+
+---
+
+### [3.4.0] 2026-03 - Configuration Dynamique & Constantes
+
+#### Système de Configuration Dynamique (Admin)
+
+**Nouveau**: Les administrateurs peuvent maintenant modifier les paramètres système sans redéploiement.
+
+##### Table `configurations`
+- **Migration**: `014_configurations.sql`
+- **Seed**: `017_configurations_default.sql`
+- **22 paramètres configurables** par catégorie :
+
+| Catégorie | Paramètres |
+|-----------|------------|
+| `jwt` | access_token_expiration, refresh_token_expiration |
+| `security` | bcrypt_rounds (défaut: 10), max_login_attempts, lockout_duration |
+| `session` | max_concurrent_sessions (défaut: 3), token_expiration_hours |
+| `rate_limit` | window_ms, max_requests (100/min), auth limits |
+| `upload` | max_file_size_mb (5), allowed_extensions, max_files_per_request |
+| `password` | min_length, require_uppercase, require_special, etc. |
+| `notifications` | email_enabled, push_enabled |
+
+##### API Endpoints
+```
+GET  /admin/config                 # Toutes les configs
+GET  /admin/config/:key           # Une config
+GET  /admin/config/category/:cat  # Par catégorie
+PUT  /admin/config/:key           # Modifier (ADMIN only)
+```
+
+#### Constantes Environnementales (Admin)
+
+**Nouveau**: Paramètres environnementaux pour calculs CO2 et coûts.
+
+##### Table `environmental_constants`
+- **Migration**: `015_environmental_constants.sql`
+- **Seed**: `018_environmental_constants.sql`
+
+| Clé | Valeur | Unité | Description |
+|-----|--------|-------|-------------|
+| CO2_PER_KM | 0.85 | kg/km | Émissions CO2 camion benne |
+| FUEL_CONSUMPTION_PER_100KM | 35 | L/100km | Consommation carburant |
+| FUEL_PRICE_PER_LITER | 1.65 | €/L | Prix carburant |
+| LABOR_COST_PER_HOUR | 50 | €/h | Coût main d'œuvre |
+| MAINTENANCE_COST_PER_KM | 0.15 | €/km | Coût maintenance |
+| CO2_PER_TREE_PER_YEAR | 20 | kg/an | CO2 absorbé par arbre |
+| CO2_PER_KM_CAR | 0.12 | kg/km | CO2 voiture moyenne |
+
+##### API Endpoints
+```
+GET  /admin/environmental-constants              # Toutes les constantes
+GET  /admin/environmental-constants/:key        # Une constante
+PUT  /admin/environmental-constants/:key         # Modifier (ADMIN only)
+```
+
+##### Fichier JS
+```javascript
+// src/config/ENVIRONMENTAL_CONSTANTS.js
+import {
+  calculateCO2Emissions,
+  calculateFuelCost,
+  calculateTotalCost,
+  calculateCarEquivalent
+} from './ENVIRONMENTAL_CONSTANTS.js';
+```
+
+#### Constantes Performance Agents (Admin)
+
+**Nouveau**: Pondérations pour calcul du score global des agents.
+
+##### Table `agent_performance_constants`
+- **Migration**: `016_agent_performance_constants.sql`
+- **Seed**: `019_agent_performance_constants.sql`
+
+```javascript
+AGENT_PERFORMANCE_CONSTANTS = {
+  WEIGHTS: {
+    COLLECTION_RATE: 0.4,      // 40% : collecte effective
+    COMPLETION_RATE: 0.3,      // 30% : complétion tournées
+    TIME_EFFICIENCY: 0.15,    // 15% : respect temps
+    DISTANCE_EFFICIENCY: 0.15  // 15% : respect distance
+  }
+}
+```
+
+##### Formule Score Global
+```
+Score = collection_rate * 0.4 + completion_rate * 0.3 + time_efficiency * 0.15 + distance_efficiency * 0.15
+```
+
+##### API Endpoints
+```
+GET  /admin/agent-performance              # Toutes les constantes
+GET  /admin/agent-performance/:key        # Une constante
+PUT  /admin/agent-performance/:key        # Modifier (ADMIN only)
+```
+
+#### Fichiers Créés
+- `database/migrations/014_configurations.sql`
+- `database/migrations/015_environmental_constants.sql`
+- `database/migrations/016_agent_performance_constants.sql`
+- `database/seeds/017_configurations_default.sql`
+- `database/seeds/018_environmental_constants.sql`
+- `database/seeds/019_agent_performance_constants.sql`
+- `services/service-users/src/config/ENVIRONMENTAL_CONSTANTS.js`
+- `services/service-users/src/config/AGENT_PERFORMANCE_CONSTANTS.js`
+- `services/service-users/src/repositories/configuration.repository.js`
+- `services/service-users/src/repositories/environmentalConstants.repository.js`
+- `services/service-users/src/repositories/agentPerformanceConstants.repository.js`
+- `services/service-users/src/routes/admin-config.js`
+- `services/service-users/src/routes/admin-environmental-constants.js`
+- `services/service-users/src/routes/admin-agent-performance.js`
+- `docs/CONFIGURATIONS.md`
+
+---
+
+### [3.3.0] 2026-03 - Redis Caching + Centralized Logging
+
+#### Cache Redis Multi-Services
+
+**Nouveau**: Implémentation du cache Redis pour améliorer les performances API.
+
+- **service-users** (port 3010)
+  - Cache des profils utilisateurs (`user:{id}:profile`) - TTL 5min
+  - Cache des stats utilisateur (`user:{id}:stats`) - TTL 5min
+  - Cache des rôles utilisateur (`user:{id}:roles`) - TTL 30min
+  - Invalidation automatique lors des mises à jour
+
+- **service-containers** (port 3011)
+  - Cache des détails conteneur (`container:{id}`) - TTL 2min
+  - Cache UID conteneur (`container:uid:{uid}`) - TTL 2min
+  - Cache liste conteneurs (`containers:list:*`) - TTL 1min
+  - Cache conteneurs par zone (`containers:zone:{id}`) - TTL 2min
+
+- **service-routes** (port 3012)
+  - Cache tournée par ID (`tournee:{id}`) - TTL 1min
+  - Cache liste tournées (`tournees:list:*`) - TTL 30s
+  - Cache tournées actives (`tournee:active`) - TTL 1min
+
+- **service-analytics** (port 3015)
+  - Migration NodeCache → Redis avec fallback mémoire
+  - Cache KPIs dashboard - TTL 1min
+  - Cache agrégations zones - TTL 5min
+
+- **service-gamifications** (port 3014)
+  - Cache classement (`gamification:leaderboard`) - TTL 5min
+  - Cache points utilisateurs - TTL 10min
+  - Cache badges disponibles - TTL 1h
+
+- **service-iot** (port 3013)
+  - Cache dernières mesures - TTL 30s
+  - Cache capteurs actifs - TTL 5min
+  - Cache statistiques conteneur - TTL 5min
+
+#### Configuration
+
+- **Package**: `redis@4.7.0` ajouté aux services
+- **Variables d'environnement**:
+  ```
+  REDIS_HOST=localhost
+  REDIS_PORT=6379
+  REDIS_PASSWORD=
+  REDIS_DB=0
+  ```
+- **Service**: Pattern Cache-Aside avec invalidation automatique
+- **Logging**: Utilisation du logger Pino existant
+
+#### Améliorations Performance (objectifs)
+
+- Réduction latence API (objectif < 500ms P95 - à mesurer)
+- Réduction charge PostgreSQL
+- Cache hit ratio cible > 80% (à mesurer)
+
+#### Système de Logging Centralisé
+
+**Nouveau**: Système de logs centralisé pour administration et monitoring.
+
+- **Base de données**: Table `centralized_logs` avec index sur timestamp, service, level, action
+- **Champs**:
+  - `timestamp` - Date/heure du log
+  - `level` - Niveau (info, warning, error, critical)
+  - `action` - Action (login, logout, create, update, delete, view, etc.)
+  - `service` - Service source
+  - `message` - Message du log
+  - `metadata` - Données supplémentaires (JSON)
+  - `user_id` - ID utilisateur
+  - `ip_address` - Adresse IP
+
+##### API Endpoints
+
+| Endpoint | Description |
+|---------|-------------|
+| `POST /api/logs` | Créer un log |
+| `GET /api/logs` | Liste avec filtres |
+| `GET /api/logs/filters` | Valeurs disponibles |
+| `GET /api/logs/summary` | Statistiques globales |
+| `GET /api/logs/export` | Export JSON ou CSV |
+
+##### Client de Logging
+
+```javascript
+centralLogClient.login('User logged in', { ip: req.ip }, userId);
+centralLogClient.error('Failed to connect', { error: err.message });
+```
+
+---
+
 ### [3.1.0] 2026-03 - Service Routes
 
 #### Nouveau Microservice : service-routes (port 3012)

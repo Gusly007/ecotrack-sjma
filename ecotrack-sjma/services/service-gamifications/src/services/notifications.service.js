@@ -8,6 +8,6 @@ export const creerNotification = async ({ idUtilisateur, type, titre, corps }, c
 };
 
 // Liste les notifications d'un utilisateur, les plus récentes d'abord.
-export const listerNotifications = async ({ idUtilisateur }) => {
-  return await NotificationsRepository.listerNotifications({ idUtilisateur });
+export const listerNotifications = async ({ idUtilisateur, page, limit }) => {
+  return await NotificationsRepository.listerNotifications({ idUtilisateur, page, limit });
 };

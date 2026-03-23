@@ -11,9 +11,11 @@ const logger = require('./src/utils/logger');
 const config = require('./src/config/config');
 const errorHandler = require('./src/middleware/error-handler');
 const requestLogger = require('./src/middleware/request-logger');
+const { publicLimiter } = require('./src/middleware/rateLimit');
 const { controllersMiddleware } = require('./src/di');
 const { testConnection } = require('./src/db/connexion');
 const { pool } = require('./src/db/connexion');
+const cacheService = require('./src/services/cacheService');
 
 const client = require('prom-client');
 const register = new client.Registry();
@@ -95,10 +97,10 @@ if (!fs.existsSync(reportsDir)) {
 }
 app.use('/reports', express.static(reportsDir));
 
-app.use('/api/routes', tourneeRoutes);
-app.use('/api/routes', vehiculeRoutes);
-app.use('/api/routes', collecteRoutes);
-app.use('/api/routes', statsRoutes);
+app.use('/api/routes', publicLimiter, tourneeRoutes);
+app.use('/api/routes', publicLimiter, vehiculeRoutes);
+app.use('/api/routes', publicLimiter, collecteRoutes);
+app.use('/api/routes', publicLimiter, statsRoutes);
 
 // Root info
 app.get('/api/routes', (req, res) => {
@@ -180,6 +182,13 @@ app.listen(port, async () => {
   logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
   logger.info({ env: config.NODE_ENV }, 'Environment');
   await testConnection();
+  
+  // Initialize Redis cache
+  await cacheService.connect().then(() => {
+    logger.info('Redis cache initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
+  });
 });
 
 module.exports = app;

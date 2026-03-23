@@ -8,6 +8,7 @@
  */
 const express = require('express');
 const { statsController } = require('../container-di');
+const { requirePermission } = require('../middleware/rbac');
 const {
   validateQuery,
   validateParams,
@@ -22,39 +23,40 @@ const {
 const router = express.Router();
 
 // ── Tableau de bord agrégé ──
-router.get('/dashboard', statsController.getDashboard);
+router.get('/dashboard', requirePermission('analytics:read'), statsController.getDashboard);
 
 // ── Stats globales des conteneurs ──
-router.get('/', statsController.getGlobalStats);
+router.get('/', requirePermission('analytics:read'), statsController.getGlobalStats);
 
 // ── Distribution des niveaux de remplissage ──
-router.get('/fill-levels', statsController.getFillLevelDistribution);
+router.get('/fill-levels', requirePermission('analytics:read'), statsController.getFillLevelDistribution);
 
 // ── Stats par zone ──
-router.get('/by-zone', validateQuery(statsByZoneSchema), statsController.getStatsByZone);
+router.get('/by-zone', requirePermission('analytics:read'), validateQuery(statsByZoneSchema), statsController.getStatsByZone);
 
 // ── Stats par type de conteneur ──
-router.get('/by-type', validateQuery(statsByTypeSchema), statsController.getStatsByType);
+router.get('/by-type', requirePermission('analytics:read'), validateQuery(statsByTypeSchema), statsController.getStatsByType);
 
 // ── Alertes actives ──
-router.get('/alerts', statsController.getAlertsSummary);
+router.get('/alerts', requirePermission('analytics:read'), statsController.getAlertsSummary);
 
 // ── Conteneurs critiques (remplissage >= seuil OU EN_MAINTENANCE) ──
-router.get('/critical', validateQuery(criticalContainersSchema), statsController.getCriticalContainers);
+router.get('/critical', requirePermission('analytics:read'), validateQuery(criticalContainersSchema), statsController.getCriticalContainers);
 
 // ── Historique de remplissage d'un conteneur (pour graphiques) ──
 router.get(
   '/containers/:id/history',
+  requirePermission('analytics:read'),
   validateParams(containerIdParamSchema),
   validateQuery(fillHistoryQuerySchema),
   statsController.getFillHistory
 );
 
 // ── Stats de collecte ──
-router.get('/collections', validateQuery(dateRangeSchema), statsController.getCollectionStats);
+router.get('/collections', requirePermission('analytics:read'), validateQuery(dateRangeSchema), statsController.getCollectionStats);
 
 // ── Stats de maintenance ──
-router.get('/maintenance', validateQuery(dateRangeSchema), statsController.getMaintenanceStats);
+router.get('/maintenance', requirePermission('analytics:read'), validateQuery(dateRangeSchema), statsController.getMaintenanceStats);
 
 module.exports = router;
 

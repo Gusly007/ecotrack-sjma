@@ -98,6 +98,57 @@ services:
     command: redis-server --appendonly yes
 
   # =========================================================================
+  # KAFKA (Message Broker)
+  # =========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: ecotrack-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: ecotrack-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecotrack-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - ecotrack
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  # =========================================================================
   # MIGRATIONS (s'exécute automatiquement au démarrage)
   # =========================================================================
   migrations:
@@ -138,6 +189,11 @@ services:
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
     ports:
       - "3000:3000"
     depends_on:
@@ -200,7 +256,6 @@ services:
     container_name: ecotrack-service-users
     environment:
       APP_PORT: 3010
-      # Connexion à PostgreSQL local
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_in_production_refresh_secret}
@@ -209,11 +264,15 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
       NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
     ports:
       - "3010:3010"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
       migrations:
         condition: service_completed_successfully
     networks:
@@ -316,28 +375,27 @@ services:
     container_name: ecotrack-service-iot
     environment:
       APP_PORT: 3013
-      # Variables PostgreSQL
       PGHOST: postgres
       PGPORT: 5432
       PGUSER: ${DB_USER:-ecotrack_user}
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
-      # MQTT
       MQTT_PORT: 1883
       MQTT_HOST: 0.0.0.0
-      # Seuils d'alerte
       ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
       ALERT_BATTERY_LOW: ${ALERT_BATTERY_LOW:-20}
       ALERT_SENSOR_TIMEOUT_HOURS: ${ALERT_SENSOR_TIMEOUT_HOURS:-24}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
     ports:
       - "3013:3013"
       - "${MQTT_PORT:-1883}:1883"
     depends_on:
       postgres:
         condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
+      kafka:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -395,11 +453,15 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
       REPORTS_DIR: /app/reports
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
     ports:
       - "3015:3015"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -424,6 +486,7 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+      - '--rule.file=/etc/prometheus/alert_rules.yml'
     logging:
       driver: "json-file"
       options:
@@ -456,6 +519,77 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # =========================================================================
+  # NODE EXPORTER (System metrics: CPU, RAM, Disk, Network)
+  # =========================================================================
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ecotrack-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  # =========================================================================
+  # POSTGRES EXPORTER (PostgreSQL metrics)
+  # =========================================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: ecotrack-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    volumes:
+      - ./monitoring/prometheus/postgres-queries.yml:/etc/postgres-exporter/queries.yml:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # =========================================================================
+  # REDIS EXPORTER (Redis cache metrics)
+  # =========================================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: ecotrack-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ""
+    ports:
+      - "9121:9121"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # =========================================================================
+  # KAFKA EXPORTER (Kafka metrics)
+  # =========================================================================
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: ecotrack-kafka-exporter
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+    ports:
+      - "9308:9308"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - kafka
+
 # ============================================================================
 # VOLUMES (Persistance des données)
 # ============================================================================
@@ -467,6 +601,8 @@ volumes:
   prometheus_data:
     driver: local
   redis_data:
+    driver: local
+  kafka_data:
     driver: local
   grafana_data:
     driver: local

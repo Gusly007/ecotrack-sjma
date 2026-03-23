@@ -8,23 +8,40 @@ export const BADGE_SEUILS = {
 };
 
 export const BadgeRepository = {
-  async getAllBadges() {
+  async getAllBadges({ page = 1, limit = 20 } = {}) {
+    const offset = (page - 1) * limit;
+    
+    const countResult = await pool.query('SELECT COUNT(*) FROM badge');
+    const total = parseInt(countResult.rows[0].count);
+    
     const { rows } = await pool.query(
-      'SELECT id_badge, code, nom, description FROM badge ORDER BY nom'
+      'SELECT id_badge, code, nom, description FROM badge ORDER BY nom LIMIT $1 OFFSET $2',
+      [limit, offset]
     );
-    return rows;
+    
+    return { rows, total };
   },
 
-  async getUserBadges(idUtilisateur) {
+  async getUserBadges(idUtilisateur, { page = 1, limit = 20 } = {}) {
+    const offset = (page - 1) * limit;
+    
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM user_badge WHERE id_utilisateur = $1',
+      [idUtilisateur]
+    );
+    const total = parseInt(countResult.rows[0].count);
+    
     const { rows } = await pool.query(
       `SELECT b.id_badge, b.code, b.nom, b.description, bu.date_obtention
        FROM user_badge bu
        JOIN badge b ON b.id_badge = bu.id_badge
        WHERE bu.id_utilisateur = $1
-       ORDER BY bu.date_obtention DESC`,
-      [idUtilisateur]
+       ORDER BY bu.date_obtention DESC
+       LIMIT $2 OFFSET $3`,
+      [idUtilisateur, limit, offset]
     );
-    return rows;
+    
+    return { rows, total };
   },
 
   async getKnownBadges(codes, client = pool) {

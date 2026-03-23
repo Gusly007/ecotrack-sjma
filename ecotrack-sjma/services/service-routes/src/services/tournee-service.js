@@ -1,6 +1,10 @@
 const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSchema, optimizeSchema } = require('../validators/tournee.validator');
 const { optimizeRoute, estimateDuration } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
+const cacheService = require('./cacheService');
+
+const TOURNEE_TTL = 60; // 1 minute
+const TOURNEES_LIST_TTL = 30; // 30 seconds
 
 class TourneeService {
   constructor(tourneeRepository, collecteRepository) {
@@ -10,26 +14,55 @@ class TourneeService {
 
   async createTournee(data) {
     const validated = validateSchema(createTourneeSchema, data);
-    return this.tourneeRepo.create(validated);
+    const result = await this.tourneeRepo.create(validated);
+    
+    // Invalidate cache
+    await cacheService.invalidatePattern('tournee:*');
+    
+    return result;
   }
 
   async getTourneeById(id) {
-    const tournee = await this.tourneeRepo.findById(id);
-    if (!tournee) throw ApiError.notFound(`Tournée ${id} introuvable`);
-    return tournee;
+    const cacheKey = `tournee:${id}`;
+    const result = await cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const tournee = await this.tourneeRepo.findById(id);
+        if (!tournee) throw ApiError.notFound(`Tournée ${id} introuvable`);
+        return tournee;
+      },
+      TOURNEE_TTL
+    );
+    return result.data;
   }
 
   async getAllTournees(options = {}) {
     const { page = 1, limit = 20, ...filters } = options;
-    const { rows, total } = await this.tourneeRepo.findAll({ page: parseInt(page), limit: parseInt(limit), ...filters });
-    return { tournees: rows, total, page: parseInt(page), limit: parseInt(limit) };
+    const cacheKey = `tournees:list:${page}:${limit}:${JSON.stringify(filters)}`;
+    
+    const result = await cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { rows, total } = await this.tourneeRepo.findAll({ page: parseInt(page), limit: parseInt(limit), ...filters });
+        return { tournees: rows, total, page: parseInt(page), limit: parseInt(limit) };
+      },
+      TOURNEES_LIST_TTL
+    );
+    return result.data;
   }
 
   async getActiveTournees() {
-    return this.tourneeRepo.findActive();
+    const cacheKey = 'tournee:active';
+    const result = await cacheService.getOrSet(
+      cacheKey,
+      () => this.tourneeRepo.findActive(),
+      TOURNEE_TTL
+    );
+    return result.data;
   }
 
   async getAgentTodayTournee(agentId) {
+    // Don't cache agent-specific data as it's time-sensitive
     const tournee = await this.tourneeRepo.findAgentTodayTournee(agentId);
     if (!tournee) throw ApiError.notFound("Aucune tournée assignée aujourd'hui");
     const etapes = await this.tourneeRepo.findEtapes(tournee.id_tournee);
@@ -42,12 +75,23 @@ class TourneeService {
     const validated = validateSchema(updateTourneeSchema, data);
     const updated = await this.tourneeRepo.update(id, validated);
     if (!updated) throw ApiError.notFound(`Tournée ${id} introuvable`);
+    
+    // Invalidate cache
+    await cacheService.del(`tournee:${id}`);
+    await cacheService.invalidatePattern('tournee:*');
+    
     return updated;
   }
 
   async updateStatut(id, data) {
     const validated = validateSchema(updateStatutSchema, data);
-    return this.tourneeRepo.updateStatut(id, validated.statut);
+    const result = await this.tourneeRepo.updateStatut(id, validated.statut);
+    
+    // Invalidate cache
+    await cacheService.del(`tournee:${id}`);
+    await cacheService.invalidatePattern('tournee:*');
+    
+    return result;
   }
 
   async deleteTournee(id) {
@@ -56,7 +100,13 @@ class TourneeService {
     if (tournee.statut === 'EN_COURS') {
       throw ApiError.badRequest('Impossible de supprimer une tournée en cours');
     }
-    return this.tourneeRepo.delete(id);
+    const result = await this.tourneeRepo.delete(id);
+    
+    // Invalidate cache
+    await cacheService.del(`tournee:${id}`);
+    await cacheService.invalidatePattern('tournee:*');
+    
+    return result;
   }
 
   async getTourneeEtapes(id) {

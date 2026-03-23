@@ -52,6 +52,9 @@ async function truncateTables(client) {
     'type_signalement',
     'maintenance',
     'role',
+    'configurations',
+    'environmental_constants',
+    'agent_performance_constants',
   ];
 
   for (const table of tables) {

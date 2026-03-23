@@ -7,6 +7,7 @@ const AnomalyService = require('../services/anomalyService');
 const logger = require('../utils/logger');
 const ValidationMiddleware = require('../middleware/validationMiddleware');
 const { mlLimiter } = require('../middleware/rateLimitMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -113,7 +114,7 @@ const authMiddleware = (req, res, next) => {
  *       404:
  *         description: Données insuffisantes
  */
-router.post('/ml/predict', authMiddleware, mlLimiter, ValidationMiddleware.validatePrediction(), async (req, res) => {
+router.post('/ml/predict', authMiddleware, requirePermission('analytics:read'), mlLimiter, ValidationMiddleware.validatePrediction(), async (req, res) => {
   try {
     const { containerId, daysAhead = 1, includeWeather = false } = req.body;
     if (!containerId) {
@@ -158,7 +159,7 @@ router.post('/ml/predict', authMiddleware, mlLimiter, ValidationMiddleware.valid
  *       200:
  *         description: Liste des conteneurs critiques prédits
  */
-router.get('/ml/predict-critical', authMiddleware, async (req, res) => {
+router.get('/ml/predict-critical', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { daysAhead = 1, threshold = 90 } = req.query;
     const predictions = await PredictionService.predictCriticalContainers(parseInt(daysAhead), parseInt(threshold));
@@ -201,7 +202,7 @@ router.get('/ml/predict-critical', authMiddleware, async (req, res) => {
  *                 data:
  *                   $ref: '#/components/schemas/Anomaly'
  */
-router.get('/ml/anomalies/:containerId', authMiddleware, async (req, res) => {
+router.get('/ml/anomalies/:containerId', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { containerId } = req.params;
     const { threshold = 2 } = req.query;
@@ -241,7 +242,7 @@ router.get('/ml/anomalies/:containerId', authMiddleware, async (req, res) => {
  *                       items:
  *                         $ref: '#/components/schemas/DefectiveSensor'
  */
-router.get('/ml/defective-sensors', authMiddleware, async (req, res) => {
+router.get('/ml/defective-sensors', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const sensors = await AnomalyService.detectDefectiveSensors();
     res.json({ success: true, data: sensors });
@@ -295,7 +296,7 @@ router.get('/ml/defective-sensors', authMiddleware, async (req, res) => {
  *                     message:
  *                       type: string
  */
-router.post('/ml/anomalies/:containerId/alerts', authMiddleware, async (req, res) => {
+router.post('/ml/anomalies/:containerId/alerts', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { containerId } = req.params;
     const { threshold = 2, autoCreate = true } = req.query;

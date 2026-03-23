@@ -4,6 +4,7 @@ const AggregationController = require('../controllers/aggregationController');
 const authMiddleware = require('../middleware/authMiddleware');
 const ValidationMiddleware = require('../middleware/validationMiddleware');
 const { generalLimiter } = require('../middleware/rateLimitMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -32,7 +33,7 @@ const { generalLimiter } = require('../middleware/rateLimitMiddleware');
  *                 data:
  *                   type: object
  */
-router.get('/aggregations', AggregationController.getAggregations);
+router.get('/aggregations', authMiddleware, requirePermission('analytics:read'), AggregationController.getAggregations);
 
 /**
  * @swagger
@@ -44,7 +45,7 @@ router.get('/aggregations', AggregationController.getAggregations);
  *       200:
  *         description: Vues rafraîchies
  */
-router.post('/aggregations/refresh', AggregationController.refreshAggregations);
+router.post('/aggregations/refresh', authMiddleware, requirePermission('analytics:read'), AggregationController.refreshAggregations);
 
 /**
  * @swagger

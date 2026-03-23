@@ -9,6 +9,8 @@ import { unifiedSwaggerSpec, swaggerOptions } from './swagger-config.js';
 import { jwtValidationMiddleware } from './middleware/auth.js';
 import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
 import healthCheckService from './services/healthCheck.js';
+import centralizedLogging from './services/centralizedLogging.js';
+import cacheService from './services/cacheService.js';
 import client from 'prom-client';
 
 dotenv.config();
@@ -262,6 +264,176 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
+// =========================================================================
+// CENTRALIZED LOGGING API
+// =========================================================================
+
+// Actions disponibles
+const LOG_ACTIONS = [
+  'login', 'logout', 'register', 'password_change',
+  'create', 'update', 'delete', 'view',
+  'api_call', 'error', 'security', 'other'
+];
+
+// Endpoint pour que les services envoient leurs logs
+app.post('/api/logs', async (req, res) => {
+  try {
+    const { 
+      level = 'info', 
+      action = 'other',
+      service, 
+      message, 
+      metadata = {}, 
+      userId, 
+      traceId,
+      ipAddress,
+      userAgent
+    } = req.body;
+    
+    if (!service || !message) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: service, message' 
+      });
+    }
+
+    await centralizedLogging.log({
+      level,
+      action,
+      service,
+      message,
+      metadata,
+      userId,
+      traceId,
+      ipAddress: ipAddress || req.ip,
+      userAgent: userAgent || req.headers['user-agent']
+    });
+    
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to log');
+    res.status(500).json({ error: 'Failed to log' });
+  }
+});
+
+// Query logs with advanced filters
+app.get('/api/logs', async (req, res) => {
+  try {
+    const { 
+      service = 'all', 
+      level = 'all', 
+      action = 'all',
+      startDate, 
+      endDate, 
+      limit = 100, 
+      offset = 0,
+      search,
+      userId
+    } = req.query;
+    
+    const logs = await centralizedLogging.queryLogs({
+      service,
+      level,
+      action,
+      startDate,
+      endDate,
+      limit: parseInt(limit) || 100,
+      offset: parseInt(offset) || 0,
+      search,
+      userId
+    });
+    
+    res.json({ logs });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to query logs');
+    res.status(500).json({ error: 'Failed to query logs' });
+  }
+});
+
+// Get log summary
+app.get('/api/logs/summary', async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const summary = await centralizedLogging.getSummary(parseInt(days));
+    res.json({ summary });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to get summary');
+    res.status(500).json({ error: 'Failed to get summary' });
+  }
+});
+
+// Get log statistics
+app.get('/api/logs/stats', async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const stats = await centralizedLogging.getStats(parseInt(days));
+    res.json({ stats });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to get log stats');
+    res.status(500).json({ error: 'Failed to get log stats' });
+  }
+});
+
+// Get filter values (services, actions, levels)
+app.get('/api/logs/filters', async (req, res) => {
+  try {
+    const filters = await centralizedLogging.getFilterValues();
+    res.json({ filters });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to get filters');
+    res.status(500).json({ error: 'Failed to get filters' });
+  }
+});
+
+// Export logs
+app.get('/api/logs/export', async (req, res) => {
+  try {
+    const { 
+      service = 'all', 
+      level = 'all', 
+      action = 'all',
+      startDate, 
+      endDate, 
+      search,
+      userId,
+      format = 'json'
+    } = req.query;
+    
+    const data = await centralizedLogging.exportLogs({
+      service,
+      level,
+      action,
+      startDate,
+      endDate,
+      search,
+      userId,
+      format
+    });
+    
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=logs.csv');
+      res.send(data);
+    } else {
+      res.json({ logs: data, count: data.length });
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to export logs');
+    res.status(500).json({ error: 'Failed to export logs' });
+  }
+});
+
+// Cleanup old logs (admin only)
+app.delete('/api/logs/cleanup', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const deleted = await centralizedLogging.cleanup(parseInt(days));
+    res.json({ success: true, deleted });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to cleanup logs');
+    res.status(500).json({ error: 'Failed to cleanup logs' });
+  }
+});
+
 // Métriques consolidées pour le frontend
 app.get('/api/metrics/status', async (req, res) => {
   const axios = (await import('axios')).default;
@@ -409,6 +581,38 @@ app.get('/api-overview', (req, res) => {
   });
 });
 
+// Cache middleware for public GET requests
+const PUBLIC_CACHE_PATHS = ['/api/zones', '/api/typecontainers'];
+const CACHE_TTL_MAP = {
+  '/api/zones': 1800,
+  '/api/typecontainers': 1800,
+  '/api/containers': 300,
+  '/api/stats': 120
+};
+
+app.use(async (req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (!PUBLIC_CACHE_PATHS.some(p => req.path.startsWith(p))) return next();
+  
+  const cacheKey = `apigw:${req.path}:${JSON.stringify(req.query)}`;
+  const cached = await cacheService.get(cacheKey);
+  
+  if (cached) {
+    return res.set('X-Cache', 'HIT').json(cached);
+  }
+  
+  const originalJson = res.json.bind(res);
+  res.json = (data) => {
+    if (res.statusCode === 200 && data) {
+      const ttl = CACHE_TTL_MAP[req.path] || 300;
+      cacheService.set(cacheKey, data, ttl);
+    }
+    return originalJson(data);
+  };
+  
+  next();
+});
+
 app.use(errorLogger);
 
 app.use((err, req, res, next) => {
@@ -425,6 +629,20 @@ app.use((err, req, res, next) => {
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
+});
+
+// Initialize centralized logging
+centralizedLogging.connect().then(() => {
+  logger.info('Centralized logging initialized');
+}).catch(err => {
+  logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+});
+
+// Initialize cache service
+cacheService.connect().then(() => {
+  logger.info('Cache service initialized');
+}).catch(err => {
+  logger.warn({ err: err.message }, 'Cache service connection failed, continuing without');
 });
 
 const server = app.listen(gatewayPort, () => {

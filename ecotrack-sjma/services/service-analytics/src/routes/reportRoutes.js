@@ -4,6 +4,7 @@ const ReportController = require('../controllers/reportController');
 const authMiddleware = require('../middleware/authMiddleware');
 const ValidationMiddleware = require('../middleware/validationMiddleware');
 const { reportLimiter } = require('../middleware/rateLimitMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -61,7 +62,7 @@ const { reportLimiter } = require('../middleware/rateLimitMiddleware');
  *       401:
  *         description: Non autorisé
  */
-router.post('/reports/generate', authMiddleware, reportLimiter, ValidationMiddleware.validateReportRequest(), ReportController.generateReport);
+router.post('/reports/generate', authMiddleware, requirePermission('analytics:read'), reportLimiter, ValidationMiddleware.validateReportRequest(), ReportController.generateReport);
 
 /**
  * @swagger
@@ -95,7 +96,7 @@ router.post('/reports/generate', authMiddleware, reportLimiter, ValidationMiddle
  *       404:
  *         description: Rapport non trouvé
  */
-router.get('/reports/download/:filename', authMiddleware, ReportController.downloadReport);
+router.get('/reports/download/:filename', authMiddleware, requirePermission('analytics:read'), ReportController.downloadReport);
 
 /**
  * @swagger
@@ -126,7 +127,7 @@ router.get('/reports/download/:filename', authMiddleware, ReportController.downl
  *       200:
  *         description: Rapport généré
  */
-router.post('/reports/environmental', authMiddleware, ReportController.generateEnvironmentalReport);
+router.post('/reports/environmental', authMiddleware, requirePermission('analytics:read'), ReportController.generateEnvironmentalReport);
 
 /**
  * @swagger
@@ -157,6 +158,6 @@ router.post('/reports/environmental', authMiddleware, ReportController.generateE
  *       200:
  *         description: Rapport généré
  */
-router.post('/reports/routes-performance', authMiddleware, ReportController.generateRoutesPerformanceReport);
+router.post('/reports/routes-performance', authMiddleware, requirePermission('analytics:read'), ReportController.generateRoutesPerformanceReport);
 
 module.exports = router;

@@ -7,6 +7,7 @@ const http = require('http');
 require('dotenv').config();
 const logger = require('./src/utils/logger');
 const client = require('prom-client');
+const cacheService = require('./src/services/cacheService');
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -201,6 +202,14 @@ app.use(errorHandler);
 
 // ========== DÉMARRAGE DU SERVEUR ==========
 const port = config.PORT;
+
+// Initialize Redis cache
+cacheService.connect().then(() => {
+  logger.info('Redis cache initialized');
+}).catch(err => {
+  logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
+});
+
 server.listen(port, () => {
   logger.info({ port }, 'EcoTrack Containers API ready');
   logger.info({ url: `http://localhost:${port}/api` }, 'API base URL');

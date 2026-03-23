@@ -8,15 +8,19 @@ import morgan from 'morgan';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
+import adminConfigRoutes from './routes/admin-config.js';
+import adminEnvironmentalConstantsRoutes from './routes/admin-environmental-constants.js';
+import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { publicLimiter } from './config/rateLimit.js';
 import pool, { ensureAuthTables } from './config/database.js';
 import path from 'path';
-import env from './config/env.js';
+import env, { loadDbConfig } from './config/env.js';
 import { validateEnv } from './config/env.js';
 import helmet from 'helmet';
 import logger from './utils/logger.js';
 import client from 'prom-client';
+import cacheService from './services/cacheService.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -49,6 +53,16 @@ if (env.nodeEnv !== 'test') {
 if (env.nodeEnv !== 'test') {
   // Ensure minimal auth tables + sequences exist before serving requests.
   await ensureAuthTables();
+}
+
+// Initialize Redis cache
+if (env.nodeEnv !== 'test') {
+  await cacheService.connect();
+}
+
+// Load configurations from database
+if (env.nodeEnv !== 'test') {
+  await loadDbConfig();
 }
 
 app.use(helmet({
@@ -106,6 +120,9 @@ app.use('/auth', publicLimiter, authRoutes);
 app.use('/users', userRoutes);
 app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
+app.use('/admin/config', adminConfigRoutes);
+app.use('/admin/environmental-constants', adminEnvironmentalConstantsRoutes);
+app.use('/admin/agent-performance', adminAgentPerformanceRoutes);
 app.use('/notifications', notificationRoutes);
 
 // Servir les avatars en tant que fichiers statiques
@@ -130,6 +147,7 @@ const server = app.listen(env.port, () => {
 process.on('SIGINT', async () => {
   logger.info('Shutting down service users');
   await pool.end();
+  await cacheService.close();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);

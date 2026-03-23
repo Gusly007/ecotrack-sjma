@@ -1,0 +1,25 @@
+const AGENT_PERFORMANCE_CONSTANTS = {
+  WEIGHTS: {
+    COLLECTION_RATE: 0.4,
+    COMPLETION_RATE: 0.3,
+    TIME_EFFICIENCY: 0.15,
+    DISTANCE_EFFICIENCY: 0.15
+  }
+};
+
+export default AGENT_PERFORMANCE_CONSTANTS;
+
+export const calculateGlobalScore = (collectionRate, completionRate, timeEfficiency, distanceEfficiency) => {
+  return (
+    collectionRate * AGENT_PERFORMANCE_CONSTANTS.WEIGHTS.COLLECTION_RATE +
+    completionRate * AGENT_PERFORMANCE_CONSTANTS.WEIGHTS.COMPLETION_RATE +
+    timeEfficiency * AGENT_PERFORMANCE_CONSTANTS.WEIGHTS.TIME_EFFICIENCY +
+    distanceEfficiency * AGENT_PERFORMANCE_CONSTANTS.WEIGHTS.DISTANCE_EFFICIENCY
+  );
+};
+
+export const validateWeightsSum = () => {
+  const { COLLECTION_RATE, COMPLETION_RATE, TIME_EFFICIENCY, DISTANCE_EFFICIENCY } = AGENT_PERFORMANCE_CONSTANTS.WEIGHTS;
+  const sum = COLLECTION_RATE + COMPLETION_RATE + TIME_EFFICIENCY + DISTANCE_EFFICIENCY;
+  return Math.abs(sum - 1.0) < 0.001;
+};

@@ -1,6 +1,6 @@
-// Repository: accès aux refresh tokens utilisateur
 import pool from '../config/database.js';
 import { hashToken } from '../utils/crypto.js';
+import env from '../config/env.js';
 
 export const SessionRepository = {
   async storeRefreshToken(userId, token) {
@@ -12,9 +12,10 @@ export const SessionRepository = {
   },
   async validateRefreshToken(userId, token) {
     const tokenHash = hashToken(token);
+    const expirationHours = env.session.tokenExpirationHours;
     const result = await pool.query(
-      'SELECT id FROM refresh_tokens WHERE user_id = $1 AND token = $2 AND created_at > NOW() - INTERVAL \'7 days\'',
-      [userId, tokenHash]
+      'SELECT id FROM refresh_tokens WHERE user_id = $1 AND token = $2 AND created_at > NOW() - ($3 || \' hours\')::interval',
+      [userId, tokenHash, expirationHours]
     );
     return result.rows.length > 0;
   },
@@ -32,9 +33,10 @@ export const SessionRepository = {
     );
   },
   async limitConcurrentSessions(userId, maxSessions = 3) {
+    const expirationHours = env.session.tokenExpirationHours;
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1 AND created_at > NOW() - INTERVAL \'7 days\'',
-      [userId]
+      'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1 AND created_at > NOW() - ($2 || \' hours\')::interval',
+      [userId, expirationHours]
     );
     const count = parseInt(result?.rows?.[0]?.count ?? '0', 10);
     if (count >= maxSessions) {

@@ -6,6 +6,8 @@ const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 const logger = require('./src/utils/logger');
 const client = require('prom-client');
+const cacheService = require('./src/services/cacheService');
+const centralizedLogging = require('./src/services/centralizedLogging');
 
 // ========== PROMETHEUS METRICS ==========
 const register = new client.Registry();
@@ -189,6 +191,14 @@ async function startServer() {
     return;
   }
 
+  // Initialize Redis cache
+  try {
+    await cacheService.connect();
+    logger.info('Redis cache connected');
+  } catch (err) {
+    logger.warn({ error: err.message }, 'Redis cache connection failed, continuing without');
+  }
+
   // Start MQTT Broker
   try {
     await di.mqttBroker.start();
@@ -207,12 +217,29 @@ async function startServer() {
   }, 60 * 60 * 1000);
 
   // Start HTTP server
-  app.listen(config.PORT, () => {
+  const server = app.listen(config.PORT, () => {
     logger.info({
       port: config.PORT,
       mqttPort: config.MQTT.port,
       env: config.NODE_ENV
     }, `Service IoT started on port ${config.PORT}`);
+  });
+
+  // Initialize centralized logging
+  centralizedLogging.connect().then(() => {
+    logger.info('Centralized logging initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+  });
+
+  // Graceful shutdown
+  process.on('SIGINT', async () => {
+    logger.info('Shutting down service IoT');
+    await cacheService.close();
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
   });
 }
 

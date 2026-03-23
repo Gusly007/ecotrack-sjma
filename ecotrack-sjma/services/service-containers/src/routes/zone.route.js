@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { zoneController } = require('../container-di.js');
+const { requirePermission } = require('../middleware/rbac');
 
 // ========== CRUD de base ==========
 
@@ -61,7 +62,7 @@ const { zoneController } = require('../container-di.js');
  *       500:
  *         description: Erreur serveur
  */
-router.post('/zones', zoneController.create);
+router.post('/zones', requirePermission('zone:create'), zoneController.create);
 
 // GET - Récupérer toutes les zones avec pagination
 /**
@@ -91,7 +92,7 @@ router.post('/zones', zoneController.create);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones', zoneController.getAll);
+router.get('/zones', requirePermission('zone:read'), zoneController.getAll);
 
 // GET - Compter les zones (doit être avant /zones/:id pour éviter la capture par :id)
 /**
@@ -114,7 +115,7 @@ router.get('/zones', zoneController.getAll);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/count', zoneController.count);
+router.get('/zones/count', requirePermission('zone:read'), zoneController.count);
 
 // GET - Récupérer une zone par son code (doit être avant /zones/:id)
 /**
@@ -141,7 +142,7 @@ router.get('/zones/count', zoneController.count);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/code/:code', zoneController.getByCode);
+router.get('/zones/code/:code', requirePermission('zone:read'), zoneController.getByCode);
 
 // GET - Récupérer une zone par ID
 /**
@@ -168,7 +169,7 @@ router.get('/zones/code/:code', zoneController.getByCode);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/:id', zoneController.getById);
+router.get('/zones/:id', requirePermission('zone:read'), zoneController.getById);
 
 // PATCH - Mettre à jour une zone
 /**
@@ -224,7 +225,7 @@ router.get('/zones/:id', zoneController.getById);
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/zones/:id', zoneController.update);
+router.patch('/zones/:id', requirePermission('zone:update'), zoneController.update);
 
 // DELETE - Supprimer une zone
 /**
@@ -251,7 +252,7 @@ router.patch('/zones/:id', zoneController.update);
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/zones/:id', zoneController.delete);
+router.delete('/zones/:id', requirePermission('zone:delete'), zoneController.delete);
 
 // DELETE - Supprimer toutes les zones
 /**
@@ -268,7 +269,7 @@ router.delete('/zones/:id', zoneController.delete);
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/zones', zoneController.deleteAll);
+router.delete('/zones', requirePermission('zone:delete'), zoneController.deleteAll);
 
 // ========== Recherche et filtres ==========
 
@@ -296,7 +297,7 @@ router.delete('/zones', zoneController.deleteAll);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/search', zoneController.searchByName);
+router.get('/zones/search', requirePermission('zone:read'), zoneController.searchByName);
 
 // GET - Rechercher les zones dans un rayon
 /**
@@ -337,32 +338,9 @@ router.get('/zones/search', zoneController.searchByName);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/radius', zoneController.getInRadius);
+router.get('/zones/radius', requirePermission('zone:read'), zoneController.getInRadius);
 
 // ========== Statistiques et vérifications ==========
-
-// GET - Compter les zones
-/**
- * @swagger
- * /zones/count:
- *   get:
- *     summary: Compte le nombre total de zones
- *     tags:
- *       - Statistiques
- *     responses:
- *       200:
- *         description: Nombre de zones
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 count:
- *                   type: integer
- *       500:
- *         description: Erreur serveur
- */
-router.get('/zones/count', zoneController.count);
 
 // GET - Récupérer les statistiques globales des zones
 /**
@@ -398,7 +376,7 @@ router.get('/zones/count', zoneController.count);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/stats/global', zoneController.getStatistics);
+router.get('/zones/stats/global', requirePermission('zone:read'), zoneController.getStatistics);
 
 // GET - Vérifier si une zone existe par ID
 /**
@@ -428,7 +406,7 @@ router.get('/zones/stats/global', zoneController.getStatistics);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/check/exists/:id', zoneController.exists);
+router.get('/zones/check/exists/:id', requirePermission('zone:read'), zoneController.exists);
 
 // GET - Vérifier si un code de zone existe
 /**
@@ -458,6 +436,6 @@ router.get('/zones/check/exists/:id', zoneController.exists);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/check/code/:code', zoneController.codeExists);
+router.get('/zones/check/code/:code', requirePermission('zone:read'), zoneController.codeExists);
 
 module.exports = router;

@@ -6,6 +6,9 @@ import {
   creerParticipationHandler,
   mettreAJourProgressionHandler
 } from '../controllers/defisController.js';
+import { validateQuery } from '../middleware/validation.js';
+import { defisQuerySchema } from '../validators/schemas.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -15,9 +18,29 @@ const router = Router();
  *   get:
  *     summary: Liste des défis
  *     tags: [Défis]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: statut
+ *         schema:
+ *           type: string
+ *           enum: [ACTIF, TERMINE, TOUS]
+ *       - in: query
+ *         name: type_defi
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Liste des défis
+ *         description: Liste des défis paginée
  *   post:
  *     summary: Créer un défi
  *     tags: [Défis]
@@ -47,9 +70,12 @@ const router = Router();
  *               - objectif
  *               - date_debut
  *               - date_fin
+ *     responses:
+ *       201:
+ *         description: Défi créé
  */
-router.get('/', listerDefisHandler);
-router.post('/', creerDefiHandler);
+router.get('/', requirePermission('defis:read'), listerDefisHandler);
+router.post('/', requirePermission('defis:create'), creerDefiHandler);
 
 /**
  * @swagger
@@ -76,7 +102,7 @@ router.post('/', creerDefiHandler);
  *       201:
  *         description: Participation créée
  */
-router.post('/:idDefi/participations', creerParticipationHandler);
+router.post('/:idDefi/participations', requirePermission('defis:read'), creerParticipationHandler);
 
 /**
  * @swagger
@@ -110,6 +136,6 @@ router.post('/:idDefi/participations', creerParticipationHandler);
  *       200:
  *         description: Progression mise à jour
  */
-router.patch('/:idDefi/participations/:idUtilisateur', mettreAJourProgressionHandler);
+router.patch('/:idDefi/participations/:idUtilisateur', requirePermission('defis:update'), mettreAJourProgressionHandler);
 
 export default router;
