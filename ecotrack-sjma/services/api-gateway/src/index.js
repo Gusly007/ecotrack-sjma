@@ -10,6 +10,7 @@ import { jwtValidationMiddleware } from './middleware/auth.js';
 import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
 import healthCheckService from './services/healthCheck.js';
 import centralizedLogging from './services/centralizedLogging.js';
+import cacheService from './services/cacheService.js';
 import client from 'prom-client';
 
 dotenv.config();
@@ -580,6 +581,38 @@ app.get('/api-overview', (req, res) => {
   });
 });
 
+// Cache middleware for public GET requests
+const PUBLIC_CACHE_PATHS = ['/api/zones', '/api/typecontainers'];
+const CACHE_TTL_MAP = {
+  '/api/zones': 1800,
+  '/api/typecontainers': 1800,
+  '/api/containers': 300,
+  '/api/stats': 120
+};
+
+app.use(async (req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (!PUBLIC_CACHE_PATHS.some(p => req.path.startsWith(p))) return next();
+  
+  const cacheKey = `apigw:${req.path}:${JSON.stringify(req.query)}`;
+  const cached = await cacheService.get(cacheKey);
+  
+  if (cached) {
+    return res.set('X-Cache', 'HIT').json(cached);
+  }
+  
+  const originalJson = res.json.bind(res);
+  res.json = (data) => {
+    if (res.statusCode === 200 && data) {
+      const ttl = CACHE_TTL_MAP[req.path] || 300;
+      cacheService.set(cacheKey, data, ttl);
+    }
+    return originalJson(data);
+  };
+  
+  next();
+});
+
 app.use(errorLogger);
 
 app.use((err, req, res, next) => {
@@ -603,6 +636,13 @@ centralizedLogging.connect().then(() => {
   logger.info('Centralized logging initialized');
 }).catch(err => {
   logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+});
+
+// Initialize cache service
+cacheService.connect().then(() => {
+  logger.info('Cache service initialized');
+}).catch(err => {
+  logger.warn({ err: err.message }, 'Cache service connection failed, continuing without');
 });
 
 const server = app.listen(gatewayPort, () => {

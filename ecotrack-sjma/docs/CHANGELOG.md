@@ -4,6 +4,62 @@
 
 ---
 
+### [3.5.5] 2026-03 - Centralized Logging & Cache API Gateway
+
+#### Centralized Logging
+
+Système de logs centralisé vers table `centralized_logs` en base PostgreSQL.
+
+| Service | Fichier |
+|---------|---------|
+| API Gateway | `src/services/centralizedLogging.js` |
+| service-analytics | `src/services/centralizedLogging.js` |
+| service-gamifications | `src/services/centralizedLogging.js` |
+| service-iot | `src/services/centralizedLogging.js` |
+
+#### Cache Redis (API Gateway)
+
+Cache au niveau API Gateway pour données de référence.
+
+| Endpoint | TTL | Clé |
+|----------|-----|-----|
+| `GET /api/zones` | 30 min | `apigw:/api/zones` |
+| `GET /api/typecontainers` | 30 min | `apigw:/api/typecontainers` |
+| `GET /api/containers` | 5 min | `apigw:/api/containers` |
+| `GET /api/stats` | 2 min | `apigw:/api/stats` |
+
+#### Cache Redis (Documentation)
+
+| Service | Fichier |
+|---------|---------|
+| service-analytics | `docs/CACHE.md` |
+| service-gamifications | `docs/CACHE.md` |
+| service-iot | `docs/CACHE_IOT.md` |
+| API Gateway | `docs/CACHE.md` |
+
+#### Rate Limiting (API Gateway)
+
+Limiteur global appliqué à toutes les requêtes.
+
+| Variable | Défaut | Description |
+|----------|--------|-------------|
+| `GATEWAY_RATE_WINDOW_MS` | 60000 | Fenêtre (1 min) |
+| `GATEWAY_RATE_MAX` | 100 | Requêtes max |
+
+#### Response Headers
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 76
+RateLimit-Reset: 56
+```
+
+#### Corrections
+
+- `service-iot`: cacheService.js déplacé vers `src/services/`
+- Imports corrigés dans `index.js` et `iot-controller.js`
+
+---
+
 ### [3.5.4] 2026-03 - Pagination & Cache IoT
 
 #### Pagination (service-gamifications)

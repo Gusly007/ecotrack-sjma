@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 const client = require('prom-client');
 const { generalLimiter, reportLimiter, mlLimiter } = require('./middleware/rateLimitMiddleware');
 const { errorHandler } = require('./middleware/errorHandler');
+const centralizedLogging = require('./services/centralizedLogging');
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -152,5 +153,11 @@ app.use('/api/metrics', metricsRoutes);
 const mlRoutes = require('./routes/mlRoutes');
 app.use('/api/analytics', mlRoutes);
 
+// Initialize centralized logging
+centralizedLogging.connect().then(() => {
+  logger.info('Centralized logging initialized');
+}).catch(err => {
+  logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+});
 
 module.exports = app;

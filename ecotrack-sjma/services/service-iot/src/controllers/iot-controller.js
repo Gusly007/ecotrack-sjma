@@ -2,7 +2,7 @@
  * Contrôleur IoT - Endpoints REST pour les mesures, capteurs et alertes
  */
 const ApiResponse = require('../utils/api-response');
-const cacheService = require('../../cacheService');
+const cacheService = require('../services/cacheService');
 
 const CACHE_TTL = {
   LATEST_MEASUREMENTS: 30,

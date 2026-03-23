@@ -6,7 +6,8 @@ const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 const logger = require('./src/utils/logger');
 const client = require('prom-client');
-const cacheService = require('./cacheService');
+const cacheService = require('./src/services/cacheService');
+const centralizedLogging = require('./src/services/centralizedLogging');
 
 // ========== PROMETHEUS METRICS ==========
 const register = new client.Registry();
@@ -222,6 +223,13 @@ async function startServer() {
       mqttPort: config.MQTT.port,
       env: config.NODE_ENV
     }, `Service IoT started on port ${config.PORT}`);
+  });
+
+  // Initialize centralized logging
+  centralizedLogging.connect().then(() => {
+    logger.info('Centralized logging initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
   });
 
   // Graceful shutdown

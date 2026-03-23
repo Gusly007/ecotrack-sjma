@@ -695,7 +695,19 @@ curl http://localhost:9090/api/v1/alerts | jq
 
 # 🗄️ Redis Caching - Services Existants
 
-> Redis est disponible dans docker-compose (port 6379) mais **non utilisé** par les services.
+> Redis est disponible dans docker-compose (port 6379).
+
+## Status d'Implémentation
+
+| Service | Status Cache | Implémenté |
+|---------|-------------|-------------|
+| **service-users** | ✅ CacheService existant | Roles, permissions, profiles |
+| **service-containers** | ✅ CacheService existant | Conteneurs, zones |
+| **service-routes** | ✅ CacheService existant | Tournées, zones, véhicules |
+| **service-iot** | ✅ **Complet** | measurements/latest, stats |
+| **service-gamifications** | ✅ CacheService existant | Leaderboard, points, badges |
+| **service-analytics** | ⚠️ Partial | ML predictions |
+| **API Gateway** | ❌ Non implémenté | - |
 
 ## Infrastructure Redis
 
@@ -771,14 +783,14 @@ vehicule:available     - Véhicules dispo
 route:optimized:{id}   - Itinéraire calculé
 ```
 
-### 4. service-iot (port 3013)
+### 4. service-iot (port 3013) - ✅ COMPLÉTÉ
 
-| Donnée à cacher | Stratégie | TTL | Priorité |
-|-----------------|-----------|-----|----------|
-| Dernières mesures | Write-behind | 30s | **Haute** |
-| Capteurs actifs | TTL fixe | 5 min | Haute |
-| Statistiques conteneur | Cache-Aside | 5 min | Moyenne |
-| Alertes actives | TTL fixe | 1 min | Haute |
+| Donnée à cacher | Stratégie | TTL | Priorité | Status |
+|-----------------|-----------|-----|----------|--------|
+| Dernières mesures | Write-behind | 30s | **Haute** | ✅ |
+| Capteurs actifs | TTL fixe | 5 min | Haute | ✅ |
+| Statistiques conteneur | Cache-Aside | 5 min | Moyenne | ✅ |
+| Alertes actives | TTL fixe | 1 min | Haute | ✅ |
 
 **Clés recommandées** :
 ```
@@ -788,14 +800,14 @@ iot:stats:{containerId}          - Stats conteneur
 iot:alerts:active                - Alertes actives
 ```
 
-### 5. service-gamifications (port 3014)
+### 5. service-gamifications (port 3014) - ✅ COMPLÉTÉ
 
-| Donnée à cacher | Stratégie | TTL | Priorité |
-|-----------------|-----------|-----|----------|
-| Classement users | Cache-Aside | 5 min | **Haute** |
-| Badges disponibles | TTL fixe | 1h | Basse |
-| Points utilisateur | Write-through | 10 min | Haute |
-| Défis actifs | Cache-Aside | 5 min | Moyenne |
+| Donnée à cacher | Stratégie | TTL | Priorité | Status |
+|-----------------|-----------|-----|----------|--------|
+| Classement users | Cache-Aside | 5 min | **Haute** | ✅ |
+| Badges disponibles | TTL fixe | 1h | Basse | ✅ |
+| Points utilisateur | Write-through | 10 min | Haute | ✅ |
+| Défis actifs | Cache-Aside | 5 min | Moyenne | ✅ |
 
 **Clés recommandées** :
 ```
@@ -1003,11 +1015,13 @@ router.put('/users/:id', async (req, res) => {
 | **Input Validation** | Zod ✅ | Joi ✅ | Joi ✅ | Joi ✅ | Zod ✅ | Delegated ✅ |
 | **Error Handling** | Centralisé ✅ | Centralisé ✅ | ✅ | ✅ Centralisé | ✅ Centralisé | ✅ |
 | **Logging (Pino)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Caching (Redis)** | ✅ | ✅ | ✅ Complet | ⚠️ Partial | ✅ | ❌ |
-| **Rate Limiting** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+
+| **Caching (Redis)** | ✅ | ✅ | ✅ Complet | ✅ Partial | ✅ | ✅ |
+| **Rate Limiting** | ✅ | ✅ Complet | ✅ | ✅ | ✅ | ✅ |
+| **Centralized Logging** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Authentication** | JWT ✅ | ❌* | ❌* | JWT ✅ | ❌ | JWT ✅ |
 | **Authorization (RBAC)** | ✅ | ❌* | ❌* | ❌ | ❌ | Role ✅ |
-| **Pagination** | ✅ | ✅ | ✅ | ⚠️ Partial | ✅ Complet | Delegated ✅ |
+| **Pagination** | ✅ | ✅ | ✅ | ✅ ML endpoints | ✅ Complet | ✅ |
 | **DB Optimization** | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | N/A |
 | **Unit Tests** | ✅ | ✅ | ✅ | ⚠️ Integration | ✅ | ⚠️ Partial |
 
@@ -1031,9 +1045,8 @@ router.put('/users/:id', async (req, res) => {
 
 | Service | Problème | Status |
 |---------|----------|--------|
-| **API Gateway** | Cache global | ❌ |
-| **API Gateway** | Rate limiting | ❌ |
 | **service-analytics** | Unit tests | ⚠️ Integration only |
+| **service-gamifications** | Unit tests | ⚠️ ES modules workaround |
 
 ---
 
@@ -1041,8 +1054,12 @@ router.put('/users/:id', async (req, res) => {
 
 1. ✅ **Error handling centralisé** - service-analytics, service-gamifications
 2. ✅ **Rate limiting** - service-routes
-3. **Auth/RBAC** - service-analytics (RBAC)
-4. ✅ **Cache Redis** - service-iot (complété)
-5. ✅ **Pagination uniforme** - service-gamifications
-6. **DB optimization** - Indexes, EXPLAIN
+3. ✅ **Pagination uniforme** - service-gamifications (defis, badges, notifications)
+4. ✅ **Pagination ML endpoints** - service-analytics (ml/predict-critical, ml/anomalies, ml/defective-sensors)
+5. ✅ **Cache Redis** - service-iot (measurements/latest, stats)
+6. ✅ **Cache Redis** - service-users, service-routes, service-containers, service-gamifications
+7. ✅ **Cache Redis** - API Gateway (zones, containers, stats)
+8. ✅ **Centralized Logging** - API Gateway, service-analytics, service-gamifications, service-iot
+9. **Auth/RBAC** - service-analytics (RBAC)
+10. **DB optimization** - Indexes proposal ready (voir database/DB_OPTIMIZATION_PROPOSAL.md)
 

@@ -18,6 +18,7 @@ import statsRoutes from './routes/stats.js';
 import logger from './utils/logger.js';
 import client from 'prom-client';
 import { errorHandler } from './middleware/errorHandler.js';
+import centralizedLogging from './services/centralizedLogging.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -118,6 +119,13 @@ let server;
 if (env.nodeEnv !== 'test') {
   server = app.listen(env.port, () => {
     logger.info({ port: env.port }, 'Service gamification ready');
+  });
+
+  // Initialize centralized logging
+  centralizedLogging.connect().then(() => {
+    logger.info('Centralized logging initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
   });
 
   process.on('SIGINT', async () => {

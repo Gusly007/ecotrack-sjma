@@ -16,3 +16,6 @@ infra/terraform/
 
 # Task Analysis
 TASK_ANALYSIS.md
+
+# DB Optimization (local notes)
+database/DB_OPTIMIZATION_PROPOSAL.md
