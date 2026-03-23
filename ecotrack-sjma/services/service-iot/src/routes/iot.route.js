@@ -14,8 +14,8 @@
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
 const { validate, validateQuery, validateParamId, simulateSchema, alertUpdateSchema, paginationSchema, containerQuerySchema } = require('../validators/iot.validator');
+const { requirePermission } = require('../middleware/rbac');
 
-// Rate limiter pour les routes d'administration (10 req/min)
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -31,14 +31,11 @@ const adminLimiter = rateLimit({
   }
 });
 
-// Le contrôleur est injecté via le DI container
 let controller;
 
 function setController(ctrl) {
   controller = ctrl;
 }
-
-// ========== MESURES ==========
 
 /**
  * @swagger
@@ -69,50 +66,42 @@ function setController(ctrl) {
  *       200:
  *         description: Liste des mesures avec pagination
  */
-router.get('/iot/measurements', validateQuery(paginationSchema), (req, res, next) => controller.getMeasurements(req, res, next));
+router.get('/iot/measurements', requirePermission('iot:read'), validateQuery(paginationSchema), (req, res, next) => controller.getMeasurements(req, res, next));
 
 /**
  * @swagger
  * /iot/measurements/latest:
  *   get:
- *     summary: Dernière mesure de chaque conteneur
+ *     summary: Dernières mesures de chaque conteneur
  *     tags: [Mesures]
  *     responses:
  *       200:
- *         description: Dernières mesures par conteneur
+ *         description: Dernières mesures
  */
-router.get('/iot/measurements/latest', (req, res, next) => controller.getLatestMeasurements(req, res, next));
+router.get('/iot/measurements/latest', requirePermission('iot:read'), (req, res, next) => controller.getLatestMeasurements(req, res, next));
 
 /**
  * @swagger
  * /iot/measurements/container/{id}:
  *   get:
- *     summary: Mesures d'un conteneur spécifique
+ *     summary: Mesures d'un conteneur
  *     tags: [Mesures]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: integer }
- *         description: ID du conteneur
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 100 }
  *     responses:
  *       200:
  *         description: Mesures du conteneur
- *       404:
- *         description: Aucune mesure trouvée
  */
-router.get('/iot/measurements/container/:id', validateParamId, validateQuery(containerQuerySchema), (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
-
-// ========== CAPTEURS ==========
+router.get('/iot/measurements/container/:id', requirePermission('iot:read'), validateParamId, validateQuery(containerQuerySchema), (req, res, next) => controller.getMeasurementsByContainer(req, res, next));
 
 /**
  * @swagger
  * /iot/sensors:
  *   get:
- *     summary: Liste des capteurs avec leur dernière mesure
+ *     summary: Liste des capteurs
  *     tags: [Capteurs]
  *     parameters:
  *       - in: query
@@ -123,9 +112,9 @@ router.get('/iot/measurements/container/:id', validateParamId, validateQuery(con
  *         schema: { type: integer, default: 50 }
  *     responses:
  *       200:
- *         description: Liste des capteurs avec pagination
+ *         description: Liste des capteurs
  */
-router.get('/iot/sensors', validateQuery(paginationSchema), (req, res, next) => controller.getSensors(req, res, next));
+router.get('/iot/sensors', requirePermission('iot:read'), validateQuery(paginationSchema), (req, res, next) => controller.getSensors(req, res, next));
 
 /**
  * @swagger
@@ -144,15 +133,13 @@ router.get('/iot/sensors', validateQuery(paginationSchema), (req, res, next) => 
  *       404:
  *         description: Capteur non trouvé
  */
-router.get('/iot/sensors/:id', validateParamId, (req, res, next) => controller.getSensorById(req, res, next));
-
-// ========== ALERTES ==========
+router.get('/iot/sensors/:id', requirePermission('iot:read'), validateParamId, (req, res, next) => controller.getSensorById(req, res, next));
 
 /**
  * @swagger
  * /iot/alerts:
  *   get:
- *     summary: Liste des alertes avec filtres
+ *     summary: Liste des alertes
  *     tags: [Alertes]
  *     parameters:
  *       - in: query
@@ -163,24 +150,18 @@ router.get('/iot/sensors/:id', validateParamId, (req, res, next) => controller.g
  *         schema: { type: integer, default: 50 }
  *       - in: query
  *         name: statut
- *         schema: { type: string, enum: [ACTIVE, RESOLUE, IGNOREE] }
- *       - in: query
- *         name: type_alerte
- *         schema: { type: string, enum: [DEBORDEMENT, BATTERIE_FAIBLE, CAPTEUR_DEFAILLANT] }
- *       - in: query
- *         name: id_conteneur
- *         schema: { type: integer }
+ *         schema: { type: string, enum: [ACTIVE, RESOLUE, TOUTES] }
  *     responses:
  *       200:
- *         description: Liste des alertes avec pagination
+ *         description: Liste des alertes
  */
-router.get('/iot/alerts', validateQuery(paginationSchema), (req, res, next) => controller.getAlerts(req, res, next));
+router.get('/iot/alerts', requirePermission('iot:read'), validateQuery(paginationSchema), (req, res, next) => controller.getAlerts(req, res, next));
 
 /**
  * @swagger
  * /iot/alerts/{id}:
  *   patch:
- *     summary: Mettre à jour le statut d'une alerte (résoudre/ignorer)
+ *     summary: Mettre à jour le statut d'une alerte
  *     tags: [Alertes]
  *     parameters:
  *       - in: path
@@ -193,78 +174,27 @@ router.get('/iot/alerts', validateQuery(paginationSchema), (req, res, next) => c
  *         application/json:
  *           schema:
  *             type: object
- *             required: [statut]
  *             properties:
  *               statut:
  *                 type: string
- *                 enum: [RESOLUE, IGNOREE]
+ *                 enum: [ACTIVE, RESOLUE]
  *     responses:
  *       200:
  *         description: Alerte mise à jour
- *       404:
- *         description: Alerte non trouvée
- *       400:
- *         description: Alerte déjà traitée
  */
-router.patch('/iot/alerts/:id', validateParamId, validate(alertUpdateSchema), (req, res, next) => controller.updateAlertStatus(req, res, next));
-
-// ========== ADMINISTRATION ==========
-
-/**
- * @swagger
- * /iot/simulate:
- *   post:
- *     summary: Simuler l'envoi de données capteur (pour tests)
- *     tags: [IoT]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [uid_capteur, fill_level, battery]
- *             properties:
- *               uid_capteur:
- *                 type: string
- *                 example: "CAP-001"
- *               fill_level:
- *                 type: number
- *                 example: 85.5
- *               battery:
- *                 type: number
- *                 example: 92.0
- *               temperature:
- *                 type: number
- *                 example: 22.3
- *     responses:
- *       201:
- *         description: Données simulées traitées
- */
-router.post('/iot/simulate', adminLimiter, validate(simulateSchema), (req, res, next) => controller.simulate(req, res, next));
-
-/**
- * @swagger
- * /iot/check-silent:
- *   post:
- *     summary: Vérifier les capteurs silencieux
- *     tags: [IoT]
- *     responses:
- *       200:
- *         description: Résultat de la vérification
- */
-router.post('/iot/check-silent', adminLimiter, (req, res, next) => controller.checkSilentSensors(req, res, next));
+router.patch('/iot/alerts/:id', requirePermission('iot:update'), validateParamId, validate(alertUpdateSchema), (req, res, next) => controller.updateAlertStatus(req, res, next));
 
 /**
  * @swagger
  * /iot/stats:
  *   get:
- *     summary: Statistiques globales du service IoT
+ *     summary: Statistiques IoT
  *     tags: [IoT]
  *     responses:
  *       200:
- *         description: Statistiques mesures, alertes et MQTT
+ *         description: Statistiques globales
  */
-router.get('/iot/stats', (req, res, next) => controller.getStats(req, res, next));
+router.get('/iot/stats', requirePermission('iot:read'), (req, res, next) => controller.getStats(req, res, next));
 
 module.exports = router;
 module.exports.setController = setController;

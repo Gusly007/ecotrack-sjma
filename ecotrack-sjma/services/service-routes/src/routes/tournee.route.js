@@ -1,5 +1,3 @@
-const router = require('express').Router();
-
 /**
  * @swagger
  * tags:
@@ -10,6 +8,9 @@ const router = require('express').Router();
  *   - name: Optimisation
  *     description: Optimisation des routes de collecte
  */
+
+const router = require('express').Router();
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -42,22 +43,39 @@ const router = require('express').Router();
  *     responses:
  *       200:
  *         description: Liste des tournées
- *       500:
- *         description: Erreur serveur
+ *   post:
+ *     summary: Crée une nouvelle tournée
+ *     tags: [Tournées]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [date_tournee, duree_prevue_min, id_zone, id_agent]
+ *             properties:
+ *               date_tournee: { type: string, format: date }
+ *               statut: { type: string, enum: [PLANIFIEE, EN_COURS, TERMINEE, ANNULEE] }
+ *               distance_prevue_km: { type: number }
+ *               duree_prevue_min: { type: integer }
+ *               id_vehicule: { type: integer }
+ *               id_zone: { type: integer }
+ *               id_agent: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Tournée créée
  */
-router.get('/tournees', (req, res, next) => req.controllers.tournee.getAll(req, res, next));
 
 /**
  * @swagger
  * /routes/tournees/active:
  *   get:
- *     summary: Liste les tournées actives (EN_COURS)
+ *     summary: Liste des tournées actives
  *     tags: [Tournées]
  *     responses:
  *       200:
- *         description: Tournées en cours
+ *         description: Liste des tournées en cours
  */
-router.get('/tournees/active', (req, res, next) => req.controllers.tournee.getActive(req, res, next));
 
 /**
  * @swagger
@@ -71,7 +89,6 @@ router.get('/tournees/active', (req, res, next) => req.controllers.tournee.getAc
  *       404:
  *         description: Aucune tournée assignée aujourd'hui
  */
-router.get('/my-tournee', (req, res, next) => req.controllers.tournee.getMyTournee(req, res, next));
 
 /**
  * @swagger
@@ -87,73 +104,16 @@ router.get('/my-tournee', (req, res, next) => req.controllers.tournee.getMyTourn
  *             type: object
  *             required: [id_zone, date_tournee, id_agent]
  *             properties:
- *               id_zone:
- *                 type: integer
- *                 description: Zone à couvrir
- *               date_tournee:
- *                 type: string
- *                 format: date
- *                 description: Date de la tournée (YYYY-MM-DD)
- *               seuil_remplissage:
- *                 type: number
- *                 default: 70
- *                 description: Seuil min de remplissage (%) pour inclure un conteneur
- *               id_agent:
- *                 type: integer
- *                 description: Agent assigné
- *               id_vehicule:
- *                 type: integer
- *                 description: Véhicule assigné (optionnel)
- *               algorithme:
- *                 type: string
- *                 enum: [nearest_neighbor, 2opt]
- *                 default: 2opt
+ *               id_zone: { type: integer }
+ *               date_tournee: { type: string, format: date }
+ *               seuil_remplissage: { type: number, default: 70 }
+ *               id_agent: { type: integer }
+ *               id_vehicule: { type: integer }
+ *               algorithme: { type: string, enum: [nearest_neighbor, 2opt], default: 2opt }
  *     responses:
  *       201:
  *         description: Tournée optimisée créée
- *       400:
- *         description: Données invalides ou aucun conteneur éligible
  */
-router.post('/optimize', (req, res, next) => req.controllers.tournee.optimize(req, res, next));
-
-/**
- * @swagger
- * /routes/tournees:
- *   post:
- *     summary: Crée une nouvelle tournée manuellement
- *     tags: [Tournées]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [date_tournee, duree_prevue_min, id_zone, id_agent]
- *             properties:
- *               date_tournee:
- *                 type: string
- *                 format: date
- *               statut:
- *                 type: string
- *                 enum: [PLANIFIEE, EN_COURS, TERMINEE, ANNULEE]
- *                 default: PLANIFIEE
- *               distance_prevue_km:
- *                 type: number
- *               duree_prevue_min:
- *                 type: integer
- *               id_vehicule:
- *                 type: integer
- *               id_zone:
- *                 type: integer
- *               id_agent:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Tournée créée
- *       400:
- *         description: Données invalides
- */
-router.post('/tournees', (req, res, next) => req.controllers.tournee.create(req, res, next));
 
 /**
  * @swagger
@@ -171,12 +131,6 @@ router.post('/tournees', (req, res, next) => req.controllers.tournee.create(req,
  *         description: Tournée trouvée
  *       404:
  *         description: Tournée introuvable
- */
-router.get('/tournees/:id', (req, res, next) => req.controllers.tournee.getById(req, res, next));
-
-/**
- * @swagger
- * /routes/tournees/{id}:
  *   patch:
  *     summary: Met à jour une tournée
  *     tags: [Tournées]
@@ -203,10 +157,20 @@ router.get('/tournees/:id', (req, res, next) => req.controllers.tournee.getById(
  *     responses:
  *       200:
  *         description: Tournée mise à jour
- *       404:
- *         description: Tournée introuvable
+ *   delete:
+ *     summary: Supprime une tournée
+ *     tags: [Tournées]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Tournée supprimée
+ *       400:
+ *         description: Impossible de supprimer une tournée EN_COURS
  */
-router.patch('/tournees/:id', (req, res, next) => req.controllers.tournee.update(req, res, next));
 
 /**
  * @swagger
@@ -233,33 +197,7 @@ router.patch('/tournees/:id', (req, res, next) => req.controllers.tournee.update
  *     responses:
  *       200:
  *         description: Statut mis à jour
- *       400:
- *         description: Statut invalide
- *       404:
- *         description: Tournée introuvable
  */
-router.patch('/tournees/:id/statut', (req, res, next) => req.controllers.tournee.updateStatut(req, res, next));
-
-/**
- * @swagger
- * /routes/tournees/{id}:
- *   delete:
- *     summary: Supprime une tournée
- *     tags: [Tournées]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Tournée supprimée
- *       400:
- *         description: Impossible de supprimer une tournée EN_COURS
- *       404:
- *         description: Tournée introuvable
- */
-router.delete('/tournees/:id', (req, res, next) => req.controllers.tournee.delete(req, res, next));
 
 /**
  * @swagger
@@ -275,10 +213,7 @@ router.delete('/tournees/:id', (req, res, next) => req.controllers.tournee.delet
  *     responses:
  *       200:
  *         description: Liste des étapes avec coordonnées conteneurs
- *       404:
- *         description: Tournée introuvable
  */
-router.get('/tournees/:id/etapes', (req, res, next) => req.controllers.tournee.getEtapes(req, res, next));
 
 /**
  * @swagger
@@ -293,9 +228,8 @@ router.get('/tournees/:id/etapes', (req, res, next) => req.controllers.tournee.g
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Détails de progression (étapes collectées/totales)
+ *         description: Détails de progression
  */
-router.get('/tournees/:id/progress', (req, res, next) => req.controllers.tournee.getProgress(req, res, next));
 
 /**
  * @swagger
@@ -303,14 +237,12 @@ router.get('/tournees/:id/progress', (req, res, next) => req.controllers.tournee
  *   get:
  *     summary: Génère une feuille de route PDF
  *     tags: [Tournées]
- *     produces:
- *       - application/pdf
+ *     produces: [application/pdf]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: integer }
- *         description: ID de la tournée
  *     responses:
  *       200:
  *         description: PDF de la feuille de route
@@ -319,47 +251,36 @@ router.get('/tournees/:id/progress', (req, res, next) => req.controllers.tournee
  *             schema:
  *               type: string
  *               format: binary
- *       404:
- *         description: Tournée introuvable
  */
-router.get('/tournees/:id/pdf', (req, res, next) => req.controllers.export.generatePDF(req, res, next));
 
 /**
  * @swagger
  * /routes/tournees/{id}/map:
  *   get:
- *     summary: Données cartographiques GeoJSON pour affichage sur carte
+ *     summary: Données cartographiques GeoJSON
  *     tags: [Tournées]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: integer }
- *         description: ID de la tournée
  *     responses:
  *       200:
  *         description: Données GeoJSON avec les points des conteneurs
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     tournee:
- *                       type: object
- *                     agent:
- *                       type: object
- *                     vehicule:
- *                       type: object
- *                     geojson:
- *                       type: object
- *       404:
- *         description: Tournée introuvable
  */
-router.get('/tournees/:id/map', (req, res, next) => req.controllers.export.getMapData(req, res, next));
+
+router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getAll(req, res, next));
+router.get('/tournees/active', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActive(req, res, next));
+router.get('/my-tournee', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getMyTournee(req, res, next));
+router.post('/optimize', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.optimize(req, res, next));
+router.post('/tournees', requirePermission('tournee:create'), (req, res, next) => req.controllers.tournee.create(req, res, next));
+router.get('/tournees/:id', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getById(req, res, next));
+router.patch('/tournees/:id', requirePermission('tournee:update'), (req, res, next) => req.controllers.tournee.update(req, res, next));
+router.patch('/tournees/:id/statut', requirePermission('tournee:update'), (req, res, next) => req.controllers.tournee.updateStatut(req, res, next));
+router.delete('/tournees/:id', requirePermission('tournee:delete'), (req, res, next) => req.controllers.tournee.delete(req, res, next));
+router.get('/tournees/:id/etapes', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getEtapes(req, res, next));
+router.get('/tournees/:id/progress', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getProgress(req, res, next));
+router.get('/tournees/:id/pdf', requirePermission('tournee:read'), (req, res, next) => req.controllers.export.generatePDF(req, res, next));
+router.get('/tournees/:id/map', requirePermission('tournee:read'), (req, res, next) => req.controllers.export.getMapData(req, res, next));
 
 module.exports = router;

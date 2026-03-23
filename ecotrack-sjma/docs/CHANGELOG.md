@@ -4,6 +4,143 @@
 
 ---
 
+### [3.6.1] 2026-03-23 - Tests Unitaires RBAC
+
+Tests unitaires pour le middleware RBAC dans tous les services.
+
+| Service | Tests | Status |
+|--------|-------|--------|
+| service-containers | 33 | ✅ Pass |
+| service-gamifications | 25 | ✅ Pass |
+| service-analytics | 127 | ✅ Pass |
+| service-iot | 97 | ✅ Pass |
+| service-routes | 237 | ✅ Pass |
+| **TOTAL** | **519** | **✅ Tous Pass** |
+
+### Fichiers de Tests Créés
+
+| Service | Fichier |
+|---------|---------|
+| service-containers | `test/unit/middleware/rbac.test.js` |
+| service-gamifications | `__tests__/middleware/rbac.test.js` |
+| service-analytics | `test/unit/middleware/rbac.test.js` |
+| service-iot | `test/unit/middleware/rbac.test.js` |
+| service-routes | `test/unit/middleware/rbac.test.js` |
+
+### Corrections
+
+- `service-containers/rbac.js` - Test corrigé (GESTIONNAIRE a containers:delete)
+- `service-routes/rbac.js` - CITOYEN n'a plus tournee:read (permission corrigée)
+
+### ✅ Lacunes Complétées
+
+| # | Problème | Service | Status |
+|---|----------|---------|--------|
+| 1-8 | Error handling, Rate limiting, Pagination, Cache, Logging | Tous | ✅ |
+| 9-13 | RBAC | Tous services | ✅ |
+
+---
+
+### [3.6.0] 2026-03 - RBAC (Role-Based Access Control)
+
+#### Permissions par Service
+
+| Service | Permission | CITOYEN | AGENT | GESTIONNAIRE | ADMIN |
+|---------|------------|---------|-------|--------------|-------|
+| containers | create | ❌ | ❌ | ✅ | ✅ |
+| containers | read | ✅ | ✅ | ✅ | ✅ |
+| containers | update | ❌ | ✅ | ✅ | ✅ |
+| containers | delete | ❌ | ❌ | ✅ | ✅ |
+| zone | create | ❌ | ❌ | ✅ | ✅ |
+| zone | read | ❌ | ❌ | ✅ | ✅ |
+| zone | update | ❌ | ❌ | ✅ | ✅ |
+| zone | delete | ❌ | ❌ | ✅ | ✅ |
+| iot | read | ❌ | ✅ | ✅ | ✅ |
+| iot | update | ❌ | ❌ | ✅ | ✅ |
+| analytics | read | ✅ | ✅ | ✅ | ✅ |
+| gamification | create | ❌ | ❌ | ✅ | ✅ |
+| gamification | read | ✅ | ✅ | ✅ | ✅ |
+| gamification | update | ❌ | ❌ | ✅ | ✅ |
+| gamification | delete | ❌ | ❌ | ✅ | ✅ |
+| badges | create | ❌ | ❌ | ✅ | ✅ |
+| badges | read | ✅ | ✅ | ✅ | ✅ |
+| badges | update | ❌ | ❌ | ✅ | ✅ |
+| badges | delete | ❌ | ❌ | ✅ | ✅ |
+| defis | create | ❌ | ❌ | ✅ | ✅ |
+| defis | read | ✅ | ✅ | ✅ | ✅ |
+| defis | update | ❌ | ❌ | ✅ | ✅ |
+| defis | delete | ❌ | ❌ | ✅ | ✅ |
+| points | read | ✅ | ✅ | ✅ | ✅ |
+| classement | read | ✅ | ✅ | ✅ | ✅ |
+| tournee | create | ❌ | ❌ | ✅ | ✅ |
+| tournee | read | ❌ | ✅ | ✅ | ✅ |
+| tournee | update | ❌ | ✅ | ✅ | ✅ |
+| tournee | delete | ❌ | ❌ | ✅ | ✅ |
+
+#### Services Modifiés
+
+| Service | Module Type | Fichier |
+|---------|-------------|---------|
+| service-containers | CommonJS | `src/middleware/rbac.js` |
+| service-analytics | CommonJS | `src/middleware/rbac.js` |
+| service-gamifications | ES Module | `src/middleware/rbac.js` |
+| service-iot | CommonJS | `src/middleware/rbac.js` |
+| service-routes | CommonJS | `src/middleware/rbac.js` |
+
+#### Routes Modifiées
+
+**service-containers**:
+- `container.route.js` - RBAC + suppression doublons
+- `zone.route.js` - RBAC pour toutes les routes
+- `typecontainer.route.js` - RBAC
+- `stats.route.js` - RBAC (`analytics:read`)
+
+**service-gamifications**:
+- `defis.js` - RBAC (déjà fait)
+- `badges.js` - RBAC
+- `classement.js` - RBAC
+- `notifications.js` - RBAC
+- `stats.js` - RBAC
+- `actions.js` - RBAC
+
+**service-analytics**:
+- `dashboardRoutes.js` - RBAC (déjà fait)
+- `aggregationRoutes.js` - RBAC (déjà fait)
+- `reportRoutes.js` - RBAC
+- `performanceRoutes.js` - RBAC
+- `mlRoutes.js` - RBAC
+- `metrics.js` - RBAC (routes ajoutées)
+
+**service-routes**:
+- `tournee.route.js` - RBAC (toutes les routes)
+
+**service-iot**:
+- `iot.route.js` - RBAC (toutes les routes)
+
+#### Pattern Middleware
+
+```javascript
+// CommonJS (service-containers, service-analytics)
+const { requirePermission } = require('../middleware/rbac');
+router.get('/endpoint', authMiddleware, requirePermission('permission'), controller);
+
+// ES Module (service-gamifications)
+import { requirePermission } from '../middleware/rbac.js';
+router.get('/endpoint', authMiddleware, requirePermission('permission'), controller);
+```
+
+#### Réponse Erreur RBAC
+
+```json
+{
+  "error": "Insufficient permissions",
+  "required": "containers:create",
+  "role": "CITOYEN"
+}
+```
+
+---
+
 ### [3.5.5] 2026-03 - Centralized Logging & Cache API Gateway
 
 #### Centralized Logging

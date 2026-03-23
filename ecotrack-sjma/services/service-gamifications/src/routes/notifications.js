@@ -6,6 +6,7 @@ import {
 } from '../controllers/notificationsController.js';
 import { notificationQuerySchema, notificationBodySchema } from '../validators/schemas.js';
 import { validateQuery, validateBody } from '../middleware/validation.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ const router = Router();
  *       201:
  *         description: Notification créée
  */
-router.get('/', listerNotificationsHandler);
-router.post('/', validateBody(notificationBodySchema), creerNotificationHandler);
+router.get('/', requirePermission('gamification:read'), listerNotificationsHandler);
+router.post('/', requirePermission('gamification:create'), validateBody(notificationBodySchema), creerNotificationHandler);
 
 export default router;

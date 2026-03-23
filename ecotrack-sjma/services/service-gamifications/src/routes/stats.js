@@ -1,6 +1,7 @@
 // Rôle du fichier : routes HTTP pour les statistiques utilisateur.
 import { Router } from 'express';
 import { obtenirStatsUtilisateur } from '../controllers/statsController.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -20,6 +21,6 @@ const router = Router();
  *       200:
  *         description: Statistiques utilisateur
  */
-router.get('/utilisateurs/:idUtilisateur/stats', obtenirStatsUtilisateur);
+router.get('/utilisateurs/:idUtilisateur/stats', requirePermission('gamification:read'), obtenirStatsUtilisateur);
 
 export default router;

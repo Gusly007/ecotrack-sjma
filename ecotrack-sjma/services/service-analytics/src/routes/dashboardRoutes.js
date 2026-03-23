@@ -4,6 +4,7 @@ const DashboardController = require('../controllers/dashboardController');
 const authMiddleware = require('../middleware/authMiddleware');
 const ValidationMiddleware = require('../middleware/validationMiddleware');
 const { generalLimiter } = require('../middleware/rateLimitMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -47,7 +48,7 @@ const { generalLimiter } = require('../middleware/rateLimitMiddleware');
  *       401:
  *         description: Non autorisé
  */
-router.get('/dashboard', authMiddleware, generalLimiter, ValidationMiddleware.validateDashboardQuery(), DashboardController.getDashboard);
+router.get('/dashboard', authMiddleware, requirePermission('analytics:read'), generalLimiter, ValidationMiddleware.validateDashboardQuery(), DashboardController.getDashboard);
 
 /**
  * @swagger
@@ -78,7 +79,7 @@ router.get('/dashboard', authMiddleware, generalLimiter, ValidationMiddleware.va
  *                       type: string
  *                       format: date-time
  */
-router.get('/realtime', authMiddleware, DashboardController.getRealTimeStats);
+router.get('/realtime', authMiddleware, requirePermission('analytics:read'), DashboardController.getRealTimeStats);
 
 /**
  * @swagger
@@ -106,7 +107,7 @@ router.get('/realtime', authMiddleware, DashboardController.getRealTimeStats);
  *                     features:
  *                       type: array
  */
-router.get('/heatmap', authMiddleware, DashboardController.getHeatmap);
+router.get('/heatmap', authMiddleware, requirePermission('analytics:read'), DashboardController.getHeatmap);
 
 /**
  * @swagger
@@ -141,6 +142,6 @@ router.get('/heatmap', authMiddleware, DashboardController.getHeatmap);
  *                     chartData:
  *                       type: object
  */
-router.get('/evolution', authMiddleware, DashboardController.getEvolution);
+router.get('/evolution', authMiddleware, requirePermission('analytics:read'), DashboardController.getEvolution);
 
 module.exports = router;

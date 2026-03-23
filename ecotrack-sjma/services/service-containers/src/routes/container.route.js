@@ -1,10 +1,6 @@
 const router = require('express').Router();
 const controller = require('../container-di.js');
-
-// Le socketMiddleware est désormais appliqué globalement dans index.js
-// req.socketService est disponible dans tous les contrôleurs
-
-// ========== CRUD de base ==========
+const { requirePermission } = require('../middleware/rbac');
 
 // POST - Créer un nouveau conteneur
 /**
@@ -34,21 +30,21 @@ const controller = require('../container-di.js');
  *               statut:
  *                 type: string
  *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE]
- *                 description: Statut du conteneur (ACTIF, INACTIF ou EN_MAINTENANCE)
+ *                 description: Statut du conteneur
  *                 example: ACTIF
  *               latitude:
  *                 type: number
  *                 format: double
- *                 description: Latitude de la position du conteneur (entre -90 et 90)
+ *                 description: Latitude de la position du conteneur
  *                 example: 48.8566
  *               longitude:
  *                 type: number
  *                 format: double
- *                 description: Longitude de la position du conteneur (entre -180 et 180)
+ *                 description: Longitude de la position du conteneur
  *                 example: 2.3522
  *               id_zone:
  *                 type: integer
- *                 description: Identifiant de la zone associée au conteneur
+ *                 description: Identifiant de la zone associée
  *                 example: 1
  *               id_type:
  *                 type: integer
@@ -57,44 +53,20 @@ const controller = require('../container-di.js');
  *     responses:
  *       201:
  *         description: Conteneur créé avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id_conteneur:
- *                   type: integer
- *                 uid:
- *                   type: string
- *                 capacite_l:
- *                   type: integer
- *                 statut:
- *                   type: string
- *                 latitude:
- *                   type: number
- *                 longitude:
- *                   type: number
- *                 date_installation:
- *                   type: string
- *                   format: date-time
- *                 id_zone:
- *                   type: integer
- *                 id_type:
- *                   type: integer
  *       400:
- *         description: Requête invalide - champs requis manquants ou coordonnées GPS invalides
+ *         description: Requête invalide
  *       500:
  *         description: Erreur serveur
  */
-router.post('/containers', controller.create);
+router.post('/containers', requirePermission('containers:create'), controller.create);
 
-// GET - Récupérer tous les conteneurs avec pagination et filtres
+// GET - Récupérer tous les conteneurs
 /**
  * @swagger
  * /containers:
  *   get:
  *     summary: Récupère tous les conteneurs
- *     description: Récupère la liste de tous les conteneurs avec support de la pagination et des filtres
+ *     description: Récupère la liste de tous les conteneurs avec pagination et filtres
  *     tags:
  *       - Conteneurs
  *     parameters:
@@ -102,19 +74,21 @@ router.post('/containers', controller.create);
  *         name: page
  *         schema:
  *           type: integer
- *         description: Numéro de la page (par défaut 1)
+ *           default: 1
+ *         description: Numéro de la page
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Nombre de résultats par page (par défaut 10)
+ *           default: 10
+ *         description: Nombre de résultats par page
  *     responses:
  *       200:
- *         description: Liste des conteneurs récupérée avec succès
+ *         description: Liste des conteneurs récupérée
  *       500:
  *         description: Erreur serveur
  */
-router.get('/containers', controller.getAll);
+router.get('/containers', requirePermission('containers:read'), controller.getAll);
 
 // GET - Récupérer un conteneur par ID
 /**
@@ -133,13 +107,13 @@ router.get('/containers', controller.getAll);
  *         description: Identifiant du conteneur
  *     responses:
  *       200:
- *         description: Conteneur récupéré avec succès
+ *         description: Conteneur récupéré
  *       404:
  *         description: Conteneur non trouvé
  *       500:
  *         description: Erreur serveur
  */
-router.get('/containers/id/:id', controller.getById);
+router.get('/containers/id/:id', requirePermission('containers:read'), controller.getById);
 
 // GET - Récupérer un conteneur par UID
 /**
@@ -158,193 +132,13 @@ router.get('/containers/id/:id', controller.getById);
  *         description: Identifiant unique du conteneur (format CNT-XXXXX)
  *     responses:
  *       200:
- *         description: Conteneur récupéré avec succès
+ *         description: Conteneur récupéré
  *       404:
  *         description: Conteneur non trouvé
  *       500:
  *         description: Erreur serveur
  */
-router.get('/containers/uid/:uid', controller.getByUid);
-
-// PATCH - Mettre à jour un conteneur
-/**
- * @swagger
- * /containers/{id}:
- *   patch:
- *     summary: Met à jour un conteneur existant
- *     description: Met à jour les informations d'un conteneur. Seuls les champs fournis seront modifiés.
- *     tags:
- *       - Conteneurs
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Identifiant du conteneur à mettre à jour
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               capacite_l:
- *                 type: integer
- *                 description: Capacité du conteneur en litres
- *               latitude:
- *                 type: number
- *                 format: double
- *                 description: Latitude de la position du conteneur
- *               longitude:
- *                 type: number
- *                 format: double
- *                 description: Longitude de la position du conteneur
- *               id_zone:
- *                 type: integer
- *                 description: Identifiant de la zone
- *               id_type:
- *                 type: integer
- *                 description: Identifiant du type de conteneur
- *     responses:
- *       200:
- *         description: Conteneur mis à jour avec succès
- *       400:
- *         description: Requête invalide ou aucun champ à mettre à jour
- *       404:
- *         description: Conteneur non trouvé
- *       500:
- *         description: Erreur serveur
- */
-router.patch('/containers/:id', controller.update);
-
-// PATCH - Mettre à jour le statut d'un conteneur
-/**
- * @swagger
- * /containers/{id}/status:
- *   patch:
- *     summary: Met à jour le statut d'un conteneur
- *     description: Change le statut d'un conteneur. Les valeurs acceptées sont ACTIF, INACTIF, EN_MAINTENANCE.
- *     tags:
- *       - Conteneurs
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Identifiant du conteneur
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - statut
- *             properties:
- *               statut:
- *                 type: string
- *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE]
- *                 description: Nouveau statut du conteneur
- *     responses:
- *       200:
- *         description: Statut mis à jour avec succès
- *       400:
- *         description: Statut invalide
- *       404:
- *         description: Conteneur non trouvé
- *       500:
- *         description: Erreur serveur
- */
-router.patch('/containers/:id/status', controller.updateStatus);
-
-// GET - Récupérer l'historique des changements de statut d'un conteneur
-/**
- * @swagger
- * /containers/{id}/status/history:
- *   get:
- *     summary: Récupère l'historique des changements de statut d'un conteneur
- *     description: Retourne tous les changements de statut d'un conteneur spécifique, triés du plus récent au plus ancien
- *     tags:
- *       - Conteneurs
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Identifiant du conteneur
- *     responses:
- *       200:
- *         description: Historique récupéré avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id_historique:
- *                     type: integer
- *                   ancien_statut:
- *                     type: string
- *                     nullable: true
- *                   nouveau_statut:
- *                     type: string
- *                   date_changement:
- *                     type: string
- *                     format: date-time
- *       400:
- *         description: ID manquant
- *       500:
- *         description: Erreur serveur
- */
-router.get('/containers/:id/status/history', controller.getStatusHistory);
-
-// DELETE - Supprimer un conteneur
-/**
- * @swagger
- * /containers/{id}:
- *   delete:
- *     summary: Supprime un conteneur
- *     tags:
- *       - Conteneurs
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Identifiant du conteneur à supprimer
- *     responses:
- *       200:
- *         description: Conteneur supprimé avec succès
- *       404:
- *         description: Conteneur non trouvé
- *       500:
- *         description: Erreur serveur
- */
-router.delete('/containers/:id', controller.delete);
-
-// DELETE - Supprimer tous les conteneurs
-/**
- * @swagger
- * /containers:
- *   delete:
- *     summary: Supprime tous les conteneurs
- *     description: Attention - Cette opération supprimera tous les conteneurs de la base de données
- *     tags:
- *       - Conteneurs
- *     responses:
- *       200:
- *         description: Tous les conteneurs ont été supprimés
- *       500:
- *         description: Erreur serveur
- */
-router.delete('/containers', controller.deleteAll);
-
-// ========== Recherche et filtres ==========
+router.get('/containers/uid/:uid', requirePermission('containers:read'), controller.getByUid);
 
 // GET - Récupérer les conteneurs par statut
 /**
@@ -366,11 +160,11 @@ router.delete('/containers', controller.deleteAll);
  *       200:
  *         description: Liste des conteneurs par statut
  *       404:
- *         description: Aucun conteneur trouvé avec ce statut
+ *         description: Aucun conteneur trouvé
  *       500:
  *         description: Erreur serveur
  */
-router.get('/containers/status/:statut', controller.getByStatus);
+router.get('/containers/status/:statut', requirePermission('containers:read'), controller.getByStatus);
 
 // GET - Récupérer les conteneurs par zone
 /**
@@ -391,11 +185,194 @@ router.get('/containers/status/:statut', controller.getByStatus);
  *       200:
  *         description: Liste des conteneurs dans la zone
  *       404:
- *         description: Aucun conteneur trouvé dans cette zone
+ *         description: Aucun conteneur trouvé
  *       500:
  *         description: Erreur serveur
  */
-router.get('/containers/zone/:id_zone', controller.getByZone);
+router.get('/containers/zone/:id_zone', requirePermission('containers:read'), controller.getByZone);
+
+// GET - Conteneurs avec niveau de remplissage
+/**
+ * @swagger
+ * /containers/fill-levels:
+ *   get:
+ *     summary: Récupère les conteneurs avec leur niveau de remplissage
+ *     description: Joint les tables conteneur, capteur et mesure pour retourner le dernier niveau de remplissage
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: query
+ *         name: min_level
+ *         schema:
+ *           type: number
+ *         description: Niveau de remplissage minimum (0-100)
+ *       - in: query
+ *         name: max_level
+ *         schema:
+ *           type: number
+ *         description: Niveau de remplissage maximum (0-100)
+ *       - in: query
+ *         name: id_zone
+ *         schema:
+ *           type: integer
+ *         description: Filtrer par zone
+ *     responses:
+ *       200:
+ *         description: Liste des conteneurs avec fill_level
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/containers/fill-levels', requirePermission('containers:read'), controller.getFillLevels);
+
+// GET - Historique des changements de statut
+/**
+ * @swagger
+ * /containers/{id}/status/history:
+ *   get:
+ *     summary: Récupère l'historique des changements de statut
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant du conteneur
+ *     responses:
+ *       200:
+ *         description: Historique récupéré
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/containers/:id/status/history', requirePermission('containers:read'), controller.getStatusHistory);
+
+// PATCH - Mettre à jour un conteneur
+/**
+ * @swagger
+ * /containers/{id}:
+ *   patch:
+ *     summary: Met à jour un conteneur existant
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant du conteneur à mettre à jour
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               capacite_l:
+ *                 type: integer
+ *               latitude:
+ *                 type: number
+ *                 format: double
+ *               longitude:
+ *                 type: number
+ *                 format: double
+ *               id_zone:
+ *                 type: integer
+ *               id_type:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Conteneur mis à jour
+ *       400:
+ *         description: Requête invalide
+ *       404:
+ *         description: Conteneur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch('/containers/:id', requirePermission('containers:update'), controller.update);
+
+// PATCH - Mettre à jour le statut d'un conteneur
+/**
+ * @swagger
+ * /containers/{id}/status:
+ *   patch:
+ *     summary: Met à jour le statut d'un conteneur
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant du conteneur
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - statut
+ *             properties:
+ *               statut:
+ *                 type: string
+ *                 enum: [ACTIF, INACTIF, EN_MAINTENANCE]
+ *     responses:
+ *       200:
+ *         description: Statut mis à jour
+ *       400:
+ *         description: Statut invalide
+ *       404:
+ *         description: Conteneur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch('/containers/:id/status', requirePermission('containers:update'), controller.updateStatus);
+
+// DELETE - Supprimer un conteneur
+/**
+ * @swagger
+ * /containers/{id}:
+ *   delete:
+ *     summary: Supprime un conteneur
+ *     tags:
+ *       - Conteneurs
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant du conteneur à supprimer
+ *     responses:
+ *       200:
+ *         description: Conteneur supprimé
+ *       404:
+ *         description: Conteneur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.delete('/containers/:id', requirePermission('containers:delete'), controller.delete);
+
+// DELETE - Supprimer tous les conteneurs
+/**
+ * @swagger
+ * /containers:
+ *   delete:
+ *     summary: Supprime tous les conteneurs
+ *     description: Attention - Cette opération supprimera tous les conteneurs de la base de données
+ *     tags:
+ *       - Conteneurs
+ *     responses:
+ *       200:
+ *         description: Tous les conteneurs ont été supprimés
+ *       500:
+ *         description: Erreur serveur
+ */
+router.delete('/containers', requirePermission('containers:delete'), controller.deleteAll);
 
 // GET - Rechercher les conteneurs dans un rayon
 /**
@@ -430,15 +407,13 @@ router.get('/containers/zone/:id_zone', controller.getByZone);
  *         description: Rayon de recherche en kilomètres
  *     responses:
  *       200:
- *         description: Liste des conteneurs trouvés dans le rayon
+ *         description: Liste des conteneurs trouvés
  *       400:
  *         description: Paramètres invalides
  *       500:
  *         description: Erreur serveur
  */
-router.get('/search/radius', controller.getInRadius);
-
-// ========== Statistiques et vérifications ==========
+router.get('/search/radius', requirePermission('containers:read'), controller.getInRadius);
 
 // GET - Compter les conteneurs
 /**
@@ -461,7 +436,7 @@ router.get('/search/radius', controller.getInRadius);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/stats/count', controller.count);
+router.get('/stats/count', requirePermission('containers:read'), controller.count);
 
 // GET - Vérifier si un conteneur existe par ID
 /**
@@ -491,7 +466,7 @@ router.get('/stats/count', controller.count);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/check/exists/:id', controller.exists);
+router.get('/check/exists/:id', requirePermission('containers:read'), controller.exists);
 
 // GET - Vérifier si un UID existe
 /**
@@ -521,15 +496,15 @@ router.get('/check/exists/:id', controller.exists);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/check/uid/:uid', controller.existsByUid);
+router.get('/check/uid/:uid', requirePermission('containers:read'), controller.existsByUid);
 
-// GET - Récupérer les statistiques globales
+// GET - Statistiques globales
 /**
  * @swagger
  * /stats:
  *   get:
  *     summary: Récupère les statistiques globales des conteneurs
- *     description: Retourne les statistiques complètes sur les conteneurs (total, par statut, par zone, etc.)
+ *     description: Retourne les statistiques complètes sur les conteneurs
  *     tags:
  *       - Statistiques
  *     responses:
@@ -551,65 +526,6 @@ router.get('/check/uid/:uid', controller.existsByUid);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/stats', controller.getStatistics);
-
-// GET - Conteneurs avec niveau de remplissage
-/**
- * @swagger
- * /containers/fill-levels:
- *   get:
- *     summary: Recupere les conteneurs avec leur niveau de remplissage
- *     description: Joint les tables conteneur, capteur et mesure pour retourner le dernier niveau de remplissage de chaque conteneur. Permet de filtrer par niveau min/max et par zone.
- *     tags:
- *       - Conteneurs
- *     parameters:
- *       - in: query
- *         name: min_level
- *         schema:
- *           type: number
- *         description: Niveau de remplissage minimum (0-100)
- *       - in: query
- *         name: max_level
- *         schema:
- *           type: number
- *         description: Niveau de remplissage maximum (0-100)
- *       - in: query
- *         name: id_zone
- *         schema:
- *           type: integer
- *         description: Filtrer par zone
- *     responses:
- *       200:
- *         description: Liste des conteneurs avec fill_level
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id_conteneur:
- *                     type: integer
- *                   uid:
- *                     type: string
- *                   statut:
- *                     type: string
- *                   capacite_l:
- *                     type: integer
- *                   latitude:
- *                     type: number
- *                   longitude:
- *                     type: number
- *                   id_zone:
- *                     type: integer
- *                   id_type:
- *                     type: integer
- *                   fill_level:
- *                     type: number
- *                     description: Dernier pourcentage de remplissage (null si aucune mesure)
- *       500:
- *         description: Erreur serveur
- */
-router.get('/containers/fill-levels', controller.getFillLevels);
+router.get('/stats', requirePermission('containers:read'), controller.getStatistics);
 
 module.exports = router;

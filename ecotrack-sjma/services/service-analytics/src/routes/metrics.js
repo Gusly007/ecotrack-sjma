@@ -1,6 +1,8 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const logger = require('../utils/logger').default || require('../utils/logger');
+const authMiddleware = require('../middleware/authMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 const router = express.Router();
 
@@ -30,7 +32,7 @@ const queryPrometheusRange = async (query, time) => {
   }
 };
 
-router.get('/overview', async (req, res) => {
+router.get('/overview', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const [servicesUp, cpuUsage, memoryUsage, diskUsage, networkIn, networkOut] = await Promise.all([
       queryPrometheus('up{job=~"service-.*"}'),
@@ -65,7 +67,7 @@ router.get('/overview', async (req, res) => {
   }
 });
 
-router.get('/services', async (req, res) => {
+router.get('/services', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const [servicesUp, latencyAvg, errorRate] = await Promise.all([
       queryPrometheus('up'),
@@ -90,7 +92,7 @@ router.get('/services', async (req, res) => {
   }
 });
 
-router.get('/iot', async (req, res) => {
+router.get('/iot', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const [sensorsTotal, sensorsActive, sensorsInactive, lowBattery, lastMeasureAge, containersCritical, containersWarning] = await Promise.all([
       queryPrometheus('ecotrack_iot_sensors_total'),
@@ -123,7 +125,7 @@ router.get('/iot', async (req, res) => {
   }
 });
 
-router.get('/kafka', async (req, res) => {
+router.get('/kafka', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const [messagesIn, consumerLag, brokerInfo] = await Promise.all([
       queryPrometheus('rate(kafka_server_brokertopicmessages_in_total[1m]) * 60'),
@@ -146,7 +148,7 @@ router.get('/kafka', async (req, res) => {
   }
 });
 
-router.get('/database', async (req, res) => {
+router.get('/database', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const [connections, maxConnections, cacheHitRatio] = await Promise.all([
       queryPrometheus('ecotrack_db_connections'),
@@ -169,7 +171,7 @@ router.get('/database', async (req, res) => {
   }
 });
 
-router.get('/alerts', async (req, res) => {
+router.get('/alerts', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { severity, service, status } = req.query;
     const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
@@ -237,7 +239,7 @@ router.get('/alerts', async (req, res) => {
   }
 });
 
-router.get('/alerts/counts', async (req, res) => {
+router.get('/alerts/counts', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
     const data = await response.json();
@@ -286,7 +288,7 @@ function getSeverityOrder(level) {
   return level;
 }
 
-router.get('/history', async (req, res) => {
+router.get('/history', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { metric = 'cpu', period = '3600' } = req.query;
     const metricMap = {

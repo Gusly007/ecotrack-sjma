@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { obtenirBadges, obtenirBadgesUtilisateur } from '../controllers/badgesController.js';
 import { validateQuery } from '../middleware/validation.js';
 import { badgesQuerySchema } from '../validators/schemas.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ const router = Router();
  *       200:
  *         description: Liste des badges paginée
  */
-router.get('/', obtenirBadges);
+router.get('/', requirePermission('badges:read'), obtenirBadges);
 
 /**
  * @swagger
@@ -55,6 +56,6 @@ router.get('/', obtenirBadges);
  *       200:
  *         description: Liste des badges utilisateur paginée
  */
-router.get('/utilisateurs/:idUtilisateur', validateQuery(badgesQuerySchema), obtenirBadgesUtilisateur);
+router.get('/utilisateurs/:idUtilisateur', requirePermission('badges:read'), validateQuery(badgesQuerySchema), obtenirBadgesUtilisateur);
 
 export default router;

@@ -1,36 +1,110 @@
 /**
  * Définition des permissions par rôle selon la matrice RBAC
+ * 
+ * Format: service:action (create, read, update, delete)
  */
+
 export const rolePermissions = {
+    /** Rôle mobile - Citoyen */
     CITOYEN: [
+        // Signalements
         'signaler:create',
-        'signaler:read'
+        'signaler:read',
+        
+        // Containers (lecture seule)
+        'containers:read',
+        
+        // Gamification
+        'gamification:read',
+        'badges:read',
+        'defis:read',
+        'points:read',
+        'classement:read'
     ],
+    
+    /** Rôle mobile - Agent de collecte */
     AGENT: [
+        // Signalements
         'signaler:create',
         'signaler:read',
         'signaler:update',
+        
+        // Tournées
         'tournee:read',
         'tournee:update',
-        'containers:update'
+        
+        // Containers
+        'containers:read',
+        'containers:update',
+        
+        // Mesures IoT
+        'iot:read',
+        
+        // Gamification
+        'gamification:read',
+        'badges:read',
+        'defis:read',
+        'points:read',
+        'classement:read'
     ],
+    
+    /** Rôle desktop - Gestionnaire */
     GESTIONNAIRE: [
+        // Signalements (full CRUD)
         'signaler:create',
         'signaler:read',
         'signaler:update',
+        'signaler:delete',
+        
+        // Tournées (full CRUD)
         'tournee:create',
         'tournee:read',
         'tournee:update',
+        'tournee:delete',
+        
+        // Containers (full CRUD)
+        'containers:create',
+        'containers:read',
         'containers:update',
-        'zone:read',
+        'containers:delete',
+        
+        // Zones (full CRUD)
         'zone:create',
-        'zone:update'
+        'zone:read',
+        'zone:update',
+        'zone:delete',
+        
+        // IoT
+        'iot:read',
+        'iot:update',
+        
+        // Analytics
+        'analytics:read',
+        
+        // Gamification
+        'gamification:create',
+        'gamification:read',
+        'gamification:update',
+        'gamification:delete',
+        'badges:create',
+        'badges:read',
+        'badges:update',
+        'badges:delete',
+        'defis:create',
+        'defis:read',
+        'defis:update',
+        'defis:delete',
+        'points:read',
+        'classement:read'
     ],
+    
+    /** Rôle desktop - Administrateur */
     ADMIN: ['*']
 };
 
 /**
- * Types d'interface par rôle
+ * Permissions par type d'interface (mobile/desktop)
+ * Utilisé pour过滤器 les endpoints selon l'interface
  */
 export const INTERFACE_BY_ROLE = {
     CITOYEN: 'mobile',
@@ -48,15 +122,70 @@ export const ROLES_BY_INTERFACE = {
 };
 
 /**
+ * Mapping permissions vers services
+ */
+export const PERMISSIONS_BY_SERVICE = {
+    signaler: ['signaler:create', 'signaler:read', 'signaler:update', 'signaler:delete'],
+    tournee: ['tournee:create', 'tournee:read', 'tournee:update', 'tournee:delete'],
+    containers: ['containers:create', 'containers:read', 'containers:update', 'containers:delete'],
+    zone: ['zone:create', 'zone:read', 'zone:update', 'zone:delete'],
+    iot: ['iot:read', 'iot:update'],
+    analytics: ['analytics:read'],
+    gamification: ['gamification:create', 'gamification:read', 'gamification:update', 'gamification:delete'],
+    badges: ['badges:create', 'badges:read', 'badges:update', 'badges:delete'],
+    defis: ['defis:create', 'defis:read', 'defis:update', 'defis:delete'],
+    points: ['points:read'],
+    classement: ['classement:read']
+};
+
+/**
+ * Obtenir les permissions par service pour un rôle
+ * @param {string} role - Le rôle de l'utilisateur
+ * @returns {Object} - Permissions groupées par service
+ */
+export const getPermissionsByService = (role) => {
+    const perms = rolePermissions[role] || [];
+    if (perms.includes('*')) {
+        // Return all permissions
+        const all = {};
+        for (const [service, servicePerms] of Object.entries(PERMISSIONS_BY_SERVICE)) {
+            all[service] = servicePerms;
+        }
+        return all;
+    }
+    
+    const result = {};
+    for (const [service, servicePerms] of Object.entries(PERMISSIONS_BY_SERVICE)) {
+        const filtered = servicePerms.filter(p => perms.includes(p));
+        if (filtered.length > 0) {
+            result[service] = filtered;
+        }
+    }
+    return result;
+};
+
+/**
  * Vérifier si un rôle a une permission spécifique
- * @param {string} role - Le rôle de l'utilisateur.
- * @param {string} permission - La permission à vérifier.
- * @returns {boolean} - True si le rôle a la permission, sinon false.
+ * @param {string} role - Le rôle de l'utilisateur
+ * @param {string} permission - La permission à vérifier
+ * @returns {boolean}
  */
 export const hasPermission = (role, permission) => {
     const perms = rolePermissions[role] || [];
     if (perms.includes('*')) return true;
     return perms.includes(permission);
+};
+
+/**
+ * Vérifier si un rôle peut effectuer une action CRUD sur un service
+ * @param {string} role - Le rôle de l'utilisateur
+ * @param {string} service - Le service (ex: 'containers')
+ * @param {string} action - L'action (ex: 'create')
+ * @returns {boolean}
+ */
+export const canPerformAction = (role, service, action) => {
+    const permission = `${service}:${action}`;
+    return hasPermission(role, permission);
 };
 
 /**
@@ -85,3 +214,31 @@ export const isMobileRole = (role) => {
 export const isDesktopRole = (role) => {
     return role === 'GESTIONNAIRE' || role === 'ADMIN';
 };
+
+/**
+ * Liste de toutes les permissions disponibles
+ */
+export const ALL_PERMISSIONS = [
+    // Signalements
+    'signaler:create', 'signaler:read', 'signaler:update', 'signaler:delete',
+    // Tournées
+    'tournee:create', 'tournee:read', 'tournee:update', 'tournee:delete',
+    // Containers
+    'containers:create', 'containers:read', 'containers:update', 'containers:delete',
+    // Zones
+    'zone:create', 'zone:read', 'zone:update', 'zone:delete',
+    // IoT
+    'iot:read', 'iot:update',
+    // Analytics
+    'analytics:read',
+    // Gamification
+    'gamification:create', 'gamification:read', 'gamification:update', 'gamification:delete',
+    // Badges
+    'badges:create', 'badges:read', 'badges:update', 'badges:delete',
+    // Défis
+    'defis:create', 'defis:read', 'defis:update', 'defis:delete',
+    // Points
+    'points:read',
+    // Classement
+    'classement:read'
+];

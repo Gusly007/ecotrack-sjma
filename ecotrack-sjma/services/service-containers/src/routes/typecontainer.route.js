@@ -1,39 +1,3 @@
-const express = require('express');
-const { typeConteneurController } = require('../container-di.js');
-
-const router = express.Router();
-
-
-// GET all type containers
-router.get('/', typeConteneurController.getAll);
-
-// GET all type containers with stats
-router.get('/stats/all', typeConteneurController.getAllWithStats);
-
-// GET type container by code
-router.get('/code/:code', typeConteneurController.getByCode);
-
-// GET type container by nom
-router.get('/nom/:nom', typeConteneurController.getByNom);
-
-// GET type container with stats by ID
-router.get('/:id/stats', typeConteneurController.getWithStats);
-
-// GET a specific type container by ID
-router.get('/:id', typeConteneurController.getById);
-
-// POST create a new type container
-router.post('/', typeConteneurController.create);
-
-// PUT update a type container
-router.put('/:id', typeConteneurController.update);
-
-// DELETE a type container
-router.delete('/:id', typeConteneurController.delete);
-
-
-module.exports = router;
-
 /**
  * @swagger
  * /typecontainers:
@@ -185,3 +149,21 @@ module.exports = router;
  *       200:
  *         description: Type container with stats found
  */
+
+const express = require('express');
+const { typeConteneurController } = require('../container-di.js');
+const { requirePermission } = require('../middleware/rbac');
+
+const router = express.Router();
+
+router.get('/', requirePermission('containers:read'), typeConteneurController.getAll);
+router.get('/stats/all', requirePermission('containers:read'), typeConteneurController.getAllWithStats);
+router.get('/code/:code', requirePermission('containers:read'), typeConteneurController.getByCode);
+router.get('/nom/:nom', requirePermission('containers:read'), typeConteneurController.getByNom);
+router.get('/:id/stats', requirePermission('containers:read'), typeConteneurController.getWithStats);
+router.get('/:id', requirePermission('containers:read'), typeConteneurController.getById);
+router.post('/', requirePermission('containers:create'), typeConteneurController.create);
+router.put('/:id', requirePermission('containers:update'), typeConteneurController.update);
+router.delete('/:id', requirePermission('containers:delete'), typeConteneurController.delete);
+
+module.exports = router;

@@ -1,6 +1,7 @@
 // Rôle du fichier : routes HTTP pour les actions utilisateur.
 import { Router } from 'express';
 import { enregistrerAction } from '../controllers/actionsController.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -30,6 +31,6 @@ const router = Router();
  *       201:
  *         description: Action enregistrée
  */
-router.post('/', enregistrerAction);
+router.post('/', requirePermission('gamification:create'), enregistrerAction);
 
 export default router;
