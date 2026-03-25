@@ -3,6 +3,7 @@
  * Parse, valide et traite les données des capteurs IoT
  */
 const logger = require('../utils/logger');
+const kafkaProducer = require('../../kafkaProducer');
 
 class MqttHandler {
   constructor(measurementService, alertService) {
@@ -62,6 +63,17 @@ class MqttHandler {
       }
 
       this.processedCount++;
+
+      await kafkaProducer.sendSensorData({
+        capteur_id: measurement.id_capteur,
+        capteurId: measurement.id_capteur,
+        uid_capteur: measurement.uid_capteur,
+        id_conteneur: measurement.id_conteneur,
+        id_zone: measurement.id_zone,
+        fill_level: data.fill_level,
+        battery: data.battery,
+        temperature: data.temperature !== undefined ? data.temperature : null
+      });
 
       // Vérifier les seuils d'alerte
       await this.alertService.checkThresholds(measurement);

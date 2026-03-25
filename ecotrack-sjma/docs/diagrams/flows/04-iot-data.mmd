@@ -1,0 +1,69 @@
+flowchart TB
+    subgraph Sensors["Capteurs"]
+        C1[Conteneur 1]
+        C2[Conteneur 2]
+        C3[Conteneur N]
+    end
+
+    subgraph MQTT["MQTT Broker"]
+        Topic[Topics: containers/+/data]
+    end
+
+    subgraph IoT["Service IoT :3013"]
+        MQTTHandler[MQTT Handler]
+        Validator[Validation]
+        Cache[Redis Cache]
+        DB[(PostgreSQL)]
+        Kafka[Kafka Producer]
+        Alerts[Alert Generator]
+    end
+
+    subgraph Kafka["Kafka"]
+        Topic1[topic: iot.measurements]
+        Topic2[topic: iot.alerts]
+    end
+
+    subgraph Analytics["Service Analytics :3015"]
+        Consumer[Kafka Consumer]
+    end
+
+    subgraph Notifications["Notifications"]
+        Email[Email Service]
+        Push[Push Notifications]
+    end
+
+    C1 -->|"MQTT: fill_level=95"| MQTT
+    C2 -->|"MQTT: battery=10"| MQTT
+    C3 -->|"MQTT: temp=45"| MQTT
+    
+    MQTT --> MQTTHandler
+    MQTTHandler --> Validator
+    Validator -->|"Valid"| Cache
+    Validator -->|"Invalid"| Discard[Discard]
+    
+    Cache --> DB
+    Cache --> Kafka
+    
+    Kafka -->|"Measurement"| Topic1
+    Kafka -->|"Alert"| Topic2
+    
+    Topic1 --> Consumer
+    Consumer -->|"Aggregation"| Analytics
+    
+    Topic2 --> Alerts
+    Alerts --> Email
+    Alerts --> Push
+
+    style Alerts color:#ff6b6b
+    style Discard color:#888
+    %% Donnees IoT
+    %% Type | Frequence | Taille
+    %% Niveau remplissage | 1/min | ~100 bytes
+    %% Batterie | 1/30min | ~50 bytes
+    %% Temperature | 1/15min | ~50 bytes
+
+    %% Seuils d'alertes
+    %% Type | Seuil Warning | Seuil Critical
+    %% Remplissage | 70% | 90%
+    %% Batterie | 20% | 10%
+    %% Temperature | 40C | 50C

@@ -21,6 +21,7 @@ import helmet from 'helmet';
 import logger from './utils/logger.js';
 import client from 'prom-client';
 import cacheService from './services/cacheService.js';
+import kafkaNotificationConsumer from './services/kafkaNotificationConsumer.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -142,10 +143,34 @@ app.use(errorHandler);
 const server = app.listen(env.port, () => {
   logger.info({ port: env.port }, 'Service users ready');
   logger.info({ url: `http://localhost:${env.port}/api-docs` }, 'Swagger docs ready');
+
+  kafkaNotificationConsumer.onAlert(async (alert, meta) => {
+    logger.warn({ topic: meta.topic, alertId: alert?.id_alerte, containerId: alert?.id_conteneur }, 'Kafka alert received by users service');
+  });
+
+  kafkaNotificationConsumer.onNotification(async (payload, meta) => {
+    logger.info({ topic: meta.topic, payloadType: payload?.type }, 'Kafka notification received by users service');
+  });
+
+  kafkaNotificationConsumer.connect().catch((err) => {
+    logger.warn({ err: err.message }, 'Kafka consumer startup failed, continuing without');
+  });
 });
 
 process.on('SIGINT', async () => {
   logger.info('Shutting down service users');
+  await kafkaNotificationConsumer.disconnect();
+  await pool.end();
+  await cacheService.close();
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('Shutting down service users (SIGTERM)');
+  await kafkaNotificationConsumer.disconnect();
   await pool.end();
   await cacheService.close();
   server.close(() => {

@@ -8,6 +8,7 @@ const logger = require('./src/utils/logger');
 const client = require('prom-client');
 const cacheService = require('./src/services/cacheService');
 const centralizedLogging = require('./src/services/centralizedLogging');
+const kafkaProducer = require('./kafkaProducer');
 
 // ========== PROMETHEUS METRICS ==========
 const register = new client.Registry();
@@ -207,6 +208,14 @@ async function startServer() {
     logger.error({ error: err.message }, 'Failed to start MQTT Broker');
   }
 
+  // Connect Kafka producer
+  try {
+    await kafkaProducer.connect();
+    logger.info('Kafka producer connected');
+  } catch (err) {
+    logger.warn({ error: err.message }, 'Kafka producer connection failed, continuing without');
+  }
+
   // Start silent sensor check interval (every hour)
   setInterval(async () => {
     try {
@@ -235,6 +244,17 @@ async function startServer() {
   // Graceful shutdown
   process.on('SIGINT', async () => {
     logger.info('Shutting down service IoT');
+    await kafkaProducer.disconnect();
+    await cacheService.close();
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGTERM', async () => {
+    logger.info('Shutting down service IoT (SIGTERM)');
+    await kafkaProducer.disconnect();
     await cacheService.close();
     server.close(() => {
       logger.info('Server closed');

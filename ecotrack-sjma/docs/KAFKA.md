@@ -220,7 +220,7 @@ Connectez-vous à :
 
 | Solution | Avantages | Inconvénients |
 |----------|-----------|---------------|
-| **Kafka** ✅ | Débit, streaming, rétention | Complexité |
+| **Kafka** | Débit, streaming, rétention | Complexité |
 | RabbitMQ | Simple, manage queues | Moins performant |
 | Redis Pub/Sub | Simple | Pas de rétention |
 | AWS SQS | Managé | Vendor lock-in |
