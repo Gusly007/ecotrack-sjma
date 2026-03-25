@@ -1,5 +1,5 @@
 const { Kafka } = require('kafkajs');
-const logger = require('../src/utils/logger.js');
+const logger = require('./src/utils/logger.js');
 
 const kafka = new Kafka({
   clientId: 'service-iot',

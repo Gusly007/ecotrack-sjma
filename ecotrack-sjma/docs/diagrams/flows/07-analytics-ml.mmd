@@ -1,0 +1,65 @@
+flowchart LR
+    subgraph Sources["Data Sources"]
+        PG[(PostgreSQL)]
+        Kafka[Kafka]
+        IoT[IoT Service]
+    end
+
+    subgraph Analytics["Service Analytics :3015"]
+        Agg[Data Aggregator]
+        Cache[(Redis Cache)]
+        Dashboard[Dashboard API]
+        Reports[Report Generator]
+        MLEngine[ML Engine]
+    end
+
+    subgraph ML["Machine Learning"]
+        Predict[Predict Fill Level]
+        Anomaly[Anomaly Detection]
+        Optimize[Route Optimization]
+    end
+
+    subgraph Output["Outputs"]
+        API[REST API]
+        PDF[PDF Reports]
+        Excel[Excel Reports]
+        Graf[Grafana Dashboards]
+    end
+
+    PG -->|"Raw Data"| Agg
+    Kafka -->|"Real-time"| Agg
+    
+    Agg --> Cache
+    Cache --> API
+    Agg --> Dashboard
+    
+    Agg --> MLEngine
+    MLEngine --> Predict
+    MLEngine --> Anomaly
+    MLEngine --> Optimize
+    
+    Predict --> API
+    Anomaly --> API
+    Optimize --> API
+    
+    Dashboard --> Reports
+    Reports --> PDF
+    Reports --> Excel
+    
+    API --> Graf
+
+    style Predict color:#9b59b6
+    style Anomaly color:#9b59b6
+    style Optimize color:#9b59b6
+    %% ML Predictions
+    %% Model | Input | Output | Accuracy
+    %% Fill Level Predictor | Time, Temp, History | Fill % in 24h | ~85%
+    %% Anomaly Detector | Sensor Data | Anomaly Score | ~90%
+    %% Route Optimizer | Containers, Traffic | Optimal Order | ~95%
+
+    %% Dashboards
+    %% Dashboard | Refresh | Data Source
+    %% Overview | Real-time | PostgreSQL
+    %% Performance | 5 min | PostgreSQL
+    %% ML Predictions | 15 min | ML Models
+    %% Alerts | Real-time | Kafka

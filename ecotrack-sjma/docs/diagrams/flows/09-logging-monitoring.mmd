@@ -1,0 +1,83 @@
+flowchart TB
+    subgraph Sources["Services"]
+        GW[API Gateway]
+        Users[service-users]
+        Containers[service-containers]
+        Routes[service-routes]
+        IoT[service-iot]
+        Gamif[service-gamifications]
+        Analytics[service-analytics]
+    end
+
+    subgraph Collect["Log Collection"]
+        Logger[Pino Logger]
+        Format[JSON Formatter]
+    end
+
+    subgraph Transport["Transport"]
+        TCP[TCP/UDP]
+        HTTP[HTTP]
+    end
+
+    subgraph Storage["Storage & Analysis"]
+        PG[(PostgreSQL<br/>centralized_logs)]
+        Graf[Grafana]
+        Prometheus[Prometheus]
+    end
+
+    subgraph Alerts["Alerting"]
+        Rules[Alert Rules]
+        Slack[Slack]
+        Email[Email]
+    end
+
+    subgraph Dashboard["Dashboards"]
+        Dash[Monitoring Dashboard]
+        Logs[Log Explorer]
+        Metrics[Metrics Explorer]
+    end
+
+    Users --> Logger
+    Containers --> Logger
+    Routes --> Logger
+    IoT --> Logger
+    Gamif --> Logger
+    Analytics --> Logger
+    GW --> Logger
+
+    Logger --> Format --> TCP --> PG
+    
+    PG --> Graf
+    Graf --> Prometheus
+    Prometheus --> Rules --> Slack
+    Rules --> Email
+
+    Graf --> Dash
+    Graf --> Logs
+    Graf --> Metrics
+
+    style PG color:#27ae60
+    style Graf color:#3498db
+    style Prometheus color:#9b59b6
+        %% Log Structure (example)
+        %% {
+        %%   "level": "info",
+        %%   "service": "service-containers",
+        %%   "message": "Container created",
+        %%   "timestamp": "2026-03-23T12:00:00Z",
+        %%   "context": {
+        %%     "containerId": "CNT-001",
+        %%     "userId": 123,
+        %%     "requestId": "abc-123"
+        %%   }
+        %% }
+
+        %% Metrics Collected
+        %% Metric | Type | Source
+        %% Request Duration | Histogram | All services
+        %% Request Count | Counter | All services
+        %% Error Rate | Counter | All services
+        %% Cache Hit Rate | Gauge | API Gateway
+        %% DB Query Time | Histogram | All services
+        %% Memory Usage | Gauge | All services
+        %% CPU Usage | Gauge | All services

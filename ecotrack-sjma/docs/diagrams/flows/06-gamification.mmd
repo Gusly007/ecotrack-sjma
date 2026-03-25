@@ -1,0 +1,67 @@
+flowchart TB
+    subgraph Trigger["Trigger Events"]
+        Scan[Scan Conteneur]
+        Report[Signaler Problème]
+        Complete[Terminer Tournée]
+    end
+
+    subgraph API["API Gateway"]
+        G[service-gamifications :3014]
+    end
+
+    subgraph Core["Gamification Service"]
+        Actions[Action Handler]
+        Points[Points Calculator]
+        Badge[Badge Checker]
+        Defi[Defi Validator]
+        Rank[Leaderboard Update]
+    end
+
+    subgraph Cache["Redis Cache"]
+        CPoints[User Points]
+        CRank[Leaderboard]
+    end
+
+    subgraph Database["PostgreSQL"]
+        DBNode[Users, Actions, Badges, Defis]
+    end
+
+    subgraph Notify["Notifications"]
+        N[Push/Email]
+    end
+
+    Scan --> G --> Actions
+    Report --> G --> Actions
+    Complete --> G --> Actions
+
+    Actions --> Points
+    Points --> DBNode
+    Points --> CPoints
+
+    CPoints --> Badge
+    Badge -->|"New Badge"| DBNode
+    Badge -->|"Unlock"| N
+
+    Points --> Defi
+    Defi -->|"Progress Update"| DBNode
+
+    CPoints --> Rank
+    Rank -->|"Top 10"| CRank
+
+    style N color:#ff6b6b
+
+    %% Actions & Points
+    %% Action | Points | Condition
+    %% Scan conteneur | +5 | -
+    %% Signaler probleme | +10 | Validated
+    %% Terminer tournee | +20 | 100% complete
+    %% Defi accompli | +50-200 | Selon objectif
+    %% Badge obtenu | +bonus | Selon type
+
+    %% Badges
+    %% Badge | Points Requis | Rarete
+    %% Debutant | 100 | Commune
+    %% Collecteur | 500 | Commune
+    %% Expert | 1000 | Rare
+    %% Maitre | 5000 | Epique
+    %% Legende | 10000 | Legend

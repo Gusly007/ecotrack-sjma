@@ -1,0 +1,73 @@
+flowchart LR
+    subgraph Client["Client"]
+        Browser[Browser/Mobile]
+    end
+
+    subgraph Gateway["API Gateway :3000"]
+        Rate[Rate Limiter]
+        CORS[CORS Handler]
+        JWT[JWT Validator]
+        Router[Router]
+    end
+
+    subgraph Services["Microservices"]
+        direction TB
+        S1[service-users<br/>:3010]
+        S2[service-containers<br/>:3011]
+        S3[service-routes<br/>:3012]
+        S4[service-iot<br/>:3013]
+        S5[service-gamifications<br/>:3014]
+        S6[service-analytics<br/>:3015]
+    end
+
+    subgraph Response["Response Flow"]
+        Log[Request Logger]
+        Metric[Metrics]
+        Cache[Response Cache]
+    end
+
+    Browser -->|"POST /api/containers"| Rate
+    Rate -->|"Within limit"| CORS
+    Rate -->|"Rate limited"| RateLim[429 Too Many]
+
+    CORS --> JWT
+    JWT -->|"Valid"| Router
+    JWT -->|"Invalid"| JWTRej[401 Unauthorized]
+
+    Router -->|"GET /api/*"| S1
+    Router -->|"POST /api/containers/*"| S2
+    Router -->|"GET /api/tournees/*"| S3
+    Router -->|"GET /api/iot/*"| S4
+    Router -->|"GET /api/badges/*"| S5
+    Router -->|"GET /api/stats/*"| S6
+    Router -->|"404"| NotFound[404 Not Found]
+
+    S1 --> Cache
+    S2 --> Cache
+    S3 --> Cache
+    S4 --> Cache
+    S5 --> Cache
+    S6 --> Cache
+
+    Cache --> Log --> Metric --> Browser
+
+    style RateLim color:#e74c3c
+    style JWTRej color:#e74c3c
+    style NotFound color:#e74c3c
+    %% API Routes Mapping
+    %% Path | Service | Permission
+    %% /api/auth/* | service-users | None
+    %% /api/containers/* | service-containers | RBAC
+    %% /api/zones/* | service-containers | RBAC
+    %% /api/tournees/* | service-routes | RBAC
+    %% /api/iot/* | service-iot | RBAC
+    %% /api/badges/* | service-gamifications | RBAC
+    %% /api/defis/* | service-gamifications | RBAC
+    %% /api/stats/* | service-analytics | RBAC
+    %% /api/dashboard/* | service-analytics | RBAC
+
+    %% Rate Limiting
+    %% Endpoint | Limit
+    %% /api/auth/* | 10/min
+    %% /api/* | 100/min
+    %% /api/measurements | 1000/min

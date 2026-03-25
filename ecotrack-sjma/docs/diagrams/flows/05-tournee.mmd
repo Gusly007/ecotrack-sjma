@@ -1,0 +1,61 @@
+sequenceDiagram
+    participant A as Agent
+    participant G as API Gateway
+    participant SvcRoutes as service-routes
+    participant PG as PostgreSQL
+    participant Algo as Optimization Engine
+
+    Note over A,SvcRoutes: Agent creates a new tournee
+
+    A->>G: POST /api/routes/tournees<br/>{date, id_zone, id_agent}
+    G->>SvcRoutes: Forward request
+    
+    SvcRoutes->>PG: Get containers in zone
+    PG-->>SvcRoutes: 45 containers to collect
+    
+    SvcRoutes->>Algo: Optimize route
+    Note over Algo: 1. Filter by fill level > 70%<br/>2. Apply 2-opt algorithm<br/>3. Calculate ETA
+    
+    Algo-->>SvcRoutes: Optimized route<br/>{order: [c1,c5,c3,c2...], distance: 12.5km, duration: 45min}
+    
+    SvcRoutes->>PG: Save tournee
+    PG-->>SvcRoutes: Tournee saved
+    
+    SvcRoutes-->>G: Tournee created with steps
+    G-->>A: 201 Created
+
+    Note over A,SvcRoutes: Agent starts tournee
+
+    A->>G: PATCH /api/routes/tournees/:id/statut<br/>{statut: "EN_COURS"}
+    G->>SvcRoutes: Forward
+    
+    SvcRoutes->>PG: Update statut
+    PG-->>SvcRoutes: OK
+    
+    SvcRoutes-->>G: 200 OK
+    G-->>A: Tournee started
+
+    Note over A,SvcRoutes: Agent completes container
+
+    A->>G: POST /api/routes/tournees/:id/etapes<br/>{id_conteneur, heure_collecte}
+    G->>SvcRoutes: Forward
+    
+    SvcRoutes->>PG: Record step + update container
+    PG-->>SvcRoutes: Step saved
+    
+    SvcRoutes->>PG: Update tournee progress
+    PG-->>SvcRoutes: Progress: 3/45
+    
+    SvcRoutes-->>G: Step recorded
+    G-->>A: Progress updated
+
+    Note over A,SvcRoutes: Agent ends tournee
+
+    A->>G: PATCH /api/routes/tournees/:id/statut<br/>{statut: "TERMINEE", distance_reelle, duree_reelle}
+    G->>SvcRoutes: Forward
+    
+    SvcRoutes->>PG: Save final stats
+    PG-->>SvcRoutes: Tournee completed
+    
+    SvcRoutes-->>G: Tournee completed
+    G-->>A: Stats: 45 collected, 12.8km, 52min

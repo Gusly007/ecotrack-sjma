@@ -26,5 +26,10 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.3.0",
+    "cross-env": "^10.1.0",
+    "jest": "^30.3.0"
   }
 }

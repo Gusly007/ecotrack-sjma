@@ -1,0 +1,53 @@
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant G as API Gateway
+    participant Svc as service-users
+    participant Redis as Redis
+    participant PG as PostgreSQL
+
+    Note over U,F: User attempts to login
+
+    F->>G: POST /api/auth/login<br/>{email, password}
+    G->>Svc: Forward request
+    Svc->>PG: Verify credentials
+    PG-->>Svc: User data (hashed password)
+    Svc->>Svc: bcrypt.compare()
+    
+    alt Credentials valid
+        Svc->>Svc: Generate JWT tokens
+        Svc->>Redis: Store refresh token
+        Redis-->>Svc: OK
+        Svc-->>G: {accessToken, refreshToken, user}
+        G-->>F: Login successful
+        F->>F: Store tokens in localStorage
+    else Credentials invalid
+        Svc-->>G: 401 Unauthorized
+        G-->>F: Login failed
+    end
+
+    Note over U,F: Token refresh (before expiry)
+
+    F->>G: POST /api/auth/refresh<br/>{refreshToken}
+    G->>Svc: Forward request
+    Svc->>Redis: Verify refresh token
+    Redis-->>Svc: Token valid
+    
+    alt Token valid
+        Svc->>Svc: Generate new access token
+        Svc-->>G: {accessToken}
+        G-->>F: Token refreshed
+    else Token expired/invalid
+        Svc-->>G: 401 Unauthorized
+        G-->>F: Redirect to login
+    end
+
+    Note over U,F: Logout
+
+    F->>G: POST /api/auth/logout
+    G->>Svc: Forward request
+    Svc->>Redis: Delete refresh token
+    Redis-->>Svc: OK
+    Svc-->>G: OK
+    G-->>F: Logged out
+    F->>F: Clear tokens

@@ -6,6 +6,7 @@
 const logger = require('../utils/logger');
 const config = require('../config/config');
 const ApiError = require('../utils/api-error');
+const kafkaProducer = require('../../kafkaProducer');
 
 class AlertService {
   constructor(alertRepository, sensorRepository, notificationService) {
@@ -137,6 +138,9 @@ class AlertService {
       containerId: idConteneur,
       value: valeurDetectee
     }, 'New alert created');
+
+    await kafkaProducer.sendAlert(alert);
+    await kafkaProducer.sendContainerStatus(idConteneur, 'ALERTE_ACTIVE');
 
     return alert;
   }

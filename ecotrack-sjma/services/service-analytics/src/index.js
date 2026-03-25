@@ -12,6 +12,7 @@ const client = require('prom-client');
 const { generalLimiter, reportLimiter, mlLimiter } = require('./middleware/rateLimitMiddleware');
 const { errorHandler } = require('./middleware/errorHandler');
 const centralizedLogging = require('./services/centralizedLogging');
+const kafkaConsumer = require('../kafkaConsumer');
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -65,6 +66,7 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 const PORT = process.env.PORT || 3015;
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Create HTTP server for WebSocket
 const httpServer = require('http').createServer(app);
@@ -108,20 +110,58 @@ app.get('/health', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-httpServer.listen(PORT, () => {
-  logger.info(' Analytics Service running on port ' + PORT);
+const attachKafkaHandlers = () => {
+  kafkaConsumer.onSensorData(async (data, meta) => {
+    logger.info({ topic: meta.topic, containerId: data?.id_conteneur }, 'Kafka sensor data received');
+    if (wsService) {
+      wsService.emitContainerUpdate(data?.id_conteneur, { type: 'sensor', data, meta });
+    }
+  });
+
+  kafkaConsumer.onAlert(async (alert, meta) => {
+    logger.warn({ topic: meta.topic, alertId: alert?.id_alerte }, 'Kafka alert received');
+    if (wsService) {
+      wsService.emitAlert(alert);
+    }
+  });
+
+  kafkaConsumer.onContainerStatus(async (payload, meta) => {
+    logger.info({ topic: meta.topic, containerId: payload?.containerId, status: payload?.status }, 'Kafka container status received');
+    if (wsService) {
+      wsService.emitContainerUpdate(payload?.containerId, { type: 'status', data: payload, meta });
+    }
+  });
+};
+
+const startRuntimeServices = () => {
   setupCronJobs();
-  
-  // Initialize WebSocket
   wsService = new WebSocketService(httpServer);
-  
-  // Setup report scheduler
+
   const ReportService = require('./services/reportService');
   const SchedulerService = require('./services/schedulerService');
   const reportService = new ReportService();
   const scheduler = new SchedulerService(reportService);
   scheduler.setupSchedules();
-});
+
+  attachKafkaHandlers();
+  kafkaConsumer.connect().catch(err => {
+    logger.warn({ err: err.message }, 'Kafka consumer startup failed, continuing without');
+  });
+
+  centralizedLogging.connect().then(() => {
+    logger.info('Centralized logging initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+  });
+};
+
+const startServer = () => {
+  if (isTestEnv) return null;
+  return httpServer.listen(PORT, () => {
+    logger.info(' Analytics Service running on port ' + PORT);
+    startRuntimeServices();
+  });
+};
 
 // Routes
 app.use('/api/analytics', aggregationRoutes);
@@ -153,11 +193,33 @@ app.use('/api/metrics', metricsRoutes);
 const mlRoutes = require('./routes/mlRoutes');
 app.use('/api/analytics', mlRoutes);
 
-// Initialize centralized logging
-centralizedLogging.connect().then(() => {
-  logger.info('Centralized logging initialized');
-}).catch(err => {
-  logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
-});
+const stopServer = async () => {
+  await kafkaConsumer.disconnect();
+  return new Promise((resolve) => {
+    if (httpServer.listening) {
+      httpServer.close(() => resolve());
+    } else {
+      resolve();
+    }
+  });
+};
+
+if (!isTestEnv) {
+  startServer();
+
+  process.on('SIGINT', async () => {
+    logger.info('Shutting down analytics service');
+    await stopServer();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    logger.info('Shutting down analytics service (SIGTERM)');
+    await stopServer();
+    process.exit(0);
+  });
+}
 
 module.exports = app;
+module.exports.startServer = startServer;
+module.exports.stopServer = stopServer;
