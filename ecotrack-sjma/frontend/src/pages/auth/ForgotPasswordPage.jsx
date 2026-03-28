@@ -10,6 +10,7 @@ const ForgotPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [resetToken, setResetToken] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,10 +30,15 @@ const ForgotPasswordPage = () => {
     setError('');
 
     try {
-      await forgotPassword(email);
+      const response = await forgotPassword(email);
+      setResetToken(response.resetToken || '');
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de l\'envoi');
+      if (err.response?.status === 404) {
+        setError('Cet email n\'existe pas. Veuillez vérifier ou contacter l\'administrateur.');
+      } else {
+        setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,8 +55,16 @@ const ForgotPasswordPage = () => {
               </div>
               <h2 style={{color: '#fff', marginBottom: '12px'}}>Email envoyé !</h2>
               <p style={{color: 'rgba(255,255,255,0.7)', marginBottom: '24px'}}>
-                Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.
+                Un lien de réinitialisation a été envoyé à votre adresse email.
               </p>
+              {resetToken && (
+                <div style={{background: '#fff', padding: '10px', borderRadius: '8px', marginBottom: '16px', wordBreak: 'break-all', fontSize: '12px'}}>
+                  <strong>Lien de test:</strong><br/>
+                  <a href={`/reset-password?token=${resetToken}`} style={{color: '#4CAF50'}}>
+                    {`/reset-password?token=${resetToken}`}
+                  </a>
+                </div>
+              )}
               <button 
                 className="btn-primary"
                 onClick={() => navigate('/login')}

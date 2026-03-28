@@ -8,6 +8,15 @@ export const errorHandler = (err, req, res, next) => {
     path: req.path,
     method: req.method
   }, 'Request error');
+  
+  if (err.status === 409) {
+    return res.status(409).json({ error: 'Email already in use' });
+  }
+  
+  if (err.status === 404) {
+    return res.status(404).json({ error: err.message });
+  }
+  
   if (err.code === '23005' || err.code === '23505') {
     return res.status(409).json({ message: 'Conflit : Ressource déjà existante.' });
   }

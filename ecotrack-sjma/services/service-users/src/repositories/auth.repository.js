@@ -19,11 +19,16 @@ export const AuthRepository = {
     return result.rows[0];
   },
   async findUserByEmail(email) {
-    const result = await pool.query(
-      'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points, est_active FROM UTILISATEUR WHERE email = $1',
-      [email]
-    );
-    return result.rows[0];
+    try {
+      const result = await pool.query(
+        'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points, est_active FROM UTILISATEUR WHERE email = $1',
+        [email]
+      );
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error in findUserByEmail:', error);
+      throw error;
+    }
   },
   async findUserById(userId) {
     const result = await pool.query(
