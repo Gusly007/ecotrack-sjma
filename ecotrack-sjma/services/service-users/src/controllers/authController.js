@@ -112,3 +112,17 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const result = await authService.resetPassword(token, newPassword);
   res.json(result);
 });
+
+/**
+ * POST /auth/activate
+ */
+export const activateAccount = asyncHandler(async (req, res) => {
+  const { email, token, newPassword } = req.body;
+  
+  if (!email || !token || !newPassword) {
+    return res.status(400).json({ error: 'Email, token et nouveau mot de passe requis' });
+  }
+  
+  const result = await authService.activateAccount(email, token, newPassword);
+  res.json(result);
+});

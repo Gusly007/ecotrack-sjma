@@ -267,7 +267,7 @@ const logoutSchema = {
  *             example:
  *               error: "Email already in use"
  */
-//router.post('/register', publicLimiter, authController.register);
+router.post('/register', publicLimiter, validate(registerSchema), authController.register);
 
 /**
  * @swagger
@@ -525,5 +525,7 @@ router.post('/forgot-password', publicLimiter, authController.forgotPassword);
  *         description: Erreur serveur
  */
 router.post('/reset-password', publicLimiter, authController.resetPassword);
+
+router.post('/activate', publicLimiter, authController.activateAccount);
 
 export default router;

@@ -3,7 +3,7 @@ import { hashPassword,comparePassword } from "../utils/crypto.js";
 import{ generateToken,generateRefreshToken } from "../utils/jwt.js";
 import * as auditService from './auditService.js';
 import * as sessionService from './sessionService.js';
-import { sendPasswordResetEmail } from './emailService.js';
+import { sendPasswordResetEmail, sendAdminCreatedUserEmail } from './emailService.js';
 import crypto from 'crypto';
 
 /**
@@ -14,10 +14,12 @@ export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN
   // Vérifier si l'utilisateur existe déjà
   const existingUser = await AuthRepository.findUserByEmailOrPrenom(email, prenom);
   if (existingUser.length > 0) {
-    throw new Error('Utilisateur déjà existant');
+    const error = new Error('Email already in use');
+    error.status = 409;
+    throw error;
   }
-  //Valider password (ajouter des règles de validation si nécessaire)
-  if (password.length < 6) {
+  
+  if (!password || password.length < 6) {
     throw new Error('Le mot de passe doit contenir au moins 6 caractères');
   }
   // Hasher le mot de passe
@@ -30,6 +32,13 @@ export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN
 
   await sessionService.limitConcurrentSessions(newUser.id_utilisateur);
   await sessionService.storeRefreshToken(newUser.id_utilisateur, refreshToken);
+
+  // Envoyer email de création de compte par admin
+  try {
+    await sendAdminCreatedUserEmail(email, prenom, nom, role, password);
+  } catch (_) {
+    // ignore email failures
+  }
 
   // Audit (best-effort)
   try {
@@ -113,27 +122,33 @@ export const getUserById = async (userId) => {
  * Demander la réinitialisation du mot de passe
  */
 export const forgotPassword = async (email) => {
-  const user = await AuthRepository.findUserByEmail(email);
-  if (!user) {
-    return { message: 'Si un compte existe avec cet email, un lien de réinitialisation sera envoyé' };
+  try {
+    const user = await AuthRepository.findUserByEmail(email);
+    if (!user) {
+      throw Object.assign(new Error('Aucun compte trouvé avec cet email. Veuillez vérifier ou contacter l\'administrateur.'), { status: 404 });
+    }
+    
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000);
+    
+    await AuthRepository.createPasswordResetToken(email, resetToken, expiresAt);
+    
+    const emailResult = await sendPasswordResetEmail(email, resetToken);
+    
+    const response = { 
+      message: 'Un lien de réinitialisation a été envoyé à votre email.'
+    };
+    
+    if (emailResult.previewUrl) {
+      response.previewUrl = emailResult.previewUrl;
+      response.resetToken = resetToken;
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error in forgotPassword:', error);
+    throw error;
   }
-  
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 3600000); // 1 heure
-  
-  await AuthRepository.createPasswordResetToken(email, resetToken, expiresAt);
-  
-  const emailResult = await sendPasswordResetEmail(email, resetToken);
-  
-  const response = { 
-    message: 'Si un compte existe avec cet email, un lien de réinitialisation sera envoyé'
-  };
-  
-  if (emailResult.previewUrl) {
-    response.previewUrl = emailResult.previewUrl;
-  }
-  
-  return response;
 };
 
 /**
@@ -155,5 +170,25 @@ export const resetPassword = async (token, newPassword) => {
   await AuthRepository.deletePasswordResetToken(token);
   
   return { message: 'Mot de passe réinitialisé avec succès' };
+};
+
+/**
+ * Activer un compte utilisateur avec mot de passe temporaire
+ */
+export const activateAccount = async (email, token, newPassword) => {
+  const user = await AuthRepository.findUserByEmail(email);
+  
+  if (!user) {
+    throw new Error('Utilisateur non trouvé');
+  }
+  
+  if (newPassword.length < 6) {
+    throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+  }
+  
+  const hashedPassword = await hashPassword(newPassword);
+  await AuthRepository.updatePassword(email, hashedPassword);
+  
+  return { message: 'Compte activé avec succès' };
 };
 

@@ -1,6 +1,6 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
-import { getPasswordResetHtml, getWelcomeHtml } from './emailTemplates.js';
+import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
 const logger = {
@@ -84,4 +84,9 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
 export const sendWelcomeEmail = async (email, prenom) => {
   const welcomeHtml = getWelcomeHtml(prenom, env.appUrl);
   return sendEmail(email, 'Bienvenue sur EcoTrack !', welcomeHtml);
+};
+
+export const sendAdminCreatedUserEmail = async (email, prenom, nom, role, password) => {
+  const html = getAdminCreatedUserHtml(prenom, nom, role, password, env.appUrl);
+  return sendEmail(email, 'Votre compte EcoTrack a été créé', html);
 };

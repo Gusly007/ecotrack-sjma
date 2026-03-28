@@ -94,8 +94,7 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('ecotrack_token', data.token);
             localStorage.setItem('ecotrack_user', JSON.stringify(data.user));
-            localStorage.setItem('ecotrack_role', selectedRole);
-            redirectBasedOnRole(selectedRole);
+            redirectAfterLogin();
         } else {
             throw new Error(data.message || 'Erreur de connexion');
         }
@@ -187,21 +186,14 @@ async function handleForgotPassword(event) {
     }
 }
 
-// ==================== REDIRECT BASED ON ROLE ====================
-function redirectBasedOnRole(role) {
-    const routes = {
-        'citoyen': '/dashboard/citoyen',
-        'agent': '/dashboard/agent',
-        'gestionnaire': '/dashboard/gestionnaire',
-        'admin': '/dashboard/admin'
-    };
-    window.location.href = routes[role] || '/';
+// ==================== REDIRECT AFTER LOGIN ====================
+function redirectAfterLogin() {
+    window.location.href = '/admin';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('ecotrack_token');
-    const role = localStorage.getItem('ecotrack_role');
-    if (token && role) {
-        redirectBasedOnRole(role);
+    const userStr = localStorage.getItem('ecotrack_user');
+    if (userStr) {
+        redirectAfterLogin();
     }
 });

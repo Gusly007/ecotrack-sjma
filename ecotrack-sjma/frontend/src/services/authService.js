@@ -48,6 +48,11 @@ export const authService = {
     return response.data;
   },
 
+  async activateAccount({ email, token, newPassword }) {
+    const response = await api.post('/auth/activate', { email, token, newPassword });
+    return response.data;
+  },
+
   getCurrentUser() {
     const userData = localStorage.getItem(USER_KEY);
     if (userData) {
