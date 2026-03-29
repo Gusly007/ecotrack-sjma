@@ -1,11 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Sidebar from './Sidebar';
 import './GestionnaireLayout.css';
 
 export default function GestionnaireLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
   
   const currentDate = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
@@ -44,7 +51,7 @@ export default function GestionnaireLayout({ children }) {
               <i className="fas fa-user-circle"></i>
               <span>{userName}</span>
             </div>
-            <button className="logout-btn" onClick={logout}>
+            <button className="logout-btn" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i>
             </button>
           </div>

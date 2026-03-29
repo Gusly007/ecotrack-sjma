@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -12,6 +13,13 @@ import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
 import UsersPage from './pages/desktop/admin/Users';
 import CreateUserPage from './pages/desktop/admin/CreateUser';
+import UserDetailPage from './pages/desktop/admin/UserDetail';
+import ConteneursPage from './pages/desktop/admin/Conteneurs';
+import ZonesPage from './pages/desktop/admin/Zones';
+import SignalementsPage from './pages/desktop/admin/Signalements';
+import AlertsPage from './pages/desktop/admin/Alerts';
+import LogsPage from './pages/desktop/admin/Logs';
+import MonitoringPage from './pages/desktop/admin/Monitoring';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 
@@ -37,42 +45,98 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           
-          {/* Routes Admin */}
+          {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
             <ProtectedRoute>
-              <AdminDashboard />
+              <RoleBasedLayout>
+                <AdminDashboard />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={
             <ProtectedRoute>
-              <UsersPage />
+              <RoleBasedLayout>
+                <UsersPage />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users/create" element={
             <ProtectedRoute>
-              <CreateUserPage />
+              <RoleBasedLayout>
+                <CreateUserPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users/:id" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <UserDetailPage />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/roles" element={
             <ProtectedRoute>
-              <RolesPage />
+              <RoleBasedLayout>
+                <RolesPage />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/zones" element={
             <ProtectedRoute>
-              <AdminDashboard />
+              <RoleBasedLayout>
+                <ZonesPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/conteneurs" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <ConteneursPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/signalements" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SignalementsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/alerts" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <AlertsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/logs" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <LogsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/monitoring" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <MonitoringPage />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
 
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
-              <GestionnaireDashboard />
+              <RoleBasedLayout>
+                <GestionnaireDashboard />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/*" element={
             <ProtectedRoute>
-              <GestionnaireDashboard />
+              <RoleBasedLayout>
+                <GestionnaireDashboard />
+              </RoleBasedLayout>
             </ProtectedRoute>
           } />
 

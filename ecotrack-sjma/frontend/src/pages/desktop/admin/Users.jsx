@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AdminLayout from '../../../components/desktop/admin/AdminLayout';
+import { StatCard, StatsGrid } from '../../../components/common';
+import { Filters, SearchBox, SelectFilter, Pagination, Table, Alert, useAlert } from '../../../components/common';
 import { userService } from '../../../services/userService';
 import './Users.css';
 
@@ -20,14 +21,42 @@ const roleClasses = {
 
 export default function UsersPage() {
   const navigate = useNavigate();
+  
+  const userColumns = [
+    { header: 'Utilisateur', render: (user) => (
+      <div className="user-cell">
+        <div className={`user-avatar ${user.role_par_defaut === 'ADMIN' ? 'admin-avatar' : ''}`}>
+          {user.prenom?.[0]}{user.nom?.[0]}
+        </div>
+        <strong>{user.prenom} {user.nom}</strong>
+      </div>
+    )},
+    { header: 'Email', accessor: 'email' },
+    { header: 'Rôle', render: (user) => (
+      <span className={`role-badge ${roleClasses[user.role_par_defaut]}`}>
+        {roleLabels[user.role_par_defaut]}
+      </span>
+    )},
+    { header: 'Dernière connexion', render: (user) => user.date_creation ? new Date(user.date_creation).toLocaleDateString('fr-FR') : '-' },
+    { header: 'Statut', render: (user) => (
+      <div className="status-cell">
+        <span className={`status-dot ${user.est_active ? 'active' : 'disabled'}`}></span>
+        {user.est_active ? 'Actif' : 'Désactivé'}
+      </div>
+    )},
+    { header: 'Actions', render: (user) => (
+      <button className="btn-primary btn-sm" onClick={() => navigate(`/admin/users/${user.id_utilisateur}`)}>Gérer</button>
+    )},
+  ];
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const { alert, showError } = useAlert();
 
   useEffect(() => {
     loadUsers();
@@ -40,10 +69,9 @@ export default function UsersPage() {
       const userData = Array.isArray(response) ? response : (response.data || []);
       console.log('Users loaded:', userData.length);
       setUsers(userData);
-      setError(null);
     } catch (err) {
       console.error('Failed to load users:', err);
-      setError('Erreur de chargement des utilisateurs');
+      showError('Erreur de chargement des utilisateurs');
       setUsers([]);
     } finally {
       setLoading(false);
@@ -85,24 +113,8 @@ export default function UsersPage() {
     }
   };
 
-  const renderPagination = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`page-btn ${currentPage === i ? 'active' : ''}`}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </button>
-      );
-    }
-    return pages;
-  };
-
   return (
-    <AdminLayout>
+    <div className="users-page">
       <div className="users-header">
         <h2 className="page-title">Gestion des Utilisateurs</h2>
         <button className="btn-primary btn-sm" onClick={() => navigate('/admin/users/create')}>
@@ -110,129 +122,82 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total utilisateurs</div>
-          <div className="stat-value">{stats.total.toLocaleString()}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Citoyens</div>
-          <div className="stat-value" style={{ color: '#4CAF50' }}>{stats.citoyens.toLocaleString()}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Agents</div>
-          <div className="stat-value" style={{ color: '#FF9800' }}>{stats.agents}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Gestionnaires / Admins</div>
-          <div className="stat-value" style={{ color: '#2196F3' }}>{stats.gestionnaires} / {stats.admins}</div>
-        </div>
-      </div>
+      <StatsGrid>
+        <StatCard 
+          icon="fa-users" 
+          iconColor="blue" 
+          label="Total utilisateurs" 
+          value={stats.total.toLocaleString()} 
+        />
+        <StatCard 
+          icon="fa-user" 
+          iconColor="green" 
+          label="Citoyens" 
+          value={stats.citoyens.toLocaleString()} 
+        />
+        <StatCard 
+          icon="fa-truck" 
+          iconColor="orange" 
+          label="Agents" 
+          value={stats.agents} 
+        />
+        <StatCard 
+          icon="fa-user-shield" 
+          iconColor="purple" 
+          label="Gestionnaires / Admins" 
+          value={`${stats.gestionnaires} / ${stats.admins}`} 
+        />
+      </StatsGrid>
 
       <div className="panel">
         {loading ? (
           <div className="loading-state"><i className="fas fa-spinner fa-spin"></i> Chargement...</div>
-        ) : error ? (
-          <div className="error-state">{error}</div>
         ) : (
           <>
-            <div className="filters-bar">
-          <div className="search-input">
-            <i className="fas fa-search"></i>
-            <input 
-              type="text" 
-              placeholder="Rechercher un utilisateur..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            />
-          </div>
-          <select 
-            className="form-select" 
-            value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
-          >
-            <option value="all">Tous les rôles</option>
-            <option value="CITOYEN">Citoyen</option>
-            <option value="AGENT">Agent</option>
-            <option value="GESTIONNAIRE">Gestionnaire</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-          <select 
-            className="form-select"
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-          >
-            <option value="all">Tous</option>
-            <option value="active">Actifs</option>
-            <option value="disabled">Désactivés</option>
-          </select>
-        </div>
+            {alert && <Alert type={alert.type} message={alert.message} />}
+            <Filters>
+              <SearchBox 
+                value={search} 
+                onChange={(value) => { setSearch(value); setCurrentPage(1); }} 
+                placeholder="Rechercher un utilisateur..." 
+              />
+              <SelectFilter 
+                value={roleFilter}
+                onChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}
+                options={[
+                  { value: 'all', label: 'Tous les rôles' },
+                  { value: 'CITOYEN', label: 'Citoyen' },
+                  { value: 'AGENT', label: 'Agent' },
+                  { value: 'GESTIONNAIRE', label: 'Gestionnaire' },
+                  { value: 'ADMIN', label: 'Admin' }
+                ]}
+              />
+              <SelectFilter 
+                value={statusFilter}
+                onChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}
+                options={[
+                  { value: 'all', label: 'Tous' },
+                  { value: 'active', label: 'Actifs' },
+                  { value: 'disabled', label: 'Désactivés' }
+                ]}
+              />
+            </Filters>
 
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>Utilisateur</th>
-              <th>Email</th>
-              <th>Rôle</th>
-              <th>Dernière connexion</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedUsers.map(user => (
-              <tr key={user.id_utilisateur}>
-                <td>
-                  <div className="user-cell">
-                    <div className={`user-avatar ${user.role_par_defaut === 'ADMIN' ? 'admin-avatar' : ''}`}>
-                      {getInitials(user)}
-                    </div>
-                    <strong>{user.prenom} {user.nom}</strong>
-                  </div>
-                </td>
-                <td>{user.email}</td>
-                <td>
-                  <span className={`role-badge ${roleClasses[user.role_par_defaut]}`}>
-                    {roleLabels[user.role_par_defaut]}
-                  </span>
-                </td>
-                <td>{user.date_creation ? new Date(user.date_creation).toLocaleDateString('fr-FR') : '-'}</td>
-                <td>
-                  <div className="status-cell">
-                    <span className={`status-dot ${user.est_active ? 'active' : 'disabled'}`}></span>
-                    {user.est_active ? 'Actif' : 'Désactivé'}
-                  </div>
-                </td>
-                <td>
-                  <button className="btn-primary btn-sm">Gérer</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table columns={userColumns} data={paginatedUsers} />
 
         {totalPages > 1 && (
-          <div className="pagination">
-            <button 
-              className="page-btn" 
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <i className="fas fa-chevron-left"></i> Précédent
-            </button>
-            {renderPagination()}
-            <button 
-              className="page-btn" 
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Suivant <i className="fas fa-chevron-right"></i>
-            </button>
-          </div>
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            showingTo={startIndex + itemsPerPage} 
+            totalItems={filteredUsers.length} 
+            label="utilisateurs" 
+            onPageChange={setCurrentPage} 
+          />
         )}
           </>
         )}
       </div>
-    </AdminLayout>
+    </div>
   );
 }

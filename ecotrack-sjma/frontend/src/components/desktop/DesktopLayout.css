@@ -125,92 +125,113 @@
   padding: 24px;
 }
 
-/* Logout Modal */
-.modal-overlay {
+/* Sidebar */
+.admin-sidebar {
   position: fixed;
-  top: 0;
   left: 0;
-  right: 0;
+  top: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-box {
+  width: 250px;
   background: #fff;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-  padding: 24px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  z-index: 200;
 }
 
-.modal-box.text-center {
-  text-align: center;
+.admin-sidebar.collapsed {
+  width: 60px;
 }
 
-.modal-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+.sidebar-logo {
+  padding: 20px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4CAF50;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  font-size: 1.5rem;
-}
-
-.modal-icon.warning {
-  background: #fff3e0;
-  color: #FF9800;
-}
-
-.modal-box h3 {
-  font-size: 1.2rem;
-  color: #333;
-  margin: 0 0 8px 0;
-}
-
-.modal-box p {
-  color: #666;
-  font-size: 0.95rem;
-  margin: 0 0 20px 0;
-}
-
-.modal-actions {
-  display: flex;
   gap: 10px;
-  justify-content: center;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.modal-actions button {
+.sidebar-logo i {
+  font-size: 1.4rem;
+}
+
+.sidebar-logo span {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.admin-sidebar.collapsed .sidebar-logo span {
+  display: none;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 12px 0;
+  margin: 0;
   flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
+  overflow-y: auto;
 }
 
-.btn-cancel {
-  background: #f0f2f5;
+.sidebar-menu li {
+  margin: 2px 8px;
+}
+
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: #555;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.sidebar-menu a:hover {
+  background: #f5f5f5;
   color: #333;
 }
 
-.btn-cancel:hover {
-  background: #e0e0e0;
+.sidebar-menu a.active {
+  background: #e8f5e9;
+  color: #4CAF50;
+  font-weight: 500;
 }
 
-.btn-confirm-danger {
-  background: #f44336;
-  color: #fff;
+.sidebar-menu a i {
+  width: 20px;
+  text-align: center;
+  font-size: 1rem;
 }
 
-.btn-confirm-danger:hover {
-  background: #d32f2f;
+.sidebar-menu a span {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.admin-sidebar.collapsed .sidebar-menu a span {
+  display: none;
+}
+
+.admin-sidebar.collapsed .sidebar-menu a {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar-section {
+  padding: 16px 14px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+.admin-sidebar.collapsed .sidebar-section {
+  display: none;
 }

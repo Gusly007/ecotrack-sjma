@@ -40,7 +40,11 @@ export const AuthProvider = ({ children }) => {
   */
 
   const logout = async () => {
-    await authService.logout();
+    try {
+      await authService.logout();
+    } catch (e) {
+      logger.warn('Logout API failed, clearing locally');
+    }
     setUser(null);
     setIsAuthenticated(false);
   };

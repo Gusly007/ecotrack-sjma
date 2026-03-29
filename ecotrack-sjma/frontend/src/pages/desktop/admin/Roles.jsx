@@ -1,4 +1,3 @@
-import AdminLayout from '../../../components/desktop/admin/AdminLayout';
 import './Roles.css';
 
 const permissions = [
@@ -22,7 +21,7 @@ const permissions = [
 
 export default function RolesPage() {
   return (
-    <AdminLayout>
+    <div className="roles-page">
       <h2 className="page-title">Rôles & Permissions (RBAC)</h2>
       
       <div className="panel">
@@ -62,6 +61,6 @@ export default function RolesPage() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

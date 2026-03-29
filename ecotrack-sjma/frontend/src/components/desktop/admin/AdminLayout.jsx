@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { ModalConfirmation } from '../../common';
 import Sidebar from './Sidebar';
 import './AdminLayout.css';
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   
   const currentDate = new Date().toLocaleDateString('fr-FR', {
@@ -16,6 +20,16 @@ export default function AdminLayout({ children }) {
 
   const notificationsCount = 5;
   const adminName = user?.prenom || user?.name || 'Admin';
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="admin-layout">
@@ -45,7 +59,7 @@ export default function AdminLayout({ children }) {
               <i className="fas fa-user-shield"></i>
               <span>{adminName} (Administrateur)</span>
             </div>
-            <button className="logout-btn" onClick={logout}>
+            <button className="logout-btn" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i>
             </button>
           </div>
@@ -55,6 +69,17 @@ export default function AdminLayout({ children }) {
           {children}
         </main>
       </div>
+
+      <ModalConfirmation 
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Déconnexion"
+        message="Voulez-vous vraiment vous déconnecter de votre session EcoTrack ?"
+        confirmText="Se déconnecter"
+        onConfirm={confirmLogout}
+        danger
+        closeAfterConfirm={false}
+      />
     </div>
   );
 }
