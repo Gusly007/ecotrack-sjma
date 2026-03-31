@@ -27,12 +27,17 @@ export function Input({
   required,
   ...props 
 }) {
+  const handleChange = (e) => {
+    if (onChange) {
+      onChange(e.target.value);
+    }
+  };
   return (
     <input 
       type={type}
       className="form-input"
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       placeholder={placeholder}
       disabled={disabled}
       required={required}

@@ -21,6 +21,7 @@ import SignalementDetailPage from './pages/desktop/admin/SignalementDetail';
 import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
+import ConfigurationPage from './pages/desktop/admin/Configuration';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 
@@ -128,6 +129,13 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <MonitoringPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/config" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <ConfigurationPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

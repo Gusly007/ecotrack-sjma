@@ -89,9 +89,7 @@ export default function SignalementsPage() {
     { header: 'Actions', render: (row) => (
       <div className="action-buttons">
         <button className="btn-primary btn-sm" onClick={() => handleView(row.id)}>Voir</button>
-        {row.statut !== 'Résolu' && row.statut !== 'Rejeté' && (
-          <button className="btn-outline btn-sm" onClick={() => handleUpdate(row.id)}>Mettre à jour</button>
-        )}
+        <button className="btn-outline btn-sm" onClick={() => handleUpdate(row.id)}>Mettre à jour</button>
       </div>
     )}
   ];
