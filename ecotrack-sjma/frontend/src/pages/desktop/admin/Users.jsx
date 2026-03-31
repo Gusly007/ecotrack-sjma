@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatCard, StatsGrid } from '../../../components/common';
 import { Filters, SearchBox, SelectFilter, Pagination, Table, Alert, useAlert } from '../../../components/common';
@@ -51,24 +51,82 @@ export default function UsersPage() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
   const itemsPerPage = 5;
   const { alert, showError } = useAlert();
 
+  const handleSearchSubmit = () => {
+    setSearchQuery(searchInput);
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [currentPage, searchQuery, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    loadTotalUsers();
+  }, [roleFilter, statusFilter, searchQuery]);
+
+  const loadTotalUsers = async () => {
+    try {
+      const response = await userService.getAll({
+        page: 1,
+        limit: 1,
+        role: roleFilter !== 'all' ? roleFilter : undefined,
+        search: searchQuery || undefined,
+        est_active: statusFilter === 'active' ? true : (statusFilter === 'disabled' ? false : undefined)
+      });
+      
+      if (response.pagination) {
+        setTotalUsers(response.pagination.total);
+      }
+    } catch (err) {
+      console.error('Failed to load total users:', err);
+    }
+  };
 
   const loadUsers = async () => {
     try {
-      const response = await userService.getAll();
-      console.log('API Response:', response);
-      const userData = Array.isArray(response) ? response : (response.data || []);
-      console.log('Users loaded:', userData.length);
+      setLoading(true);
+      setUsers([]);
+      
+      let estActiveValue = undefined;
+      if (statusFilter === 'active') estActiveValue = 'true';
+      else if (statusFilter === 'disabled') estActiveValue = 'false';
+      
+      const params = [];
+      if (currentPage) params.push(`page=${currentPage}`);
+      if (itemsPerPage) params.push(`limit=${itemsPerPage}`);
+      if (roleFilter !== 'all') params.push(`role=${roleFilter}`);
+      if (searchQuery) params.push(`search=${searchQuery}`);
+      if (estActiveValue) params.push(`est_active=${estActiveValue}`);
+      
+      console.log('Request URL:', '/users?' + params.join('&'));
+      
+      const response = await userService.getAll({
+        page: currentPage,
+        limit: itemsPerPage,
+        role: roleFilter !== 'all' ? roleFilter : undefined,
+        search: searchQuery || undefined,
+        est_active: estActiveValue
+      });
+      
+      const userData = response.data || response;
+      const pagination = response.pagination;
+      
       setUsers(userData);
+      if (pagination) {
+        setTotalPages(pagination.pages);
+        setTotalItems(pagination.total);
+      }
     } catch (err) {
       console.error('Failed to load users:', err);
       showError('Erreur de chargement des utilisateurs');
@@ -78,23 +136,11 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const fullName = `${user.prenom || ''} ${user.nom || ''}`.toLowerCase();
-    const matchSearch = fullName.includes(search.toLowerCase()) || 
-                        (user.email || '').toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === 'all' || user.role_par_defaut === roleFilter;
-    const matchStatus = statusFilter === 'all' || 
-                        (statusFilter === 'active' && user.est_active) ||
-                        (statusFilter === 'disabled' && !user.est_active);
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedUsers = users;
+  const filteredUsers = users;
 
   const stats = {
-    total: users.length,
+    total: totalUsers,
     citoyens: users.filter(u => u.role_par_defaut === 'CITOYEN').length,
     agents: users.filter(u => u.role_par_defaut === 'AGENT').length,
     gestionnaires: users.filter(u => u.role_par_defaut === 'GESTIONNAIRE').length,
@@ -157,8 +203,9 @@ export default function UsersPage() {
             {alert && <Alert type={alert.type} message={alert.message} />}
             <Filters>
               <SearchBox 
-                value={search} 
-                onChange={(value) => { setSearch(value); setCurrentPage(1); }} 
+                value={searchInput} 
+                onChange={(value) => setSearchInput(value)}
+                onSubmit={handleSearchSubmit}
                 placeholder="Rechercher un utilisateur..." 
               />
               <SelectFilter 
@@ -183,17 +230,32 @@ export default function UsersPage() {
               />
             </Filters>
 
-        <Table columns={userColumns} data={paginatedUsers} />
+        {users.length === 0 && !loading ? (
+          <div className="empty-state">
+            <i className="fas fa-user-slash"></i>
+            <p>
+              {statusFilter === 'disabled' 
+                ? 'Aucun utilisateur désactivé' 
+                : statusFilter === 'active' 
+                  ? 'Aucun utilisateur actif' 
+                  : 'Aucun utilisateur trouvé'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <Table columns={userColumns} data={paginatedUsers} />
 
-        {totalPages > 1 && (
-          <Pagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            showingTo={startIndex + itemsPerPage} 
-            totalItems={filteredUsers.length} 
-            label="utilisateurs" 
-            onPageChange={setCurrentPage} 
-          />
+            {totalPages > 1 && (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                showingTo={Math.min(currentPage * itemsPerPage, totalItems)} 
+                totalItems={totalItems} 
+                label="utilisateurs" 
+                onPageChange={setCurrentPage} 
+              />
+            )}
+          </>
         )}
           </>
         )}

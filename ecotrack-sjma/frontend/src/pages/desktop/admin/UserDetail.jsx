@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FormGroup, FormRow, Input, Select, Modal, ModalConfirmation } from '../../../components/common';
 import { userService } from '../../../services/userService';
+import AdminLayout from '../../../components/desktop/admin/AdminLayout';
 import './UserDetail.css';
 
 const roleLabels = {

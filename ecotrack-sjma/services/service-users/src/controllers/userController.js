@@ -57,8 +57,9 @@ export const getProfileWithStats = asyncHandler(async (req, res) => {
 });
 
 export const listUsers = asyncHandler(async (req, res) => {
-  const { page, limit, role, search } = req.query;
-  const result = await userService.listUsers({ page, limit, role, search });
+  const { page, limit, role, search, est_active } = req.query;
+  console.log('[DEBUG controller] est_active:', est_active);
+  const result = await userService.listUsers({ page, limit, role, search, est_active });
   res.json(result);
 });
 

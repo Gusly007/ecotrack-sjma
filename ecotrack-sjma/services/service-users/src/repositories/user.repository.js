@@ -63,12 +63,13 @@ export const UserRepository = {
     if (result.rows.length === 0) throw new Error('User not found');
     return result.rows[0];
   },
-  async listUsers({ page = 1, limit = 20, role, search } = {}) {
+  async listUsers({ page = 1, limit = 20, role, search, est_active } = {}) {
     const pageNumber = Number.isNaN(parseInt(page, 10)) ? 1 : Math.max(1, parseInt(page, 10));
     const limitNumber = Number.isNaN(parseInt(limit, 10)) ? 20 : Math.max(1, Math.min(100, parseInt(limit, 10)));
     const offset = (pageNumber - 1) * limitNumber;
     const filters = [];
     const params = [];
+    console.log('[DEBUG listUsers] est_active:', est_active, 'type:', typeof est_active);
     if (role) {
       params.push(role.toString().toUpperCase());
       filters.push(`role_par_defaut = $${params.length}`);
@@ -78,6 +79,12 @@ export const UserRepository = {
       params.push(normalizedSearch);
       const idx = params.length;
       filters.push(`(LOWER(email) LIKE $${idx} OR LOWER(prenom) LIKE $${idx})`);
+    }
+    if (est_active !== undefined) {
+      console.log('[DEBUG listUsers] Adding est_active filter, value:', est_active);
+      const activeValue = est_active === 'true' || est_active === true;
+      params.push(activeValue);
+      filters.push(`est_active = $${params.length}`);
     }
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
     const countResult = await pool.query(
