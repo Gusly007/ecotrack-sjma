@@ -42,11 +42,16 @@ export function Input({
 }
 
 export function Select({ value, onChange, options, placeholder, disabled }) {
+  const handleChange = (e) => {
+    if (onChange) {
+      onChange(e.target.value);
+    }
+  };
   return (
     <select 
       className="form-input"
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       disabled={disabled}
     >
       {placeholder && <option value="">{placeholder}</option>}
@@ -58,11 +63,16 @@ export function Select({ value, onChange, options, placeholder, disabled }) {
 }
 
 export function Textarea({ value, onChange, placeholder, rows = 3 }) {
+  const handleChange = (e) => {
+    if (onChange) {
+      onChange(e.target.value);
+    }
+  };
   return (
     <textarea 
       className="form-textarea"
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       placeholder={placeholder}
       rows={rows}
     />

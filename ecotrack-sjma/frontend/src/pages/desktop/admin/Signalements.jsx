@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Table, Pagination, Modal, Filters, SearchBox, SelectFilter, FormGroup, Select, DetailView, useAlert } from '../../../components/common';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Table, Pagination, Filters, SearchBox, SelectFilter, useAlert } from '../../../components/common';
 import { StatCard, StatsGrid } from '../../../components/common';
 import './Signalements.css';
 
@@ -23,6 +24,7 @@ const statutsList = ['Nouveau', 'En cours', 'Résolu', 'Rejeté'];
 const urgencesList = ['Haute', 'Moyenne', 'Basse'];
 
 export default function SignalementsPage() {
+  const navigate = useNavigate();
   const { alert, showSuccess } = useAlert();
   const [signalements, setSignalements] = useState(mockSignalements);
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,10 +32,6 @@ export default function SignalementsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatut, setFilterStatut] = useState('Tous');
   const [filterUrgence, setFilterUrgence] = useState('Toutes');
-  
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedSignalement, setSelectedSignalement] = useState(null);
 
   const filteredSignalements = signalements.filter(sig => {
     const matchSearch = sig.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,20 +65,12 @@ export default function SignalementsPage() {
     }
   };
 
-  const handleView = (signalement) => {
-    setSelectedSignalement(signalement);
-    setShowViewModal(true);
+  const handleView = (id) => {
+    navigate(`/admin/signalements/${id}`);
   };
 
-  const handleUpdate = (signalement) => {
-    setSelectedSignalement({ ...signalement });
-    setShowUpdateModal(true);
-  };
-
-  const handleStatusChange = () => {
-    setSignalements(signalements.map(s => s.id === selectedSignalement.id ? selectedSignalement : s));
-    setShowUpdateModal(false);
-    showSuccess('Statut du signalement mis à jour avec succès');
+  const handleUpdate = (id) => {
+    navigate(`/admin/signalements/${id}`);
   };
 
   const columns = [
@@ -98,8 +88,10 @@ export default function SignalementsPage() {
     { header: 'Soumis le', accessor: 'date' },
     { header: 'Actions', render: (row) => (
       <div className="action-buttons">
-        <button className="btn-sm btn-info" title="Voir" onClick={() => handleView(row)}><i className="fas fa-eye"></i></button>
-        <button className="btn-sm btn-outline" title="Mettre à jour" onClick={() => handleUpdate(row)}><i className="fas fa-edit"></i></button>
+        <button className="btn-primary btn-sm" onClick={() => handleView(row.id)}>Voir</button>
+        {row.statut !== 'Résolu' && row.statut !== 'Rejeté' && (
+          <button className="btn-outline btn-sm" onClick={() => handleUpdate(row.id)}>Mettre à jour</button>
+        )}
       </div>
     )}
   ];
@@ -126,46 +118,6 @@ export default function SignalementsPage() {
       <Table columns={columns} data={currentSignalements} />
 
       <Pagination currentPage={currentPage} totalPages={totalPages} showingTo={indexOfLast} totalItems={filteredSignalements.length} label="signalements" onPageChange={setCurrentPage} />
-
-      <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={`Signalement ${selectedSignalement?.id}`} headerIcon="fa-flag" headerColor="#f44336" size="md">
-        {selectedSignalement && (
-          <>
-            <DetailView items={[
-              { label: 'Type', value: selectedSignalement.type },
-              { label: 'Conteneur', value: `${selectedSignalement.conteneur} — ${selectedSignalement.conteneurAdresse}` },
-              { label: 'Zone', value: selectedSignalement.zone },
-              { label: 'Urgence', value: <span className={`urgence-badge ${getUrgenceClass(selectedSignalement.urgence)}`}>{selectedSignalement.urgence}</span> },
-              { label: 'Statut', value: <span className={`statut-badge ${getStatutClass(selectedSignalement.statut)}`}><span className={`statut-dot ${getStatutClass(selectedSignalement.statut)}`}></span>{selectedSignalement.statut}</span> },
-              { label: 'Soumis par', value: selectedSignalement.utilisateur },
-              { label: 'Date', value: selectedSignalement.date }
-            ]} />
-            <div className="description-box">
-              <p>{selectedSignalement.description}</p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowViewModal(false)}>Fermer</button>
-              <button className="btn-primary" onClick={() => { setShowViewModal(false); handleUpdate(selectedSignalement); }}><i className="fas fa-edit"></i> Mettre à jour</button>
-            </div>
-          </>
-        )}
-      </Modal>
-
-      <Modal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} title="Mettre à jour le signalement" headerIcon="fa-edit" size="sm">
-        {selectedSignalement && (
-          <>
-            <FormGroup label="Statut">
-              <Select value={selectedSignalement.statut} onChange={v => setSelectedSignalement({...selectedSignalement, statut: v})} options={statutsList.map(s => ({value: s, label: s}))} />
-            </FormGroup>
-            <FormGroup label="Urgence">
-              <Select value={selectedSignalement.urgence} onChange={v => setSelectedSignalement({...selectedSignalement, urgence: v})} options={urgencesList.map(u => ({value: u, label: u}))} />
-            </FormGroup>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowUpdateModal(false)}>Annuler</button>
-              <button className="btn-primary" onClick={handleStatusChange}><i className="fas fa-save"></i> Enregistrer</button>
-            </div>
-          </>
-        )}
-      </Modal>
     </div>
   );
 }

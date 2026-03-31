@@ -17,6 +17,7 @@ import UserDetailPage from './pages/desktop/admin/UserDetail';
 import ConteneursPage from './pages/desktop/admin/Conteneurs';
 import ZonesPage from './pages/desktop/admin/Zones';
 import SignalementsPage from './pages/desktop/admin/Signalements';
+import SignalementDetailPage from './pages/desktop/admin/SignalementDetail';
 import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
@@ -99,6 +100,13 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <SignalementsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/signalements/:id" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SignalementDetailPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
