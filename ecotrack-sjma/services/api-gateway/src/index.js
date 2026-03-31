@@ -71,6 +71,9 @@ const services = {
       { mountPath: '/users' },
       { mountPath: '/notifications' },
       { mountPath: '/admin/roles' },
+      { mountPath: '/admin/config' },
+      { mountPath: '/admin/environmental-constants' },
+      { mountPath: '/admin/agent-performance' },
       { mountPath: '/avatars' },
       { mountPath: '/api/users', rewrite: (path) => path.replace(/^\/api\/users/, '/users') }
     ]

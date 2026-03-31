@@ -45,6 +45,22 @@
   font-family: 'Courier New', monospace;
 }
 
+.config-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-warning i {
+  color: #ffc107;
+}
+
 .form-group {
   margin-bottom: 16px;
 }
