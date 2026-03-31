@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import GestionnaireLayout from '../../../components/desktop/gestionnaire/GestionnaireLayout';
 import './GestionnaireDashboard.css';
 
 export default function GestionnaireDashboard() {
   return (
-    <GestionnaireLayout>
+    <div className="gestionnaire-dashboard">
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon green"><i className="fas fa-route"></i></div>
@@ -113,6 +111,6 @@ export default function GestionnaireDashboard() {
           </tbody>
         </table>
       </div>
-    </GestionnaireLayout>
+    </div>
   );
 }

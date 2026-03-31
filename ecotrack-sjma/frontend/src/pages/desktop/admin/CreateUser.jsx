@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../../../services/userService';
-import AdminLayout from '../../../components/desktop/admin/AdminLayout';
+import { FormGroup, FormRow, Input, Select } from '../../../components/common';
 import './CreateUser.css';
 
 const roles = [
@@ -83,7 +83,7 @@ export default function CreateUserPage() {
   };
 
   return (
-    <AdminLayout>
+    <div className="create-user-page">
       <div className="create-user-header">
         <button className="back-btn" onClick={() => navigate('/admin/users')}>
           <i className="fas fa-arrow-left"></i>
@@ -153,41 +153,35 @@ export default function CreateUserPage() {
         <div className="panel-grid">
           <div className="panel">
             <h3><i className="fas fa-user-plus" style={{ color: '#4CAF50' }}></i> Informations de base</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Prénom</label>
-                <input 
+            <FormRow>
+              <FormGroup label="Prénom">
+                <Input 
                   type="text" 
-                  className="form-input"
                   placeholder="Sophie"
                   value={formData.prenom}
                   onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
                   required
                 />
-              </div>
-              <div className="form-group">
-                <label>Nom</label>
-                <input 
+              </FormGroup>
+              <FormGroup label="Nom">
+                <Input 
                   type="text" 
-                  className="form-input"
                   placeholder="Martin"
                   value={formData.nom}
                   onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                   required
                 />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input 
+              </FormGroup>
+            </FormRow>
+            <FormGroup label="Email">
+              <Input 
                 type="email" 
-                className="form-input"
                 placeholder="sophie.martin@ecotrack.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
               />
-            </div>
+            </FormGroup>
           </div>
 
           <div className="panel">
@@ -217,18 +211,12 @@ export default function CreateUserPage() {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Zone(s) assignée(s)</label>
-              <select 
-                className="form-input"
-                onChange={(e) => setFormData({ ...formData, zones: [e.target.value] })}
-              >
-                <option value="">Sélectionner une zone</option>
-                {zones.map(zone => (
-                  <option key={zone} value={zone}>{zone}</option>
-                ))}
-              </select>
-            </div>
+            <FormGroup label="Zone(s) assignée(s)">
+              <Select 
+                onChange={(value) => setFormData({ ...formData, zones: [value] })}
+                options={[{ value: '', label: 'Sélectionner une zone' }, ...zones.map(zone => ({ value: zone, label: zone }))]}
+              />
+            </FormGroup>
           </div>
         </div>
 
@@ -245,17 +233,14 @@ export default function CreateUserPage() {
             </div>
             
             {!formData.generatePassword && (
-              <div className="form-group password-input-group">
-                <label>Mot de passe</label>
+              <FormGroup label="Mot de passe">
                 <div className="password-field">
-                  <input 
+                  <Input 
                     type={showPassword ? "text" : "password"} 
-                    className="form-input"
                     placeholder="Minimum 6 caractères"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required={!formData.generatePassword}
-                    minLength={6}
                   />
                   <button 
                     type="button" 
@@ -265,7 +250,7 @@ export default function CreateUserPage() {
                     <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
-              </div>
+              </FormGroup>
             )}
             
             {formData.password && formData.generatePassword && (
@@ -312,6 +297,6 @@ export default function CreateUserPage() {
           </div>
         </div>
       </form>
-    </AdminLayout>
+    </div>
   );
 }

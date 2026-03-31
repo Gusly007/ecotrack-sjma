@@ -78,9 +78,9 @@
 }
 
 .sidebar-menu li a.active {
-  background: rgba(76,175,80,0.15);
-  border-left-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
+  border-left: 3px solid #4CAF50;
 }
 
 .sidebar-menu li a i {

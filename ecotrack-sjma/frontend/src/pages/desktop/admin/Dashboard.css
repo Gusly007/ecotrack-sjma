@@ -1,50 +1,40 @@
-/* Admin Dashboard Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+/* Dashboard Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
 }
 
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  margin-bottom: 12px;
-}
-
-.stat-icon.green { background: #e8f5e9; color: #4CAF50; }
-.stat-icon.blue { background: #e3f2fd; color: #2196F3; }
-.stat-icon.purple { background: #f3e5f5; color: #9C27B0; }
-.stat-icon.orange { background: #fff3e0; color: #FF9800; }
-
-.stat-label {
-  font-size: 0.85rem;
-  color: #888;
-  margin-bottom: 4px;
-}
-
-.stat-value {
+.dashboard-header h1 {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #333;
+  margin: 0;
 }
 
-.stat-change {
-  font-size: 0.8rem;
+.dashboard-links {
+  display: flex;
+  gap: 10px;
+}
+
+.dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #555;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.dashboard-link:hover {
+  border-color: #4CAF50;
   color: #4CAF50;
-  margin-top: 4px;
 }
 
 /* Panel Grid */
@@ -64,10 +54,30 @@
 .panel h3 {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.view-all-link {
+  font-size: 0.85rem;
+  color: #4CAF50;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
 }
 
 /* Service Status */
@@ -102,7 +112,7 @@
 /* Alert Items */
 .alert-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
@@ -116,15 +126,23 @@
 
 .alert-item.warning {
   background: #fff3e0;
-  color: #e65100;
 }
 
 .alert-item.info {
   background: #e3f2fd;
-  color: #1565c0;
 }
 
 .alert-item.critical {
   background: #ffebee;
-  color: #c62828;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alert-content small {
+  font-size: 0.75rem;
+  color: #888;
 }
