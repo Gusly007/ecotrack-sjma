@@ -24,9 +24,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const user = await authService.login(email, password);
-    setUser(authService.getCurrentUser());
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
     setIsAuthenticated(true);
-    return user;
+    return currentUser;
   };
 
   // Inscription désactivée - only ADMIN can create users via API
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } catch (e) {
-      logger.warn('Logout API failed, clearing locally');
+      console.warn('Logout API failed, clearing locally');
     }
     setUser(null);
     setIsAuthenticated(false);

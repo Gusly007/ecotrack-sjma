@@ -266,6 +266,11 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: redis
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
     ports:
       - "3010:3010"
     depends_on:

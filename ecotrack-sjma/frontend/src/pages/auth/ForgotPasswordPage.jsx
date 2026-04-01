@@ -10,7 +10,6 @@ const ForgotPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [resetToken, setResetToken] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,8 +29,7 @@ const ForgotPasswordPage = () => {
     setError('');
 
     try {
-      const response = await forgotPassword(email);
-      setResetToken(response.resetToken || '');
+      await forgotPassword(email);
       setSuccess(true);
     } catch (err) {
       if (err.response?.status === 404) {
@@ -57,14 +55,6 @@ const ForgotPasswordPage = () => {
               <p style={{color: 'rgba(255,255,255,0.7)', marginBottom: '24px'}}>
                 Un lien de réinitialisation a été envoyé à votre adresse email.
               </p>
-              {resetToken && (
-                <div style={{background: '#fff', padding: '10px', borderRadius: '8px', marginBottom: '16px', wordBreak: 'break-all', fontSize: '12px'}}>
-                  <strong>Lien de test:</strong><br/>
-                  <a href={`/reset-password?token=${resetToken}`} style={{color: '#4CAF50'}}>
-                    {`/reset-password?token=${resetToken}`}
-                  </a>
-                </div>
-              )}
               <button 
                 className="btn-primary"
                 onClick={() => navigate('/login')}

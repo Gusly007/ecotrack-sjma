@@ -1,3 +1,4 @@
+
 import api from './api';
 
 export const userService = {
@@ -32,6 +33,11 @@ export const userService = {
 
   delete: async (id) => {
     const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+
+  getStats: async (id) => {
+    const response = await api.get(`/users/${id}/stats`);
     return response.data;
   },
 };

@@ -72,6 +72,15 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   res.json({ data });
 });
 
+export const getUserStats = asyncHandler(async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(targetId)) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+  const data = await userService.getUserStats(targetId);
+  res.json({ data });
+});
+
 export const updateUserByAdmin = asyncHandler(async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (Number.isNaN(targetId)) {

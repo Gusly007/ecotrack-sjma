@@ -1,7 +1,7 @@
 // Repository: accès aux données utilisateur
 import pool from '../config/database.js';
 
-const userProfileColumns = `id_utilisateur, email, prenom, role_par_defaut, points, est_active, date_creation`;
+const userProfileColumns = `id_utilisateur, email, prenom, nom, role_par_defaut, points, est_active, date_creation`;
 
 const resolveUserRow = (result) => {
   if (result.rows.length === 0) {
@@ -46,22 +46,109 @@ export const UserRepository = {
   async getProfileWithStats(userId) {
     const result = await pool.query(
       `SELECT 
-         u.id_utilisateur,
-         u.email,
-         u.prenom,
-         u.role_par_defaut,
-         u.points,
-         u.date_creation,
-         u.est_active,
-         COUNT(DISTINCT ub.id_badge) as badge_count
-       FROM UTILISATEUR u
-       LEFT JOIN user_badge ub ON u.id_utilisateur = ub.id_utilisateur
-       WHERE u.id_utilisateur = $1
-       GROUP BY u.id_utilisateur`,
+          u.id_utilisateur,
+          u.email,
+          u.prenom,
+          u.nom,
+          u.role_par_defaut,
+          u.points,
+          u.date_creation,
+          u.est_active,
+          COUNT(DISTINCT ub.id_badge) as badge_count
+        FROM UTILISATEUR u
+        LEFT JOIN user_badge ub ON u.id_utilisateur = ub.id_utilisateur
+        WHERE u.id_utilisateur = $1
+        GROUP BY u.id_utilisateur`,
       [userId]
     );
     if (result.rows.length === 0) throw new Error('User not found');
     return result.rows[0];
+  },
+
+  async getUserStats(userId) {
+    const signalements = await pool.query(
+      `SELECT 
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE statut = 'OUVERT')::int as ouverts,
+        COUNT(*) FILTER (WHERE statut = 'RESOLU')::int as resolus
+      FROM signalement WHERE id_citoyen = $1`,
+      [userId]
+    );
+
+    const pointsHistory = await pool.query(
+      `SELECT delta_points, raison, date_creation 
+       FROM historique_points 
+       WHERE id_utilisateur = $1 
+       ORDER BY date_creation DESC 
+       LIMIT 5`,
+      [userId]
+    );
+
+    const signalementsRecent = await pool.query(
+      `SELECT s.id_signalement, s.description, s.statut, s.date_creation, ts.libelle as type
+       FROM signalement s
+       JOIN type_signalement ts ON s.id_type = ts.id_type
+       WHERE s.id_citoyen = $1
+       ORDER BY s.date_creation DESC 
+       LIMIT 5`,
+      [userId]
+    );
+
+    const defis = await pool.query(
+      `SELECT COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE statut = 'TERMINE')::int as termines
+       FROM gamification_participation_defi 
+       WHERE id_utilisateur = $1`,
+      [userId]
+    );
+
+    const auditLogs = await pool.query(
+      `SELECT action, type_entite, date_creation
+       FROM journal_audit 
+       WHERE id_acteur = $1 
+       ORDER BY date_creation DESC 
+       LIMIT 10`,
+      [userId]
+    );
+
+    const actionLabels = {
+      'LOGIN_SUCCESS': 'Connexion réussie',
+      'LOGIN_FAILED': 'Connexion échouée',
+      'USER_REGISTER': 'Inscription',
+      'CREATION_TOURNEE': 'Création tournée',
+      'CLOTURE_SIGNALEMENT': 'Clôture signalement',
+      'AJOUT_BADGE': 'Badge obtenu'
+    };
+
+    const lastLogin = await pool.query(
+      `SELECT date_creation FROM journal_audit 
+       WHERE id_acteur = $1 AND action = 'LOGIN_SUCCESS'
+       ORDER BY date_creation DESC LIMIT 1`,
+      [userId]
+    );
+
+    const recentActivity = [
+      ...auditLogs.rows.map(l => ({
+        date: l.date_creation,
+        action: actionLabels[l.action] || l.action,
+        type: 'audit'
+      })),
+      ...pointsHistory.rows.map(p => ({
+        date: p.date_creation,
+        action: `${p.delta_points > 0 ? '+' : ''}${p.delta_points} pts - ${p.raison}`,
+        type: 'points'
+      }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+    return {
+      signalements: signalements.rows[0] || { total: 0, ouverts: 0, resolus: 0 },
+      pointsHistory: pointsHistory.rows,
+      signalementsRecent: signalementsRecent.rows,
+      defis: defis.rows[0] || { total: 0, termines: 0 },
+      auditLogs: auditLogs.rows,
+      lastLogin: lastLogin.rows[0]?.date_creation || null,
+      recentActivity
+    };
   },
   async listUsers({ page = 1, limit = 20, role, search, est_active } = {}) {
     const pageNumber = Number.isNaN(parseInt(page, 10)) ? 1 : Math.max(1, parseInt(page, 10));

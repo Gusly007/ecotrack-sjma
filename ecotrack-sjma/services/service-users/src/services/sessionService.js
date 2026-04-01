@@ -21,3 +21,7 @@ export const limitConcurrentSessions = async (userId, maxSessions = null) => {
   const max = maxSessions ?? env.session.maxConcurrentSessions;
   return await SessionRepository.limitConcurrentSessions(userId, max);
 };
+
+export const invalidateAllUserSessions = async (userId) => {
+  return await SessionRepository.invalidateAllTokens(userId);
+};
