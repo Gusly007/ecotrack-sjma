@@ -483,26 +483,163 @@ app.delete('/api/logs/cleanup', async (req, res) => {
 });
 
 // Get all alerts
-app.get('/api/alerts', async (req, res) => {
-  try {
-    const { status, limit = 50, offset = 0 } = req.query;
-    const axios = (await import('axios')).default;
-    
-    const params = new URLSearchParams({ limit, offset });
-    if (status && status !== 'all') params.append('status', status);
-    
-    const response = await axios.get(`http://service-iot:3013/api/alerts?${params.toString()}`, {
-      timeout: 5000
-    });
-    
-    res.json(response.data);
-  } catch (err) {
-    logger.error({ err: err.message }, 'Failed to get alerts');
-    res.status(500).json({ error: 'Failed to get alerts' });
-  }
-});
+  app.get('/api/alerts', async (req, res) => {
+    try {
+      const { status, limit = 50, offset = 0 } = req.query;
+      const axios = (await import('axios')).default;
 
-// Get sensors status
+      const params = new URLSearchParams({ limit, offset });
+      if (status && status !== 'all') params.append('status', status);
+
+      const response = await axios.get(`http://service-iot:3013/api/alerts?${params.toString()}`, {
+        timeout: 5000
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get alerts');
+      res.status(500).json({ error: 'Failed to get alerts' });
+    }
+  });
+
+  // Update alert status (resolve/ignore)
+  app.patch('/api/alerts/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { statut } = req.body;
+      const axios = (await import('axios')).default;
+
+      const response = await axios.patch(`http://service-iot:3013/api/iot/alerts/${id}`, {
+        statut
+      }, {
+        timeout: 5000
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to update alert');
+      res.status(500).json({ error: 'Failed to update alert' });
+    }
+  });
+
+  // Get unified alerts from all sources
+  app.get('/api/alerts/unified', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+      const { severity, type, limit = 50, offset = 0 } = req.query;
+
+      // 1. Get IoT alerts from service-iot
+      const iotResponse = await axios.get('http://service-iot:3013/api/alerts', {
+        params: { limit, offset },
+        timeout: 5000
+      }).catch(() => ({ data: { data: [], total: 0 } }));
+
+      // 2. Get Prometheus alerts (if available)
+      const prometheusResponse = await axios.get('http://prometheus:9090/api/v1/alerts', {
+        timeout: 3000
+      }).catch(() => ({ data: { data: { alerts: [] } } }));
+
+      // Transform IoT alerts
+      const iotAlerts = iotResponse.data.data?.map(alert => {
+        const config = {
+          DEBORDEMENT: { severity: 'critical', category: 'conteneur', icon: 'fa-fill-drip' },
+          BATTERIE_FAIBLE: { severity: 'high', category: 'capteur', icon: 'fa-battery-quarter' },
+          CAPTEUR_DEFAILLANT: { severity: 'medium', category: 'capteur', icon: 'fa-microchip' }
+        }[alert.type_alerte] || { severity: 'low', category: 'autre', icon: 'fa-bell' };
+
+        return {
+          id: alert.id_alerte,
+          type: alert.type_alerte,
+          severity: config.severity,
+          category: config.category,
+          icon: config.icon,
+          title: `${alert.type_alerte} - Conteneur #${alert.id_conteneur}`,
+          description: alert.description || `${alert.type_alerte}: ${alert.valeur_detectee}/${alert.seuil}`,
+          time: alert.date_creation,
+          statut: alert.statut,
+          valeur: alert.valeur_detectee,
+          seuil: alert.seuil,
+          source: 'iot'
+        };
+      }) || [];
+
+      // Transform Prometheus alerts
+      const prometheusAlerts = prometheusResponse.data.data?.alerts?.map(alert => ({
+        id: `prom-${alert.labels?.alertname}-${Date.now()}`,
+        type: alert.labels?.alertname,
+        severity: alert.labels?.severity || 'warning',
+        category: alert.labels?.category || 'infrastructure',
+        icon: 'fa-server',
+        title: alert.annotations?.summary || alert.labels?.alertname,
+        description: alert.annotations?.description || '',
+        time: new Date(alert.startsAt).toISOString(),
+        statut: alert.state?.toUpperCase() || 'ACTIVE',
+        valeur: alert.annotations?.current_value || '',
+        seuil: alert.annotations?.threshold || '',
+        source: 'prometheus'
+      })) || [];
+
+      // Combine all alerts
+      let allAlerts = [...iotAlerts, ...prometheusAlerts];
+
+      // Filter by severity
+      if (severity && severity !== 'all') {
+        allAlerts = allAlerts.filter(a => a.severity === severity);
+      }
+
+      // Filter by type/category
+      if (type && type !== 'all') {
+        allAlerts = allAlerts.filter(a => 
+          a.type === type || 
+          a.category === type.toLowerCase()
+        );
+      }
+
+      // Sort by time (newest first)
+      allAlerts.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+      const total = allAlerts.length;
+      const paginatedAlerts = allAlerts.slice(offset, parseInt(offset) + parseInt(limit));
+
+      res.json({
+        success: true,
+        data: paginatedAlerts,
+        total: total
+      });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get unified alerts');
+      res.status(500).json({ error: 'Failed to get alerts' });
+    }
+  });
+
+  // Get alert stats
+  app.get('/api/alerts/stats', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+      
+      const response = await axios.get('http://service-iot:3013/api/alerts', {
+        params: { limit: 1000 },
+        timeout: 5000
+      }).catch(() => ({ data: { data: [] } }));
+
+      const alerts = response.data.data || [];
+      
+      const stats = {
+        critical: alerts.filter(a => a.type_alerte === 'DEBORDEMENT').length,
+        high: alerts.filter(a => a.type_alerte === 'BATTERIE_FAIBLE').length,
+        medium: alerts.filter(a => a.type_alerte === 'CAPTEUR_DEFAILLANT').length,
+        low: alerts.filter(a => !['DEBORDEMENT', 'BATTERIE_FAIBLE', 'CAPTEUR_DEFAILLANT'].includes(a.type_alerte)).length,
+        total: alerts.length
+      };
+
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get alert stats');
+      res.status(500).json({ error: 'Failed to get alert stats' });
+    }
+  });
+
+  // Get sensors status
   app.get('/api/iot/sensors/status', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
