@@ -55,6 +55,20 @@ app.use((req, res, next) => {
     const route = req.route ? req.route.path : req.path;
     httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
     httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
+    
+    // Log to centralized_logs
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warning' : 'info';
+    const action = req.method.toLowerCase();
+    centralizedLogging.log({
+      level,
+      action,
+      service: 'service-iot',
+      message: `${req.method} ${req.path} - ${res.statusCode}`,
+      metadata: { route, duration, statusCode: res.statusCode },
+      userId: req.user?.id || req.headers['x-user-id'],
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    }).catch(() => {});
   });
   next();
 });

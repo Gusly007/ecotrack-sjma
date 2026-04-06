@@ -34,6 +34,19 @@ const httpRequestDuration = new client.Histogram({
 });
 
 const app = express();
+
+const localhostIps = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const shouldBypassLocalRateLimit = () => {
+  if (process.env.GATEWAY_RATE_BYPASS_LOCAL === 'true') return true;
+  if (process.env.GATEWAY_RATE_BYPASS_LOCAL === 'false') return false;
+  return (process.env.NODE_ENV || 'development') === 'development';
+};
+
+const hasLocalhostHostHeader = (req) => {
+  const host = (req.headers?.host || '').toLowerCase();
+  const forwardedHost = (req.headers?.['x-forwarded-host'] || '').toLowerCase();
+  return host.includes('localhost') || host.includes('127.0.0.1') || forwardedHost.includes('localhost') || forwardedHost.includes('127.0.0.1');
+};
 /**
  * API Gateway for EcoTrack microservices
  * @type {number}
@@ -159,9 +172,14 @@ const globalRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    if (req.path === '/health') return true;
+    if (!shouldBypassLocalRateLimit()) return false;
+    return localhostIps.has(req.ip) || hasLocalhostHostHeader(req);
+  },
   // Logging des rate limit hits
   handler: (req, res, next, options) => {
-    logger.warn({ ip: req.ip }, 'Rate limit exceeded');
+    logger.warn({ ip: req.ip, path: req.originalUrl }, 'Rate limit exceeded');
     res.status(429).json(options.message);
   }
 });
@@ -193,11 +211,31 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
 });
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+    } else if (/^http:\/\/localhost:\d+$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With'],
+  exposedHeaders: ['Cache-Control', 'Pragma', 'Expires', 'X-Total-Count'],
+  maxAge: 86400
 }));
+
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
 // =========================================================================
 // SÉCURITÉ
@@ -428,8 +466,15 @@ app.get('/api/logs/export', async (req, res) => {
 // Cleanup old logs (admin only)
 app.delete('/api/logs/cleanup', async (req, res) => {
   try {
-    const { days = 30 } = req.query;
-    const deleted = await centralizedLogging.cleanup(parseInt(days));
+    const { days, level, action, service, startDate, endDate } = req.query;
+    const deleted = await centralizedLogging.cleanup({ 
+      days: days ? parseInt(days) : undefined,
+      level: level && level !== 'all' ? level : undefined,
+      action: action && action !== 'all' ? action : undefined,
+      service: service && service !== 'all' ? service : undefined,
+      startDate,
+      endDate
+    });
     res.json({ success: true, deleted });
   } catch (err) {
     logger.error({ err: err.message }, 'Failed to cleanup logs');

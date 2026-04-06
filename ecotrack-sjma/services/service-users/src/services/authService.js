@@ -62,16 +62,22 @@ export const loginUser = async (email, password, ipAddress = null) => {
 // Récupérer l'utilisateur 
     const user = await AuthRepository.findUserByEmail(email);
     if (!user) {
-      throw new Error('Utilisateur non trouvé');
+      const error = new Error('Invalid credentials');
+      error.status = 401;
+      throw error;
     }
     //Vérifier si actif
     if (!user.est_active) {
-        throw new Error('Utilisateur inactif');
+      const error = new Error('Compte inactif');
+      error.status = 403;
+      throw error;
     }
     //Vérifier le mot de passe
     const validPassword = await comparePassword(password, user.password_hash);
     if (!validPassword) {
-        throw new Error('Invalid credentials');
+      const error = new Error('Invalid credentials');
+      error.status = 401;
+      throw error;
     }
     // Générer tokens
   const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);

@@ -385,6 +385,11 @@ services:
       PGUSER: ${DB_USER:-ecotrack_user}
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      DB_NAME: ${DB_NAME:-ecotrack}
       MQTT_PORT: 1883
       MQTT_HOST: 0.0.0.0
       ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
@@ -424,6 +429,11 @@ services:
     environment:
       PORT: 3014
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3014:3014"
@@ -450,6 +460,11 @@ services:
     environment:
       APP_PORT: 3015
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
       NODE_ENV: ${NODE_ENV:-production}
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}

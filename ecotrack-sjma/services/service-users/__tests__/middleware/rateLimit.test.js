@@ -56,6 +56,7 @@ describe('Rate limit middleware', () => {
     afterEach(() => {
       delete process.env.RATE_LIMIT_REQUESTS;
       delete process.env.RATE_LIMIT_WINDOW_MS;
+      delete process.env.RATE_LIMIT_BYPASS_LOCAL;
     });
 
     it('returns 429 after exceeding configured max requests', async () => {
@@ -70,6 +71,25 @@ describe('Rate limit middleware', () => {
       expect(third.blocked).toBe(true);
       expect(third.status).toBe(429);
       expect(String(third.body)).toContain('Too many requests');
+    });
+
+    it('skips localhost when RATE_LIMIT_BYPASS_LOCAL is enabled', async () => {
+      process.env.RATE_LIMIT_BYPASS_LOCAL = 'true';
+      process.env.RATE_LIMIT_REQUESTS = '1';
+      process.env.RATE_LIMIT_WINDOW_MS = '1000';
+
+      jest.resetModules();
+      const { publicLimiter } = await import('../../src/config/rateLimit.js');
+
+      const first = await invokeLimiter(publicLimiter);
+      const second = await invokeLimiter(publicLimiter);
+      const third = await invokeLimiter(publicLimiter);
+
+      expect(first.blocked).toBe(false);
+      expect(second.blocked).toBe(false);
+      expect(third.blocked).toBe(false);
+
+      delete process.env.RATE_LIMIT_BYPASS_LOCAL;
     });
   });
 

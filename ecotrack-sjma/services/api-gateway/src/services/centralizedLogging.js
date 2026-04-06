@@ -263,12 +263,46 @@ class CentralizedLoggingService {
     return logs;
   }
 
-  // Cleanup old logs
-  async cleanup(retentionDays = 30) {
-    const query = `DELETE FROM centralized_logs WHERE timestamp < NOW() - INTERVAL '${retentionDays} days'`;
+  // Cleanup old logs or logs matching filters
+  async cleanup(options = {}) {
+    const { days, level, action, service, startDate, endDate } = options;
+    
+    let query = 'DELETE FROM centralized_logs WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+    
+    if (days) {
+      query += ` AND timestamp < NOW() - INTERVAL '${parseInt(days)} days'`;
+    }
+    
+    if (level) {
+      query += ` AND level = $${paramIndex++}`;
+      params.push(level);
+    }
+    
+    if (action) {
+      query += ` AND action = $${paramIndex++}`;
+      params.push(action);
+    }
+    
+    if (service) {
+      query += ` AND service = $${paramIndex++}`;
+      params.push(service);
+    }
+    
+    if (startDate) {
+      query += ` AND timestamp >= $${paramIndex++}`;
+      params.push(startDate);
+    }
+    
+    if (endDate) {
+      query += ` AND timestamp <= $${paramIndex++}`;
+      params.push(endDate);
+    }
+    
     try {
-      const result = await this.pool.query(query);
-      logger.info({ deleted: result.rowCount }, 'Cleaned up old logs');
+      const result = await this.pool.query(query, params);
+      logger.info({ deleted: result.rowCount }, 'Cleaned up logs');
       return result.rowCount;
     } catch (err) {
       logger.error({ err: err.message }, 'Failed to cleanup logs');
