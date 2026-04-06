@@ -10,6 +10,7 @@ import { jwtValidationMiddleware } from './middleware/auth.js';
 import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
 import healthCheckService from './services/healthCheck.js';
 import centralizedLogging from './services/centralizedLogging.js';
+import dashboardStatsService from './services/dashboardStats.js';
 import cacheService from './services/cacheService.js';
 import client from 'prom-client';
 
@@ -491,7 +492,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       const params = new URLSearchParams({ limit, offset });
       if (status && status !== 'all') params.append('status', status);
 
-      const response = await axios.get(`http://service-iot:3013/api/alerts?${params.toString()}`, {
+      const response = await axios.get(`http://ecotrack-service-iot:3013/api/alerts?${params.toString()}`, {
         timeout: 5000
       });
 
@@ -509,7 +510,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       const { statut } = req.body;
       const axios = (await import('axios')).default;
 
-      const response = await axios.patch(`http://service-iot:3013/api/iot/alerts/${id}`, {
+      const response = await axios.patch(`http://ecotrack-service-iot:3013/api/iot/alerts/${id}`, {
         statut
       }, {
         timeout: 5000
@@ -529,7 +530,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       const { severity, type, limit = 50, offset = 0 } = req.query;
 
       // 1. Get IoT alerts from service-iot
-      const iotResponse = await axios.get('http://service-iot:3013/api/alerts', {
+      const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
         params: { limit, offset },
         timeout: 5000
       }).catch(() => ({ data: { data: [], total: 0 } }));
@@ -617,7 +618,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
       
-      const response = await axios.get('http://service-iot:3013/api/alerts', {
+      const response = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
         params: { limit: 1000 },
         timeout: 5000
       }).catch(() => ({ data: { data: [] } }));
@@ -644,7 +645,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
 
-      const response = await axios.get('http://service-iot:3013/api/iot/sensors/status', {
+      const response = await axios.get('http://ecotrack-service-iot:3013/api/iot/sensors/status', {
         timeout: 5000,
         headers: {
           'x-user-id': '1',
@@ -666,12 +667,12 @@ app.delete('/api/logs/cleanup', async (req, res) => {
 
       const microservices = [
         { name: 'api-gateway', url: 'http://localhost:3000/health' },
-        { name: 'service-users', url: 'http://service-users:3010/health' },
-        { name: 'service-containers', url: 'http://service-containers:3011/health' },
-        { name: 'service-routes', url: 'http://service-routes:3012/health' },
-        { name: 'service-iot', url: 'http://service-iot:3013/health' },
-        { name: 'service-gamifications', url: 'http://service-gamifications:3014/health' },
-        { name: 'service-analytics', url: 'http://service-analytics:3015/health' }
+        { name: 'service-users', url: 'http://ecotrack-service-users:3010/health' },
+        { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/health' },
+        { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/health' },
+        { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/health' },
+        { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/health' },
+        { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/health' }
       ];
 
       const infrastructure = [
@@ -726,15 +727,15 @@ app.delete('/api/logs/cleanup', async (req, res) => {
   app.get('/api/metrics/status', async (req, res) => {
     const axios = (await import('axios')).default;
 
-    const serviceMetrics = [
-      { name: 'api-gateway', url: 'http://api-gateway:3000/metrics' },
-      { name: 'service-users', url: 'http://service-users:3010/metrics' },
-      { name: 'service-containers', url: 'http://service-containers:3011/metrics' },
-      { name: 'service-iot', url: 'http://service-iot:3013/metrics' },
-      { name: 'service-gamifications', url: 'http://service-gamifications:3014/metrics' },
-      { name: 'service-analytics', url: 'http://service-analytics:3015/metrics' },
-      { name: 'service-routes', url: 'http://service-routes:3012/metrics' }
-    ];
+  const serviceMetrics = [
+    { name: 'api-gateway', url: 'http://ecotrack-api-gateway:3000/metrics' },
+    { name: 'service-users', url: 'http://ecotrack-service-users:3010/metrics' },
+    { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/metrics' },
+    { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/metrics' },
+    { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/metrics' },
+    { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/metrics' },
+    { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/metrics' }
+  ];
 
     try {
       const results = await Promise.allSettled(
@@ -774,7 +775,18 @@ app.delete('/api/logs/cleanup', async (req, res) => {
     }
   });
 
-// Metrics middleware
+// Dashboard stats endpoint
+  app.get('/api/dashboard/stats', async (req, res) => {
+    try {
+      const stats = await dashboardStatsService.getStats();
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get dashboard stats');
+      res.status(500).json({ success: false, error: 'Failed to get dashboard stats' });
+    }
+  });
+
+  // Metrics middleware
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {

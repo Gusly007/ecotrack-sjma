@@ -6,7 +6,7 @@
 #
 # ============================================================================
 
-.PHONY: help install up down logs status db-migrate db-seed db-fresh db-reset db-status dev build test clean prod prod-up prod-down prod-logs
+.PHONY: help install up down logs status gateway-fix auth-fix db-migrate db-seed db-fresh db-reset db-status dev build test clean prod prod-up prod-down prod-logs
 
 # Couleurs
 CYAN=\033[0;36m
@@ -31,6 +31,8 @@ help:
 	@echo "  make down             Arrêter tous les services"
 	@echo "  make logs             Afficher les logs (Ctrl+C pour quitter)"
 	@echo "  make status           Afficher le statut des conteneurs"
+	@echo "  make gateway-fix      Réparer le 504 login (recréation api-gateway)"
+	@echo "  make auth-fix         Réparer login 504 (postgres + users + gateway)"
 	@echo "  make clean            Supprimer conteneurs, volumes et images"
 	@echo ""
 	@echo "${MAGENTA}🚀 PRODUCTION (Neon cloud)${NC}"
@@ -99,6 +101,28 @@ logs:
 status:
 	@echo ""
 	@docker compose ps
+	@echo ""
+
+gateway-fix:
+	@echo "${YELLOW}🔧 Réparation api-gateway (erreur 504 login)...${NC}"
+	-@docker rm -f ecotrack-api-gateway >/dev/null 2>&1 || true
+	@docker compose up -d --no-deps api-gateway
+	@echo "${GREEN}✅ api-gateway recréé${NC}"
+	@echo ""
+	@echo "Vérification rapide:"
+	@docker exec ecotrack-api-gateway printenv
+	@echo ""
+
+auth-fix:
+	@echo "${YELLOW}🔧 Réparation complète login (postgres + users + gateway)...${NC}"
+	@docker compose up -d postgres
+	@docker compose up -d --no-deps service-users
+	@docker restart ecotrack-service-users
+	@docker compose up -d --no-deps api-gateway
+	@echo "${GREEN}✅ Services auth redémarrés${NC}"
+	@echo ""
+	@echo "Contrôle:"
+	@docker compose ps postgres service-users api-gateway
 	@echo ""
 
 build:

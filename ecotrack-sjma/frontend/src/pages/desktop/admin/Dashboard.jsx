@@ -17,12 +17,14 @@ export default function AdminDashboard() {
   const [healthData, setHealthData] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showInfrastructure, setShowInfrastructure] = useState(true);
+  const [showInfrastructure, setShowInfrastructure] = useState(false);
   const [stats, setStats] = useState({
-    activeUsers: 1245,
-    dbSize: '2.4 GB',
-    requestsPerMin: 450,
-    uptime: '99.98%'
+    activeUsers: 0,
+    activeUsersChange: '',
+    dbSize: '...',
+    dbPercentage: 0,
+    requestsPerMin: 0,
+    uptime: '...'
   });
 
   useEffect(() => {
@@ -45,14 +47,14 @@ export default function AdminDashboard() {
       // Update stats from backend
       if (dashboardStats.data) {
         setStats({
-          activeUsers: dashboardStats.data.activeUsers || 1245,
-          activeUsersChange: dashboardStats.data.activeUsersChange || '+32 cette semaine',
-          dbSize: dashboardStats.data.dbSize || '2.4 GB',
-          dbPercentage: dashboardStats.data.dbPercentage || 4.8,
-          requestsPerMin: dashboardStats.data.requestsPerMin || 450,
-          uptime: dashboardStats.data.uptime || '99.98%',
-          servicesUp: dashboardStats.data.servicesUp || 0,
-          servicesTotal: dashboardStats.data.servicesTotal || 13
+          activeUsers: dashboardStats.data.activeUsers ?? 0,
+          activeUsersChange: dashboardStats.data.activeUsersChange ?? '',
+          dbSize: dashboardStats.data.dbSize ?? '...',
+          dbPercentage: dashboardStats.data.dbPercentage ?? 0,
+          requestsPerMin: dashboardStats.data.requestsPerMin ?? 0,
+          uptime: dashboardStats.data.uptime ?? '...',
+          servicesUp: dashboardStats.data.servicesUp ?? 0,
+          servicesTotal: dashboardStats.data.servicesTotal ?? 13
         });
       }
     } catch (err) {
@@ -174,21 +176,21 @@ export default function AdminDashboard() {
           change={activeServices === totalServices ? 'Tous OK' : `${totalServices - activeServices} service(s) down`}
           changeType={activeServices === totalServices ? 'up' : 'down'}
         />
-        <StatCard
-          icon="fa-users"
-          iconColor="blue"
-          label="Utilisateurs actifs"
-          value={stats.activeUsers.toLocaleString()}
-          change="+32 cette semaine"
-          changeType="up"
-        />
-        <StatCard
-          icon="fa-database"
-          iconColor="purple"
-          label="Espace DB"
-          value={stats.dbSize}
-          change="/ 50 GB (4.8%)"
-        />
+      <StatCard
+        icon="fa-users"
+        iconColor="blue"
+        label="Utilisateurs actifs"
+        value={stats.activeUsers.toLocaleString()}
+        change={stats.totalUsers > 0 ? `sur ${stats.totalUsers} total` : ''}
+        changeType="up"
+      />
+      <StatCard
+        icon="fa-database"
+        iconColor="purple"
+        label="Espace DB"
+        value={stats.dbSize}
+        change={`${stats.dbPercentage}% utilisé`}
+      />
         <StatCard
           icon="fa-tachometer-alt"
           iconColor="orange"

@@ -25,6 +25,7 @@ const publicRoutes = [
   { path: '/api/health/all', methods: ['GET'] }, // All services health
   { path: '/api/iot/sensors/status', methods: ['GET'] }, // Sensors status
   { path: '/api/alerts', methods: ['GET'] }, // Alerts for monitoring
+  { path: '/api/dashboard/stats', methods: ['GET'] }, // Dashboard stats
 ];
 
 /**

@@ -10,9 +10,21 @@ class CacheService {
   async connect() {
     if (this.client && this.isConnected) return;
 
-    const redisHost = process.env.REDIS_HOST || 'localhost';
-    const redisPort = process.env.REDIS_PORT || 6379;
-    const redisPassword = process.env.REDIS_PASSWORD || undefined;
+    // Parse REDIS_URL if provided
+    let redisHost = process.env.REDIS_HOST || 'ecotrack-redis';
+    let redisPort = process.env.REDIS_PORT || 6379;
+    let redisPassword = process.env.REDIS_PASSWORD || undefined;
+
+    if (process.env.REDIS_URL) {
+      try {
+        const url = new URL(process.env.REDIS_URL);
+        redisHost = url.hostname || redisHost;
+        redisPort = url.port || redisPort;
+        redisPassword = url.password || redisPassword;
+      } catch (err) {
+        logger.warn('Failed to parse REDIS_URL, using defaults');
+      }
+    }
 
     this.client = redis.createClient({
       socket: {
