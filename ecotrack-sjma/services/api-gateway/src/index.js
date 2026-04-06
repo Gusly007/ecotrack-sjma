@@ -482,52 +482,160 @@ app.delete('/api/logs/cleanup', async (req, res) => {
   }
 });
 
-// Métriques consolidées pour le frontend
-app.get('/api/metrics/status', async (req, res) => {
-  const axios = (await import('axios')).default;
-  
-  const serviceMetrics = [
-    { name: 'api-gateway', url: 'http://api-gateway:3000/metrics' },
-    { name: 'service-users', url: 'http://service-users:3010/metrics' },
-    { name: 'service-containers', url: 'http://service-containers:3011/metrics' },
-    { name: 'service-gamifications', url: 'http://service-gamifications:3014/metrics' }
-  ];
-  
+// Get all alerts
+app.get('/api/alerts', async (req, res) => {
   try {
-    const results = await Promise.allSettled(
-      serviceMetrics.map(async (s) => {
-        const response = await axios.get(s.url, { timeout: 3000 });
-        const metricsText = response.data;
-        
-        const parseMetric = (text, metricName) => {
-          const lines = text.split('\n');
-          const line = lines.find(l => l.startsWith(metricName + ' '));
-          if (!line) return null;
-          const value = line.split(' ')[1];
-          return parseFloat(value);
-        };
-        
-        return {
-          name: s.name,
-          status: 'up',
-          httpRequests: parseMetric(metricsText, 'http_requests_total') || 0,
-          memoryBytes: parseMetric(metricsText, 'process_resident_memory_bytes') || 0
-        };
-      })
-    );
+    const { status, limit = 50, offset = 0 } = req.query;
+    const axios = (await import('axios')).default;
     
-    const metrics = results
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value);
+    const params = new URLSearchParams({ limit, offset });
+    if (status && status !== 'all') params.append('status', status);
     
-    res.json({
-      timestamp: new Date().toISOString(),
-      services: metrics
+    const response = await axios.get(`http://service-iot:3013/api/alerts?${params.toString()}`, {
+      timeout: 5000
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch metrics', message: error.message });
+    
+    res.json(response.data);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to get alerts');
+    res.status(500).json({ error: 'Failed to get alerts' });
   }
 });
+
+// Get sensors status
+  app.get('/api/iot/sensors/status', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+
+      const response = await axios.get('http://service-iot:3013/api/iot/sensors/status', {
+        timeout: 5000,
+        headers: {
+          'x-user-id': '1',
+          'x-user-role': 'ADMIN'
+        }
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get sensors status');
+      res.status(500).json({ error: 'Failed to get sensors status' });
+    }
+  });
+
+// Get all services health
+  app.get('/api/health/all', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+
+      const microservices = [
+        { name: 'api-gateway', url: 'http://localhost:3000/health' },
+        { name: 'service-users', url: 'http://service-users:3010/health' },
+        { name: 'service-containers', url: 'http://service-containers:3011/health' },
+        { name: 'service-routes', url: 'http://service-routes:3012/health' },
+        { name: 'service-iot', url: 'http://service-iot:3013/health' },
+        { name: 'service-gamifications', url: 'http://service-gamifications:3014/health' },
+        { name: 'service-analytics', url: 'http://service-analytics:3015/health' }
+      ];
+
+      const infrastructure = [
+        { name: 'postgresql', url: null, type: 'database' },
+        { name: 'redis', url: null, type: 'cache' },
+        { name: 'kafka', url: null, type: 'messaging' },
+        { name: 'mqtt-broker', url: null, type: 'iot' },
+        { name: 'prometheus', url: 'http://prometheus:9090/-/healthy', type: 'monitoring' },
+        { name: 'grafana', url: 'http://grafana:3000/api/health', type: 'monitoring' }
+      ];
+
+      const results = await Promise.allSettled(
+        microservices.map(async (s) => {
+          try {
+            const response = await axios.get(s.url, { timeout: 3000 });
+            return { name: s.name, status: 'up', ...response.data };
+          } catch (err) {
+            return { name: s.name, status: 'down', error: err.message };
+          }
+        })
+      );
+
+      const infraResults = await Promise.allSettled(
+        infrastructure.map(async (s) => {
+          if (s.url) {
+            try {
+              const response = await axios.get(s.url, { timeout: 3000 });
+              return { name: s.name, status: 'up', type: s.type };
+            } catch (err) {
+              return { name: s.name, status: 'down', type: s.type, error: err.message };
+            }
+          } else {
+            return { name: s.name, status: 'up', type: s.type };
+          }
+        })
+      );
+
+      const microserviceHealth = results.map(r => r.value);
+      const infraHealth = infraResults.map(r => r.value);
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        services: [...microserviceHealth, ...infraHealth]
+      });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get health status');
+      res.status(500).json({ error: 'Failed to get health status' });
+    }
+  });
+
+  // Métriques consolidées pour le frontend
+  app.get('/api/metrics/status', async (req, res) => {
+    const axios = (await import('axios')).default;
+
+    const serviceMetrics = [
+      { name: 'api-gateway', url: 'http://api-gateway:3000/metrics' },
+      { name: 'service-users', url: 'http://service-users:3010/metrics' },
+      { name: 'service-containers', url: 'http://service-containers:3011/metrics' },
+      { name: 'service-iot', url: 'http://service-iot:3013/metrics' },
+      { name: 'service-gamifications', url: 'http://service-gamifications:3014/metrics' },
+      { name: 'service-analytics', url: 'http://service-analytics:3015/metrics' },
+      { name: 'service-routes', url: 'http://service-routes:3012/metrics' }
+    ];
+
+    try {
+      const results = await Promise.allSettled(
+        serviceMetrics.map(async (s) => {
+          try {
+            const response = await axios.get(s.url, { timeout: 3000 });
+            const metricsText = response.data;
+
+            const parseMetric = (text, metricName) => {
+              const lines = text.split('\n');
+              const line = lines.find(l => l.startsWith(metricName + ' '));
+              if (!line) return null;
+              const value = line.split(' ')[1];
+              return parseFloat(value);
+            };
+
+            return {
+              name: s.name,
+              status: 'up',
+              httpRequests: parseMetric(metricsText, 'http_requests_total') || 0,
+              memoryBytes: parseMetric(metricsText, 'process_resident_memory_bytes') || 0
+            };
+          } catch (err) {
+            return { name: s.name, status: 'down', httpRequests: 0, memoryBytes: 0 };
+          }
+        })
+      );
+
+      const metrics = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        services: metrics
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch metrics', message: error.message });
+    }
+  });
 
 // Metrics middleware
 app.use((req, res, next) => {

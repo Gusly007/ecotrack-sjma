@@ -47,6 +47,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
+// Parse auth headers from API Gateway
+app.use((req, res, next) => {
+  if (req.headers['x-user-id'] && req.headers['x-user-role']) {
+    req.user = {
+      id: parseInt(req.headers['x-user-id']),
+      role: req.headers['x-user-role']
+    };
+  }
+  next();
+});
+
 // Metrics middleware (avant les routes pour capturer toutes les requêtes)
 app.use((req, res, next) => {
   const start = Date.now();
@@ -116,8 +127,17 @@ const swaggerOptions = {
   apis: ['./src/routes/*.js']
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+let swaggerSpec;
+try {
+  swaggerSpec = swaggerJsdoc(swaggerOptions);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+} catch (err) {
+  console.error('Swagger initialization failed:', err.message);
+  // Provide a simple docs endpoint instead
+  app.get('/api-docs', (req, res) => {
+    res.json({ message: 'API docs temporarily unavailable' });
+  });
+}
 
 // ========== DEPENDENCY INJECTION ==========
 const di = require('./src/container-di');

@@ -100,38 +100,107 @@ router.get('/iot/measurements/container/:id', requirePermission('iot:read'), val
 /**
  * @swagger
  * /iot/sensors:
- *   get:
- *     summary: Liste des capteurs
- *     tags: [Capteurs]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 50 }
- *     responses:
- *       200:
- *         description: Liste des capteurs
+ * get:
+ * summary: Liste des capteurs
+ * tags: [Capteurs]
+ * parameters:
+ * - in: query
+ * name: page
+ * schema: { type: integer, default: 1 }
+ * - in: query
+ * name: limit
+ * schema: { type: integer, default: 50 }
+ * responses:
+ * 200:
+ * description: Liste des capteurs
  */
 router.get('/iot/sensors', requirePermission('iot:read'), validateQuery(paginationSchema), (req, res, next) => controller.getSensors(req, res, next));
 
 /**
  * @swagger
+ * /iot/sensors/status:
+ * get:
+ * summary: Statut des capteurs
+ * tags: [Capteurs]
+ * responses:
+ * 200:
+ * description: Statut des capteurs (total, actifs, inactifs)
+ */
+router.get('/iot/sensors/status', async (req, res, next) => {
+  try {
+    const pool = require('../db/connexion');
+
+    const sensorsResult = await pool.query(`
+      SELECT
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '1 hour')::int as active_last_hour,
+        COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '24 hours')::int as active_last_24h,
+        COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '12 hours')::int as inactive_12h,
+        COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '24 hours')::int as inactive_24h
+      FROM capteur
+    `);
+
+    const lowBatteryResult = await pool.query(`
+      SELECT COUNT(*)::int as low_battery
+      FROM mesure m
+      WHERE m.batterie_pct < 20
+      AND m.date_heure_mesure = (
+        SELECT MAX(m2.date_heure_mesure) 
+        FROM mesure m2 
+        WHERE m2.id_capteur = m.id_capteur
+      )
+    `);
+
+    const messagesResult = await pool.query(`
+      SELECT COUNT(*)::int as messages_last_minute
+      FROM mesure
+      WHERE date_heure_mesure > NOW() - INTERVAL '1 minute'
+    `);
+
+    const lastMeasureResult = await pool.query(`
+      SELECT EXTRACT(EPOCH FROM (NOW() - MAX(date_heure_mesure)))::int as seconds_ago
+      FROM mesure
+    `);
+
+    const sensorsData = sensorsResult.rows[0];
+    const lowBattery = lowBatteryResult.rows[0]?.low_battery || 0;
+    const messagesPerMin = messagesResult.rows[0]?.messages_last_minute || 0;
+    const lastMeasureSeconds = lastMeasureResult.rows[0]?.seconds_ago || 0;
+
+    res.json({
+      success: true,
+      data: {
+        total: sensorsData.total,
+        active: sensorsData.active_last_24h,
+        active_count: sensorsData.active_last_24h,
+        inactive_12h: sensorsData.inactive_12h,
+        inactive_24h: sensorsData.inactive_24h,
+        low_battery: lowBattery,
+        messages_per_min: messagesPerMin,
+        last_measure_seconds_ago: lastMeasureSeconds
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @swagger
  * /iot/sensors/{id}:
- *   get:
- *     summary: Détails d'un capteur
- *     tags: [Capteurs]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Détails du capteur
- *       404:
- *         description: Capteur non trouvé
+ * get:
+ * summary: Détails d'un capteur
+ * tags: [Capteurs]
+ * parameters:
+ * - in: path
+ * name: id
+ * required: true
+ * schema: { type: integer }
+ * responses:
+ * 200:
+ * description: Détails du capteur
+ * 404:
+ * description: Capteur non trouvé
  */
 router.get('/iot/sensors/:id', requirePermission('iot:read'), validateParamId, (req, res, next) => controller.getSensorById(req, res, next));
 
@@ -195,6 +264,41 @@ router.patch('/iot/alerts/:id', requirePermission('iot:update'), validateParamId
  *         description: Statistiques globales
  */
 router.get('/iot/stats', requirePermission('iot:read'), (req, res, next) => controller.getStats(req, res, next));
+
+router.get('/alerts', async (req, res, next) => {
+  try {
+    const pool = require('../db/connexion');
+    const { status, limit = 50, offset = 0 } = req.query;
+    
+    let query = 'SELECT * FROM alerte_capteur';
+    const params = [];
+    
+    if (status && status !== 'all') {
+      query += ' WHERE statut = $1';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY date_creation DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const result = await pool.query(query, params);
+    
+    const countResult = await pool.query(
+      status && status !== 'all' 
+        ? 'SELECT COUNT(*)::int as total FROM alerte_capteur WHERE statut = $1'
+        : 'SELECT COUNT(*)::int as total FROM alerte_capteur',
+      status && status !== 'all' ? [status] : []
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      total: countResult.rows[0].total
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;
 module.exports.setController = setController;

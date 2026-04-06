@@ -22,6 +22,9 @@ const publicRoutes = [
   { path: '/metrics', methods: ['GET'] }, // Prometheus metrics
   { path: '/api/metrics/status', methods: ['GET'] }, // Frontend metrics
   { path: '/api/analytics', methods: ['GET'] }, // Analytics (public for now)
+  { path: '/api/health/all', methods: ['GET'] }, // All services health
+  { path: '/api/iot/sensors/status', methods: ['GET'] }, // Sensors status
+  { path: '/api/alerts', methods: ['GET'] }, // Alerts for monitoring
 ];
 
 /**
