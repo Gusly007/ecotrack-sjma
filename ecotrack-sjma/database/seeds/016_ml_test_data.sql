@@ -138,8 +138,8 @@ SELECT
   END,
   CASE (c.id_conteneur % 3)
     WHEN 0 THEN 95
-    WHEN 1 THEN 15
-    ELSE 0
+    WHEN 1 THEN 25
+    ELSE 15
   END,
   CASE (c.id_conteneur % 3)
     WHEN 0 THEN 90
