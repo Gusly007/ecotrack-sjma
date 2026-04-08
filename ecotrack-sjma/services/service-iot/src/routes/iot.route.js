@@ -171,8 +171,9 @@ router.get('/iot/sensors/status', async (req, res, next) => {
       success: true,
       data: {
         total: sensorsData.total,
-        active: sensorsData.active_last_24h,
-        active_count: sensorsData.active_last_24h,
+        active: sensorsData.active_last_hour,
+        active_count: sensorsData.active_last_hour,
+        active_last_24h: sensorsData.active_last_24h,
         inactive_12h: sensorsData.inactive_12h,
         inactive_24h: sensorsData.inactive_24h,
         low_battery: lowBattery,

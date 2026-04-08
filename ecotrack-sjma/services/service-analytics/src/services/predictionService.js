@@ -79,14 +79,18 @@ class PredictionService {
         modelVersion: '1.0-linear'
       };
 
-      // Sauvegarder la prédiction
-      await PredictionRepository.savePrediction({
-        containerId: result.containerId,
-        predictedFillLevel: result.predictedFillLevel,
-        predictionDate: result.predictionDate,
-        confidence: result.confidence,
-        modelVersion: result.modelVersion
-      });
+      // Sauvegarder la prédiction (ne pas échouer si erreur)
+      try {
+        await PredictionRepository.savePrediction({
+          containerId: result.containerId,
+          predictedFillLevel: result.predictedFillLevel,
+          predictionDate: result.predictionDate,
+          confidence: result.confidence,
+          modelVersion: result.modelVersion
+        });
+      } catch (saveError) {
+        logger.warn('Could not save prediction, continuing without save');
+      }
 
       return result;
     } catch (error) {
