@@ -177,6 +177,8 @@ services:
     container_name: ecotrack-api-gateway
     environment:
       GATEWAY_PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       USERS_PORT: 3010
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
       USERS_SERVICE_URL: http://service-users:3010
@@ -201,6 +203,8 @@ services:
         condition: service_healthy
       service-routes:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -306,6 +310,8 @@ services:
       PGUSER: ${DB_USER:-ecotrack_user}
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3011:3011"
@@ -314,6 +320,8 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -341,6 +349,8 @@ services:
     environment:
       APP_PORT: 3012
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       NODE_ENV: ${NODE_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
@@ -350,6 +360,8 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
     networks:
       - ecotrack
     restart: unless-stopped
@@ -476,6 +488,7 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     networks:
       - ecotrack
@@ -486,7 +499,6 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
-      - '--rule.file=/etc/prometheus/alert_rules.yml'
     logging:
       driver: "json-file"
       options:
