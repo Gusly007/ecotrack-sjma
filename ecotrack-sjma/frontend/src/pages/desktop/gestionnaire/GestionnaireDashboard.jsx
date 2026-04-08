@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatCard } from "../../../components/common";
 import AlertesUrgentesPanel from "../../../components/desktop/gestionnaire/AlertesUrgentesPanel";
 import CollectesAujourdhuiPanel from "../../../components/desktop/gestionnaire/CollectesAujourdhuiPanel";
-import TourneesEnCoursTable from "../../../components/desktop/gestionnaire/TourneesEnCoursTable";
+import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
 import { fetchDashboardData } from "../../../services/dashboardService";
 import "./GestionnaireDashboard.css";
 
@@ -10,6 +10,7 @@ export default function GestionnaireDashboard() {
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 	const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+	const [refreshNonce, setRefreshNonce] = useState(0);
 	const [dashboardData, setDashboardData] = useState({
 		stats: null,
 		activeTournees: [],
@@ -27,6 +28,7 @@ export default function GestionnaireDashboard() {
 
 			const data = await fetchDashboardData();
 			setDashboardData(data);
+			setRefreshNonce((prev) => prev + 1);
 			setLastUpdated(new Date());
 		} catch (err) {
 			// Silent fail to keep dashboard visible with last valid data
@@ -151,33 +153,6 @@ export default function GestionnaireDashboard() {
 		});
 	}, [dashboardData.activeTournees]);
 
-	const tourneesEnCours = useMemo(() => {
-		return (dashboardData.activeTournees || []).map((tournee) => {
-			const total = Number(tournee.total_etapes || 0);
-			const done = Number(tournee.etapes_collectees || 0);
-			const progression = total > 0 ? Math.round((done / total) * 100) : 0;
-
-			let statusText = "En cours";
-			let statusColor = "green";
-
-			if (progression >= 90) {
-				statusText = "Bientot fini";
-			} else if (progression <= 20) {
-				statusText = "Retard";
-				statusColor = "orange";
-			}
-
-			return {
-				id: `T-${tournee.id_tournee}`,
-				agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigne",
-				zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
-				progression,
-				statusText,
-				statusColor,
-			};
-		});
-	}, [dashboardData.activeTournees]);
-
 	if (loading) {
 		return <div className="gestionnaire-dashboard">Chargement du dashboard...</div>;
 	}
@@ -229,7 +204,7 @@ export default function GestionnaireDashboard() {
 				<CollectesAujourdhuiPanel collectesParZone={collectesParZone} />
 			</div>
 
-			<TourneesEnCoursTable tourneesEnCours={tourneesEnCours} />
+			<TourneesActivesPanel pageSize={6} refreshNonce={refreshNonce} />
 		</div>
 	);
 }

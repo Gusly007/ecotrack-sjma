@@ -12,10 +12,34 @@ function unwrap(payload) {
   return payload;
 }
 
-export async function fetchDashboardData() {
+function extractPaginated(payload) {
+  const data = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  const pagination = payload?.pagination || {
+    page: 1,
+    limit: data.length || 0,
+    total: data.length || 0,
+    pages: 1,
+    hasMore: false,
+  };
+
+  return { data, pagination };
+}
+
+export async function fetchDashboardData({ activePage = 1, activeLimit = 6 } = {}) {
   const [statsResult, tourneesResult, notificationsResult] = await Promise.allSettled([
     api.get("/api/routes/stats/dashboard"),
-    api.get("/api/routes/tournees/active"),
+    api.get("/api/routes/tournees", {
+      params: {
+        statut: "EN_COURS",
+        page: activePage,
+        limit: activeLimit,
+      },
+    }),
     api.get("/notifications?limit=5"),
   ]);
 
@@ -23,9 +47,11 @@ export async function fetchDashboardData() {
     ? unwrap(statsResult.value.data) || {}
     : {};
 
-  const activeTournees = tourneesResult.status === "fulfilled"
-    ? unwrap(tourneesResult.value.data) || []
-    : [];
+  const activeTourneesPayload = tourneesResult.status === "fulfilled"
+    ? tourneesResult.value.data || {}
+    : {};
+
+  const { data: activeTournees, pagination: activeTourneesPagination } = extractPaginated(activeTourneesPayload);
 
   const notificationsPayload = notificationsResult.status === "fulfilled"
     ? unwrap(notificationsResult.value.data) || notificationsResult.value.data || {}
@@ -42,6 +68,7 @@ export async function fetchDashboardData() {
   return {
     stats: statsData,
     activeTournees,
+    activeTourneesPagination,
     notifications,
   };
 }
