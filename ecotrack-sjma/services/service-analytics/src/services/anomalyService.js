@@ -1,4 +1,4 @@
-const PredictionRepository = require('../repositories/predictionRepository');
+const AnomalyRepository = require('../repositories/anomalyRepository');
 const StatsUtils = require('../utils/statsUtils');
 const logger = require('../utils/logger');
 
@@ -8,22 +8,8 @@ class AnomalyService {
    */
   static async detectAnomalies(containerId, threshold = 2) {
     try {
-      const db = require('../config/database');
-      
-      const query = `
-        SELECT 
-          niveau_remplissage_pct as fill_level,
-          batterie_pct as battery,
-          date_heure_mesure as timestamp,
-          temperature
-        FROM MESURE
-        WHERE id_conteneur = $1
-          AND date_heure_mesure >= CURRENT_DATE - INTERVAL '7 days'
-        ORDER BY date_heure_mesure DESC;
-      `;
-
-      const result = await db.query(query, [containerId]);
-      const data = result.rows.map(row => ({
+      const rows = await AnomalyRepository.getRecentContainerMeasurements(containerId);
+      const data = rows.map(row => ({
         ...row,
         fill_level: parseFloat(row.fill_level),
         battery: parseFloat(row.battery),
@@ -104,35 +90,11 @@ class AnomalyService {
    */
   static async detectDefectiveSensors() {
     try {
-      const db = require('../config/database');
-      
-      const query = `
-        WITH sensor_stats AS (
-          SELECT 
-            c.id_conteneur,
-            c.uid,
-            COUNT(m.id_mesure) as measurement_count,
-            MAX(m.date_heure_mesure) as last_measurement,
-            AVG(m.batterie_pct) as avg_battery,
-            COALESCE(STDDEV(m.niveau_remplissage_pct), 0) as stddev_fill
-          FROM CONTENEUR c
-          LEFT JOIN MESURE m ON m.id_conteneur = c.id_conteneur
-            AND m.date_heure_mesure >= CURRENT_DATE - INTERVAL '7 days'
-          WHERE c.statut = 'ACTIF'
-          GROUP BY c.id_conteneur, c.uid
-        )
-        SELECT *
-        FROM sensor_stats
-        WHERE 
-          (last_measurement < CURRENT_TIMESTAMP - INTERVAL '48 hours' OR last_measurement IS NULL)
-          OR (avg_battery IS NOT NULL AND avg_battery < 10)
-          OR (stddev_fill IS NOT NULL AND stddev_fill < 1)
-        ORDER BY last_measurement ASC NULLS FIRST;
-      `;
+      const rows = await AnomalyRepository.getDefectiveSensorStats();
 
-      const result = await db.query(query);
-      
-      const defectiveSensors = result.rows.map(sensor => ({
+      const defectiveSensors = rows.map(sensor => ({
+        sensorId: sensor.id_capteur,
+        sensorUid: sensor.uid_capteur,
         containerId: sensor.id_conteneur,
         containerUid: sensor.uid,
         issues: this._identifyIssues(sensor),
@@ -191,36 +153,82 @@ class AnomalyService {
    */
   static async createAlerts(anomalies) {
     try {
-      const db = require('../config/database');
-      
       for (const anomaly of anomalies.anomalies.slice(0, 10)) {
         const seuil = anomaly.fillLevel > 50 ? 90 : 20;
-        const query = `
-          INSERT INTO ALERTE_CAPTEUR (
-            type_alerte,
-            valeur_detectee,
-            seuil,
-            statut,
-            date_creation,
-            description,
-            id_conteneur
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `;
-
-        await db.query(query, [
-          'CAPTEUR_DEFAILLANT',
-          anomaly.fillLevel,
-          seuil,
-          'ACTIVE',
-          new Date(),
-          `Anomalie détectée: ${anomaly.type.join(', ')}`,
-          anomalies.containerId
-        ]);
+        await AnomalyRepository.createSensorAlert({
+          value: anomaly.fillLevel,
+          threshold: seuil,
+          status: 'ACTIVE',
+          createdAt: new Date(),
+          description: `Anomalie détectée: ${anomaly.type.join(', ')}`,
+          containerId: anomalies.containerId
+        });
       }
 
       logger.info(`Created ${anomalies.anomalies.length} automatic alerts`);
     } catch (error) {
       logger.error('Error creating alerts:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Détection globale d'anomalies pour TOUS les conteneurs (auto-scan)
+   * Retourne un résumé des conteneurs avec le plus d'anomalies
+   */
+  static async detectGlobalAnomalies(threshold = 2, limit = 20) {
+    try {
+      const containers = await AnomalyRepository.getContainersForGlobalAnomalyScan();
+      
+      const results = [];
+      let totalAnomalies = 0;
+      let totalMeasurements = 0;
+      
+      for (const container of containers) {
+        try {
+          const anomalyResult = await this.detectAnomalies(container.id_conteneur, threshold);
+          
+          if (anomalyResult.anomaliesCount > 0) {
+            results.push({
+              containerId: container.id_conteneur,
+              containerUid: container.uid,
+              sensorId: container.id_capteur,
+              sensorUid: container.uid_capteur,
+              anomaliesCount: anomalyResult.anomaliesCount,
+              anomaliesRate: parseFloat(anomalyResult.anomaliesRate),
+              totalMeasurements: anomalyResult.totalMeasurements,
+              topAnomalies: anomalyResult.anomalies.slice(0, 3),
+              statistics: anomalyResult.statistics
+            });
+          }
+          
+          totalAnomalies += anomalyResult.anomaliesCount;
+          totalMeasurements += anomalyResult.totalMeasurements;
+        } catch (err) {
+          // Skip containers with errors
+          logger.warn(`Skipping container ${container.id_conteneur}: ${err.message}`);
+        }
+      }
+      
+      // Sort by anomaly count descending
+      results.sort((a, b) => b.anomaliesCount - a.anomaliesCount);
+      
+      return {
+        summary: {
+          containersScanned: containers.length,
+          containersWithAnomalies: results.length,
+          totalAnomalies,
+          totalMeasurements,
+          globalAnomalyRate: totalMeasurements > 0 
+            ? ((totalAnomalies / totalMeasurements) * 100).toFixed(2) 
+            : '0',
+          threshold
+        },
+        containers: results.slice(0, limit),
+        detectionDate: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.error('Error detecting global anomalies:', error);
       throw error;
     }
   }

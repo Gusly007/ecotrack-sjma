@@ -2,11 +2,12 @@ import api from './api';
 
 export const alertService = {
   async getAlerts(params = {}) {
-    const { severity, type, limit = 50, offset = 0 } = params;
+    const { severity, type, status, limit = 50, offset = 0 } = params;
     
     const queryParams = new URLSearchParams();
     if (severity && severity !== 'all') queryParams.append('severity', severity);
     if (type && type !== 'all') queryParams.append('type', type);
+    if (status && status !== 'all') queryParams.append('status', status);
     queryParams.append('limit', limit);
     queryParams.append('offset', offset);
     

@@ -68,6 +68,7 @@ class LogRepository extends BaseRepository {
   async getLogs(filters = {}) {
     const {
       service, level, action, startDate, endDate,
+      search, userId,
       limit = 50, offset = 0
     } = filters;
 
@@ -75,19 +76,19 @@ class LogRepository extends BaseRepository {
     const params = [];
     let paramCount = 0;
 
-    if (service) {
+    if (service && service !== 'all') {
       paramCount++;
       whereClause += ` AND service = $${paramCount}`;
       params.push(service);
     }
 
-    if (level) {
+    if (level && level !== 'all') {
       paramCount++;
       whereClause += ` AND level = $${paramCount}`;
       params.push(level);
     }
 
-    if (action) {
+    if (action && action !== 'all') {
       paramCount++;
       whereClause += ` AND action = $${paramCount}`;
       params.push(action);
@@ -103,6 +104,18 @@ class LogRepository extends BaseRepository {
       paramCount++;
       whereClause += ` AND timestamp <= $${paramCount}`;
       params.push(endDate);
+    }
+
+    if (search) {
+      paramCount++;
+      whereClause += ` AND (message ILIKE $${paramCount} OR action ILIKE $${paramCount} OR service ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+    }
+
+    if (userId) {
+      paramCount++;
+      whereClause += ` AND user_id = $${paramCount}`;
+      params.push(userId);
     }
 
     paramCount++;
@@ -176,18 +189,18 @@ class LogRepository extends BaseRepository {
     }
   }
 
-  async getStats() {
+  async getStats(days = 7) {
     try {
       const [totalResult, todayResult, servicesResult] = await Promise.all([
-        this.query('SELECT COUNT(*) FROM centralized_logs'),
-        this.query("SELECT COUNT(*) FROM centralized_logs WHERE timestamp >= NOW() - INTERVAL '24 hours'"),
+        this.query(`SELECT COUNT(*) FROM centralized_logs WHERE timestamp >= NOW() - ($1::text || ' days')::interval`, [days]),
+        this.query("SELECT COUNT(*) FROM centralized_logs WHERE timestamp >= NOW() - ($1 || ' days')::interval", [days]),
         this.query(`
           SELECT service, COUNT(*) as count 
           FROM centralized_logs 
-          WHERE timestamp >= NOW() - INTERVAL '24 hours'
+          WHERE timestamp >= NOW() - ($1 || ' days')::interval
           GROUP BY service
           ORDER BY count DESC
-        `)
+        `, [days])
       ]);
 
       return {
@@ -201,16 +214,37 @@ class LogRepository extends BaseRepository {
     }
   }
 
-  async deleteOldLogs(olderThanDays = 30) {
+  async getSummary(days = 7) {
     const query = `
-      DELETE FROM centralized_logs 
-      WHERE timestamp < NOW() - INTERVAL '${olderThanDays} days'
-      RETURNING COUNT(*)
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE level = 'error') as error_count,
+        COUNT(*) FILTER (WHERE level = 'warning') as warning_count,
+        COUNT(*) FILTER (WHERE level = 'critical') as critical_count,
+        COUNT(*) FILTER (WHERE level = 'info') as info_count
+      FROM centralized_logs
+      WHERE timestamp >= NOW() - ($1 || ' days')::interval
     `;
 
     try {
-      const result = await this.query(query);
-      const count = result.rows[0].count;
+      const result = await this.query(query, [days]);
+      return result.rows[0];
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get logs summary');
+      throw err;
+    }
+  }
+
+  async deleteOldLogs(olderThanDays = 30) {
+    const query = `
+      DELETE FROM centralized_logs 
+      WHERE timestamp < NOW() - ($1 || ' days')::interval
+      RETURNING 1
+    `;
+
+    try {
+      const result = await this.query(query, [olderThanDays]);
+      const count = result.rowCount;
       logger.info(`Deleted ${count} old logs`);
       return count;
     } catch (err) {
@@ -220,20 +254,26 @@ class LogRepository extends BaseRepository {
   }
 
   async getDistinctValues(column) {
-    const validColumns = ['service', 'level', 'action'];
-    if (!validColumns.includes(column)) {
+    if (column === 'service') {
+      const result = await this.query('SELECT DISTINCT service FROM centralized_logs ORDER BY service');
+      return result.rows.map(row => row.service);
+    }
+
+    if (column === 'level') {
+      const result = await this.query('SELECT DISTINCT level FROM centralized_logs ORDER BY level');
+      return result.rows.map(row => row.level);
+    }
+
+    if (column === 'action') {
+      const result = await this.query('SELECT DISTINCT action FROM centralized_logs ORDER BY action');
+      return result.rows.map(row => row.action);
+    }
+
+    if (!['service', 'level', 'action'].includes(column)) {
       throw new Error(`Invalid column: ${column}`);
     }
 
-    const query = `SELECT DISTINCT ${column} FROM centralized_logs ORDER BY ${column}`;
-
-    try {
-      const result = await this.query(query);
-      return result.rows.map(row => row[column]);
-    } catch (err) {
-      logger.error({ err: err.message }, `Failed to get distinct ${column}`);
-      throw err;
-    }
+    return [];
   }
 }
 

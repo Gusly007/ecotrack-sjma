@@ -21,6 +21,26 @@ class CentralizedLoggingService {
     }
   }
 
+  async queryLogs(filters = {}) {
+    // Filter out 'all' values - they mean no filter should be applied
+    const cleanedFilters = {};
+    if (filters.service && filters.service !== 'all') cleanedFilters.service = filters.service;
+    if (filters.level && filters.level !== 'all') cleanedFilters.level = filters.level;
+    if (filters.action && filters.action !== 'all') cleanedFilters.action = filters.action;
+    if (filters.startDate) cleanedFilters.startDate = filters.startDate;
+    if (filters.endDate) cleanedFilters.endDate = filters.endDate;
+    if (filters.limit) cleanedFilters.limit = filters.limit;
+    if (filters.offset) cleanedFilters.offset = filters.offset;
+    if (filters.search) cleanedFilters.search = filters.search;
+    if (filters.userId) cleanedFilters.userId = filters.userId;
+    
+    return logRepository.getLogs(cleanedFilters);
+  }
+
+  async getLogs(filters = {}) {
+    return logRepository.getLogs(filters);
+  }
+
   async info(action, service, message, metadata) {
     return this.log({ level: 'INFO', action, service, message, metadata });
   }
@@ -37,12 +57,12 @@ class CentralizedLoggingService {
     return this.log({ level: 'DEBUG', action, service, message, metadata });
   }
 
-  async getLogs(filters) {
-    return logRepository.getLogs(filters);
+  async getStats(days = 7) {
+    return logRepository.getStats(days);
   }
 
-  async getStats() {
-    return logRepository.getStats();
+  async getSummary(days = 7) {
+    return logRepository.getSummary(days);
   }
 
   async getFilterValues() {
@@ -59,8 +79,15 @@ class CentralizedLoggingService {
     }
   }
 
+  async exportLogs(filters = {}) {
+    return logRepository.getLogs(filters);
+  }
+
   async cleanup(olderThanDays = 30) {
-    return logRepository.deleteOldLogs(olderThanDays);
+    const days = typeof olderThanDays === 'object'
+      ? (olderThanDays.days || olderThanDays.olderThanDays || 30)
+      : olderThanDays;
+    return logRepository.deleteOldLogs(days);
   }
 }
 
