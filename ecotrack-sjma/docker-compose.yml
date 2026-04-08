@@ -475,6 +475,7 @@ services:
       REPORTS_DIR: /app/reports
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      USERS_SERVICE_URL: http://ecotrack-service-users:3010
     ports:
       - "3015:3015"
     depends_on:

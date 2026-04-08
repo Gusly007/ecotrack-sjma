@@ -200,7 +200,7 @@ export default function MonitoringPage() {
         <StatCard 
           icon="fa-satellite-dish" 
           iconColor="orange" 
-          label="Capteurs actifs" 
+          label="Capteurs actifs (1h)" 
           value={sensorsData ? `${sensorsData.active_count || sensorsData.active || 0}/${sensorsData.total || 0}` : 'N/A'} 
         />
       </StatsGrid>
@@ -278,7 +278,7 @@ export default function MonitoringPage() {
               <>
                 <div className="iot-stats">
                   <div className="iot-stat">
-                    <span>Capteurs actifs</span>
+                    <span>Capteurs actifs (1h)</span>
                     <strong style={{ color: '#4CAF50' }}>
                       {sensorsData.active_count?.toLocaleString() || sensorsData.active?.toLocaleString() || 0} / {sensorsData.total?.toLocaleString() || 0}
                     </strong>

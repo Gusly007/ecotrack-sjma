@@ -162,11 +162,13 @@ const startRuntimeServices = () => {
     logger.warn({ err: err.message }, 'Kafka consumer startup failed, continuing without');
   });
 
-  centralizedLogging.connect().then(() => {
-    logger.info('Centralized logging initialized');
-  }).catch(err => {
-    logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
-  });
+  if (typeof centralizedLogging.connect === 'function') {
+    centralizedLogging.connect().then(() => {
+      logger.info('Centralized logging initialized');
+    }).catch(err => {
+      logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
+    });
+  }
 };
 
 const startServer = () => {
@@ -182,6 +184,9 @@ app.use('/api/analytics', aggregationRoutes);
 
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/analytics', dashboardRoutes);
+
+const dashboardAnalyticsRoutes = require('./routes/dashboardAnalyticsRoutes');
+app.use('/api/analytics', dashboardAnalyticsRoutes);
 
 const performanceRoutes = require('./routes/performanceRoutes');
 app.use('/api/analytics', performanceRoutes);

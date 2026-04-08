@@ -78,61 +78,51 @@ export default function ConfigurationPage() {
       
       const newConfig = JSON.parse(JSON.stringify(initialConfig));
       
-      // Track if we got any data from the server
-      let hasDataFromServer = false;
-      
-      if (data.security && Object.keys(data.security).length > 0) {
-        hasDataFromServer = true;
+      if (data.security) {
         const sec = data.security;
-        if (sec['jwt.access_token_expiration']?.value) {
+        if (sec['jwt.access_token_expiration']?.value !== undefined) {
           const val = sec['jwt.access_token_expiration'].value;
           newConfig.security.jwtExpiration = val.replace ? val.replace('h', '') : String(val);
         }
-        if (sec['jwt.refresh_token_expiration']?.value) {
+        if (sec['jwt.refresh_token_expiration']?.value !== undefined) {
           const val = sec['jwt.refresh_token_expiration'].value;
           const hours = val.replace ? parseFloat(val.replace('h', '')) : parseFloat(val);
           newConfig.security.refreshTokenExpiration = String(Math.round(hours / 24));
         }
-        if (sec['session.max_concurrent_sessions']?.value) {
+        if (sec['session.max_concurrent_sessions']?.value !== undefined) {
           newConfig.security.sessionsMax = String(sec['session.max_concurrent_sessions'].value);
         }
-        if (sec['security.bcrypt_rounds']?.value) {
+        if (sec['security.bcrypt_rounds']?.value !== undefined) {
           newConfig.security.bcryptRounds = String(sec['security.bcrypt_rounds'].value);
         }
-        if (sec['rate_limit.max_requests']?.value) {
+        if (sec['rate_limit.max_requests']?.value !== undefined) {
           newConfig.security.rateLimiting = String(sec['rate_limit.max_requests'].value);
         }
       }
       
-      if (data.performance && Object.keys(data.performance).length > 0) {
-        hasDataFromServer = true;
+      if (data.performance) {
         const perf = data.performance;
-        if (perf['COLLECTION_RATE_WEIGHT']?.value) newConfig.performance.collectionRateWeight = String(perf['COLLECTION_RATE_WEIGHT'].value);
-        if (perf['COMPLETION_RATE_WEIGHT']?.value) newConfig.performance.completionRateWeight = String(perf['COMPLETION_RATE_WEIGHT'].value);
-        if (perf['TIME_EFFICIENCY_WEIGHT']?.value) newConfig.performance.timeEfficiencyWeight = String(perf['TIME_EFFICIENCY_WEIGHT'].value);
-        if (perf['DISTANCE_EFFICIENCY_WEIGHT']?.value) newConfig.performance.distanceEfficiencyWeight = String(perf['DISTANCE_EFFICIENCY_WEIGHT'].value);
+        if (perf['COLLECTION_RATE_WEIGHT']?.value !== undefined) newConfig.performance.collectionRateWeight = String(perf['COLLECTION_RATE_WEIGHT'].value);
+        if (perf['COMPLETION_RATE_WEIGHT']?.value !== undefined) newConfig.performance.completionRateWeight = String(perf['COMPLETION_RATE_WEIGHT'].value);
+        if (perf['TIME_EFFICIENCY_WEIGHT']?.value !== undefined) newConfig.performance.timeEfficiencyWeight = String(perf['TIME_EFFICIENCY_WEIGHT'].value);
+        if (perf['DISTANCE_EFFICIENCY_WEIGHT']?.value !== undefined) newConfig.performance.distanceEfficiencyWeight = String(perf['DISTANCE_EFFICIENCY_WEIGHT'].value);
       }
       
-      if (data.environment && Object.keys(data.environment).length > 0) {
-        hasDataFromServer = true;
-        const env = data.environment;
-        if (env['CO2_PER_KM']?.value) newConfig.environment.CO2_PER_KM = String(env['CO2_PER_KM'].value);
-        if (env['FUEL_CONSUMPTION_PER_100KM']?.value) newConfig.environment.FUEL_CONSUMPTION_PER_100KM = String(env['FUEL_CONSUMPTION_PER_100KM'].value);
-        if (env['FUEL_PRICE_PER_LITER']?.value) newConfig.environment.FUEL_PRICE_PER_LITER = String(env['FUEL_PRICE_PER_LITER'].value);
-        if (env['LABOR_COST_PER_HOUR']?.value) newConfig.environment.LABOR_COST_PER_HOUR = String(env['LABOR_COST_PER_HOUR'].value);
-        if (env['MAINTENANCE_COST_PER_KM']?.value) newConfig.environment.MAINTENANCE_COST_PER_KM = String(env['MAINTENANCE_COST_PER_KM'].value);
-        if (env['CO2_PER_TREE_PER_YEAR']?.value) newConfig.environment.CO2_PER_TREE_PER_YEAR = String(env['CO2_PER_TREE_PER_YEAR'].value);
-        if (env['CO2_PER_KM_CAR']?.value) newConfig.environment.CO2_PER_KM_CAR = String(env['CO2_PER_KM_CAR'].value);
+      if (data.environmental) {
+        const env = data.environmental;
+        if (env['CO2_PER_KM']?.value !== undefined) newConfig.environment.CO2_PER_KM = String(env['CO2_PER_KM'].value);
+        if (env['FUEL_CONSUMPTION_PER_100KM']?.value !== undefined) newConfig.environment.FUEL_CONSUMPTION_PER_100KM = String(env['FUEL_CONSUMPTION_PER_100KM'].value);
+        if (env['FUEL_PRICE_PER_LITER']?.value !== undefined) newConfig.environment.FUEL_PRICE_PER_LITER = String(env['FUEL_PRICE_PER_LITER'].value);
+        if (env['LABOR_COST_PER_HOUR']?.value !== undefined) newConfig.environment.LABOR_COST_PER_HOUR = String(env['LABOR_COST_PER_HOUR'].value);
+        if (env['MAINTENANCE_COST_PER_KM']?.value !== undefined) newConfig.environment.MAINTENANCE_COST_PER_KM = String(env['MAINTENANCE_COST_PER_KM'].value);
+        if (env['CO2_PER_TREE_PER_YEAR']?.value !== undefined) newConfig.environment.CO2_PER_TREE_PER_YEAR = String(env['CO2_PER_TREE_PER_YEAR'].value);
+        if (env['CO2_PER_KM_CAR']?.value !== undefined) newConfig.environment.CO2_PER_KM_CAR = String(env['CO2_PER_KM_CAR'].value);
       }
       
       setConfig(newConfig);
-      
-      if (!hasDataFromServer) {
-        console.warn('No configuration data from server, using defaults');
-      }
     } catch (err) {
       console.error('Failed to load config:', err);
-      showError('Erreur de chargement des configurations - utilisation des valeurs par défaut');
+      showError('Erreur de chargement des configurations');
     } finally {
       setLoading(false);
     }
@@ -178,6 +168,9 @@ export default function ConfigurationPage() {
       setSavedSection(section);
       setTimeout(() => setSavedSection(null), 3000);
       showSuccess(`Configuration ${section} enregistrée avec succès`);
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await loadConfig();
     } catch (err) {
       console.error('Save config error:', err);
       const errorMsg = err.response?.data?.error || err.message || 'Erreur inconnue';

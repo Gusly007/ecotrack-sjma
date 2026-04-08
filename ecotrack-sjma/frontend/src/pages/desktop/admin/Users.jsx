@@ -59,6 +59,7 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [userCounts, setUserCounts] = useState({ citoyens: 0, agents: 0, gestionnaires: 0, admins: 0 });
   const itemsPerPage = 5;
   const { alert, showError } = useAlert();
 
@@ -70,28 +71,6 @@ export default function UsersPage() {
   useEffect(() => {
     loadUsers();
   }, [currentPage, searchQuery, roleFilter, statusFilter]);
-
-  useEffect(() => {
-    loadTotalUsers();
-  }, [roleFilter, statusFilter, searchQuery]);
-
-  const loadTotalUsers = async () => {
-    try {
-      const response = await userService.getAll({
-        page: 1,
-        limit: 1,
-        role: roleFilter !== 'all' ? roleFilter : undefined,
-        search: searchQuery || undefined,
-        est_active: statusFilter === 'active' ? true : (statusFilter === 'disabled' ? false : undefined)
-      });
-      
-      if (response.pagination) {
-        setTotalUsers(response.pagination.total);
-      }
-    } catch (err) {
-      console.error('Failed to load total users:', err);
-    }
-  };
 
   const loadUsers = async () => {
     try {
@@ -121,12 +100,32 @@ export default function UsersPage() {
       
       const userData = response.data || response;
       const pagination = response.pagination;
+      const total = pagination?.total || 0;
+
+      const allUsersResponse = total > 0
+        ? await userService.getAll({
+            page: 1,
+            limit: total,
+            role: roleFilter !== 'all' ? roleFilter : undefined,
+            search: searchQuery || undefined,
+            est_active: estActiveValue
+          }).catch(() => null)
+        : null;
+
+      const usersForCounts = allUsersResponse?.data || userData || [];
       
       setUsers(userData);
       if (pagination) {
         setTotalPages(pagination.pages);
         setTotalItems(pagination.total);
+        setTotalUsers(pagination.total);
       }
+      setUserCounts({
+        citoyens: usersForCounts.filter(u => u.role_par_defaut === 'CITOYEN').length,
+        agents: usersForCounts.filter(u => u.role_par_defaut === 'AGENT').length,
+        gestionnaires: usersForCounts.filter(u => u.role_par_defaut === 'GESTIONNAIRE').length,
+        admins: usersForCounts.filter(u => u.role_par_defaut === 'ADMIN').length
+      });
     } catch (err) {
       console.error('Failed to load users:', err);
       showError('Erreur de chargement des utilisateurs');
@@ -141,10 +140,10 @@ export default function UsersPage() {
 
   const stats = {
     total: totalUsers,
-    citoyens: users.filter(u => u.role_par_defaut === 'CITOYEN').length,
-    agents: users.filter(u => u.role_par_defaut === 'AGENT').length,
-    gestionnaires: users.filter(u => u.role_par_defaut === 'GESTIONNAIRE').length,
-    admins: users.filter(u => u.role_par_defaut === 'ADMIN').length
+    citoyens: userCounts.citoyens,
+    agents: userCounts.agents,
+    gestionnaires: userCounts.gestionnaires,
+    admins: userCounts.admins
   };
 
   const getInitials = (user) => {
