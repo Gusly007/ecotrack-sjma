@@ -153,17 +153,21 @@
 const express = require('express');
 const { typeConteneurController } = require('../container-di.js');
 const { requirePermission } = require('../middleware/rbac');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', requirePermission('containers:read'), typeConteneurController.getAll);
-router.get('/stats/all', requirePermission('containers:read'), typeConteneurController.getAllWithStats);
-router.get('/code/:code', requirePermission('containers:read'), typeConteneurController.getByCode);
-router.get('/nom/:nom', requirePermission('containers:read'), typeConteneurController.getByNom);
-router.get('/:id/stats', requirePermission('containers:read'), typeConteneurController.getWithStats);
-router.get('/:id', requirePermission('containers:read'), typeConteneurController.getById);
-router.post('/', requirePermission('containers:create'), typeConteneurController.create);
-router.put('/:id', requirePermission('containers:update'), typeConteneurController.update);
-router.delete('/:id', requirePermission('containers:delete'), typeConteneurController.delete);
+// Apply authentication to all routes
+router.use(authenticateToken);
+
+router.get('/typecontainers', requirePermission('containers:read'), typeConteneurController.getAll);
+router.get('/typecontainers/stats/all', requirePermission('containers:read'), typeConteneurController.getAllWithStats);
+router.get('/typecontainers/code/:code', requirePermission('containers:read'), typeConteneurController.getByCode);
+router.get('/typecontainers/nom/:nom', requirePermission('containers:read'), typeConteneurController.getByNom);
+router.get('/typecontainers/:id/stats', requirePermission('containers:read'), typeConteneurController.getWithStats);
+router.get('/typecontainers/:id', requirePermission('containers:read'), typeConteneurController.getById);
+router.post('/typecontainers', requirePermission('containers:create'), typeConteneurController.create);
+router.put('/typecontainers/:id', requirePermission('containers:update'), typeConteneurController.update);
+router.delete('/typecontainers/:id', requirePermission('containers:delete'), typeConteneurController.delete);
 
 module.exports = router;

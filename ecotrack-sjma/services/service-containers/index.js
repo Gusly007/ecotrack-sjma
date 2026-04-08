@@ -137,10 +137,10 @@ app.use('/api', zoneRoutes);
 
 // Type Container routes
 const typeContainerRoutes = require('./src/routes/typecontainer.route.js');
-app.use('/api/typecontainers', typeContainerRoutes);
+app.use('/api', typeContainerRoutes);
 // Stats routes
 const statsRoutes = require('./src/routes/stats.route.js');
-app.use('/api/stats', statsRoutes);
+app.use('/api', statsRoutes);
 // ========== HEALTH CHECK ==========
 app.get('/health', async (req, res) => {
   const healthcheck = {

@@ -26,42 +26,40 @@ export default function Pagination({
   const safeTotalItems = totalItems || 0;
   
   return (
-    <div className="table-footer" style={{ display: 'flex !important' }}>
+    <div className="table-footer" style={{ display: 'flex !important', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e0e0e0', backgroundColor: '#fafafa' }}>
       <span className="results-count">
         {safeTotalPages > 1 
           ? `Affichage ${showingFrom || 1}-${showingTo || safeTotalItems} sur ${safeTotalItems} ${label}`
           : `${safeTotalItems} ${label}${safeTotalItems !== 1 ? 's' : ''}`
         }
       </span>
-      {safeTotalPages > 1 && (
-        <div className="pagination">
-          <button 
-            className="btn-sm btn-outline" 
-            disabled={currentPage === 1}
-            onClick={() => onPageChange?.(currentPage - 1)}
+      <div className="pagination">
+        <button 
+          className="btn-sm btn-outline" 
+          disabled={currentPage === 1}
+          onClick={() => onPageChange?.(currentPage - 1)}
+        >
+          <i className="fas fa-chevron-left"></i>
+        </button>
+        {start > 1 && <span className="pagination-ellipsis">...</span>}
+        {pages.map(page => (
+          <button
+            key={page}
+            className={`btn-sm ${page === currentPage ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => onPageChange?.(page)}
           >
-            <i className="fas fa-chevron-left"></i>
+            {page}
           </button>
-          {start > 1 && <span className="pagination-ellipsis">...</span>}
-          {pages.map(page => (
-            <button
-              key={page}
-              className={`btn-sm ${page === currentPage ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => onPageChange?.(page)}
-            >
-              {page}
-            </button>
-          ))}
-          {end < safeTotalPages && <span className="pagination-ellipsis">...</span>}
-          <button 
-            className="btn-sm btn-outline" 
-            disabled={currentPage === safeTotalPages}
-            onClick={() => onPageChange?.(currentPage + 1)}
-          >
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      )}
+        ))}
+        {end < safeTotalPages && <span className="pagination-ellipsis">...</span>}
+        <button 
+          className="btn-sm btn-outline" 
+          disabled={currentPage === safeTotalPages}
+          onClick={() => onPageChange?.(currentPage + 1)}
+        >
+          <i className="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   );
 }

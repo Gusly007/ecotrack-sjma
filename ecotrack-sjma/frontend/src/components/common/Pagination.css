@@ -1,4 +1,5 @@
-.zones-list-panel .table-footer {
+/* General table-footer styles */
+.table-footer {
   display: flex !important;
   justify-content: space-between;
   align-items: center;
@@ -6,27 +7,28 @@
   border-top: 1px solid #e0e0e0;
   background: #fafafa;
   margin: 0;
-  border-radius: 0 0 12px 12px;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-.zones-list-panel .results-count {
+.results-count {
   font-size: 0.85rem;
   color: #666;
   font-weight: 500;
 }
 
-.zones-list-panel .pagination {
+.pagination {
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
-.zones-list-panel .pagination-ellipsis {
+.pagination-ellipsis {
   color: #888;
   padding: 0 4px;
 }
 
-.zones-list-panel .btn-sm {
+.table-footer .btn-sm {
   padding: 6px 12px;
   font-size: 0.8rem;
   border-radius: 6px;
@@ -40,23 +42,33 @@
   justify-content: center;
 }
 
-.zones-list-panel .btn-sm.btn-primary {
+.table-footer .btn-sm.btn-primary {
   background: #4CAF50;
   color: #fff;
 }
 
-.zones-list-panel .btn-sm.btn-outline {
+.table-footer .btn-sm.btn-outline {
   background: #fff;
   border: 1px solid #ddd;
   color: #666;
 }
 
-.zones-list-panel .btn-sm.btn-outline:hover:not(:disabled) {
+.table-footer .btn-sm.btn-outline:hover:not(:disabled) {
   border-color: #4CAF50;
   color: #4CAF50;
 }
 
-.zones-list-panel .btn-sm.btn-outline:disabled {
+.table-footer .btn-sm.btn-outline:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Zones list panel specific */
+.zones-list-panel .table-footer {
+  border-radius: 0 0 12px 12px;
+}
+
+/* Conteneurs panel specific */
+.conteneurs-panel .table-footer {
+  border-radius: 0 0 12px 12px;
 }
