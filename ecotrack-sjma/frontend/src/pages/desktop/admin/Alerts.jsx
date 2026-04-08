@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { StatCard, StatsGrid } from '../../../components/common';
 import { Filters, SelectFilter, Pagination } from '../../../components/common';
 import { alertService } from '../../../services/alertService';
@@ -22,31 +23,55 @@ const categoryConfig = {
 };
 
 export default function AlertsPage() {
+  const [searchParams] = useSearchParams();
   const [alerts, setAlerts] = useState([]);
+  const [alertCounts, setAlertCounts] = useState({ critical: 0, high: 0, medium: 0, low: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterSeverity, setFilterSeverity] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
+  // Initialize filters from URL params or defaults
+  const [filterSeverity, setFilterSeverity] = useState(searchParams.get('severity') || 'all');
+  const [filterCategory, setFilterCategory] = useState(searchParams.get('type') || 'all');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchAlerts();
-  }, [filterSeverity, filterCategory, currentPage]);
+  }, [filterSeverity, filterCategory, filterStatus, currentPage]);
 
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const response = await alertService.getAlerts({
+      const filters = {
         severity: filterSeverity,
         type: filterCategory,
+        status: filterStatus,
+      };
+
+      const response = await alertService.getAlerts({
+        ...filters,
         limit: itemsPerPage,
         offset: (currentPage - 1) * itemsPerPage
       });
       
       setAlerts(response.data || []);
       setTotalItems(response.total || 0);
+      const allAlertsResponse = response.total > 0
+        ? await alertService.getAlerts({
+            ...filters,
+            limit: response.total,
+            offset: 0
+          }).catch(() => null)
+        : null;
+
+      const alertsForCounts = allAlertsResponse?.data || response.data || [];
+      setAlertCounts({
+        critical: alertsForCounts.filter(a => a.severity === 'critical').length,
+        high: alertsForCounts.filter(a => a.severity === 'high').length,
+        medium: alertsForCounts.filter(a => a.severity === 'medium').length,
+        low: alertsForCounts.filter(a => a.severity === 'low').length,
+      });
       setError(null);
     } catch (err) {
       console.error('Error fetching alerts:', err);
@@ -56,22 +81,16 @@ export default function AlertsPage() {
     }
   };
 
-  const filteredAlerts = alerts.filter(alert => {
-    const matchSeverity = filterSeverity === 'all' || alert.severity === filterSeverity;
-    const matchCategory = filterCategory === 'all' || alert.category === filterCategory;
-    return matchSeverity && matchCategory;
-  });
+  const updateFilter = (setter) => (value) => {
+    setCurrentPage(1);
+    setter(value);
+  };
 
+  // Note: alerts are already filtered by the API, no need for client-side filtering
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLast = Math.min(currentPage * itemsPerPage, totalItems);
   const indexOfFirst = (currentPage - 1) * itemsPerPage + 1;
-
-  const counts = {
-    critical: alerts.filter(a => a.severity === 'critical').length,
-    high: alerts.filter(a => a.severity === 'high').length,
-    medium: alerts.filter(a => a.severity === 'medium').length,
-    low: alerts.filter(a => a.severity === 'low').length,
-  };
+  const pageLabel = totalItems > 0 ? `Page ${currentPage} sur ${totalPages}` : 'Aucune page';
 
   if (loading) {
     return <div className="alerts-page"><div className="loading">Chargement des alertes...</div></div>;
@@ -84,11 +103,14 @@ export default function AlertsPage() {
   return (
     <div className="alerts-page">
       <div className="alerts-header">
-        <h1>Centre d'alertes système</h1>
+        <div>
+          <h1>Centre d'alertes système</h1>
+          <p className="alerts-page-context">{pageLabel} - compteurs calculés sur toutes les alertes filtrées</p>
+        </div>
         <Filters>
           <SelectFilter
             value={filterSeverity}
-            onChange={setFilterSeverity}
+            onChange={updateFilter(setFilterSeverity)}
             options={[
               { value: 'all', label: 'Toutes sévérités' },
               { value: 'critical', label: 'Critique' },
@@ -99,7 +121,7 @@ export default function AlertsPage() {
           />
           <SelectFilter
             value={filterCategory}
-            onChange={setFilterCategory}
+            onChange={updateFilter(setFilterCategory)}
             options={[
               { value: 'all', label: 'Toutes catégories' },
               { value: 'conteneur', label: 'Conteneurs' },
@@ -110,24 +132,34 @@ export default function AlertsPage() {
               { value: 'iot', label: 'IoT' }
             ]}
           />
+          <SelectFilter
+            value={filterStatus}
+            onChange={updateFilter(setFilterStatus)}
+            options={[
+              { value: 'ACTIVE', label: 'Actives' },
+              { value: 'RESOLUE', label: 'Résolues' },
+              { value: 'IGNOREE', label: 'Ignorées' },
+              { value: 'all', label: 'Tous statuts' }
+            ]}
+          />
         </Filters>
       </div>
 
       <StatsGrid>
-        <StatCard icon="fa-times-circle" iconColor="red" label="Critiques" value={counts.critical} />
-        <StatCard icon="fa-exclamation-triangle" iconColor="orange" label="Hautes" value={counts.high} />
-        <StatCard icon="fa-exclamation-circle" iconColor="yellow" label="Moyennes" value={counts.medium} />
-        <StatCard icon="fa-info-circle" iconColor="blue" label="Basses" value={counts.low} />
+        <StatCard icon="fa-times-circle" iconColor="red" label="Critiques" value={alertCounts.critical} />
+        <StatCard icon="fa-exclamation-triangle" iconColor="orange" label="Hautes" value={alertCounts.high} />
+        <StatCard icon="fa-exclamation-circle" iconColor="yellow" label="Moyennes" value={alertCounts.medium} />
+        <StatCard icon="fa-info-circle" iconColor="blue" label="Basses" value={alertCounts.low} />
       </StatsGrid>
 
       <div className="alerts-list">
-        {filteredAlerts.length === 0 ? (
+        {alerts.length === 0 ? (
           <div className="no-alerts">
             <i className="fas fa-check-circle" style={{ color: '#4CAF50', marginRight: '8px' }}></i>
-            Aucune alerte active
+            Aucune alerte {filterStatus === 'ACTIVE' ? 'active' : filterStatus === 'RESOLUE' ? 'résolue' : filterStatus === 'IGNOREE' ? 'ignorée' : ''}
           </div>
         ) : (
-          filteredAlerts.map(alert => {
+          alerts.map(alert => {
             const severityInfo = severityConfig[alert.severity] || severityConfig.low;
             const categoryInfo = categoryConfig[alert.category] || categoryConfig.autre;
             

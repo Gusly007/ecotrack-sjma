@@ -527,18 +527,36 @@ app.delete('/api/logs/cleanup', async (req, res) => {
   app.get('/api/alerts/unified', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
-      const { severity, type, limit = 50, offset = 0 } = req.query;
+      const { severity, type, status, limit = 50, offset = 0 } = req.query;
 
-      // 1. Get IoT alerts from service-iot
+      // 1. Get IoT alerts from service-iot (with status filter)
       const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
-        params: { limit, offset },
+        params: { status, limit: 1000, offset: 0 }, // Get all to filter properly, then paginate
         timeout: 5000
       }).catch(() => ({ data: { data: [], total: 0 } }));
 
-      // 2. Get Prometheus alerts (if available)
-      const prometheusResponse = await axios.get('http://prometheus:9090/api/v1/alerts', {
-        timeout: 3000
-      }).catch(() => ({ data: { data: { alerts: [] } } }));
+      // 2. Get Prometheus alerts (if available) - only if status is 'all' or 'ACTIVE'
+      let prometheusAlerts = [];
+      if (!status || status === 'all' || status === 'ACTIVE') {
+        const prometheusResponse = await axios.get('http://prometheus:9090/api/v1/alerts', {
+          timeout: 3000
+        }).catch(() => ({ data: { data: { alerts: [] } } }));
+        
+        prometheusAlerts = prometheusResponse.data.data?.alerts?.map(alert => ({
+          id: `prom-${alert.labels?.alertname}-${Date.now()}`,
+          type: alert.labels?.alertname,
+          severity: alert.labels?.severity || 'warning',
+          category: alert.labels?.category || 'infrastructure',
+          icon: 'fa-server',
+          title: alert.annotations?.summary || alert.labels?.alertname,
+          description: alert.annotations?.description || '',
+          time: new Date(alert.startsAt).toISOString(),
+          statut: alert.state?.toUpperCase() || 'ACTIVE',
+          valeur: alert.annotations?.current_value || '',
+          seuil: alert.annotations?.threshold || '',
+          source: 'prometheus'
+        })) || [];
+      }
 
       // Transform IoT alerts
       const iotAlerts = iotResponse.data.data?.map(alert => {
@@ -564,22 +582,6 @@ app.delete('/api/logs/cleanup', async (req, res) => {
         };
       }) || [];
 
-      // Transform Prometheus alerts
-      const prometheusAlerts = prometheusResponse.data.data?.alerts?.map(alert => ({
-        id: `prom-${alert.labels?.alertname}-${Date.now()}`,
-        type: alert.labels?.alertname,
-        severity: alert.labels?.severity || 'warning',
-        category: alert.labels?.category || 'infrastructure',
-        icon: 'fa-server',
-        title: alert.annotations?.summary || alert.labels?.alertname,
-        description: alert.annotations?.description || '',
-        time: new Date(alert.startsAt).toISOString(),
-        statut: alert.state?.toUpperCase() || 'ACTIVE',
-        valeur: alert.annotations?.current_value || '',
-        seuil: alert.annotations?.threshold || '',
-        source: 'prometheus'
-      })) || [];
-
       // Combine all alerts
       let allAlerts = [...iotAlerts, ...prometheusAlerts];
 
@@ -600,7 +602,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       allAlerts.sort((a, b) => new Date(b.time) - new Date(a.time));
 
       const total = allAlerts.length;
-      const paginatedAlerts = allAlerts.slice(offset, parseInt(offset) + parseInt(limit));
+      const paginatedAlerts = allAlerts.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
 
       res.json({
         success: true,
@@ -746,10 +748,20 @@ app.delete('/api/logs/cleanup', async (req, res) => {
 
             const parseMetric = (text, metricName) => {
               const lines = text.split('\n');
-              const line = lines.find(l => l.startsWith(metricName + ' '));
-              if (!line) return null;
-              const value = line.split(' ')[1];
-              return parseFloat(value);
+              // Sum all metric values (handles both with and without labels)
+              // Format: metric_name{labels} value or metric_name value
+              let total = 0;
+              for (const line of lines) {
+                if (line.startsWith(metricName + ' ') || line.startsWith(metricName + '{')) {
+                  // Extract the value (last part after space)
+                  const parts = line.split(' ');
+                  const value = parseFloat(parts[parts.length - 1]);
+                  if (!isNaN(value)) {
+                    total += value;
+                  }
+                }
+              }
+              return total > 0 ? total : null;
             };
 
             return {
