@@ -1,0 +1,64 @@
+.zone-map-container {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 14px;
+  gap: 8px;
+}
+
+/* Zone popup styles */
+.zone-popup h3 {
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 2px solid currentColor;
+  padding-bottom: 4px;
+}
+
+.zone-popup p {
+  font-size: 13px;
+  color: #333;
+}
+
+/* Leaflet customizations */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+  min-width: 200px;
+}
+
+/* Drawing controls */
+.leaflet-draw-toolbar a {
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+.leaflet-draw-toolbar a:hover {
+  background-color: #f0f0f0;
+}
+
+/* Zone circles */
+.zone-circle {
+  transition: all 0.3s ease;
+}
+
+.zone-circle:hover {
+  stroke-width: 3px;
+}

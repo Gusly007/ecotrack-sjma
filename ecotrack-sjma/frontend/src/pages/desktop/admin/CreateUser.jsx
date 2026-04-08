@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../../../services/userService';
+import { zoneService } from '../../../services/zoneService';
 import { FormGroup, FormRow, Input, Select } from '../../../components/common';
 import './CreateUser.css';
 
@@ -11,18 +12,10 @@ const roles = [
   { id: 'ADMIN', icon: 'fa-shield-alt', color: '#f44336', label: 'Administrateur', desc: 'Configuration système, RBAC, monitoring' },
 ];
 
-const defaultZones = [
-  { nom: 'Centre-Ville' },
-  { nom: 'Quartier Nord' },
-  { nom: 'Quartier Sud' },
-  { nom: 'Quartier Est' },
-  { nom: 'Quartier Ouest' },
-  { nom: 'Zone Industrielle' },
-];
-
 export default function CreateUserPage() {
   const navigate = useNavigate();
-  const [zones, setZones] = useState(defaultZones);
+  const [zones, setZones] = useState([]);
+  const [loadingZones, setLoadingZones] = useState(true);
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -37,6 +30,29 @@ export default function CreateUserPage() {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [activationLink, setActivationLink] = useState('');
+
+  // Charger les zones depuis l'API
+  useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        setLoadingZones(true);
+        const response = await zoneService.getAll(1, 100);
+        let data = [];
+        if (response.data) {
+          data = response.data.data || response.data || [];
+        } else if (Array.isArray(response)) {
+          data = response;
+        }
+        setZones(data);
+      } catch (err) {
+        console.error('Erreur chargement zones:', err);
+        setZones([]);
+      } finally {
+        setLoadingZones(false);
+      }
+    };
+    fetchZones();
+  }, []);
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -67,7 +83,8 @@ export default function CreateUserPage() {
         prenom: formData.prenom,
         email: formData.email,
         password: formData.password,
-        role: formData.role
+        role: formData.role,
+        zones: formData.zones
       };
 
       console.log('Creating user with data:', userData);
@@ -224,11 +241,25 @@ export default function CreateUserPage() {
                 <p className="helper-text" style={{ color: '#999', fontSize: '0.85rem', marginTop: '5px' }}>
                   Non applicable pour ce rôle
                 </p>
+              ) : loadingZones ? (
+                <p className="helper-text" style={{ color: '#666', fontSize: '0.85rem', marginTop: '5px' }}>
+                  <i className="fas fa-spinner fa-spin"></i> Chargement des zones...
+                </p>
+              ) : zones.length === 0 ? (
+                <p className="helper-text" style={{ color: '#999', fontSize: '0.85rem', marginTop: '5px' }}>
+                  Aucune zone disponible
+                </p>
               ) : (
                 <Select 
                   value={formData.zones[0] || ''}
-                  onChange={(value) => setFormData({ ...formData, zones: [value] })}
-                  options={[{ value: '', label: 'Sélectionner une zone' }, ...zones.map(zone => ({ value: zone.nom, label: zone.nom }))]}
+                  onChange={(value) => setFormData({ ...formData, zones: value ? [value] : [] })}
+                  options={[
+                    { value: '', label: 'Sélectionner une zone' }, 
+                    ...zones.map(zone => ({ 
+                      value: zone.id_zone?.toString() || zone.id?.toString(), 
+                      label: zone.nom 
+                    }))
+                  ]}
                 />
               )}
             </FormGroup>

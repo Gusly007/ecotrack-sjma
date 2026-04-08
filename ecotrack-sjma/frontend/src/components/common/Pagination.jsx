@@ -22,19 +22,25 @@ export default function Pagination({
     pages.push(i);
   }
 
+  const safeTotalPages = Math.max(1, totalPages || 1);
+  const safeTotalItems = totalItems || 0;
+  
   return (
-    <div className="table-footer">
+    <div className="table-footer" style={{ display: 'flex !important' }}>
       <span className="results-count">
-        Affichage {showingFrom}-{showingTo || totalItems} sur {totalItems} {label}
+        {safeTotalPages > 1 
+          ? `Affichage ${showingFrom || 1}-${showingTo || safeTotalItems} sur ${safeTotalItems} ${label}`
+          : `${safeTotalItems} ${label}${safeTotalItems !== 1 ? 's' : ''}`
+        }
       </span>
-      {totalPages > 1 && (
+      {safeTotalPages > 1 && (
         <div className="pagination">
           <button 
             className="btn-sm btn-outline" 
             disabled={currentPage === 1}
             onClick={() => onPageChange?.(currentPage - 1)}
           >
-            Précédent
+            <i className="fas fa-chevron-left"></i>
           </button>
           {start > 1 && <span className="pagination-ellipsis">...</span>}
           {pages.map(page => (
@@ -46,13 +52,13 @@ export default function Pagination({
               {page}
             </button>
           ))}
-          {end < totalPages && <span className="pagination-ellipsis">...</span>}
+          {end < safeTotalPages && <span className="pagination-ellipsis">...</span>}
           <button 
             className="btn-sm btn-outline" 
-            disabled={currentPage === totalPages}
+            disabled={currentPage === safeTotalPages}
             onClick={() => onPageChange?.(currentPage + 1)}
           >
-            Suivant
+            <i className="fas fa-chevron-right"></i>
           </button>
         </div>
       )}

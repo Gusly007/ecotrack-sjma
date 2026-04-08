@@ -67,6 +67,22 @@
   gap: 8px;
 }
 
+.panel-header-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-header-with-actions h3 {
+  margin: 0;
+}
+
+.panel-header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 /* Zones Map */
 .zones-map {
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
@@ -211,8 +227,71 @@
 .btn-sm.btn-info { background: #e3f2fd; border: 1px solid #2196F3; color: #2196F3; }
 .btn-sm.btn-info:hover { background: #2196F3; color: #fff; }
 
+.btn-sm.btn-success { background: #4CAF50; border: 1px solid #4CAF50; color: #fff; }
+.btn-sm.btn-success:hover { background: #43a047; }
+
+.btn-sm.btn-warning { background: #FF9800; border: 1px solid #FF9800; color: #fff; }
+.btn-sm.btn-warning:hover { background: #e68900; }
+
 .btn-sm.btn-danger { background: #fff; border: 1px solid #f44336; color: #f44336; }
 .btn-sm.btn-danger:hover { background: #f44336; color: #fff; }
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fafafa;
+  border-radius: 0 0 8px 8px;
+}
+
+.table-footer .results-count {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.table-footer .pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-footer .btn-sm {
+  min-width: 36px;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  white-space: nowrap;
+}
+
+.table-footer .btn-sm.btn-primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.table-footer .btn-sm.btn-outline {
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.table-footer .btn-sm.btn-outline:hover:not(:disabled) {
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.table-footer .btn-sm.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Buttons */
 .btn-primary {
@@ -384,4 +463,21 @@
   .form-row {
     flex-direction: column;
   }
+}
+
+/* Zones List Panel */
+.zones-list-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+
+.zones-list-panel .zones-table-container {
+  flex: 1;
+  overflow-x: auto;
+}
+
+.zones-list-panel .table-footer {
+  flex-shrink: 0;
+  margin-top: auto;
 }

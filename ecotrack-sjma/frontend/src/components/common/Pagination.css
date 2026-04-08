@@ -1,31 +1,32 @@
-.table-footer {
-  display: flex;
+.zones-list-panel .table-footer {
+  display: flex !important;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  flex-wrap: wrap;
-  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  margin: 0;
+  border-radius: 0 0 12px 12px;
 }
 
-.results-count {
+.zones-list-panel .results-count {
   font-size: 0.85rem;
-  color: #888;
+  color: #666;
+  font-weight: 500;
 }
 
-.pagination {
+.zones-list-panel .pagination {
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
-.pagination-ellipsis {
+.zones-list-panel .pagination-ellipsis {
   color: #888;
   padding: 0 4px;
 }
 
-.btn-sm {
+.zones-list-panel .btn-sm {
   padding: 6px 12px;
   font-size: 0.8rem;
   border-radius: 6px;
@@ -33,29 +34,29 @@
   transition: all 0.2s;
   border: none;
   white-space: nowrap;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn-sm.btn-primary {
+.zones-list-panel .btn-sm.btn-primary {
   background: #4CAF50;
   color: #fff;
 }
 
-.btn-sm.btn-primary:hover {
-  background: #43a047;
-}
-
-.btn-sm.btn-outline {
+.zones-list-panel .btn-sm.btn-outline {
   background: #fff;
   border: 1px solid #ddd;
   color: #666;
 }
 
-.btn-sm.btn-outline:hover:not(:disabled) {
+.zones-list-panel .btn-sm.btn-outline:hover:not(:disabled) {
   border-color: #4CAF50;
   color: #4CAF50;
 }
 
-.btn-sm.btn-outline:disabled {
+.zones-list-panel .btn-sm.btn-outline:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

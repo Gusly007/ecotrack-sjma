@@ -312,6 +312,7 @@ services:
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
       NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
     ports:
       - "3011:3011"
     depends_on:
