@@ -110,6 +110,62 @@ class SensorRepository {
     const result = await this.pool.query(sql, [timeoutHours]);
     return result.rows;
   }
+
+  /**
+   * Récupère les statistiques globales de statut des capteurs
+   */
+  async getSensorsStatus() {
+    const sql = `
+      WITH sensor_stats AS (
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '1 hour')::int AS active_last_hour,
+          COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '24 hours')::int AS active_last_24h,
+          COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '12 hours')::int AS inactive_12h,
+          COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '24 hours')::int AS inactive_24h
+        FROM capteur
+      ),
+      latest_per_sensor AS (
+        SELECT DISTINCT ON (m.id_capteur)
+          m.id_capteur,
+          m.batterie_pct
+        FROM mesure m
+        ORDER BY m.id_capteur, m.date_heure_mesure DESC
+      ),
+      measure_stats AS (
+        SELECT
+          COUNT(*) FILTER (WHERE date_heure_mesure > NOW() - INTERVAL '1 minute')::int AS messages_last_minute,
+          COALESCE(EXTRACT(EPOCH FROM (NOW() - MAX(date_heure_mesure)))::int, 0) AS seconds_ago
+        FROM mesure
+      )
+      SELECT
+        ss.total,
+        ss.active_last_hour,
+        ss.active_last_24h,
+        ss.inactive_12h,
+        ss.inactive_24h,
+        (SELECT COUNT(*)::int FROM latest_per_sensor WHERE batterie_pct < 20) AS low_battery,
+        ms.messages_last_minute,
+        ms.seconds_ago
+      FROM sensor_stats ss
+      CROSS JOIN measure_stats ms
+    `;
+
+    const result = await this.pool.query(sql);
+    const row = result.rows[0] || {};
+
+    return {
+      total: row.total || 0,
+      active: row.active_last_hour || 0,
+      active_count: row.active_last_hour || 0,
+      active_last_24h: row.active_last_24h || 0,
+      inactive_12h: row.inactive_12h || 0,
+      inactive_24h: row.inactive_24h || 0,
+      low_battery: row.low_battery || 0,
+      messages_per_min: row.messages_last_minute || 0,
+      last_measure_seconds_ago: row.seconds_ago || 0
+    };
+  }
 }
 
 module.exports = SensorRepository;

@@ -331,7 +331,7 @@ export default function AdminDashboard() {
   });
 
   // Chart data
-  const zonePerformanceData = zonePerformance.slice(0, 6).map(zone => ({
+  const zonePerformanceData = zonePerformance.map(zone => ({
     label: zone.code || zone.name?.substring(0, 10) || `Z${zone.id}`,
     value: Math.round((zone.fillRate || 0) * 10) / 10,
     color: zone.fillRate > 80 ? '#f44336' : zone.fillRate > 60 ? '#FF9800' : '#4CAF50',

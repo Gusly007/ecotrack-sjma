@@ -127,7 +127,16 @@ router.post('/ml/predict', authMiddleware, requirePermission('analytics:read'), 
       prediction = await PredictionService.predictFillLevel(containerId, daysAhead);
     }
     if (!prediction) {
-      return res.status(404).json({ success: false, error: 'Insufficient data for prediction' });
+      return res.status(200).json({
+        success: true,
+        data: {
+          containerId,
+          daysAhead,
+          available: false,
+          reason: 'INSUFFICIENT_DATA',
+          message: 'Insufficient data for prediction'
+        }
+      });
     }
     res.json({ success: true, data: prediction });
   } catch (error) {

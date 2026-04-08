@@ -126,65 +126,7 @@ router.get('/iot/sensors', requirePermission('iot:read'), validateQuery(paginati
  * 200:
  * description: Statut des capteurs (total, actifs, inactifs)
  */
-router.get('/iot/sensors/status', async (req, res, next) => {
-  try {
-    const pool = require('../db/connexion');
-
-    const sensorsResult = await pool.query(`
-      SELECT
-        COUNT(*)::int as total,
-        COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '1 hour')::int as active_last_hour,
-        COUNT(*) FILTER (WHERE derniere_communication > NOW() - INTERVAL '24 hours')::int as active_last_24h,
-        COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '12 hours')::int as inactive_12h,
-        COUNT(*) FILTER (WHERE derniere_communication IS NULL OR derniere_communication <= NOW() - INTERVAL '24 hours')::int as inactive_24h
-      FROM capteur
-    `);
-
-    const lowBatteryResult = await pool.query(`
-      SELECT COUNT(*)::int as low_battery
-      FROM mesure m
-      WHERE m.batterie_pct < 20
-      AND m.date_heure_mesure = (
-        SELECT MAX(m2.date_heure_mesure) 
-        FROM mesure m2 
-        WHERE m2.id_capteur = m.id_capteur
-      )
-    `);
-
-    const messagesResult = await pool.query(`
-      SELECT COUNT(*)::int as messages_last_minute
-      FROM mesure
-      WHERE date_heure_mesure > NOW() - INTERVAL '1 minute'
-    `);
-
-    const lastMeasureResult = await pool.query(`
-      SELECT EXTRACT(EPOCH FROM (NOW() - MAX(date_heure_mesure)))::int as seconds_ago
-      FROM mesure
-    `);
-
-    const sensorsData = sensorsResult.rows[0];
-    const lowBattery = lowBatteryResult.rows[0]?.low_battery || 0;
-    const messagesPerMin = messagesResult.rows[0]?.messages_last_minute || 0;
-    const lastMeasureSeconds = lastMeasureResult.rows[0]?.seconds_ago || 0;
-
-    res.json({
-      success: true,
-      data: {
-        total: sensorsData.total,
-        active: sensorsData.active_last_hour,
-        active_count: sensorsData.active_last_hour,
-        active_last_24h: sensorsData.active_last_24h,
-        inactive_12h: sensorsData.inactive_12h,
-        inactive_24h: sensorsData.inactive_24h,
-        low_battery: lowBattery,
-        messages_per_min: messagesPerMin,
-        last_measure_seconds_ago: lastMeasureSeconds
-      }
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get('/iot/sensors/status', requirePermission('iot:read'), (req, res, next) => controller.getSensorsStatus(req, res, next));
 
 /**
  * @swagger

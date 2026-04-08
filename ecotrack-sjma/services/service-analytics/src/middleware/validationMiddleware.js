@@ -73,10 +73,21 @@ class ValidationMiddleware {
       const schema = Joi.object({
         containerId: Joi.number().integer().positive().required(),
         daysAhead: Joi.number().integer().min(1).max(30).default(1),
-        includeWeather: Joi.boolean().default(false)
-      });
+        includeWeather: Joi.boolean().default(false),
+        // Champs legacy toleres pour compatibilite frontend
+        id_conteneur: Joi.number().integer().positive().optional(),
+        days: Joi.number().integer().min(1).max(30).optional(),
+        includeConfidence: Joi.boolean().optional()
+      }).unknown(true);
 
-      const { error, value } = schema.validate(req.body);
+      const normalizedBody = {
+        ...req.body,
+        containerId: req.body?.containerId ?? req.body?.id_conteneur,
+        daysAhead: req.body?.daysAhead ?? req.body?.days,
+        includeWeather: req.body?.includeWeather ?? req.body?.includeConfidence ?? false
+      };
+
+      const { error, value } = schema.validate(normalizedBody);
 
       if (error) {
         return res.status(400).json({
@@ -85,7 +96,11 @@ class ValidationMiddleware {
         });
       }
 
-      req.body = value;
+      req.body = {
+        containerId: value.containerId,
+        daysAhead: value.daysAhead,
+        includeWeather: value.includeWeather
+      };
       next();
     };
   }
