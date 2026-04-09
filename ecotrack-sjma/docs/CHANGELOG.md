@@ -4,6 +4,22 @@
 
 ---
 
+### [3.6.2] 2026-04-09 - Frontend rôle ADMIN
+
+Création et structuration de l'interface frontend dédiée au rôle `ADMIN`.
+
+### Ajouts Frontend (ADMIN)
+
+- Mise en place de l'espace desktop d'administration.
+- Intégration des pages et composants de gestion pour les opérations administratives.
+- Alignement navigation, accès et expérience utilisateur pour les profils administrateurs.
+
+### Impact
+
+- Le rôle `ADMIN` dispose désormais d'une interface frontend dédiée et exploitable.
+
+---
+
 ### [3.6.1] 2026-03-23 - Tests Unitaires RBAC
 
 Tests unitaires pour le middleware RBAC dans tous les services.
