@@ -4,6 +4,31 @@
 
 ---
 
+### [3.6.3] 2026-04-09 - Stratégie de tests intégrée dans CI
+
+Intégration de la stratégie de tests pyramidale et des contrôles sécurité dans `.github/workflows/ci.yml`.
+
+### Tests intégrés (CI)
+
+- Tests unitaires backend + frontend exécutés automatiquement.
+- Tests d'intégration ajoutés pour les services clés.
+- Tests end-to-end ajoutés pour le flux service-containers.
+- Upload des rapports de tests en artifacts CI (intégration et e2e).
+
+### Sécurité intégrée (CI)
+
+- Audit de dépendances (`npm audit`) avec rapport JSON par service.
+- SAST via CodeQL.
+- DAST via OWASP ZAP baseline sur l'API Gateway.
+- Upload des rapports sécurité en artifacts CI.
+
+### Impact
+
+- Le pipeline CI couvre désormais explicitement les niveaux unitaires, intégration et e2e.
+- Les preuves de qualité et sécurité sont exportables pour la documentation/annexes.
+
+---
+
 ### [3.6.2] 2026-04-09 - Frontend rôle ADMIN
 
 Création et structuration de l'interface frontend dédiée au rôle `ADMIN`.
