@@ -7,10 +7,18 @@
 
 -- Créer des conteneurs de test spécifiques pour ML
 INSERT INTO conteneur (uid, capacite_l, statut, date_installation, position, id_type, id_zone)
-VALUES 
-  ('CNT-ML-001', 1000, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3522, 48.8566), 4326), 1, 1),
-  ('CNT-ML-002', 1500, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3530, 48.8570), 4326), 1, 1),
-  ('CNT-ML-003', 2000, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3540, 48.8580), 4326), 1, 1)
+SELECT *
+FROM (
+  VALUES 
+    ('CNT-ML-001', 1000, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3522, 48.8566), 4326)),
+    ('CNT-ML-002', 1500, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3530, 48.8570), 4326)),
+    ('CNT-ML-003', 2000, 'ACTIF', CURRENT_DATE - 90, ST_SetSRID(ST_MakePoint(2.3540, 48.8580), 4326))
+) AS v(uid, capacite_l, statut, date_installation, position)
+CROSS JOIN LATERAL (
+  SELECT 
+    (SELECT id_type FROM type_conteneur WHERE code = 'ORD' LIMIT 1) AS id_type,
+    (SELECT id_zone FROM zone WHERE code = 'Z01' LIMIT 1) AS id_zone
+) refs
 ON CONFLICT (uid) DO NOTHING;
 
 -- ==============================================================================

@@ -2,6 +2,8 @@
 -- SEED COMPLET - 2000 CONTENEURS + 1 MILLION DE MESURES
 -- ============================================================================
 
+TRUNCATE TABLE TOURNEE CASCADE;
+
 -- ============================================================================
 -- 1. DONNÉES DE BASE
 -- ============================================================================
@@ -21,7 +23,7 @@ SELECT
     'Zone ' || i || ' - ' || CASE (i % 5) WHEN 0 THEN 'Centre' WHEN 1 THEN 'Nord' WHEN 2 THEN 'Sud' WHEN 3 THEN 'Est' ELSE 'Ouest' END,
     (10000 + (random() * 90000))::int,
     (1.0 + random() * 5.0)::numeric(10,2),
-    ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.8, 48.86 + (random()-0.5)*0.8), 4326)
+    ST_Buffer(ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.8, 48.86 + (random()-0.5)*0.8), 4326), 0.01)
 FROM generate_series(1, 50) AS i
 WHERE NOT EXISTS (SELECT 1 FROM ZONE WHERE code = 'Z' || LPAD(i::text, 2, '0'));
 
@@ -37,6 +39,8 @@ WHERE NOT EXISTS (SELECT 1 FROM VEHICULE WHERE numero_immatriculation = 'VH-' ||
 -- ============================================================================
 -- 2. 2000 CONTENEURS + CAPTEURS
 -- ============================================================================
+
+TRUNCATE TABLE ALERTE_CAPTEUR CASCADE;
 
 TRUNCATE TABLE CONTENEUR CASCADE;
 
@@ -118,7 +122,7 @@ FROM CONTENEUR c WHERE c.statut = 'ACTIF' AND random() < 0.05 LIMIT 100;
 INSERT INTO ALERTE_CAPTEUR (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
 SELECT 
     'BATTERIE_FAIBLE',
-    10 + random() * 10,
+    20 + random() * 20,
     20,
     CASE WHEN random() > 0.5 THEN 'ACTIVE' ELSE 'RESOLUE' END,
     NOW() - ((random() * 30)::int || ' days')::interval,

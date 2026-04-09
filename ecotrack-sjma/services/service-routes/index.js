@@ -89,6 +89,7 @@ const tourneeRoutes = require('./src/routes/tournee.route');
 const vehiculeRoutes = require('./src/routes/vehicule.route');
 const collecteRoutes = require('./src/routes/collecte.route');
 const statsRoutes = require('./src/routes/stats.route');
+const signalementRoutes = require('./src/routes/signalement.route');
 
 // Servir les PDF générés
 const reportsDir = process.env.REPORTS_DIR || './reports';
@@ -101,6 +102,7 @@ app.use('/api/routes', publicLimiter, tourneeRoutes);
 app.use('/api/routes', publicLimiter, vehiculeRoutes);
 app.use('/api/routes', publicLimiter, collecteRoutes);
 app.use('/api/routes', publicLimiter, statsRoutes);
+app.use('/api/routes', publicLimiter, signalementRoutes);
 
 // Root info
 app.get('/api/routes', (req, res) => {

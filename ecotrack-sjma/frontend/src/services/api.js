@@ -7,8 +7,8 @@ const getAPIBaseURL = () => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // 2. Fallback: localhost:3011 (service-containers)
-  return 'http://localhost:3011';
+  // 2. Fallback: localhost:3000 (API gateway)
+  return 'http://localhost:3000';
 };
 
 const API_BASE_URL = getAPIBaseURL();
