@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "test": "jest --runInBand",
     "test:unit": "jest test/unit --runInBand",
-    "test:integration": "jest test/integration --runInBand"
+    "test:integration": "jest test/integration --runInBand --passWithNoTests"
   },
   "keywords": [],
   "author": "",

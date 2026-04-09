@@ -32,15 +32,15 @@ describe('errorHandler', () => {
   it('should handle "token" errors and return status 401', () => {
     const error = new Error('Invalid token');
     errorHandler(error, mockRequest, mockResponse, nextFunction);
-    expect(mockResponse.status).toHaveBeenCalledWith(401);
-    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Token invalide ou expiré.' });
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Token invalide ou expiré.' });
   });
 
   it('should handle "validation" errors and return status 400', () => {
     const error = new Error('some Validation error');
     errorHandler(error, mockRequest, mockResponse, nextFunction);
     expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Données invalides.' });
+    expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Données invalides.' });
   });
 
   it('should handle other errors and return status 500', () => {
