@@ -47,6 +47,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
+// Parse auth headers from API Gateway
+app.use((req, res, next) => {
+  if (req.headers['x-user-id'] && req.headers['x-user-role']) {
+    req.user = {
+      id: parseInt(req.headers['x-user-id']),
+      role: req.headers['x-user-role']
+    };
+  }
+  next();
+});
+
 // Metrics middleware (avant les routes pour capturer toutes les requêtes)
 app.use((req, res, next) => {
   const start = Date.now();
@@ -55,6 +66,20 @@ app.use((req, res, next) => {
     const route = req.route ? req.route.path : req.path;
     httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
     httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
+    
+    // Log to centralized_logs
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warning' : 'info';
+    const action = req.method.toLowerCase();
+    centralizedLogging.log({
+      level,
+      action,
+      service: 'service-iot',
+      message: `${req.method} ${req.path} - ${res.statusCode}`,
+      metadata: { route, duration, statusCode: res.statusCode },
+      userId: req.user?.id || req.headers['x-user-id'],
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    }).catch(() => {});
   });
   next();
 });
@@ -102,8 +127,17 @@ const swaggerOptions = {
   apis: ['./src/routes/*.js']
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+let swaggerSpec;
+try {
+  swaggerSpec = swaggerJsdoc(swaggerOptions);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+} catch (err) {
+  console.error('Swagger initialization failed:', err.message);
+  // Provide a simple docs endpoint instead
+  app.get('/api-docs', (req, res) => {
+    res.json({ message: 'API docs temporarily unavailable' });
+  });
+}
 
 // ========== DEPENDENCY INJECTION ==========
 const di = require('./src/container-di');

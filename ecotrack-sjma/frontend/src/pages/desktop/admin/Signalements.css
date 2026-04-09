@@ -263,3 +263,32 @@
     flex-direction: column;
   }
 }
+
+/* Signalements Panel */
+.signalements-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.signalements-panel .table-footer {
+  margin-top: 16px;
+  padding: 12px 0 0 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Statut badges */
+.statut-badge.statut-nouveau { background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; }
+.statut-badge.statut-cours { background: #fff3e0; color: #ef6c00; padding: 4px 12px; border-radius: 12px; }
+.statut-badge.statut-resolu { background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; }
+.statut-badge.statut-rejete { background: #f5f5f5; color: #757575; padding: 4px 12px; border-radius: 12px; }
+
+/* Urgence badges */
+.urgence-badge.urgence-haute { background: #ffebee; color: #c62828; }
+.urgence-badge.urgence-moyenne { background: #fff3e0; color: #ef6c00; }
+.urgence-badge.urgence-basse { background: #e8f5e9; color: #2e7d32; }
+
+/* Button warning */
+.btn-sm.btn-warning { background: #fff3e0; border: 1px solid #FF9800; color: #FF9800; }
+.btn-sm.btn-warning:hover { background: #FF9800; color: #fff; }

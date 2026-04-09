@@ -36,6 +36,13 @@ class SensorService {
     }
     return sensor;
   }
+
+  /**
+   * Récupère les statistiques de statut des capteurs
+   */
+  async getSensorsStatus() {
+    return this.sensorRepository.getSensorsStatus();
+  }
 }
 
 module.exports = SensorService;

@@ -1,6 +1,10 @@
 const router = require('express').Router();
 const { zoneController } = require('../container-di.js');
 const { requirePermission } = require('../middleware/rbac');
+const { authenticateToken } = require('../middleware/auth');
+
+// Appliquer l'authentification à toutes les routes
+router.use(authenticateToken);
 
 // ========== CRUD de base ==========
 

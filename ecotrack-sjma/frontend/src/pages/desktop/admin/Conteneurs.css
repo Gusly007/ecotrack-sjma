@@ -15,11 +15,13 @@
 
 .users-header .btn-primary {
   margin-left: auto;
-  padding: 12px 16px;
+  padding: 10px 20px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
+  min-width: 180px;
+  justify-content: center;
 }
 
 .btn-primary {
@@ -512,3 +514,37 @@
     flex-direction: column;
   }
 }
+
+/* Conteneurs Panel */
+.conteneurs-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.conteneurs-panel .table-footer {
+  margin-top: 16px;
+  padding: 12px 0 0 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Statut badge colors for modal */
+.statut-badge.statut-actif { background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; }
+.statut-badge.statut-maintenance { background: #fff3e0; color: #ef6c00; padding: 4px 12px; border-radius: 12px; }
+.statut-badge.statut-hors-service { background: #ffebee; color: #c62828; padding: 4px 12px; border-radius: 12px; }
+
+/* Button variants */
+.btn-sm.btn-warning { background: #fff3e0; border: 1px solid #FF9800; color: #FF9800; }
+.btn-sm.btn-warning:hover { background: #FF9800; color: #fff; }
+
+/* Type badge colors */
+.type-badge.type-ordures { background: #ffebee; color: #c62828; }
+.type-badge.type-recyclage { background: #e3f2fd; color: #1565c0; }
+.type-badge.type-verre { background: #e8f5e9; color: #2e7d32; }
+.type-badge.type-bio { background: #fff3e0; color: #ef6c00; }
+
+/* Fill colors */
+.fill-critical { color: #c62828 !important; }
+.fill-high { color: #ef6c00 !important; }
+.fill-medium { color: #2e7d32 !important; }

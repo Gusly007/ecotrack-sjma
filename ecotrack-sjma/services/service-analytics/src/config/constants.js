@@ -28,5 +28,9 @@ module.exports = {
     WARNING: '#F59E0B',
     DANGER: '#EF4444',
     INFO: '#3B82F6'
+  },
+
+  SERVICE_URLS: {
+    USERS_SERVICE: process.env.USERS_SERVICE_URL || 'http://ecotrack-service-users:3002'
   }
 };

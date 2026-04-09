@@ -195,7 +195,7 @@ class Validators {
       Validators.throwValidationError('Données de zone invalides');
     }
 
-    const allowedFields = ['code', 'nom', 'population', 'superficie_km2', 'latitude', 'longitude'];
+    const allowedFields = ['code', 'nom', 'population', 'superficie_km2', 'latitude', 'longitude', 'couleur', 'geometry'];
     const keys = Object.keys(data);
     if (keys.some((key) => !allowedFields.includes(key))) {
       Validators.throwValidationError('Données de zone invalides: champ non autorisé');
@@ -207,8 +207,6 @@ class Validators {
 
     if (Object.prototype.hasOwnProperty.call(data, 'code')) {
       Validators.validateCode(data.code, 'code', 2, 50);
-    } else if (!isUpdate) {
-      Validators.throwValidationError('Champ requis manquant: code');
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'nom')) {
@@ -235,13 +233,21 @@ class Validators {
 
     const hasLatitude = Object.prototype.hasOwnProperty.call(data, 'latitude');
     const hasLongitude = Object.prototype.hasOwnProperty.call(data, 'longitude');
+    const hasGeometry = Object.prototype.hasOwnProperty.call(data, 'geometry');
     if (hasLatitude || hasLongitude) {
       if (!hasLatitude || !hasLongitude) {
         Validators.throwValidationError('Latitude et longitude doivent être fournies ensemble');
       }
       Validators.validateCoordinates(data.latitude, data.longitude);
-    } else if (!isUpdate) {
-      Validators.throwValidationError('Champs requis manquants: latitude, longitude');
+    } else if (!isUpdate && !hasGeometry) {
+      Validators.throwValidationError('Champs requis manquants: latitude, longitude ou geometry');
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'couleur')) {
+      const hexRegex = /^#[0-9A-Fa-f]{6}$/;
+      if (typeof data.couleur !== 'string' || !hexRegex.test(data.couleur)) {
+        Validators.throwValidationError('Couleur invalide: doit être un code hexadécimal (ex: #3388ff)');
+      }
     }
 
     return true;

@@ -125,16 +125,37 @@
 
 /* Service Status */
 .service-status {
-  display: flex;
+  display: grid;
+  grid-template-columns: 10px 1fr 80px 80px;
   align-items: center;
   gap: 12px;
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid #f0f0f0;
   font-size: 0.9rem;
 }
 
 .service-status:last-child {
   border-bottom: none;
+}
+
+.service-status .service-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.service-status .service-status-col {
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.service-status .service-status-col.up {
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.service-status .service-status-col.down {
+  color: #f44336;
+  font-weight: 500;
 }
 
 .status-indicator {
@@ -148,7 +169,6 @@
 .status-indicator.down { background: #f44336; }
 
 .latency {
-  margin-left: auto;
   font-size: 0.85rem;
   color: #888;
 }
@@ -236,8 +256,38 @@
   .monitoring-page .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .monitoring-page .panel-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: #f44336;
+  background: #ffebee;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 20px;
+  color: #4CAF50;
+  font-size: 0.95rem;
+}
+
+.monitoring-page .dashboard-link {
+  cursor: pointer;
+}
+
+.monitoring-page .dashboard-link i {
+  font-size: 0.9rem;
 }

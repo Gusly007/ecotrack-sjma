@@ -181,12 +181,12 @@ services:
       REDIS_PORT: 6379
       USERS_PORT: 3010
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
-      USERS_SERVICE_URL: http://service-users:3010
-      CONTAINERS_SERVICE_URL: http://service-containers:3011
-      ROUTES_SERVICE_URL: http://service-routes:3012
-      IOT_SERVICE_URL: http://service-iot:3013
-      GAMIFICATIONS_SERVICE_URL: http://service-gamifications:3014
-      ANALYTICS_SERVICE_URL: http://service-analytics:3015
+      USERS_SERVICE_URL: http://ecotrack-service-users:3010
+      CONTAINERS_SERVICE_URL: http://ecotrack-service-containers:3011
+      ROUTES_SERVICE_URL: http://ecotrack-service-routes:3012
+      IOT_SERVICE_URL: http://ecotrack-service-iot:3013
+      GAMIFICATIONS_SERVICE_URL: http://ecotrack-service-gamifications:3014
+      ANALYTICS_SERVICE_URL: http://ecotrack-service-analytics:3015
       GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
@@ -270,6 +270,11 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: redis
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
     ports:
       - "3010:3010"
     depends_on:
@@ -313,6 +318,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
     ports:
       - "3011:3011"
     depends_on:
@@ -392,6 +398,11 @@ services:
       PGUSER: ${DB_USER:-ecotrack_user}
       PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
       PGDATABASE: ${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      DB_NAME: ${DB_NAME:-ecotrack}
       MQTT_PORT: 1883
       MQTT_HOST: 0.0.0.0
       ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
@@ -431,6 +442,11 @@ services:
     environment:
       PORT: 3014
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
       NODE_ENV: ${NODE_ENV:-production}
     ports:
       - "3014:3014"
@@ -457,6 +473,11 @@ services:
     environment:
       APP_PORT: 3015
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
       NODE_ENV: ${NODE_ENV:-production}
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
@@ -467,6 +488,7 @@ services:
       REPORTS_DIR: /app/reports
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      USERS_SERVICE_URL: http://ecotrack-service-users:3010
     ports:
       - "3015:3015"
     depends_on:

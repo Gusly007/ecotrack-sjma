@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import './Sidebar.css';
 
 const menuItems = [
@@ -17,10 +18,26 @@ const menuItems = [
 
 export default function Sidebar({ className = '' }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleLogoClick = () => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (user?.role === 'GESTIONNAIRE') {
+      navigate('/gestionnaire');
+    } else if (user?.role === 'AGENT') {
+      navigate('/agent');
+    } else if (user?.role === 'CITOYEN') {
+      navigate('/citoyen');
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <aside className={`admin-sidebar ${className}`}>
-      <div className="sidebar-logo">
+      <div className="sidebar-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
         <i className="fas fa-leaf"></i> <span>EcoTrack</span>
       </div>
       <ul className="sidebar-menu">

@@ -2,6 +2,8 @@
  * Zone Repository - Data Access Layer
  * Handles all database queries for zones
  */
+const CodeGenerator = require('../utils/code-generator');
+
 class ZoneRepository {
     constructor(db) {
         this.db = db;
@@ -10,33 +12,35 @@ class ZoneRepository {
     /**
      * Crée une nouvelle zone
      * @param {Object} zoneData - Données de zone
-     * @param {string} zoneData.code - Code unique de la zone
+     * @param {string} [zoneData.code] - Code unique de la zone (auto-généré si non fourni)
      * @param {string} zoneData.nom - Nom de la zone
      * @param {number} zoneData.population - Population (entier >= 0)
      * @param {number} zoneData.superficie_km2 - Superficie en km² (>= 0)
      * @param {number} zoneData.latitude - Latitude entre -90 et 90
      * @param {number} zoneData.longitude - Longitude entre -180 et 180
+     * @param {string} [zoneData.couleur] - Couleur de la zone (hex)
+     * @param {string} [zoneData.geometry] - Géométrie GeoJSON pour formes dessinées
      */
     async addZone(zoneData) {
-        const { code, nom, population, superficie_km2, latitude, longitude } = zoneData;
+        const { code, nom, population, superficie_km2, latitude, longitude, couleur, geometry } = zoneData;
         
         // Validation des champs requis
-        if (!code || !nom || !population || !superficie_km2 || !latitude || !longitude) {
-            throw new Error('Tous les champs requis manquent: code, nom, population, superficie_km2, latitude, longitude');
+        if (!nom || population === undefined || superficie_km2 === undefined) {
+            throw new Error('Tous les champs requis manquent: nom, population, superficie_km2');
         }
 
-        // Validation du code (unique)
-        const existingCode = await this.db.query(
-            'SELECT id_zone FROM zone WHERE code = $1',
-            [code]
-        );
-        if (existingCode.rows.length > 0) {
-            throw new Error(`Le code de zone "${code}" existe déjà`);
-        }
+        // Générer un code unique si non fourni
+        const zoneCode = code || await CodeGenerator.generateUnique(this.db, 'zone', 'code', 'ZN', 6);
 
-        // Validation des coordonnées GPS
-        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-            throw new Error('Coordonnées GPS invalides (latitude: -90 à 90, longitude: -180 à 180)');
+        // Validation du code (unique) - seulement si fourni manuellement
+        if (code) {
+            const existingCode = await this.db.query(
+                'SELECT id_zone FROM zone WHERE code = $1',
+                [code]
+            );
+            if (existingCode.rows.length > 0) {
+                throw new Error(`Le code de zone "${code}" existe déjà`);
+            }
         }
 
         // Validation des valeurs numériques
@@ -44,25 +48,41 @@ class ZoneRepository {
             throw new Error('La population et la superficie doivent être positives');
         }
 
-        // Construire un polygone (cercle) autour du point en fonction de la superficie (km²)
-                // Rayon en km = sqrt(superficie_km2 / pi)
-                const radiusKm = Math.sqrt(superficie_km2 / Math.PI);
-                const radiusMeters = radiusKm * 1000;
+        let result;
+        if (geometry) {
+            result = await this.db.query(
+                `INSERT INTO zone (code, nom, population, superficie_km2, couleur, geom)
+                 VALUES ($1, $2, $3, $4, $5, ST_GeomFromGeoJSON($6))
+                 RETURNING id_zone, code, nom, population, superficie_km2, couleur,
+                           ST_X(ST_Centroid(geom)) as longitude,
+                           ST_Y(ST_Centroid(geom)) as latitude`,
+                [zoneCode, nom, population, superficie_km2, couleur || '#3388ff', geometry]
+            );
+        } else {
+            if (latitude === undefined || longitude === undefined) {
+                throw new Error('Coordonnées GPS requises sans géométrie personnalisée');
+            }
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                throw new Error('Coordonnées GPS invalides (latitude: -90 à 90, longitude: -180 à 180)');
+            }
 
-                const result = await this.db.query(
-                        `INSERT INTO zone (code, nom, population, superficie_km2, geom)
-                         VALUES (
-                             $1, $2, $3, $4,
-                             ST_Buffer(
-                                 ST_SetSRID(ST_MakePoint($5, $6), 4326)::geography,
-                                 $7
-                             )::geometry
-                         )
-                         RETURNING id_zone, code, nom, population, superficie_km2,
-                                   ST_X(ST_Centroid(geom)) as longitude,
-                                   ST_Y(ST_Centroid(geom)) as latitude`,
-                        [code, nom, population, superficie_km2, longitude, latitude, radiusMeters]
-                );
+            const radiusKm = Math.sqrt(superficie_km2 / Math.PI);
+            const radiusMeters = radiusKm * 1000;
+
+            result = await this.db.query(
+                `INSERT INTO zone (code, nom, population, superficie_km2, couleur, geom)
+                 VALUES ($1, $2, $3, $4, $5,
+                         ST_Buffer(
+                             ST_SetSRID(ST_MakePoint($6, $7), 4326)::geography,
+                             $8
+                         )::geometry
+                 )
+                 RETURNING id_zone, code, nom, population, superficie_km2, couleur,
+                           ST_X(ST_Centroid(geom)) as longitude,
+                           ST_Y(ST_Centroid(geom)) as latitude`,
+                [zoneCode, nom, population, superficie_km2, couleur || '#3388ff', longitude, latitude, radiusMeters]
+            );
+        }
         
         return result.rows[0];
     }
@@ -74,9 +94,10 @@ class ZoneRepository {
         const offset = (page - 1) * limit;
         
         const result = await this.db.query(
-                `SELECT id_zone, code, nom, population, superficie_km2,
+                `SELECT id_zone, code, nom, population, superficie_km2, couleur,
                     ST_X(ST_Centroid(geom)) as longitude,
-                    ST_Y(ST_Centroid(geom)) as latitude
+                    ST_Y(ST_Centroid(geom)) as latitude,
+                    ST_AsGeoJSON(geom)::json as geometry
                  FROM zone 
              ORDER BY nom ASC
              LIMIT $1 OFFSET $2`,
@@ -107,9 +128,10 @@ class ZoneRepository {
         }
 
         const result = await this.db.query(
-                `SELECT id_zone, code, nom, population, superficie_km2,
+                `SELECT id_zone, code, nom, population, superficie_km2, couleur,
                     ST_X(ST_Centroid(geom)) as longitude,
-                    ST_Y(ST_Centroid(geom)) as latitude
+                    ST_Y(ST_Centroid(geom)) as latitude,
+                    ST_AsGeoJSON(geom)::json as geometry
                  FROM zone 
              WHERE id_zone = $1`,
             [id]
@@ -131,9 +153,10 @@ class ZoneRepository {
         }
 
         const result = await this.db.query(
-                `SELECT id_zone, code, nom, population, superficie_km2,
+                `SELECT id_zone, code, nom, population, superficie_km2, couleur,
                     ST_X(ST_Centroid(geom)) as longitude,
-                    ST_Y(ST_Centroid(geom)) as latitude
+                    ST_Y(ST_Centroid(geom)) as latitude,
+                    ST_AsGeoJSON(geom)::json as geometry
                  FROM zone 
              WHERE code = $1`,
             [code]
@@ -156,13 +179,15 @@ class ZoneRepository {
      * @param {number} [zoneData.superficie_km2] - Superficie en km² (>= 0)
      * @param {number} [zoneData.latitude] - Latitude entre -90 et 90
      * @param {number} [zoneData.longitude] - Longitude entre -180 et 180
+     * @param {string} [zoneData.couleur] - Couleur de la zone (hex)
+     * @param {string} [zoneData.geometry] - Géométrie GeoJSON pour formes dessinées
      */
     async updateZone(id, zoneData) {
         if (!id) {
             throw new Error('ID de zone requis');
         }
 
-        const { code, nom, population, superficie_km2, latitude, longitude } = zoneData;
+        const { code, nom, population, superficie_km2, latitude, longitude, couleur, geometry } = zoneData;
 
         // Vérifier que la zone existe
         const existing = await this.getZoneById(id);
@@ -206,19 +231,25 @@ class ZoneRepository {
             values.push(superficie_km2);
         }
 
-        // Mise à jour de la géométrie en fonction des données fournies
-        if (latitude !== undefined && longitude !== undefined) {
+        if (couleur !== undefined) {
+            updates.push(`couleur = $${paramIndex++}`);
+            values.push(couleur);
+        }
+
+        // Mise à jour de la géométrie
+        if (geometry) {
+            updates.push(`geom = ST_GeomFromGeoJSON($${paramIndex++})`);
+            values.push(geometry);
+        } else if (latitude !== undefined && longitude !== undefined) {
             if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
                 throw new Error('Coordonnées GPS invalides');
             }
-            // Rayon en km: si superficie_km2 fournie on l'utilise, sinon on garde l'existante
             const currentArea = superficie_km2 !== undefined ? superficie_km2 : existing.superficie_km2;
             const radiusKm = Math.sqrt(currentArea / Math.PI);
             const radiusMeters = radiusKm * 1000;
             updates.push(`geom = ST_Buffer(ST_SetSRID(ST_MakePoint($${paramIndex++}, $${paramIndex++}), 4326)::geography, $${paramIndex++})::geometry`);
             values.push(longitude, latitude, radiusMeters);
         } else if (superficie_km2 !== undefined) {
-            // Recalcule le buffer autour du centroïde existant
             const radiusKm = Math.sqrt(superficie_km2 / Math.PI);
             const radiusMeters = radiusKm * 1000;
             updates.push(`geom = ST_Buffer(ST_Centroid(geom)::geography, $${paramIndex++})::geometry`);
@@ -235,9 +266,10 @@ class ZoneRepository {
             `UPDATE zone 
              SET ${updates.join(', ')} 
              WHERE id_zone = $${paramIndex} 
-             RETURNING id_zone, code, nom, population, superficie_km2,
+             RETURNING id_zone, code, nom, population, superficie_km2, couleur,
                        ST_X(ST_Centroid(geom)) as longitude,
-                       ST_Y(ST_Centroid(geom)) as latitude`,
+                       ST_Y(ST_Centroid(geom)) as latitude,
+                       ST_AsGeoJSON(geom)::json as geometry`,
             values
         );
 
@@ -280,9 +312,10 @@ class ZoneRepository {
         }
 
         const result = await this.db.query(
-                `SELECT id_zone, code, nom, population, superficie_km2,
+                `SELECT id_zone, code, nom, population, superficie_km2, couleur,
                     ST_X(ST_Centroid(geom)) as longitude,
-                    ST_Y(ST_Centroid(geom)) as latitude
+                    ST_Y(ST_Centroid(geom)) as latitude,
+                    ST_AsGeoJSON(geom)::json as geometry
                  FROM zone 
              WHERE nom ILIKE $1
              ORDER BY nom ASC`,
@@ -309,9 +342,10 @@ class ZoneRepository {
         }
 
         const result = await this.db.query(
-                `SELECT id_zone, code, nom, population, superficie_km2,
+                `SELECT id_zone, code, nom, population, superficie_km2, couleur,
                     ST_X(ST_Centroid(geom)) as longitude,
                     ST_Y(ST_Centroid(geom)) as latitude,
+                    ST_AsGeoJSON(geom)::json as geometry,
                     ST_Distance(ST_Centroid(geom)::geography, ST_MakePoint($1, $2)::geography) / 1000 as distance_km
                  FROM zone 
              WHERE ST_DWithin(geom::geography, ST_MakePoint($1, $2)::geography, $3 * 1000)

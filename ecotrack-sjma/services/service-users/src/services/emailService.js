@@ -1,6 +1,6 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
-import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml } from './emailTemplates.js';
+import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
 const logger = {
@@ -89,4 +89,20 @@ export const sendWelcomeEmail = async (email, prenom) => {
 export const sendAdminCreatedUserEmail = async (email, prenom, nom, role, password) => {
   const html = getAdminCreatedUserHtml(prenom, nom, role, password, env.appUrl);
   return sendEmail(email, 'Votre compte EcoTrack a été créé', html);
+};
+
+export const sendAccountStatusEmail = async (email, prenom, isActivated) => {
+  const html = getAccountStatusHtml(prenom, isActivated, env.appUrl);
+  const subject = isActivated ? 'Votre compte EcoTrack a été activé' : 'Votre compte EcoTrack a été désactivé';
+  return sendEmail(email, subject, html);
+};
+
+export const sendRoleChangeEmail = async (email, prenom, oldRole, newRole) => {
+  const html = getRoleChangeHtml(prenom, oldRole, newRole, env.appUrl);
+  return sendEmail(email, 'Votre rôle EcoTrack a été modifié', html);
+};
+
+export const sendAccountDeletedEmail = async (email, prenom) => {
+  const html = getAccountDeletedHtml(prenom, env.appUrl);
+  return sendEmail(email, 'Votre compte EcoTrack a été supprimé', html);
 };

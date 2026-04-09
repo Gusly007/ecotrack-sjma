@@ -34,6 +34,8 @@
   box-sizing: border-box;
   transition: border-color 0.2s;
   font-family: inherit;
+  background-color: #fff;
+  cursor: pointer;
 }
 
 .form-input:focus {
@@ -45,6 +47,14 @@
   background: #f5f5f5;
   color: #888;
   cursor: not-allowed;
+}
+
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23555' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
 }
 
 .form-textarea {

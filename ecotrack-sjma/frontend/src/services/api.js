@@ -1,12 +1,25 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Détection dynamique du port API
+const getAPIBaseURL = () => {
+  // 1. Vérifier la variable d'environnement
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // 2. Fallback: localhost:3000 (API gateway)
+  return 'http://localhost:3000';
+};
+
+const API_BASE_URL = getAPIBaseURL();
+console.log('[API] Base URL configurée:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
   },
 });
 
@@ -16,6 +29,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers['Pragma'] = 'no-cache';
+    config.headers['Expires'] = '0';
     return config;
   },
   (error) => Promise.reject(error)
@@ -54,6 +70,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

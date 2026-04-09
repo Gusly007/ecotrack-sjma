@@ -57,8 +57,9 @@ export const getProfileWithStats = asyncHandler(async (req, res) => {
 });
 
 export const listUsers = asyncHandler(async (req, res) => {
-  const { page, limit, role, search } = req.query;
-  const result = await userService.listUsers({ page, limit, role, search });
+  const { page, limit, role, search, est_active } = req.query;
+  console.log('[DEBUG controller] est_active:', est_active);
+  const result = await userService.listUsers({ page, limit, role, search, est_active });
   res.json(result);
 });
 
@@ -68,6 +69,15 @@ export const getUserProfile = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invalid user id' });
   }
   const data = await userService.getProfileWithStats(targetId);
+  res.json({ data });
+});
+
+export const getUserStats = asyncHandler(async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(targetId)) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+  const data = await userService.getUserStats(targetId);
   res.json({ data });
 });
 

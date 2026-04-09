@@ -7,6 +7,7 @@ export default function Modal({
   children, 
   size = 'md',
   showFooter = true,
+  showCloseButton = true,
   footer,
   headerIcon,
   headerColor
@@ -24,9 +25,11 @@ export default function Modal({
             {headerIcon && <i className={`fas ${headerIcon}`} style={{ color: headerColor }}></i>}
             {title}
           </h2>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
+          {showCloseButton && (
+            <button className="modal-close" onClick={onClose}>
+              <i className="fas fa-times"></i>
+            </button>
+          )}
         </div>
         <div className="modal-body">
           {children}

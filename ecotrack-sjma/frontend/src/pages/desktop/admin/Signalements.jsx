@@ -1,98 +1,120 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Alert, Table, Pagination, Filters, SearchBox, SelectFilter, useAlert } from '../../../components/common';
-import { StatCard, StatsGrid } from '../../../components/common';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { Alert, Pagination, useAlert, Button, StatCard, StatsGrid } from '../../../components/common';
+import SignalementFilters from '../../../components/desktop/shared/SignalementFilters';
+import SignalementTable from '../../../components/desktop/shared/SignalementTable';
+import SignalementDetailModal from '../../../components/desktop/shared/SignalementDetailModal';
+import { signalementService } from '../../../services/signalementService';
 import './Signalements.css';
 
-let mockSignalements = [
-  { id: 'SIG-001234', type: 'Débordement', conteneur: 'CONT-00456', conteneurAdresse: 'Place Bellecour', zone: 'Centre', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 09:15', utilisateur: 'Jean Dupont', description: 'Le conteneur vert à l\'angle de la rue Victor Hugo est plein depuis 3 jours. Les déchets débordent sur le trottoir.' },
-  { id: 'SIG-001230', type: 'Capteur', conteneur: 'CONT-00891', conteneurAdresse: '22 Rue Gambetta', zone: 'Centre', urgence: 'Basse', statut: 'En cours', date: '13/01/2026 10:00', utilisateur: 'Marie Martin', description: 'Le capteur semble défectueux, les données de remplissage ne sont plus transmises.' },
-  { id: 'SIG-001210', type: 'Dégradation', conteneur: 'CONT-00789', conteneurAdresse: '8 Avenue de la République', zone: 'Centre', urgence: 'Moyenne', statut: 'En cours', date: '12/01/2026 14:30', utilisateur: 'Paul Dubois', description: 'Le couvercle du conteneur est cassé et ne ferme plus correctement.' },
-  { id: 'SIG-001198', type: 'Débordement', conteneur: 'CONT-01023', conteneurAdresse: '45 Rue de la Paix', zone: 'Nord', urgence: 'Basse', statut: 'Résolu', date: '10/01/2026 08:00', utilisateur: 'Sophie Bernard', description: 'Conteneur débordant depuis plusieurs jours.' },
-  { id: 'SIG-001150', type: 'Accès bloqué', conteneur: 'CONT-00567', conteneurAdresse: '12 Rue Nationale', zone: 'Sud', urgence: 'Moyenne', statut: 'Résolu', date: '07/01/2026 11:20', utilisateur: 'Lucas Petit', description: 'Le conteneur est bloqué par des véhicules stationnés.' },
-  { id: 'SIG-001145', type: 'Débordement', conteneur: 'CONT-00234', conteneurAdresse: '78 Rue de la République', zone: 'Est', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 11:30', utilisateur: 'Emma Moreau', description: 'Conteneur de recyclage plein à ras bord.' },
-  { id: 'SIG-001140', type: 'Capteur', conteneur: 'CONT-00678', conteneurAdresse: '5 Place Wilson', zone: 'Ouest', urgence: 'Moyenne', statut: 'Nouveau', date: '13/01/2026 16:45', utilisateur: 'Nathan Garcia', description: 'Le capteu de température ne fonctionne plus.' },
-  { id: 'SIG-001135', type: 'Dégradation', conteneur: 'CONT-00345', conteneurAdresse: '33 Avenue Jean Jaurès', zone: 'Centre', urgence: 'Basse', statut: 'En cours', date: '12/01/2026 09:20', utilisateur: 'Chloé Martinez', description: 'Le conteneur est tagué graffitis.' },
-  { id: 'SIG-001130', type: 'Accès bloqué', conteneur: 'CONT-00999', conteneurAdresse: '10 Rue Pasteur', zone: 'Nord', urgence: 'Haute', statut: 'En cours', date: '11/01/2026 14:10', utilisateur: 'Thomas Laurent', description: 'Camion poubelle bloqué par une voiture.' },
-  { id: 'SIG-001125', type: 'Débordement', conteneur: 'CONT-00444', conteneurAdresse: '22 Boulevard Leclerc', zone: 'Sud', urgence: 'Moyenne', statut: 'Résolu', date: '09/01/2026 07:55', utilisateur: 'Inès Rousseau', description: 'Conteneur débordant depuis 2 jours.' },
-  { id: 'SIG-001120', type: 'Capteur', conteneur: 'CONT-00777', conteneurAdresse: '88 Rue Nationale', zone: 'Est', urgence: 'Basse', statut: 'Résolu', date: '08/01/2026 12:30', utilisateur: 'Hugo Dubois', description: 'Capteur de poids défaillant.' },
-  { id: 'SIG-001115', type: 'Dégradation', conteneur: 'CONT-00222', conteneurAdresse: '14 Rue Voltaire', zone: 'Ouest', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 08:00', utilisateur: 'Manon Petit', description: 'Conteneur incendié.' },
-  { id: 'SIG-001110', type: 'Accès bloqué', conteneur: 'CONT-00888', conteneurAdresse: '67 Avenue de Lyon', zone: 'Centre', urgence: 'Moyenne', statut: 'En cours', date: '10/01/2026 10:15', utilisateur: 'Lucas Bernard', description: 'Conteneur inaccessible.' },
-];
-
-const statutsList = ['Nouveau', 'En cours', 'Résolu', 'Rejeté'];
-const urgencesList = ['Haute', 'Moyenne', 'Basse'];
-
 export default function SignalementsPage() {
-  const navigate = useNavigate();
-  const { alert, showSuccess } = useAlert();
-  const [signalements, setSignalements] = useState(mockSignalements);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const { user } = useAuth();
+  const { alert, showSuccess, showError } = useAlert();
+
+  const role = user?.role || user?.role_par_defaut || 'MANAGER';
+  const canUpdate = role === 'ADMIN' || role === 'GESTIONNAIRE';
+
+  const [signalements, setSignalements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatut, setFilterStatut] = useState('Tous');
-  const [filterUrgence, setFilterUrgence] = useState('Toutes');
+  const [statutFilter, setStatutFilter] = useState('');
+  const [urgenceFilter, setUrgenceFilter] = useState('');
 
-  const filteredSignalements = signalements.filter(sig => {
-    const matchSearch = sig.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       sig.conteneur.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatut = filterStatut === 'Tous' || sig.statut === filterStatut;
-    const matchUrgence = filterUrgence === 'Toutes' || sig.urgence === filterUrgence;
-    return matchSearch && matchStatut && matchUrgence;
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
 
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentSignalements = filteredSignalements.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredSignalements.length / itemsPerPage);
+  const [selectedSignalement, setSelectedSignalement] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
-  const getUrgenceClass = (urgence) => {
-    switch (urgence) {
-      case 'Haute': return 'urgence-haute';
-      case 'Moyenne': return 'urgence-moyenne';
-      case 'Basse': return 'urgence-basse';
-      default: return '';
+  const normalizeStats = (rawStats) => {
+    if (!rawStats) return null;
+
+    return {
+      total: Number(rawStats.total ?? rawStats.totalSignalements ?? 0),
+      nouveaux: Number(rawStats.nouveaux ?? rawStats.nouveau ?? 0),
+      enCours: Number(rawStats.enCours ?? rawStats.en_cours ?? 0),
+      resolus: Number(rawStats.resolus ?? rawStats.resolu ?? 0),
+      rejetes: Number(rawStats.rejetes ?? rawStats.rejete ?? 0)
+    };
+  };
+
+  const loadSignalements = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await signalementService.getAll(currentPage, itemsPerPage, {
+        statut: statutFilter || undefined,
+        urgence: urgenceFilter || undefined,
+        search: searchTerm || undefined
+      });
+
+      let data = [];
+      let pagination = { totalPages: 1, total: 0 };
+
+      if (response?.data) {
+        data = response.data.data || [];
+        pagination = response.data.pagination || { totalPages: 1, total: data.length };
+      } else if (Array.isArray(response)) {
+        data = response;
+        pagination = { totalPages: 1, total: response.length };
+      }
+
+      setSignalements(data);
+      setTotalPages(pagination.totalPages || 1);
+      setTotalItems(pagination.total || 0);
+    } catch (err) {
+      console.error('Erreur chargement signalements:', err);
+      showError('Erreur lors du chargement des signalements');
+      setSignalements([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, statutFilter, urgenceFilter, searchTerm, showError]);
 
-  const getStatutClass = (statut) => {
-    switch (statut) {
-      case 'Nouveau': return 'statut-nouveau';
-      case 'En cours': return 'statut-cours';
-      case 'Résolu': return 'statut-resolu';
-      case 'Rejeté': return 'statut-rejete';
-      default: return '';
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await signalementService.getStats();
+      const statsData = normalizeStats(response?.data || response);
+      if (statsData) setStats(statsData);
+    } catch (err) {
+      console.error('Erreur stats:', err);
     }
+  }, []);
+
+  useEffect(() => {
+    loadSignalements();
+  }, [loadSignalements]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const handleView = (signalement) => {
+    setSelectedSignalement(signalement);
+    setShowDetailModal(true);
   };
 
-  const handleView = (id) => {
-    navigate(`/admin/signalements/${id}`);
+  const handleUpdate = (signalement) => {
+    setSelectedSignalement(signalement);
+    setShowDetailModal(true);
   };
 
-  const handleUpdate = (id) => {
-    navigate(`/admin/signalements/${id}`);
+  const handleSuccess = () => {
+    loadSignalements();
+    loadStats();
+    showSuccess('Signalement mis à jour avec succès');
   };
 
-  const columns = [
-    { header: 'ID', accessor: 'id', render: (row) => <strong>{row.id}</strong> },
-    { header: 'Type', accessor: 'type' },
-    { header: 'Conteneur', accessor: 'conteneur' },
-    { header: 'Zone', accessor: 'zone' },
-    { header: 'Urgence', render: (row) => <span className={`urgence-badge ${getUrgenceClass(row.urgence)}`}>{row.urgence}</span> },
-    { header: 'Statut', render: (row) => (
-      <span className={`statut-badge ${getStatutClass(row.statut)}`}>
-        <span className={`statut-dot ${getStatutClass(row.statut)}`}></span>
-        {row.statut}
-      </span>
-    )},
-    { header: 'Soumis le', accessor: 'date' },
-    { header: 'Actions', render: (row) => (
-      <div className="action-buttons">
-        <button className="btn-primary btn-sm" onClick={() => handleView(row.id)}>Voir</button>
-        <button className="btn-outline btn-sm" onClick={() => handleUpdate(row.id)}>Mettre à jour</button>
-      </div>
-    )}
-  ];
+  const filteredStats = stats || {
+    total: signalements.length,
+    nouveaux: signalements.filter(s => s.statut?.toUpperCase() === 'NOUVEAU').length,
+    enCours: signalements.filter(s => s.statut?.toUpperCase() === 'EN_COURS').length,
+    resolus: signalements.filter(s => s.statut?.toUpperCase() === 'RESOLU').length,
+    rejetes: signalements.filter(s => s.statut?.toUpperCase() === 'REJETE').length
+  };
 
   return (
     <div className="signalements-page">
@@ -100,22 +122,84 @@ export default function SignalementsPage() {
         <h1>Signalements Citoyens</h1>
       </div>
 
+      {alert && (
+        <Alert type={alert.type} message={alert.message} onClose={() => {}} />
+      )}
+
       <StatsGrid>
-        <StatCard icon="fa-flag" iconColor="blue" label="Total signalements" value={signalements.length} change="Ce mois" />
-        <StatCard icon="fa-inbox" iconColor="blue" label="Nouveaux" value={signalements.filter(s => s.statut === 'Nouveau').length} change="En attente de triage" />
-        <StatCard icon="fa-spinner" iconColor="orange" label="En cours" value={signalements.filter(s => s.statut === 'En cours').length} change="Agents assignés" />
-        <StatCard icon="fa-check-double" iconColor="green" label="Résolus" value={signalements.filter(s => s.statut === 'Résolu').length} change="Temps moy: 4h 32min" />
+        <StatCard 
+          icon="fa-flag" 
+          iconColor="blue" 
+          label="Total signalements" 
+          value={filteredStats.total || 0} 
+        />
+        <StatCard 
+          icon="fa-inbox" 
+          iconColor="blue" 
+          label="Nouveaux" 
+          value={filteredStats.nouveaux || filteredStats.nouveau || 0} 
+        />
+        <StatCard 
+          icon="fa-spinner" 
+          iconColor="orange" 
+          label="En cours" 
+          value={filteredStats.enCours || filteredStats.en_cours || 0} 
+        />
+        <StatCard 
+          icon="fa-check-double" 
+          iconColor="green" 
+          label="Résolus" 
+          value={filteredStats.resolus || 0} 
+        />
+        <StatCard 
+          icon="fa-ban" 
+          iconColor="red" 
+          label="Rejetés" 
+          value={filteredStats.rejetes || 0} 
+        />
       </StatsGrid>
 
-      <Filters>
-        <SearchBox value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher par ID, conteneur..." />
-        <SelectFilter value={filterStatut} onChange={setFilterStatut} options={[{value: 'Tous', label: 'Tous statuts'}, ...statutsList.map(s => ({value: s, label: s}))]} />
-        <SelectFilter value={filterUrgence} onChange={setFilterUrgence} options={[{value: 'Toutes', label: 'Toutes urgences'}, ...urgencesList.map(u => ({value: u, label: u}))]} />
-      </Filters>
+      <SignalementFilters
+        searchValue={searchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          setCurrentPage(1);
+        }}
+        statutFilter={statutFilter}
+        onStatutChange={(v) => { setStatutFilter(v); setCurrentPage(1); }}
+        urgenceFilter={urgenceFilter}
+        onUrgenceChange={(v) => { setUrgenceFilter(v); setCurrentPage(1); }}
+      />
 
-      <Table columns={columns} data={currentSignalements} />
+      <div className="panel signalements-panel">
+        <SignalementTable
+          signalements={signalements}
+          loading={loading}
+          onView={handleView}
+          onUpdate={handleUpdate}
+          canUpdate={canUpdate}
+          role={role}
+        />
 
-      <Pagination currentPage={currentPage} totalPages={totalPages} showingTo={indexOfLast} totalItems={filteredSignalements.length} label="signalements" onPageChange={setCurrentPage} />
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          showingFrom={(currentPage - 1) * itemsPerPage + 1}
+          showingTo={Math.min(currentPage * itemsPerPage, totalItems)}
+          totalItems={totalItems}
+          label="signalements"
+          onPageChange={setCurrentPage}
+        />
+      </div>
+
+      <SignalementDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        onSuccess={handleSuccess}
+        signalement={selectedSignalement}
+        role={role}
+        canUpdate={canUpdate}
+      />
     </div>
   );
 }

@@ -1,64 +1,297 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FormGroup, Select, Textarea, Alert, Modal, useAlert } from '../../../components/common';
+import { signalementService } from '../../../services/signalementService';
+import { userService } from '../../../services/userService';
+import { useAuth } from '../../../context/AuthContext';
 import './SignalementDetail.css';
 
-const mockSignalements = [
-  { id: 'SIG-001234', type: 'Débordement', conteneur: 'CONT-00456', conteneurAdresse: '15 Rue Victor Hugo', zone: 'Centre', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 09:15', utilisateur: 'Jean Dupont', description: 'Le conteneur vert à l\'angle de la rue Victor Hugo est plein depuis 3 jours. Les déchets débordent sur le trottoir.' },
-  { id: 'SIG-001230', type: 'Capteur', conteneur: 'CONT-00891', conteneurAdresse: '22 Rue Gambetta', zone: 'Centre', urgence: 'Basse', statut: 'En cours', date: '13/01/2026 10:00', utilisateur: 'Marie Martin', description: 'Le capteur semble défectueux, les données de remplissage ne sont plus transmises.' },
-  { id: 'SIG-001210', type: 'Dégradation', conteneur: 'CONT-00789', conteneurAdresse: '8 Avenue de la République', zone: 'Centre', urgence: 'Moyenne', statut: 'En cours', date: '12/01/2026 14:30', utilisateur: 'Paul Dubois', description: 'Le couvercle du conteneur est cassé et ne ferme plus correctement.' },
-  { id: 'SIG-001198', type: 'Débordement', conteneur: 'CONT-01023', conteneurAdresse: '45 Rue de la Paix', zone: 'Nord', urgence: 'Basse', statut: 'Résolu', date: '10/01/2026 08:00', utilisateur: 'Sophie Bernard', description: 'Conteneur débordant depuis plusieurs jours.' },
-  { id: 'SIG-001150', type: 'Accès bloqué', conteneur: 'CONT-00567', conteneurAdresse: '12 Rue Nationale', zone: 'Sud', urgence: 'Moyenne', statut: 'Résolu', date: '07/01/2026 11:20', utilisateur: 'Lucas Petit', description: 'Le conteneur est bloqué par des véhicules stationnés.' },
-  { id: 'SIG-001145', type: 'Débordement', conteneur: 'CONT-00234', conteneurAdresse: '78 Rue de la République', zone: 'Est', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 11:30', utilisateur: 'Emma Moreau', description: 'Conteneur de recyclage plein à ras bord.' },
-  { id: 'SIG-001140', type: 'Capteur', conteneur: 'CONT-00678', conteneurAdresse: '5 Place Wilson', zone: 'Ouest', urgence: 'Moyenne', statut: 'Nouveau', date: '13/01/2026 16:45', utilisateur: 'Nathan Garcia', description: 'Le capteur de température ne fonctionne plus.' },
-  { id: 'SIG-001135', type: 'Dégradation', conteneur: 'CONT-00345', conteneurAdresse: '33 Avenue Jean Jaurès', zone: 'Centre', urgence: 'Basse', statut: 'En cours', date: '12/01/2026 09:20', utilisateur: 'Chloé Martinez', description: 'Le conteneur est tagué graffitis.' },
-  { id: 'SIG-001130', type: 'Accès bloqué', conteneur: 'CONT-00999', conteneurAdresse: '10 Rue Pasteur', zone: 'Nord', urgence: 'Haute', statut: 'En cours', date: '11/01/2026 14:10', utilisateur: 'Thomas Laurent', description: 'Camion poubelle bloqué par une voiture.' },
-  { id: 'SIG-001125', type: 'Débordement', conteneur: 'CONT-00444', conteneurAdresse: '22 Boulevard Leclerc', zone: 'Sud', urgence: 'Moyenne', statut: 'Résolu', date: '09/01/2026 07:55', utilisateur: 'Inès Rousseau', description: 'Conteneur débordant depuis 2 jours.' },
-  { id: 'SIG-001120', type: 'Capteur', conteneur: 'CONT-00777', conteneurAdresse: '88 Rue Nationale', zone: 'Est', urgence: 'Basse', statut: 'Résolu', date: '08/01/2026 12:30', utilisateur: 'Hugo Dubois', description: 'Capteur de poids défaillant.' },
-  { id: 'SIG-001115', type: 'Dégradation', conteneur: 'CONT-00222', conteneurAdresse: '14 Rue Voltaire', zone: 'Ouest', urgence: 'Haute', statut: 'Nouveau', date: '14/01/2026 08:00', utilisateur: 'Manon Petit', description: 'Conteneur incendié.' },
-  { id: 'SIG-001110', type: 'Accès bloqué', conteneur: 'CONT-00888', conteneurAdresse: '67 Avenue de Lyon', zone: 'Centre', urgence: 'Moyenne', statut: 'En cours', date: '10/01/2026 10:15', utilisateur: 'Lucas Bernard', description: 'Conteneur inaccessible.' },
+const statutsList = [
+  { value: 'NOUVEAU', label: 'Nouveau' },
+  { value: 'EN_COURS', label: 'En cours' },
+  { value: 'RESOLU', label: 'Résolu' },
+  { value: 'REJETE', label: 'Rejeté' }
 ];
 
-const agents = [
-  { id: 'AGT-007', nom: 'Marc Lefebvre' },
-  { id: 'AGT-008', nom: 'Julie Renard' },
-  { id: 'AGT-012', nom: 'Pierre Morel' },
+const typesIntervention = [
+  { value: 'COLLECTE_URGENTE', label: 'Collecte urgente' },
+  { value: 'REPARATION', label: 'Réparation' },
+  { value: 'NETTOYAGE', label: 'Nettoyage' },
+  { value: 'REMPLACEMENT_CAPTEUR', label: 'Remplacement capteur' },
+  { value: 'INSPECTION', label: 'Inspection' },
+  { value: 'AUTRE', label: 'Autre' }
 ];
 
-const typesIntervention = ['Collecte urgente', 'Réparation', 'Nettoyage', 'Remplacement capteur', 'Autre'];
-const priorites = ['Basse', 'Moyenne', 'Haute', 'Critique'];
-const statutsList = ['Nouveau', 'En cours', 'Résolu', 'Rejeté'];
+const priorites = [
+  { value: 'BASSE', label: 'Basse' },
+  { value: 'MOYENNE', label: 'Moyenne' },
+  { value: 'HAUTE', label: 'Haute' },
+  { value: 'CRITIQUE', label: 'Critique' }
+];
 
 export default function SignalementDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { alert, showSuccess } = useAlert();
+  const { user } = useAuth();
+  const { alert, showSuccess, showError } = useAlert();
   
   const [signalement, setSignalement] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [agents, setAgents] = useState([]);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+  
   const [nouveauStatut, setNouveauStatut] = useState('');
-  const [agent, setAgent] = useState('');
+  const [selectedAgent, setSelectedAgent] = useState('');
   const [commentaire, setCommentaire] = useState('');
-  const [historique, setHistorique] = useState([
-    { date: '14/01 09:15', action: 'Signalement créé par Jean Dupont' },
-    { date: '14/01 09:15', action: 'Notification envoyée aux gestionnaires Zone Centre' },
-  ]);
+  const [historique, setHistorique] = useState([]);
   
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [maintenanceForm, setMaintenanceForm] = useState({
     type: '',
     typeCustom: '',
     date: '',
-    priorite: 'Moyenne',
+    priorite: 'MOYENNE',
     agent: '',
+    notes: ''
   });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const found = mockSignalements.find(s => s.id === id);
-    if (found) {
-      setSignalement(found);
-      setNouveauStatut(found.statut);
-    }
+    setHistorique([]);
+    loadSignalement();
+    loadAgents();
   }, [id]);
+
+  const buildFallbackHistory = (data) => {
+    const fallback = [
+      {
+        date: formatDate(data.date_creation),
+        action: `Signalement créé par ${data.citoyen_nom || 'Citoyen'}`,
+        type: 'creation'
+      }
+    ];
+
+    if (data.date_resolution) {
+      fallback.push({
+        date: formatDate(data.date_resolution),
+        action: 'Signalement résolu',
+        type: 'resolution'
+      });
+    }
+
+    return fallback;
+  };
+
+  const loadSignalement = async () => {
+    try {
+      setLoading(true);
+      const response = await signalementService.getById(id);
+      const data = response?.data || response;
+      setSignalement(data);
+      setNouveauStatut(data.statut || '');
+
+      await loadHistory(data);
+    } catch (err) {
+      console.error('Erreur chargement:', err);
+      showError('Erreur lors du chargement du signalement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadHistory = async (fallbackSignalement = signalement) => {
+    try {
+      const historyResponse = await signalementService.getHistory(id);
+      const historyData = historyResponse?.data || historyResponse || [];
+
+      if (Array.isArray(historyData) && historyData.length > 0) {
+        setHistorique(
+          historyData.map((item) => ({
+            date: formatDate(item.date),
+            action: item.action,
+            type: item.type || 'default'
+          }))
+        );
+        return;
+      }
+    } catch (historyError) {
+      console.error('Erreur chargement historique:', historyError);
+    }
+
+    if (fallbackSignalement) {
+      setHistorique(buildFallbackHistory(fallbackSignalement));
+    } else {
+      setHistorique([]);
+    }
+  };
+
+  const loadAgents = async () => {
+    try {
+      setAgentsLoading(true);
+      const response = await userService.getAll({ role: 'AGENT', limit: 100 });
+      const users = response?.data?.data || response?.data || response || [];
+      setAgents(users);
+    } catch (err) {
+      console.error('Erreur chargement agents:', err);
+      setAgents([]);
+    } finally {
+      setAgentsLoading(false);
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '—';
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatutBadgeClass = (statut) => {
+    switch (statut?.toUpperCase()) {
+      case 'NOUVEAU': return 'nouveau';
+      case 'EN_COURS': return 'encours';
+      case 'RESOLU': return 'resolu';
+      case 'REJETE': return 'rejete';
+      default: return '';
+    }
+  };
+
+  const getStatutColor = (statut) => {
+    switch (statut?.toUpperCase()) {
+      case 'NOUVEAU': return '#1976D2';
+      case 'EN_COURS': return '#F57C00';
+      case 'RESOLU': return '#388E3C';
+      case 'REJETE': return '#9e9e9e';
+      default: return '#4CAF50';
+    }
+  };
+
+  const getUrgenceClass = (urgence) => {
+    switch (urgence?.toUpperCase()) {
+      case 'HAUTE': return 'haute';
+      case 'MOYENNE': return 'moyenne';
+      case 'BASSE': return 'basse';
+      default: return '';
+    }
+  };
+
+  const getStepStatus = (step) => {
+    const currentStatut = nouveauStatut?.toUpperCase();
+    if (currentStatut === 'RESOLU') return 'done';
+    if (currentStatut === 'EN_COURS') {
+      return step === 'soumis' || step === 'encours' ? 'done' : 'pending';
+    }
+    if (currentStatut === 'REJETE') {
+      return step === 'soumis' ? 'done' : 'pending';
+    }
+    if (currentStatut === 'NOUVEAU') {
+      return step === 'soumis' ? 'done' : 'pending';
+    }
+    return 'pending';
+  };
+
+  const getStepColor = (step) => {
+    return getStepStatus(step) === 'done' ? '#4CAF50' : '#e0e0e0';
+  };
+
+  const handleUpdate = async () => {
+    if (!nouveauStatut && !selectedAgent && !commentaire) {
+      showError('Aucune modification à enregistrer');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const currentUserId = user?.id_utilisateur || user?.id || user?.sub;
+
+      if ((commentaire || selectedAgent) && !selectedAgent && !currentUserId) {
+        showError('Impossible d\'identifier l\'agent connecté pour enregistrer la note');
+        setSaving(false);
+        return;
+      }
+      
+      if (nouveauStatut?.toUpperCase() !== signalement.statut?.toUpperCase()) {
+        await signalementService.updateStatus(id, nouveauStatut);
+      }
+
+      if (commentaire || selectedAgent) {
+        await signalementService.saveTreatment(id, {
+          id_agent: selectedAgent || currentUserId,
+          type_action: 'NOTE',
+          commentaire: commentaire || null
+        });
+      }
+      
+      await loadSignalement();
+      setSelectedAgent('');
+      setCommentaire('');
+      showSuccess('Signalement mis à jour avec succès');
+    } catch (err) {
+      console.error('Erreur mise à jour:', err);
+      showError(err.response?.data?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePlanifierMaintenance = async () => {
+    if (!maintenanceForm.date || !maintenanceForm.type) {
+      showError('Veuillez remplir les champs obligatoires');
+      return;
+    }
+
+    if (maintenanceForm.type === 'AUTRE' && !maintenanceForm.typeCustom.trim()) {
+      showError("Veuillez préciser le type d'intervention");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const interventionType = typesIntervention.find(t => t.value === maintenanceForm.type);
+      const typeLabel = maintenanceForm.type === 'AUTRE' ? maintenanceForm.typeCustom.trim() : (interventionType?.label || maintenanceForm.type);
+      const currentUserId = user?.id_utilisateur || user?.id || user?.sub;
+
+      if (!maintenanceForm.agent && !currentUserId) {
+        showError('Impossible d\'identifier l\'agent connecté pour planifier l\'intervention');
+        setSaving(false);
+        return;
+      }
+
+      await signalementService.saveTreatment(id, {
+        id_agent: maintenanceForm.agent || currentUserId,
+        type_action: 'INTERVENTION',
+        type_intervention: typeLabel,
+        date_intervention: maintenanceForm.date,
+        priorite_intervention: maintenanceForm.priorite,
+        notes_intervention: maintenanceForm.notes || null
+      });
+      
+      setShowMaintenanceModal(false);
+      setMaintenanceForm({ type: '', typeCustom: '', date: '', priorite: 'MOYENNE', agent: '', notes: '' });
+      await loadSignalement();
+      showSuccess('Intervention planifiée avec succès');
+    } catch (err) {
+      console.error('Erreur intervention:', err);
+      showError('Erreur lors de la planification');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="signalement-detail-page">
+        <div className="loading-state">
+          <i className="fas fa-spinner fa-spin"></i>
+          <p>Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!signalement) {
     return (
@@ -73,75 +306,15 @@ export default function SignalementDetailPage() {
     );
   }
 
-  const getStatutBadgeClass = (statut) => {
-    switch (statut) {
-      case 'Nouveau': return 'nouveau';
-      case 'En cours': return 'encours';
-      case 'Résolu': return 'resolu';
-      case 'Rejeté': return 'rejete';
-      default: return '';
-    }
-  };
-
-  const getUrgenceClass = (urgence) => {
-    switch (urgence) {
-      case 'Haute': return 'haute';
-      case 'Moyenne': return 'moyenne';
-      case 'Basse': return 'basse';
-      default: return '';
-    }
-  };
-
-  const getStepStatus = (step) => {
-    if (nouveauStatut === 'Résolu') return 'done';
-    if (nouveauStatut === 'En cours') {
-      return step === 'soumis' || step === 'encours' ? 'done' : 'pending';
-    }
-    if (nouveauStatut === 'Rejeté') {
-      return step === 'soumis' ? 'done' : 'pending';
-    }
-    return step === 'soumis' ? 'done' : 'pending';
-  };
-
-  const getStepColor = (step) => {
-    return getStepStatus(step) === 'done' ? '#4CAF50' : '#e0e0e0';
-  };
-
-  const handleUpdate = () => {
-    const now = new Date();
-    const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    const newHistorique = [...historique];
-    
-    if (nouveauStatut !== signalement.statut) {
-      newHistorique.push({ date: dateStr, action: `Statut changé: ${signalement.statut} → ${nouveauStatut}` });
-    }
-    if (agent) {
-      const agentInfo = agents.find(a => a.id === agent);
-      const agentLabel = agentInfo ? agentInfo.nom : agent;
-      newHistorique.push({ date: dateStr, action: `Agent ${agentLabel} assigné` });
-    }
-    if (commentaire) {
-      newHistorique.push({ date: dateStr, action: `Commentaire ajouté` });
-    }
-    
-    setHistorique(newHistorique);
-    setSignalement({ ...signalement, statut: nouveauStatut });
-    showSuccess('Statut mis à jour avec succès');
-  };
-
-  const handlePlanifierMaintenance = () => {
-    const now = new Date();
-    const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    const agentInfo = agents.find(a => a.id === maintenanceForm.agent);
-    const agentLabel = agentInfo ? agentInfo.nom : '';
-    const interventionType = maintenanceForm.type === 'Autre' ? maintenanceForm.typeCustom : maintenanceForm.type;
-    setHistorique([...historique, { date: dateStr, action: `Intervention planifiée - ${interventionType}${agentLabel ? ' - ' + agentLabel : ''}` }]);
-    setShowMaintenanceModal(false);
-    setMaintenanceForm({ type: '', typeCustom: '', date: '', priorite: 'Moyenne', agent: '' });
-    showSuccess('Intervention planifiée avec succès');
-  };
+  const agentOptions = agentsLoading ? 
+    [{ value: '', label: 'Chargement...' }] :
+    [
+      { value: '', label: '— Sélectionner un agent —' },
+      ...agents.map(a => ({ 
+        value: a.id_utilisateur?.toString() || a.id?.toString(), 
+        label: `${a.prenom} ${a.nom} (${a.role || 'Agent'})` 
+      }))
+    ];
 
   return (
     <div className="signalement-detail-page">
@@ -151,8 +324,22 @@ export default function SignalementDetailPage() {
         <button className="back-btn" onClick={() => navigate('/admin/signalements')}>
           <i className="fas fa-arrow-left"></i>
         </button>
-        <h2>Signalement #{signalement.id}</h2>
-        <span className={`statut-badge-large ${getStatutBadgeClass(nouveauStatut)}`}>{nouveauStatut}</span>
+        <h2>
+          Signalement 
+          <code style={{ 
+            fontFamily: 'monospace', 
+            marginLeft: '8px',
+            background: '#f5f5f5',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '0.9em'
+          }}>
+            #{signalement.id_signalement || signalement.id}
+          </code>
+        </h2>
+        <span className={`statut-badge-large ${getStatutBadgeClass(nouveauStatut)}`}>
+          {statutsList.find(s => s.value === nouveauStatut?.toUpperCase())?.label || nouveauStatut}
+        </span>
       </div>
 
       <div className="panel-grid">
@@ -161,45 +348,67 @@ export default function SignalementDetailPage() {
           <div className="info-list">
             <div className="info-row">
               <span>ID</span>
-              <strong>{signalement.id}</strong>
+              <strong><code>{signalement.id_signalement || signalement.id}</code></strong>
             </div>
             <div className="info-row">
               <span>Type</span>
-              <strong>{signalement.type}</strong>
+              <strong>{signalement.type_signalement || signalement.type || '-'}</strong>
             </div>
             <div className="info-row">
               <span>Conteneur</span>
-              <strong>{signalement.conteneur}</strong>
+              <strong>
+                <code style={{ fontFamily: 'monospace' }}>
+                  {signalement.conteneur_uid || signalement.uid_conteneur || '-'}
+                </code>
+              </strong>
             </div>
             <div className="info-row">
-              <span>Adresse</span>
-              <strong>{signalement.conteneurAdresse}</strong>
+              <span>Zone</span>
+              <strong>{signalement.zone_nom || signalement.zone || '-'}</strong>
+            </div>
+            <div className="info-row">
+              <span>Position</span>
+              <strong>
+                {signalement.latitude && signalement.longitude ? 
+                  `${parseFloat(signalement.latitude).toFixed(4)}, ${parseFloat(signalement.longitude).toFixed(4)}` : 
+                  '-'}
+              </strong>
             </div>
             <div className="info-row">
               <span>Urgence</span>
-              <strong><span className={`urgence-badge ${getUrgenceClass(signalement.urgence)}`}>{signalement.urgence}</span></strong>
+              <strong>
+                <span className={`urgence-badge ${getUrgenceClass(signalement.urgence)}`}>
+                  {signalement.urgence || '-'}
+                </span>
+              </strong>
             </div>
             <div className="info-row">
-              <span>Soumis par</span>
-              <strong>{signalement.utilisateur}</strong>
+              <span>Signalé par</span>
+              <strong>{signalement.citoyen_nom || signalement.nom_citoyen || '-'}</strong>
             </div>
             <div className="info-row">
-              <span>Date</span>
-              <strong>{signalement.date}</strong>
+              <span>Date création</span>
+              <strong>{formatDate(signalement.date_creation)}</strong>
             </div>
+            {signalement.date_resolution && (
+              <div className="info-row">
+                <span>Date résolution</span>
+                <strong>{formatDate(signalement.date_resolution)}</strong>
+              </div>
+            )}
           </div>
 
           <div className="description-box">
-            <h4>Description</h4>
-            <p>{signalement.description}</p>
+            <h4><i className="fas fa-align-left" style={{ marginRight: '6px' }}></i>Description</h4>
+            <p>{signalement.description || 'Aucune description'}</p>
           </div>
 
-          <div className="photo-box">
-            <h4>Photo jointe</h4>
-            <div className="photo-placeholder">
-              <i className="fas fa-image"></i>
+          {signalement.capacite_l && (
+            <div className="info-row" style={{ marginTop: '12px' }}>
+              <span>Capacité conteneur</span>
+              <strong>{signalement.capacite_l}L</strong>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="panel">
@@ -208,8 +417,8 @@ export default function SignalementDetailPage() {
           <div className="timeline">
             <div className={`timeline-step ${getStepStatus('soumis')}`}>
               <div className="timeline-dot" style={{ background: getStepColor('soumis') }}></div>
-              <span>Soumis</span>
-              <small>{signalement.date.split(' ')[0]}</small>
+              <span>Nouveau</span>
+              <small>{formatDate(signalement.date_creation).split(' ')[0]}</small>
             </div>
             <div className="timeline-line" style={{ background: getStepColor('encours') }}></div>
             <div className={`timeline-step ${getStepStatus('encours')}`}>
@@ -229,40 +438,49 @@ export default function SignalementDetailPage() {
             <Select 
               value={nouveauStatut} 
               onChange={setNouveauStatut}
-              options={statutsList.map(s => ({ value: s, label: s }))}
+              options={statutsList}
             />
           </FormGroup>
 
           <FormGroup label="Assigner un agent">
             <Select 
-              value={agent}
-              onChange={setAgent}
-              options={[
-                { value: '', label: '— Sélectionner —' },
-                ...agents.map(a => ({ value: a.id, label: `${a.nom} (${a.id})` }))
-              ]}
+              value={selectedAgent}
+              onChange={setSelectedAgent}
+              options={agentOptions}
+              disabled={agentsLoading}
             />
           </FormGroup>
 
-          <FormGroup label="Commentaire / Réponse au citoyen">
+          <FormGroup label="Commentaire / Note interne">
             <Textarea 
               value={commentaire}
-              onChange={(e) => setCommentaire(e.target.value)}
-              placeholder="Ajoutez un commentaire visible par le citoyen..."
+              onChange={setCommentaire}
+              placeholder="Ajoutez une note ou commentaire interne..."
+              rows={3}
             />
           </FormGroup>
 
-          <button className="btn-primary btn-full" onClick={handleUpdate}>
-            <i className="fas fa-save"></i> Mettre à jour le signalement
+          <button 
+            className="btn-primary btn-full update-btn" 
+            onClick={handleUpdate}
+            disabled={saving}
+            style={{ backgroundColor: getStatutColor(nouveauStatut) }}
+          >
+            {saving ? (
+              <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
+            ) : (
+              <><i className="fas fa-save"></i> Mettre à jour le signalement</>
+            )}
           </button>
+          
           <button className="btn-outline btn-full" onClick={() => setShowMaintenanceModal(true)}>
-            <i className="fas fa-wrench"></i> Planifier une intervention
+            <i className="fas fa-calendar-plus"></i> Planifier une intervention
           </button>
 
           <h3 style={{ marginTop: '24px' }}><i className="fas fa-history" style={{ color: '#FF9800' }}></i> Historique des actions</h3>
           <div className="historique-list">
             {historique.map((item, index) => (
-              <div key={index} className="historique-item">
+              <div key={index} className={`historique-item historique-${item.type || 'default'}`}>
                 <span className="historique-date">{item.date}</span> — {item.action}
               </div>
             ))}
@@ -275,70 +493,96 @@ export default function SignalementDetailPage() {
         onClose={() => setShowMaintenanceModal(false)} 
         title="Planifier une intervention"
         headerIcon="fa-wrench"
-        size="md"
-        showFooter={false}
+        headerColor="#FF9800"
+        size="lg"
+        footer={(
+          <div className="maintenance-modal-actions">
+            <button className="btn-secondary" onClick={() => setShowMaintenanceModal(false)}>
+              Annuler
+            </button>
+            <button 
+              className="btn-primary" 
+              onClick={handlePlanifierMaintenance}
+              disabled={saving || !maintenanceForm.date || !maintenanceForm.type}
+            >
+              {saving ? (
+                <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
+              ) : (
+                <><i className="fas fa-calendar-plus"></i> Planifier</>
+              )}
+            </button>
+          </div>
+        )}
       >
         <div className="maintenance-form">
-          <FormGroup label="Conteneur">
-            <div className="conteneur-info">
-              <strong>{signalement.conteneur}</strong> — {signalement.conteneurAdresse}
+          <div className="maintenance-modal-body">
+            <div className="maintenance-summary-card">
+              <div className="maintenance-summary-title">Intervention sur conteneur</div>
+              <div className="maintenance-summary-meta">
+                <span className="maintenance-chip">{signalement.conteneur_uid || signalement.uid_conteneur}</span>
+                {signalement.zone_nom && <span className="maintenance-chip maintenance-chip-zone">{signalement.zone_nom}</span>}
+              </div>
             </div>
-          </FormGroup>
 
-          <FormGroup label="Type d'intervention">
-            <Select 
-              value={maintenanceForm.type}
-              onChange={(v) => setMaintenanceForm({...maintenanceForm, type: v})}
-              options={[
-                { value: '', label: '— Sélectionner —' },
-                ...typesIntervention.map(t => ({ value: t, label: t }))
-              ]}
-            />
-          </FormGroup>
+            <div className="maintenance-grid">
+              <FormGroup label="Type d'intervention *">
+                <Select 
+                  value={maintenanceForm.type}
+                  onChange={(v) => setMaintenanceForm({...maintenanceForm, type: v})}
+                  options={[
+                    { value: '', label: '— Sélectionner —' },
+                    ...typesIntervention
+                  ]}
+                />
+              </FormGroup>
 
-          {maintenanceForm.type === 'Autre' && (
-            <FormGroup label="Préciser le type d'intervention">
+              <FormGroup label="Date planifiée *">
+                <input 
+                  type="date" 
+                  className="form-input"
+                  value={maintenanceForm.date}
+                  onChange={(e) => setMaintenanceForm({...maintenanceForm, date: e.target.value})}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </FormGroup>
+
+              <FormGroup label="Priorité">
+                <Select 
+                  value={maintenanceForm.priorite}
+                  onChange={(v) => setMaintenanceForm({...maintenanceForm, priorite: v})}
+                  options={priorites}
+                />
+              </FormGroup>
+
+              <FormGroup label="Agent assigné">
+                <Select 
+                  value={maintenanceForm.agent}
+                  onChange={(v) => setMaintenanceForm({...maintenanceForm, agent: v})}
+                  options={agentOptions}
+                  disabled={agentsLoading}
+                />
+              </FormGroup>
+            </div>
+
+            {maintenanceForm.type === 'AUTRE' && (
+              <FormGroup label="Préciser le type d'intervention *">
+                <Textarea 
+                  value={maintenanceForm.typeCustom}
+                  onChange={(value) => setMaintenanceForm({...maintenanceForm, typeCustom: value})}
+                  placeholder="Décrivez le type d'intervention..."
+                  rows={2}
+                />
+              </FormGroup>
+            )}
+
+            <FormGroup label="Notes">
               <Textarea 
-                value={maintenanceForm.typeCustom}
-                onChange={(e) => setMaintenanceForm({...maintenanceForm, typeCustom: e.target.value})}
-                placeholder="Décrivez le type d'intervention..."
+                value={maintenanceForm.notes}
+                onChange={(value) => setMaintenanceForm({...maintenanceForm, notes: value})}
+                placeholder="Notes ou instructions pour l'intervention..."
+                rows={3}
               />
             </FormGroup>
-          )}
-
-          <FormGroup label="Date planifiée">
-            <input 
-              type="date" 
-              className="form-input"
-              value={maintenanceForm.date}
-              onChange={(e) => setMaintenanceForm({...maintenanceForm, date: e.target.value})}
-            />
-          </FormGroup>
-
-          <FormGroup label="Priorité">
-            <Select 
-              value={maintenanceForm.priorite}
-              onChange={(v) => setMaintenanceForm({...maintenanceForm, priorite: v})}
-              options={priorites.map(p => ({ value: p, label: p }))}
-            />
-          </FormGroup>
-
-          <FormGroup label="Agent assigné">
-            <Select 
-              value={maintenanceForm.agent}
-              onChange={(v) => setMaintenanceForm({...maintenanceForm, agent: v})}
-              options={[
-                { value: '', label: '— Sélectionner —' },
-                ...agents.map(a => ({ value: a.id, label: `${a.nom} (${a.id})` }))
-              ]}
-            />
-          </FormGroup>
-
-          <div className="modal-actions">
-            <button className="btn-secondary" onClick={() => setShowMaintenanceModal(false)}>Annuler</button>
-            <button className="btn-primary" onClick={handlePlanifierMaintenance}>
-              <i className="fas fa-calendar-plus"></i> Planifier
-            </button>
           </div>
         </div>
       </Modal>

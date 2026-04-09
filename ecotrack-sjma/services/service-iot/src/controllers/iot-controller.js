@@ -24,6 +24,7 @@ class IotController {
     this.getMeasurementsByContainer = this.getMeasurementsByContainer.bind(this);
     this.getLatestMeasurements = this.getLatestMeasurements.bind(this);
     this.getSensors = this.getSensors.bind(this);
+    this.getSensorsStatus = this.getSensorsStatus.bind(this);
     this.getSensorById = this.getSensorById.bind(this);
     this.getAlerts = this.getAlerts.bind(this);
     this.updateAlertStatus = this.updateAlertStatus.bind(this);
@@ -86,6 +87,18 @@ class IotController {
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 50;
       res.json(ApiResponse.paginated(rows, page, limit, total, 'Capteurs récupérés'));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /sensors/status - Statistiques de statut des capteurs
+   */
+  async getSensorsStatus(req, res, next) {
+    try {
+      const status = await this.sensorService.getSensorsStatus();
+      res.json(ApiResponse.success(status, 'Statut des capteurs récupéré'));
     } catch (err) {
       next(err);
     }

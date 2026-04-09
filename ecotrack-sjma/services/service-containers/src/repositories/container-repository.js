@@ -86,6 +86,35 @@ class ContainerRepository {
       throw new Error('Coordonnées GPS invalides');
     }
 
+    if (idZone != null) {
+      const zoneValidation = await this.db.query(
+        `SELECT
+           EXISTS(SELECT 1 FROM zone WHERE id_zone = $1) AS zone_exists,
+           EXISTS(
+             SELECT 1
+             FROM zone
+             WHERE id_zone = $1
+               AND ST_Covers(geom, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+           ) AS point_in_zone`,
+        [idZone, longitude, latitude]
+      );
+
+      const zoneExists = zoneValidation.rows[0]?.zone_exists;
+      const pointInZone = zoneValidation.rows[0]?.point_in_zone;
+
+      if (!zoneExists) {
+        const err = new Error(`Zone avec l'ID ${idZone} introuvable`);
+        err.statusCode = 404;
+        throw err;
+      }
+
+      if (!pointInZone) {
+        const err = new Error('La position GPS du conteneur doit se trouver a l\'interieur de la zone selectionnee');
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
     // Validation de schéma (types et champs autorisés)
     validateSchema(containerCreateSchema, data);
 
@@ -414,11 +443,23 @@ class ContainerRepository {
       params.push(idType);
     }
 
+    const countQuery = `SELECT COUNT(*)::int AS total FROM (${query}) AS filtered_containers`;
+    const countResult = await this.db.query(countQuery, params);
+    const total = countResult.rows[0]?.total || 0;
+
     query += ` ORDER BY id_conteneur DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
     const result = await this.db.query(query, params);
-    return result.rows;
+    return {
+      data: result.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.max(1, Math.ceil(total / limit))
+      }
+    };
   }
 
   /**
@@ -563,46 +604,38 @@ class ContainerRepository {
       conditions.push(`c.id_zone = $${params.length}`);
     }
 
-    let havingClause = '';
-    const havingConditions = [];
+    const fillConditions = [];
 
     if (minLevel != null) {
       params.push(minLevel);
-      havingConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) >= $${params.length}`);
+      fillConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) >= $${params.length}`);
     }
 
     if (maxLevel != null) {
       params.push(maxLevel);
-      havingConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) <= $${params.length}`);
+      fillConditions.push(`COALESCE(m.niveau_remplissage_pct, 0) <= $${params.length}`);
     }
 
-    if (havingConditions.length > 0) {
-      havingClause = `HAVING ${havingConditions.join(' AND ')}`;
-    }
-
-    const whereClause = conditions.length > 0
-      ? `WHERE ${conditions.join(' AND ')}`
+    const whereClause = [...conditions, ...fillConditions].length > 0
+      ? `WHERE ${[...conditions, ...fillConditions].join(' AND ')}`
       : '';
 
     const query = `
       SELECT 
         c.id_conteneur, c.uid, c.statut, c.capacite_l,
-        c.latitude, c.longitude, c.id_zone, c.id_type,
+        ST_Y(c.position) AS latitude,
+        ST_X(c.position) AS longitude,
+        c.id_zone, c.id_type,
         COALESCE(m.niveau_remplissage_pct, NULL) AS fill_level
       FROM conteneur c
-      LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
       LEFT JOIN LATERAL (
-        SELECT niveau_remplissage_pct 
+        SELECT niveau_remplissage_pct
         FROM mesure 
-        WHERE id_capteur = cap.id_capteur 
+        WHERE id_conteneur = c.id_conteneur
         ORDER BY date_heure_mesure DESC 
         LIMIT 1
       ) m ON TRUE
       ${whereClause}
-      GROUP BY c.id_conteneur, c.uid, c.statut, c.capacite_l,
-               c.latitude, c.longitude, c.id_zone, c.id_type,
-               m.niveau_remplissage_pct
-      ${havingClause}
       ORDER BY fill_level DESC NULLS LAST
     `;
 

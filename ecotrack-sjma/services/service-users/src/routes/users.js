@@ -457,7 +457,7 @@ router.get('/:id', userController.getUserProfile);
  */
 router.put(
   '/:id',
-  authorizeRole(['ADMIN']),
+  authorizeRole(['ADMIN', 'GESTIONNAIRE']),
   userController.updateUserByAdmin
 );
 
@@ -501,6 +501,12 @@ router.delete(
   '/:id',
   authorizeRole(['ADMIN']),
   userController.deleteUser
+);
+
+router.get(
+  '/:id/stats',
+  authorizeRole(['ADMIN', 'GESTIONNAIRE']),
+  userController.getUserStats
 );
 
 export default router;

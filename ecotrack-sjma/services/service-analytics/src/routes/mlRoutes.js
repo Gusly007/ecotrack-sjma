@@ -127,7 +127,16 @@ router.post('/ml/predict', authMiddleware, requirePermission('analytics:read'), 
       prediction = await PredictionService.predictFillLevel(containerId, daysAhead);
     }
     if (!prediction) {
-      return res.status(404).json({ success: false, error: 'Insufficient data for prediction' });
+      return res.status(200).json({
+        success: true,
+        data: {
+          containerId,
+          daysAhead,
+          available: false,
+          reason: 'INSUFFICIENT_DATA',
+          message: 'Insufficient data for prediction'
+        }
+      });
     }
     res.json({ success: true, data: prediction });
   } catch (error) {
@@ -202,9 +211,12 @@ router.get('/ml/predict-critical', authMiddleware, requirePermission('analytics:
  *                 data:
  *                   $ref: '#/components/schemas/Anomaly'
  */
-router.get('/ml/anomalies/:containerId', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
+router.get('/ml/anomalies/:containerId', authMiddleware, requirePermission('analytics:read'), async (req, res, next) => {
   try {
     const { containerId } = req.params;
+    if (containerId === 'global') {
+      return next();
+    }
     const { threshold = 2 } = req.query;
     const anomalies = await AnomalyService.detectAnomalies(containerId, parseFloat(threshold));
     res.json({ success: true, data: anomalies });
@@ -249,6 +261,40 @@ router.get('/ml/defective-sensors', authMiddleware, requirePermission('analytics
   } catch (error) {
     logger.error('Error getting defective sensors:', error);
     res.status(500).json({ success: false, error: 'Failed to detect defective sensors', message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/analytics/ml/anomalies/global:
+ *   get:
+ *     summary: Détection globale d'anomalies pour tous les conteneurs (auto-scan)
+ *     tags: [ML Anomalies]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: threshold
+ *         schema:
+ *           type: number
+ *           default: 2
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Résumé des anomalies globales
+ */
+router.get('/ml/anomalies/global', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
+  try {
+    const { threshold = 2, limit = 20 } = req.query;
+    const result = await AnomalyService.detectGlobalAnomalies(parseFloat(threshold), parseInt(limit));
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Error detecting global anomalies:', error);
+    res.status(500).json({ success: false, error: 'Global anomaly detection failed', message: error.message });
   }
 });
 

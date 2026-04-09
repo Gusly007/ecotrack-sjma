@@ -36,8 +36,8 @@ module.exports = {
   // Déclencher une erreur si une migration échoue
   singleTransaction: true,
 
-  // Vérifier l'ordre des migrations
-  checkOrder: true,
+  // Vérifier l'ordre des migrations (DÉSACTIVÉ pour .sql files)
+  checkOrder: false,
 
   // Extension des fichiers de migration
   'migration-file-language': 'cjs',

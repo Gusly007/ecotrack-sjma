@@ -8,7 +8,7 @@ module.exports = {
 
   // Base de données
   DB: {
-    host: process.env.PGHOST || 'localhost',
+    host: process.env.PGHOST || 'ecotrack-postgres',
     port: process.env.PGPORT || 5432,
     user: process.env.PGUSER || 'postgres',
     password: process.env.PGPASSWORD || '',

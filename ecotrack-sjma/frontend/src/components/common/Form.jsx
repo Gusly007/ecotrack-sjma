@@ -52,22 +52,25 @@ export function Select({ value, onChange, options, placeholder, disabled }) {
       onChange(e.target.value);
     }
   };
+  
+  const safeOptions = Array.isArray(options) ? options : [];
+  
   return (
     <select 
       className="form-input"
-      value={value}
+      value={value || ''}
       onChange={handleChange}
       disabled={disabled}
     >
       {placeholder && <option value="">{placeholder}</option>}
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      {safeOptions.map((opt, idx) => (
+        opt ? <option key={opt.value ?? idx} value={opt.value ?? ''}>{opt.label ?? opt.value ?? ''}</option> : null
       ))}
     </select>
   );
 }
 
-export function Textarea({ value, onChange, placeholder, rows = 3 }) {
+export function Textarea({ value, onChange, placeholder, rows = 3, ...props }) {
   const handleChange = (e) => {
     if (onChange) {
       onChange(e.target.value);
@@ -76,10 +79,11 @@ export function Textarea({ value, onChange, placeholder, rows = 3 }) {
   return (
     <textarea 
       className="form-textarea"
-      value={value}
+      value={value || ''}
       onChange={handleChange}
       placeholder={placeholder}
       rows={rows}
+      {...props}
     />
   );
 }
