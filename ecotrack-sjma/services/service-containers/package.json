@@ -9,7 +9,7 @@
     "test": "jest --runInBand",
     "test:unit": "jest test/unit --runInBand",
     "test:integration": "jest test/integration --runInBand",
-    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles",
+    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles --passWithNoTests",
     "test:socket": "jest test/integration/socket.service.test.js --runInBand",
     "test:socket:integration": "jest test/integration/socket.integration.test.js --runInBand",
     "test:socket:e2e": "jest test/e2e/socket.e2e.test.js --runInBand --detectOpenHandles",

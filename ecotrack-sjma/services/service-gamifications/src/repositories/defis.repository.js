@@ -23,7 +23,6 @@ export class DefisRepository {
 
   static async listerDefis({ page = 1, limit = 20, statut, typeDefi } = {}) {
     const pool = (await import('../config/database.js')).default;
-    const offset = (page - 1) * limit;
     
     let whereClause = '';
     const params = [];
@@ -38,19 +37,12 @@ export class DefisRepository {
       whereClause += whereClause ? ` AND type_defi = $${params.length}` : ` WHERE type_defi = $${params.length}`;
     }
     
-    const countResult = await pool.query(
-      `SELECT COUNT(*) FROM gamification_defi${whereClause}`,
-      params
-    );
-    const total = parseInt(countResult.rows[0].count);
+    const query = `SELECT * FROM gamification_defi${whereClause} ORDER BY date_debut DESC`;
+    const { rows } = params.length > 0
+      ? await pool.query(query, params)
+      : await pool.query(query);
     
-    params.push(limit, offset);
-    const { rows } = await pool.query(
-      `SELECT * FROM gamification_defi${whereClause} ORDER BY date_debut DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
-      params
-    );
-    
-    return { rows, total };
+    return rows;
   }
 
   static async creerParticipation({ idDefi, idUtilisateur }) {

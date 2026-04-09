@@ -1,7 +1,6 @@
 // Rôle du fichier : controller des notifications.
 import { z } from 'zod';
 import { creerNotification, listerNotifications } from '../services/notifications.service.js';
-import { ApiResponse } from '../utils/api-response.js';
 
 const creationSchema = z.object({
   id_utilisateur: z.number().int().positive(),
@@ -30,10 +29,13 @@ export const creerNotificationHandler = async (req, res, next) => {
 export const listerNotificationsHandler = async (req, res, next) => {
   try {
     const id_utilisateur = parseInt(req.query.id_utilisateur, 10);
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
-    const { rows, total } = await listerNotifications({ idUtilisateur: id_utilisateur, page, limit });
-    res.json(ApiResponse.paginated(rows, page, limit, total, 'Notifications récupérées'));
+    const options = { idUtilisateur: id_utilisateur };
+    if (req.query.page || req.query.limit) {
+      options.page = parseInt(req.query.page, 10) || 1;
+      options.limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
+    }
+    const notifications = await listerNotifications(options);
+    res.json(notifications);
   } catch (error) {
     next(error);
   }

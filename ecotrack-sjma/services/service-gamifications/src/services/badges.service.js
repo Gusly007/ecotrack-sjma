@@ -4,24 +4,22 @@ import { BADGE_SEUILS, BadgeRepository } from '../repositories/badges.repository
 
 // Retourne tous les badges avec leur seuil de points.
 export const listerBadges = async (options = {}) => {
-  const { rows, total } = await BadgeRepository.getAllBadges(options);
-  const badges = rows
+  const rows = await BadgeRepository.getAllBadges(options);
+  return rows
     .map((badge) => ({
       ...badge,
       points_requis: BADGE_SEUILS[badge.code] ?? null
     }))
     .sort((a, b) => (a.points_requis ?? 0) - (b.points_requis ?? 0));
-  return { rows: badges, total };
 };
 
 // Retourne les badges déjà obtenus par un utilisateur.
 export const listerBadgesUtilisateur = async (idUtilisateur, options = {}) => {
-  const { rows, total } = await BadgeRepository.getUserBadges(idUtilisateur, options);
-  const badges = rows.map((badge) => ({
+  const rows = await BadgeRepository.getUserBadges(idUtilisateur, options);
+  return rows.map((badge) => ({
     ...badge,
     points_requis: BADGE_SEUILS[badge.code] ?? null
   }));
-  return { rows: badges, total };
 };
 
 // Attribue automatiquement les badges atteints sans doublons.
