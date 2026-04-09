@@ -28,13 +28,12 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Statistiques** : Dashboard, analytics, alertes
 - **Socket.IO** : Notifications temps réel des changements de statut
 
-### Service Gamification (Port 3014)
-- **Actions** : Enregistrement des actions écoresponsables
-- **Badges** : Système de récompenses et badges
-- **Défis** : Challenges communautaires et participations
-- **Classement** : Leaderboard des utilisateurs
-- **Notifications** : Alertes gamification
-- **Statistiques** : Profil et stats de chaque utilisateur
+### Service Routes (Port 3012)
+- **Tournées** : gestion, optimisation, statuts, étapes, PDF et carte
+- **Véhicules** : gestion et affectation des véhicules
+- **Collectes** : validation, anomalies et suivi des collectes
+- **Signalements** : suivi des incidents, traitements et historique
+- **Statistiques** : dashboard et KPIs des tournées
 
 ### Service IoT (Port 3013)
 - **Mesures** : Réception et stockage des données capteurs
@@ -42,6 +41,14 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 - **Alertes** : Alertes automatiques (débordement, batterie, température)
 - **MQTT Broker** : Broker Aedes embarqué (port 1883)
 - **Simulation** : Outil de test sans vrai-capteur
+
+### Service Gamification (Port 3014)
+- **Actions** : Enregistrement des actions écoresponsables
+- **Badges** : Système de récompenses et badges
+- **Défis** : Challenges communautaires et participations
+- **Classement** : Leaderboard des utilisateurs
+- **Notifications** : Alertes gamification
+- **Statistiques** : Profil et stats de chaque utilisateur
 
 ### Service Analytics (Port 3015)
 - **Agrégations** : Dashboard complet, stats globales, journalières, par zone, par type
@@ -81,12 +88,20 @@ Obtenez un token via \`POST /auth/login\`
       description: 'Service Containers (Direct)'
     },
     {
-      url: 'http://localhost:3014',
-      description: 'Service Gamification (Direct)'
+      url: 'http://localhost:3012',
+      description: 'Service Routes (Direct)'
     },
     {
       url: 'http://localhost:3013',
       description: 'Service IoT (Direct)'
+    },
+    {
+      url: 'http://localhost:3014',
+      description: 'Service Gamification (Direct)'
+    },
+    {
+      url: 'http://localhost:3015',
+      description: 'Service Analytics (Direct)'
     }
   ],
   tags: [
@@ -123,19 +138,35 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: 'Types',
-      description: 'Types de conteneurs (Service Containers)',
+      name: 'Routes',
+      description: 'Gestion des tournées, véhicules, collectes et signalements (Service Routes)',
       externalDocs: {
         description: 'Documentation détaillée',
-        url: 'http://localhost:3011/api-docs'
+        url: 'http://localhost:3012/api-docs'
       }
     },
     {
-      name: 'Statistics',
-      description: 'Statistiques et analytics (Service Containers)',
+      name: 'IoT Mesures',
+      description: 'Données des capteurs IoT (Service IoT)',
       externalDocs: {
         description: 'Documentation détaillée',
-        url: 'http://localhost:3011/api-docs'
+        url: 'http://localhost:3013/api-docs'
+      }
+    },
+    {
+      name: 'IoT Capteurs',
+      description: 'Gestion des capteurs (Service IoT)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3013/api-docs'
+      }
+    },
+    {
+      name: 'IoT Alertes',
+      description: 'Alertes automatiques IoT (Service IoT)',
+      externalDocs: {
+        description: 'Documentation détaillée',
+        url: 'http://localhost:3013/api-docs'
       }
     },
     {
@@ -187,27 +218,11 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
     {
-      name: 'IoT Mesures',
-      description: 'Données des capteurs IoT (Service IoT)',
+      name: 'Analytics',
+      description: 'Agrégations et statistiques avancées (Service Analytics)',
       externalDocs: {
         description: 'Documentation détaillée',
-        url: 'http://localhost:3013/api-docs'
-      }
-    },
-    {
-      name: 'IoT Capteurs',
-      description: 'Gestion des capteurs (Service IoT)',
-      externalDocs: {
-        description: 'Documentation détaillée',
-        url: 'http://localhost:3013/api-docs'
-      }
-    },
-    {
-      name: 'IoT Alertes',
-      description: 'Alertes automatiques IoT (Service IoT)',
-      externalDocs: {
-        description: 'Documentation détaillée',
-        url: 'http://localhost:3013/api-docs'
+        url: 'http://localhost:3015/api-docs'
       }
     }
   ],
@@ -1179,7 +1194,6 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-  },
 
   // ========================================================================
   // ROUTES SERVICE - Service de gestion des tournées
@@ -1314,7 +1328,6 @@ Obtenez un token via \`POST /auth/login\`
     get: {
       tags: ['Routes - Export'],
       summary: 'Génère une feuille de route PDF',
-      produces: ['application/pdf'],
       parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
       responses: {
         200: {
@@ -1631,6 +1644,8 @@ Obtenez un token via \`POST /auth/login\`
         200: { description: 'Statistiques mesures, alertes et MQTT' }
       }
     }
+  },
+
   },
 
   components: {
