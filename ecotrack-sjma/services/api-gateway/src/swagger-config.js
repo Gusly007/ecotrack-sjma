@@ -1672,13 +1672,13 @@ Obtenez un token via \`POST /auth/login\`
 };
 
 export const swaggerOptions = {
-  customCss: `
-    .swagger-ui .topbar { display: none }
-    .swagger-ui .info { margin: 50px 0 }
-    .swagger-ui .info .title { font-size: 36px; color: #4CAF50; }
-    .swagger-ui .info .description { font-size: 16px; line-height: 1.6; }
-    .swagger-ui .opblock-tag { font-size: 24px; }
-  `,
   customSiteTitle: 'EcoTrack API - Documentation Unifiée',
-  customfavIcon: '/favicon.ico'
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    validatorUrl: null,
+    tryItOutEnabled: false,
+    displayRequestDuration: false,
+    filter: true,
+    docExpansion: 'none'
+  }
 };
