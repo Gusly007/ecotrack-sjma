@@ -42,7 +42,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -52,13 +52,19 @@ api.interceptors.response.use(
             refreshToken,
           });
 
-          const { token: accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('token', accessToken);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
+          const refreshedToken = response.data?.token || response.data?.accessToken;
+          if (!refreshedToken) {
+            throw new Error('Refresh response missing token');
           }
 
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          localStorage.setItem('token', refreshedToken);
+
+          if (response.data?.refreshToken) {
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+          }
+
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
           return api(originalRequest);
         }
       } catch (refreshError) {

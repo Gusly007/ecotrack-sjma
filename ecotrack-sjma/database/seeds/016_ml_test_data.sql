@@ -138,22 +138,22 @@ LIMIT 100;
 -- ==============================================================================
 
 INSERT INTO ALERTE_CAPTEUR (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
-SELECT
-CASE (c.id_conteneur % 3)
-WHEN 0 THEN 'DEBORDEMENT'
-WHEN 1 THEN 'BATTERIE_FAIBLE'
-ELSE 'CAPTEUR_DEFAILLANT'
-END,
-CASE (c.id_conteneur % 3)
-WHEN 0 THEN 95
-WHEN 1 THEN 20
-ELSE 10
-END,
-CASE (c.id_conteneur % 3)
-WHEN 0 THEN 90
-WHEN 1 THEN 20
-ELSE 10
-END,
+SELECT 
+  CASE (c.id_conteneur % 3)
+    WHEN 0 THEN 'DEBORDEMENT'
+    WHEN 1 THEN 'BATTERIE_FAIBLE'
+    ELSE 'CAPTEUR_DEFAILLANT'
+  END,
+  CASE (c.id_conteneur % 3)
+    WHEN 0 THEN 95
+    WHEN 1 THEN 25
+    ELSE 15
+  END,
+  CASE (c.id_conteneur % 3)
+    WHEN 0 THEN 90
+    WHEN 1 THEN 20
+    ELSE 10
+  END,
   'ACTIVE',
   NOW() - (RANDOM() * 7) * INTERVAL '1 day',
   CASE (c.id_conteneur % 3)
