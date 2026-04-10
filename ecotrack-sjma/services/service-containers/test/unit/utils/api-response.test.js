@@ -52,4 +52,31 @@ describe('ApiResponse - Unit Tests', () => {
       expect(response.details).toEqual(details);
     });
   });
+
+  describe('paginated', () => {
+    it('devrait créer une réponse paginée avec hasMore à true', () => {
+      const items = [{ id: 1 }, { id: 2 }];
+      const response = ApiResponse.paginated(items, 1, 2, 10, 'Liste');
+
+      expect(response.success).toBe(true);
+      expect(response.statusCode).toBe(200);
+      expect(response.message).toBe('Liste');
+      expect(response.data).toEqual(items);
+      expect(response.pagination).toEqual({
+        page: 1,
+        limit: 2,
+        total: 10,
+        pages: 5,
+        hasMore: true
+      });
+    });
+
+    it('devrait créer une réponse paginée avec hasMore à false', () => {
+      const response = ApiResponse.paginated([{ id: 1 }], 2, 5, 10);
+
+      expect(response.message).toBe('Succès');
+      expect(response.pagination.hasMore).toBe(false);
+      expect(response.pagination.pages).toBe(2);
+    });
+  });
 });

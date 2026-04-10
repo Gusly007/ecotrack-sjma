@@ -21,7 +21,14 @@ describe('ZoneServices - Unit Tests', () => {
       getZoneById: jest.fn(),
       getZoneByCode: jest.fn(),
       updateZone: jest.fn(),
-      deleteZone: jest.fn()
+      deleteZone: jest.fn(),
+      deleteAllZones: jest.fn(),
+      searchZonesByName: jest.fn(),
+      getZonesInRadius: jest.fn(),
+      getZoneStatistics: jest.fn(),
+      countZones: jest.fn(),
+      zoneExists: jest.fn(),
+      codeExists: jest.fn()
     };
 
     zoneService = new ZoneServices(mockModel);
@@ -72,9 +79,10 @@ describe('ZoneServices - Unit Tests', () => {
 
       mockModel.getAllZones.mockResolvedValue(mockZones);
 
-      const result = await zoneService.getAllZones();
+      const result = await zoneService.getAllZones(1, 10);
 
-      expect(mockModel.getAllZones).toHaveBeenCalled();
+      expect(Validators.validatePagination).toHaveBeenCalledWith(1, 10);
+      expect(mockModel.getAllZones).toHaveBeenCalledWith(1, 10);
       expect(result).toEqual(mockZones);
     });
   });
@@ -121,6 +129,58 @@ describe('ZoneServices - Unit Tests', () => {
       expect(Validators.validateZoneId).toHaveBeenCalledWith(id);
       expect(mockModel.deleteZone).toHaveBeenCalledWith(id);
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('other delegated methods', () => {
+    it('getZoneByCode valide code puis délègue', async () => {
+      mockModel.getZoneByCode.mockResolvedValue({ code: 'ZN01' });
+      const result = await zoneService.getZoneByCode('ZN01');
+      expect(Validators.validateCode).toHaveBeenCalledWith('ZN01', 'code');
+      expect(mockModel.getZoneByCode).toHaveBeenCalledWith('ZN01');
+      expect(result).toEqual({ code: 'ZN01' });
+    });
+
+    it('deleteAllZones délègue', async () => {
+      mockModel.deleteAllZones.mockResolvedValue([{ id: 1 }]);
+      const result = await zoneService.deleteAllZones();
+      expect(result).toEqual([{ id: 1 }]);
+    });
+
+    it('searchZonesByName valide et délègue', async () => {
+      mockModel.searchZonesByName.mockResolvedValue([{ id: 2 }]);
+      const result = await zoneService.searchZonesByName('Centre');
+      expect(Validators.validateNonEmptyString).toHaveBeenCalledWith('Centre', 'nom', 2);
+      expect(mockModel.searchZonesByName).toHaveBeenCalledWith('Centre');
+      expect(result).toEqual([{ id: 2 }]);
+    });
+
+    it('getZonesInRadius valide coordonnées et rayon', async () => {
+      mockModel.getZonesInRadius.mockResolvedValue([{ id: 3 }]);
+      const result = await zoneService.getZonesInRadius(48.8, 2.3, 10);
+      expect(Validators.validateCoordinates).toHaveBeenCalledWith(48.8, 2.3);
+      expect(Validators.validateRadius).toHaveBeenCalledWith(10);
+      expect(mockModel.getZonesInRadius).toHaveBeenCalledWith(48.8, 2.3, 10);
+      expect(result).toEqual([{ id: 3 }]);
+    });
+
+    it('stats/count/existence methods délèguent', async () => {
+      mockModel.getZoneStatistics.mockResolvedValue({ total: 1 });
+      mockModel.countZones.mockResolvedValue({ total: 1 });
+      mockModel.zoneExists.mockResolvedValue(true);
+      mockModel.codeExists.mockResolvedValue(false);
+
+      const stats = await zoneService.getZoneStatistics();
+      const count = await zoneService.countZones();
+      const exists = await zoneService.zoneExists(9);
+      const codeExists = await zoneService.codeExists('ZNX');
+
+      expect(Validators.validateZoneId).toHaveBeenCalledWith(9);
+      expect(Validators.validateCode).toHaveBeenCalledWith('ZNX', 'code');
+      expect(stats).toEqual({ total: 1 });
+      expect(count).toEqual({ total: 1 });
+      expect(exists).toBe(true);
+      expect(codeExists).toBe(false);
     });
   });
 
