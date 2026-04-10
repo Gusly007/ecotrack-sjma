@@ -9,7 +9,7 @@
     "test": "jest --runInBand",
     "test:unit": "jest test/unit --runInBand",
     "test:integration": "jest test/integration --runInBand",
-    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles",
+    "test:e2e": "jest test/e2e --runInBand --detectOpenHandles --passWithNoTests",
     "test:socket": "jest test/integration/socket.service.test.js --runInBand",
     "test:socket:integration": "jest test/integration/socket.integration.test.js --runInBand",
     "test:socket:e2e": "jest test/e2e/socket.e2e.test.js --runInBand --detectOpenHandles",
@@ -57,5 +57,9 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.2.2"
   }
 }

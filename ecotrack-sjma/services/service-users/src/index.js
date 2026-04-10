@@ -56,9 +56,11 @@ if (env.nodeEnv !== 'test') {
   await ensureAuthTables();
 }
 
-// Initialize Redis cache
+// Initialize Redis cache (non-blocking; service starts even if Redis is unavailable)
 if (env.nodeEnv !== 'test') {
-  await cacheService.connect();
+  cacheService.connect().catch(err => {
+    logger.warn({ err: err.message }, 'Redis connection failed during startup; continuing without cache');
+  });
 }
 
 // Load configurations from database

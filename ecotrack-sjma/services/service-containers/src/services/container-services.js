@@ -117,6 +117,22 @@ class ContainerServices {
   }
 
   /**
+   * Récupère les conteneurs par statut (avec cache)
+   */
+  async getContainersByStatus(statut) {
+    Validators.validateStatut(statut); // Validation du statut
+
+    const cacheKey = `containers:status:${statut}`;
+    const result = await cacheService.getOrSet(
+      cacheKey,
+      () => this.repository.getContainersByStatus(statut),
+      CONTAINER_TTL
+    );
+
+    return result.data;
+  }
+
+  /**
    * Récupère les conteneurs par zone (avec cache)
    */
   async getContainersByZone(idZone) {

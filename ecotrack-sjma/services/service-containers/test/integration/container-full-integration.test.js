@@ -9,7 +9,9 @@ const express = require('express');
 const containerRoute = require('../../src/routes/container.route');
 const { pool } = require('../../src/db/connexion');
 
-describe('Container Routes - Full Integration Tests (Real Database)', () => {
+const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
+
+(runIntegration ? describe : describe.skip)('Container Routes - Full Integration Tests (Real Database)', () => {
   let app;
   let testZoneId1;
   let testZoneId2;

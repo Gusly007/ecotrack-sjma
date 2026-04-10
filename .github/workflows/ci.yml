@@ -67,12 +67,12 @@ jobs:
       # Étape 3: Installer dépendances
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
       
       # Étape 4: Lancer ESLint (si config existe)
       - name: 'Run ESLint'
         run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
         continue-on-error: true
 
   # =========================================================================
@@ -114,12 +114,12 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-users
+        working-directory: ecotrack-sjma/services/service-users
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
-        working-directory: services/service-users
+        working-directory: ecotrack-sjma/services/service-users
         env:
           # Base de test dans le service postgres ci-dessus
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -131,7 +131,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./services/service-users/coverage/coverage-final.json
+          files: ./ecotrack-sjma/services/service-users/coverage/coverage-final.json
           flags: unittests
         continue-on-error: true
 
@@ -174,20 +174,20 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-containers
+        working-directory: ecotrack-sjma/services/service-containers
       
       # Initialiser le schéma de test
       - name: 'Initialize test database'
         run: |
           PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
           PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -f src/db/init-db-pg.sql || echo "Schema init skipped"
-        working-directory: services/service-containers
+        working-directory: ecotrack-sjma/services/service-containers
         continue-on-error: true
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:unit
-        working-directory: services/service-containers
+        working-directory: ecotrack-sjma/services/service-containers
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -200,7 +200,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./services/service-containers/coverage/coverage-final.json
+          files: ./ecotrack-sjma/services/service-containers/coverage/coverage-final.json
           flags: unittests-containers
         continue-on-error: true
 
@@ -241,12 +241,12 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-gamifications
+        working-directory: ecotrack-sjma/services/service-gamifications
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
-        working-directory: services/service-gamifications
+        working-directory: ecotrack-sjma/services/service-gamifications
         env:
           NODE_ENV: test
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -256,7 +256,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./services/service-gamifications/coverage/coverage-final.json
+          files: ./ecotrack-sjma/services/service-gamifications/coverage/coverage-final.json
           flags: unittests-gamifications
         continue-on-error: true
 
@@ -296,11 +296,11 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-iot
+        working-directory: ecotrack-sjma/services/service-iot
       
       - name: 'Run Jest tests'
         run: npm test
-        working-directory: services/service-iot
+        working-directory: ecotrack-sjma/services/service-iot
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -308,7 +308,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./services/service-iot/coverage/coverage-final.json
+          files: ./ecotrack-sjma/services/service-iot/coverage/coverage-final.json
           flags: unittests-iot
         continue-on-error: true
 
@@ -348,11 +348,11 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-analytics
+        working-directory: ecotrack-sjma/services/service-analytics
       
       - name: 'Run Jest tests'
         run: npm test
-        working-directory: services/service-analytics
+        working-directory: ecotrack-sjma/services/service-analytics
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -360,7 +360,7 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./services/service-analytics/coverage/coverage-final.json
+          files: ./ecotrack-sjma/services/service-analytics/coverage/coverage-final.json
           flags: unittests-analytics
         continue-on-error: true
 
@@ -384,17 +384,17 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: frontend
+        working-directory: ecotrack-sjma/frontend
 
       - name: 'Run Vitest coverage'
         run: npm run test:coverage
-        working-directory: frontend
+        working-directory: ecotrack-sjma/frontend
 
       - name: 'Upload frontend coverage artifact'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-frontend
-          path: frontend/coverage
+          path: ecotrack-sjma/frontend/coverage
           if-no-files-found: warn
 
   # =========================================================================
@@ -442,13 +442,13 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
 
       - name: 'Run integration tests'
         run: |
           mkdir -p reports
           ${{ matrix.command }}
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -462,7 +462,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-integration-${{ matrix.service }}
-          path: services/${{ matrix.service }}/reports/integration.json
+          path: ecotrack-sjma/services/${{ matrix.service }}/reports/integration.json
           if-no-files-found: warn
 
   # =========================================================================
@@ -500,13 +500,13 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/service-containers
+        working-directory: ecotrack-sjma/services/service-containers
 
       - name: 'Run e2e tests'
         run: |
           mkdir -p reports
           npm run test:e2e -- --json --outputFile=reports/e2e.json
-        working-directory: services/service-containers
+        working-directory: ecotrack-sjma/services/service-containers
         env:
           NODE_ENV: test
           PGHOST: localhost
@@ -519,7 +519,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-e2e-service-containers
-          path: services/service-containers/reports/e2e.json
+          path: ecotrack-sjma/services/service-containers/reports/e2e.json
           if-no-files-found: warn
 
   # =========================================================================
@@ -546,21 +546,21 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
       
       # npm audit = audit des dépendances et génération de rapport JSON
       - name: 'Run npm audit and save report'
         run: |
           mkdir -p reports/security
           npm audit --omit=dev --json > reports/security/npm-audit-${{ matrix.service }}.json || true
-        working-directory: services/${{ matrix.service }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
         continue-on-error: true
 
       - name: 'Upload dependency audit report'
         uses: actions/upload-artifact@v4
         with:
           name: report-dependency-audit-${{ matrix.service }}
-          path: services/${{ matrix.service }}/reports/security/npm-audit-${{ matrix.service }}.json
+          path: ecotrack-sjma/services/${{ matrix.service }}/reports/security/npm-audit-${{ matrix.service }}.json
           if-no-files-found: warn
 
   # =========================================================================
@@ -606,7 +606,7 @@ jobs:
 
       - name: 'Start API Gateway stack'
         run: docker compose up -d api-gateway service-users service-containers service-routes service-iot service-analytics postgres redis
-
+        working-directory: ecotrack-sjma
       - name: 'Run ZAP Baseline Scan'
         uses: zaproxy/action-baseline@v0.14.0
         with:
@@ -705,7 +705,7 @@ jobs:
       - name: 'Build and push Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./services/${{ matrix.service }}
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
           push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -766,7 +766,7 @@ jobs:
       - name: 'Build Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./services/${{ matrix.service }}
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
           load: true
           tags: ${{ matrix.image-name }}:test
       

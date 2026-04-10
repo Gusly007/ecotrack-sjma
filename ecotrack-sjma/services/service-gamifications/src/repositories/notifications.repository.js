@@ -13,23 +13,14 @@ export class NotificationsRepository {
   }
 
   static async listerNotifications({ idUtilisateur, page = 1, limit = 20 }) {
-    const offset = (page - 1) * limit;
-    
-    const countResult = await pool.query(
-      'SELECT COUNT(*) FROM notification WHERE id_utilisateur = $1',
-      [idUtilisateur]
-    );
-    const total = parseInt(countResult.rows[0].count);
-    
     const { rows } = await pool.query(
       `SELECT *
        FROM notification
        WHERE id_utilisateur = $1
-       ORDER BY date_creation DESC
-       LIMIT $2 OFFSET $3`,
-      [idUtilisateur, limit, offset]
+       ORDER BY date_creation DESC`,
+      [idUtilisateur]
     );
     
-    return { rows, total };
+    return rows;
   }
 }

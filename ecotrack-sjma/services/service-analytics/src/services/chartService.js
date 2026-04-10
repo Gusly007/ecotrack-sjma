@@ -3,14 +3,15 @@ const DateUtils = require('../utils/dateUtils');
 
 let ChartJSNodeCanvas;
 try {
-  ChartJSNodeCanvas = require('chartjs-node-canvas');
+  const chartModule = require('chartjs-node-canvas');
+  ChartJSNodeCanvas = chartModule.ChartJSNodeCanvas || chartModule.default || chartModule;
 } catch (e) {
   logger.warn('chartjs-node-canvas not available, image generation disabled');
 }
 
 class ChartService {
   constructor() {
-    this.chartJSNodeCanvas = ChartJSNodeCanvas ? new ChartJSNodeCanvas({ 
+    this.chartJSNodeCanvas = typeof ChartJSNodeCanvas === 'function' ? new ChartJSNodeCanvas({ 
       width: 800, 
       height: 400 
     }) : null;
