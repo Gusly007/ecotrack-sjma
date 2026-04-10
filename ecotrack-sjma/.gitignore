@@ -4,6 +4,7 @@ node_modules/
 coverage/
 **/coverage/
 docs/FRONTEND_METRICS.md
+docs/SECURITY_VULNERABILITIES_REPORT.md
 infra/kubernetes/
 infra/terraform/  
 
