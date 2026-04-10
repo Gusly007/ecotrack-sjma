@@ -4,51 +4,92 @@
 import { jest } from '@jest/globals';
 
 describe('Environment Configuration', () => {
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
+
+  const loadEnvModule = async () => {
+    jest.resetModules();
+    return import('../../src/config/env.js');
+  };
 
   beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv, NODE_ENV: 'test' };
   });
 
   afterAll(() => {
-    process.env = originalEnv;
+    process.env = { ...originalEnv };
   });
 
-  it('should load NODE_ENV from environment', () => {
-    process.env.NODE_ENV = 'test';
-    expect(process.env.NODE_ENV).toBe('test');
+  it('uses default nodeEnv when missing', async () => {
+    delete process.env.NODE_ENV;
+    const { default: env } = await loadEnvModule();
+    expect(env.nodeEnv).toBe('development');
   });
 
-  it('should have default port when not set', () => {
+  it('uses default port when no env value exists', async () => {
     delete process.env.GAMIFICATIONS_PORT;
-    expect(process.env.GAMIFICATIONS_PORT).toBeUndefined();
+    delete process.env.PORT;
+    const { default: env } = await loadEnvModule();
+    expect(env.port).toBe(3014);
   });
 
-  it('should parse integer ports correctly', () => {
+  it('prioritizes GAMIFICATIONS_PORT over PORT', async () => {
     process.env.GAMIFICATIONS_PORT = '3014';
-    const port = parseInt(process.env.GAMIFICATIONS_PORT, 10);
-    expect(port).toBe(3014);
-    expect(typeof port).toBe('number');
+    process.env.PORT = '9999';
+    const { default: env } = await loadEnvModule();
+    expect(env.port).toBe(3014);
   });
 
-  it('should preserve DATABASE_URL when GAMIFICATIONS_DATABASE_URL not set', () => {
-    delete process.env.GAMIFICATIONS_DATABASE_URL;
-    process.env.DATABASE_URL = 'postgresql://localhost/test';
-    expect(process.env.DATABASE_URL).toBe('postgresql://localhost/test');
+  it('falls back to default port when provided port is invalid', async () => {
+    process.env.GAMIFICATIONS_PORT = 'abc';
+    const { default: env } = await loadEnvModule();
+    expect(env.port).toBe(3014);
   });
 
-  it('should prioritize GAMIFICATIONS_DATABASE_URL over DATABASE_URL', () => {
+  it('uses GAMIFICATIONS_DATABASE_URL before DATABASE_URL', async () => {
     process.env.GAMIFICATIONS_DATABASE_URL = 'postgresql://localhost/gamifications';
     process.env.DATABASE_URL = 'postgresql://localhost/generic';
-    expect(process.env.GAMIFICATIONS_DATABASE_URL).toBe('postgresql://localhost/gamifications');
+    const { default: env } = await loadEnvModule();
+    expect(env.databaseUrl).toBe('postgresql://localhost/gamifications');
   });
 
-  it('should handle auto schema flag', () => {
-    process.env.GAMIFICATIONS_AUTO_SCHEMA = 'true';
-    expect(process.env.GAMIFICATIONS_AUTO_SCHEMA).toBe('true');
-    
+  it('falls back to DATABASE_URL when service URL is missing', async () => {
+    delete process.env.GAMIFICATIONS_DATABASE_URL;
+    process.env.DATABASE_URL = 'postgresql://localhost/main';
+    const { default: env } = await loadEnvModule();
+    expect(env.databaseUrl).toBe('postgresql://localhost/main');
+  });
+
+  it('forces autoSchema in test environment', async () => {
+    process.env.NODE_ENV = 'test';
     process.env.GAMIFICATIONS_AUTO_SCHEMA = 'false';
-    expect(process.env.GAMIFICATIONS_AUTO_SCHEMA).toBe('false');
+    const { default: env } = await loadEnvModule();
+    expect(env.autoSchema).toBe(true);
+  });
+
+  it('enables autoSchema in non-test when env flag is true', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.GAMIFICATIONS_AUTO_SCHEMA = 'TRUE';
+    const { default: env } = await loadEnvModule();
+    expect(env.autoSchema).toBe(true);
+  });
+
+  it('disables autoSchema in non-test when env flag is false', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.GAMIFICATIONS_AUTO_SCHEMA = 'false';
+    const { default: env } = await loadEnvModule();
+    expect(env.autoSchema).toBe(false);
+  });
+
+  it('validateEnv throws when DB URL is missing', async () => {
+    process.env.GAMIFICATIONS_DATABASE_URL = '';
+    process.env.DATABASE_URL = '';
+    const { validateEnv } = await loadEnvModule();
+    expect(() => validateEnv()).toThrow(/Variables d'environnement manquantes/);
+  });
+
+  it('validateEnv passes when DB URL exists', async () => {
+    process.env.GAMIFICATIONS_DATABASE_URL = 'postgresql://localhost/ok';
+    const { validateEnv } = await loadEnvModule();
+    expect(() => validateEnv()).not.toThrow();
   });
 });

@@ -1,109 +1,71 @@
-/**
- * Validation Middleware Tests
- */
 import { jest } from '@jest/globals';
+import { z } from 'zod';
+import { validateBody, validateQuery } from '../../src/middleware/validation.js';
 
-describe('Validation Middleware', () => {
-  let req, res, next;
-
-  beforeEach(() => {
-    req = {
-      body: {},
-      query: {},
-      params: {}
-    };
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
-    };
-    next = jest.fn();
+describe('validation middleware', () => {
+  const makeRes = () => ({
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis()
   });
 
-  describe('Query validation', () => {
-    it('should accept valid query parameters', () => {
-      req.query = { page: '1', limit: '10' };
-      expect(req.query.page).toBe('1');
-      expect(req.query.limit).toBe('10');
+  it('validateQuery parses valid query and calls next', () => {
+    const schema = z.object({
+      page: z.preprocess((v) => parseInt(v, 10), z.number().int().positive())
     });
 
-    it('should reject missing required query params', () => {
-      req.query = {};
-      expect(Object.keys(req.query).length).toBe(0);
-    });
+    const req = { query: { page: '2' } };
+    const res = makeRes();
+    const next = jest.fn();
 
-    it('should coerce string to number for page', () => {
-      req.query = { page: '5' };
-      const pageNum = Number(req.query.page);
-      expect(pageNum).toBe(5);
-    });
+    validateQuery(schema)(req, res, next);
 
-    it('should coerce string to number for limit', () => {
-      req.query = { limit: '20' };
-      const limitNum = Number(req.query.limit);
-      expect(limitNum).toBe(20);
-    });
+    expect(req.query.page).toBe(2);
+    expect(next).toHaveBeenCalled();
   });
 
-  describe('Body validation', () => {
-    it('should accept valid body payload', () => {
-      req.body = { name: 'Badge Pro', description: 'Expert level' };
-      expect(req.body.name).toBe('Badge Pro');
-    });
+  it('validateQuery returns 400 on parse error', () => {
+    const schema = z.object({ page: z.number().int().positive() });
+    const req = { query: { page: 'x' } };
+    const res = makeRes();
+    const next = jest.fn();
 
-    it('should reject empty body', () => {
-      req.body = {};
-      expect(Object.keys(req.body).length).toBe(0);
-    });
+    validateQuery(schema)(req, res, next);
 
-    it('should validate required fields presence', () => {
-      req.body = { name: 'Badge' };
-      const hasDescription = 'description' in req.body;
-      expect(hasDescription).toBe(false);
-    });
-
-    it('should validate string field types', () => {
-      req.body = { name: 'Badge Name', description: 'Desc' };
-      expect(typeof req.body.name).toBe('string');
-      expect(typeof req.body.description).toBe('string');
-    });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Paramètres invalides' })
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 
-  describe('Error responses', () => {
-    it('should return 400 for validation failure', () => {
-      const error = { status: 400, message: 'Validation failed' };
-      expect(error.status).toBe(400);
+  it('validateBody parses valid body and calls next', () => {
+    const schema = z.object({
+      titre: z.string().min(1),
+      objectif: z.number().int().positive()
     });
 
-    it('should include field details in error', () => {
-      const error = { 
-        status: 400, 
-        details: [{ field: 'name', message: 'Required' }] 
-      };
-      expect(error.details[0].field).toBe('name');
-    });
+    const req = { body: { titre: 'Tri', objectif: 3 } };
+    const res = makeRes();
+    const next = jest.fn();
 
-    it('should include validation message in response', () => {
-      const error = { message: 'Invalid input: name is required' };
-      expect(error.message).toContain('Invalid');
-    });
+    validateBody(schema)(req, res, next);
+
+    expect(req.body.titre).toBe('Tri');
+    expect(next).toHaveBeenCalled();
   });
 
-  describe('Type coercion', () => {
-    it('should convert string boolean to actual boolean', () => {
-      const value = 'true';
-      const bool = value === 'true';
-      expect(bool).toBe(true);
-    });
+  it('validateBody returns 400 on invalid payload', () => {
+    const schema = z.object({ titre: z.string().min(1) });
+    const req = { body: { titre: '' } };
+    const res = makeRes();
+    const next = jest.fn();
 
-    it('should parse JSON string fields', () => {
-      const jsonStr = '{"key":"value"}';
-      const parsed = JSON.parse(jsonStr);
-      expect(parsed.key).toBe('value');
-    });
+    validateBody(schema)(req, res, next);
 
-    it('should handle null values', () => {
-      const value = null;
-      expect(value).toBeNull();
-    });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Corps de requête invalide' })
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 });
