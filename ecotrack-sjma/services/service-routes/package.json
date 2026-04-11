@@ -6,9 +6,13 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --runInBand",
-    "test:unit": "jest test/unit --runInBand",
-    "test:integration": "jest test/integration --runInBand --passWithNoTests"
+    "test": "jest --runInBand && node clean-report.js",
+    "test:unit": "jest __tests__/unit --runInBand && node clean-report.js",
+    "test:integration": "jest __tests__/integration --runInBand --passWithNoTests && node clean-report.js",
+    "test:e2e": "jest __tests__/e2e --runInBand --passWithNoTests && node clean-report.js",
+    "test:all": "jest --runInBand && node clean-report.js",
+    "test:coverage": "jest --runInBand --coverage --coverageReporters=html --coverageReporters=text",
+    "test:coverageAll": "jest --runInBand --coverage"
   },
   "keywords": [],
   "author": "",
@@ -17,8 +21,17 @@
   "jest": {
     "testEnvironment": "node",
     "testMatch": [
-      "<rootDir>/test/unit/**/*.test.js",
-      "<rootDir>/test/integration/**/*.test.js"
+      "<rootDir>/__tests__/unit/**/*.test.js",
+      "<rootDir>/__tests__/integration/**/*.test.js",
+      "<rootDir>/__tests__/e2e/**/*.test.js"
+    ],
+    "reporters": [
+      "default",
+      ["jest-html-reporter", {
+        "pageTitle": "EcoTrack - service-routes Test Report",
+        "outputPath": "test-results/test-report.html",
+        "shortFilePaths": true
+      }]
     ]
   },
   "dependencies": {
@@ -41,6 +54,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "jest-html-reporter": "^3.2.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.4"
   }
