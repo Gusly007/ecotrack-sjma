@@ -1012,23 +1012,25 @@ cacheService.connect().then(() => {
   logger.warn({ err: err.message }, 'Cache service connection failed, continuing without');
 });
 
-const server = app.listen(gatewayPort, () => {
-  logger.info({ port: gatewayPort }, 'API Gateway ready');
-  console.table(
-    Object.entries(services).map(([key, svc]) => ({
-      service: key,
-      status: svc.status,
-      target: svc.baseUrl || 'pending'
-    }))
-  );
-});
-
-process.on('SIGINT', () => {
-  logger.info('Shutting down gateway');
-  server.close(() => {
-    logger.info('Gateway closed');
-    process.exit(0);
+if (process.env.DISABLE_AUTO_START !== 'true') {
+  const server = app.listen(gatewayPort, () => {
+    logger.info({ port: gatewayPort }, 'API Gateway ready');
+    console.table(
+      Object.entries(services).map(([key, svc]) => ({
+        service: key,
+        status: svc.status,
+        target: svc.baseUrl || 'pending'
+      }))
+    );
   });
-});
+
+  process.on('SIGINT', () => {
+    logger.info('Shutting down gateway');
+    server.close(() => {
+      logger.info('Gateway closed');
+      process.exit(0);
+    });
+  });
+}
 
 export default app;
