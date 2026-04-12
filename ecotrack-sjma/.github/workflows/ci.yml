@@ -577,6 +577,9 @@ jobs:
         with:
           node-version: '20'
       
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+      
       - name: 'Install dependencies'
         run: npm ci
         working-directory: services/service-analytics
@@ -639,6 +642,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
       - name: 'Install dependencies'
         run: npm ci
         working-directory: services/service-analytics
@@ -690,6 +696,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1545,6 +1554,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Create reports directory'
         run: mkdir -p reports/{coverage,tests,security}
