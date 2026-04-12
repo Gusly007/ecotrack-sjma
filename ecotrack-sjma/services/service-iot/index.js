@@ -4,6 +4,7 @@ const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const http = require('http');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const logger = require('./src/utils/logger');
 const client = require('prom-client');
@@ -42,7 +43,13 @@ const server = http.createServer(app);
 iotRoutes.setController(di.iotController);
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -120,7 +127,14 @@ app.get('/api', (req, res) => {
   });
 });
 
-app.use('/api', iotRoutes);
+// Rate limiting middleware for IoT routes
+const iotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
+});
+
+app.use('/api', iotLimiter, iotRoutes);
 
 app.get('/health', async (req, res) => {
   const healthcheck = {

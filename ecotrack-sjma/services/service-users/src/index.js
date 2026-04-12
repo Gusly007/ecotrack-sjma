@@ -69,13 +69,27 @@ if (env.nodeEnv !== 'test') {
 }
 
 app.use(helmet({
-  // Swagger UI can break with strict CSP in dev; keep it simple for now.
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false,
   hsts: env.nodeEnv === 'production' ? undefined : false
 }));
 
 app.use(cors());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
+});
+app.use('/auth/', apiLimiter);
+app.use('/users/', apiLimiter);
+
 app.use(express.json());
 app.use(morgan('combined', {
   stream: {
@@ -120,7 +134,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/auth', publicLimiter, authRoutes);
-app.use('/users', userRoutes);
+app.use('/users', publicLimiter, userRoutes);
 app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
 app.use('/admin/config', adminConfigRoutes);

@@ -59,6 +59,19 @@ export const getPasswordResetHtml = (resetUrl, appUrl) => `
     </html>
 `;
 
+// Security: HTML escape function to prevent XSS  
+const escapeHtml = (text) => {
+  if (!text) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, (char) => map[char]);
+};
+
 export const getWelcomeHtml = (prenom, appUrl) => `
     <!DOCTYPE html>
     <html>
@@ -79,7 +92,7 @@ export const getWelcomeHtml = (prenom, appUrl) => `
               </tr>
               <tr>
                 <td style="padding: 40px 30px;">
-                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue sur EcoTrack, ${prenom} !</h2>
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue sur EcoTrack, ${escapeHtml(prenom)} !</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Nous sommes ravis de vous accueillir dans notre communauté engagée pour l'environnement.
                   </p>
@@ -147,7 +160,7 @@ export const getAdminCreatedUserHtml = (prenom, nom, role, password, appUrl) => 
               </tr>
               <tr>
                 <td style="padding: 40px 30px;">
-                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue, ${prenom} ${nom} !</h2>
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue, ${escapeHtml(prenom)} ${escapeHtml(nom)} !</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Un compte EcoTrack a été créé pour vous par l'administrateur.
                   </p>
@@ -158,7 +171,7 @@ export const getAdminCreatedUserHtml = (prenom, nom, role, password, appUrl) => 
                   </div>
                   <div style="background-color: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
                     <p style="margin: 0 0 10px 0; color: #856404; font-size: 16px;"><strong>🔑 Mot de passe temporaire :</strong></p>
-                    <p style="margin: 0; color: #856404; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${password}</strong></p>
+                    <p style="margin: 0; color: #856404; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${escapeHtml(password)}</strong></p>
                     <p style="margin: 10px 0 0 0; color: #856404; font-size: 13px;">Vous devrez changer ce mot de passe lors de votre première connexion.</p>
                   </div>
                   <table width="100%" cellpadding="0" cellspacing="0">
@@ -216,7 +229,7 @@ export const getAccountStatusHtml = (prenom, isActivated, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">${icon} ${title}</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${prenom},
+                    Bonjour ${escapeHtml(prenom)},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre compte EcoTrack a été <strong>${status}</strong> par un administrateur.
@@ -283,17 +296,17 @@ export const getRoleChangeHtml = (prenom, oldRole, newRole, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">🔄 Rôle modifié</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${prenom},
+                    Bonjour ${escapeHtml(prenom)},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre rôle sur EcoTrack a été modifié par un administrateur.
                   </p>
                   <div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
                     <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Ancien rôle</p>
-                    <p style="margin: 0 0 15px 0; color: #333; font-size: 18px; font-weight: 600;">${oldRoleLabel}</p>
+                    <p style="margin: 0 0 15px 0; color: #333; font-size: 18px; font-weight: 600;">${escapeHtml(oldRoleLabel)}</p>
                     <p style="margin: 0; color: #2196F3; font-size: 24px;">⬇️</p>
                     <p style="margin: 15px 0 0 0; color: #666; font-size: 14px;">Nouveau rôle</p>
-                    <p style="margin: 10px 0 0 0; color: #4CAF50; font-size: 18px; font-weight: 600;">${newRoleLabel}</p>
+                    <p style="margin: 10px 0 0 0; color: #4CAF50; font-size: 18px; font-weight: 600;">${escapeHtml(newRoleLabel)}</p>
                   </div>
                   ${newRole === 'ADMIN' || newRole === 'GESTIONNAIRE' 
                     ? `<p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Vous avez désormais accès à de nouvelles fonctionnalités administratives. Consultez votre tableau de bord pour voir vos nouveaux droits.</p>`
@@ -349,7 +362,7 @@ export const getAccountDeletedHtml = (prenom, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">❌ Compte supprimé</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${prenom},
+                    Bonjour ${escapeHtml(prenom)},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre compte EcoTrack a été <strong>supprimé</strong> par un administrateur.

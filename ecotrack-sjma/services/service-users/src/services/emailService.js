@@ -65,6 +65,17 @@ const ensureTransporter = async () => {
   return transporterPromise;
 };
 
+export const sanitizeHtml = (unsafeHtml) => {
+  if (typeof unsafeHtml !== 'string') return '';
+  return unsafeHtml
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+};
+
 export const sendEmail = async (to, subject, html) => {
   try {
     await ensureTransporter();
