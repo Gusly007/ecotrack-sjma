@@ -280,21 +280,6 @@ jobs:
 
     needs: test-containers
 
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4-alpine
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_pass
-          POSTGRES_DB: ecotrack_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -303,6 +288,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -321,6 +324,11 @@ jobs:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+
   # =========================================================================
   # JOB 2B2: E2E TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 3)
   # =========================================================================
@@ -333,21 +341,6 @@ jobs:
 
     needs: test-containers-integration
 
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4-alpine
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_pass
-          POSTGRES_DB: ecotrack_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -356,6 +349,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in {1..30}; do
+            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -373,6 +384,10 @@ jobs:
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
