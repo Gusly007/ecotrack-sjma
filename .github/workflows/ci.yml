@@ -118,7 +118,7 @@ jobs:
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
-        run: npm run test:coverage
+        run: npm run test:coverage 2>&1 | tee test-output.log
         working-directory: ecotrack-sjma/services/service-users
         env:
           # Base de test dans le service postgres ci-dessus
@@ -127,6 +127,13 @@ jobs:
           ACCESS_TOKEN_SECRET: test_secret_access
           REFRESH_TOKEN_SECRET: test_secret_refresh
         continue-on-error: true
+      
+      - name: 'Show test output'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "=== TEST OUTPUT ==="
+          tail -100 test-output.log || echo "No test output log found"
       
       - name: 'Verify test script exists'
         if: always()
