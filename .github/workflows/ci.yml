@@ -116,6 +116,14 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-users
       
+      - name: 'Verify Jest installation'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "Checking Jest installation..."
+          npx jest --version
+          echo "Jest version verified ✓"
+      
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage 2>&1 | tee test-output.log
