@@ -1409,12 +1409,20 @@ jobs:
         uses: github/codeql-action/analyze@v3
         id: codeql-analyze
 
-      - name: 'Upload CodeQL SARIF as artifact'
+      - name: 'Upload CodeQL SARIF results'
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'sarif-output'
+          wait-for-processing: false
+        continue-on-error: true
+
+      - name: 'Collect CodeQL results as artifact'
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: report-sast-codeql-sarif
-          path: '*.sarif'
+          name: report-sast-codeql-results
+          path: 'sarif-output/'
           if-no-files-found: ignore
 
   # =========================================================================
@@ -1560,12 +1568,105 @@ jobs:
           path: frontend/coverage/
           if-no-files-found: ignore
 
-      # ===== UPLOAD TEST REPORTS =====
-      - name: 'Debug: Find test result files'
+      # ===== GENERATE TEST REPORTS WITH JSON OUTPUT =====
+      - name: 'Generate test reports (JSON format)'
+        run: |
+          echo "Generating test reports in JSON format..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              echo "  → Generating tests for $service..."
+              mkdir -p services/$service/test-results
+              cd services/$service
+              npm test -- --json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+              cd ../../
+            fi
+          done
+        continue-on-error: true
+
+      - name: 'Generate frontend test reports'
+        run: |
+          echo "Generating frontend test reports..."
+          mkdir -p frontend/test-results
+          cd frontend
+          npm run test -- --reporter=json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+        continue-on-error: true
+
+      # ===== FINAL VERIFICATION & UPLOAD ALL ARTIFACTS =====
+      - name: 'Final artifact verification'
         if: always()
         run: |
-          echo "Searching for test result files..."
-          find . -type f \( -name "*.json" -o -name "junit.xml" \) -path "*/test*" 2>/dev/null | head -30 || echo "No test result files found"
+          echo "=========================================="
+          echo "📊 ARTIFACT VERIFICATION REPORT"
+          echo "=========================================="
+          
+          echo ""
+          echo "✅ COVERAGE REPORTS:"
+          find services frontend -type d -name "coverage" 2>/dev/null | while read dir; do
+            size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+            echo "   ✓ $dir ($size)"
+          done
+          
+          echo ""
+          echo "✅ TEST REPORTS:"
+          find services frontend -type f -name "test-report.json" -o -name "junit.xml" 2>/dev/null | while read file; do
+            size=$(wc -c < "$file" 2>/dev/null | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "$(wc -c < "$file") bytes")
+            echo "   ✓ $file ($size)"
+          done
+          
+          echo ""
+          echo "✅ COVERAGE DIRECTORIES SUMMARY:"
+          du -sh reports/coverage/* 2>/dev/null || echo "   ⚠ No consolidated coverage yet"
+          
+          echo ""
+          echo "=========================================="
+
+      - name: 'Create downloadable archives'
+        if: always()
+        run: |
+          echo "Creating archives for easy download..."
+          mkdir -p archives
+          
+          # Coverage archive
+          if [ -d "reports/coverage" ] && [ "$(ls -A reports/coverage/)" ]; then
+            tar -czf archives/coverage-all.tar.gz -C reports coverage/ 2>/dev/null && echo "✓ coverage-all.tar.gz"
+          fi
+          
+          # Backend coverage archive
+          if find services -type d -name "coverage" | grep -q .; then
+            tar -czf archives/coverage-backend.tar.gz services/*/coverage/ 2>/dev/null && echo "✓ coverage-backend.tar.gz"
+          fi
+          
+          # Frontend coverage archive
+          if [ -d "frontend/coverage" ] && [ "$(ls -A frontend/coverage/)" ]; then
+            tar -czf archives/coverage-frontend.tar.gz frontend/coverage/ 2>/dev/null && echo "✓ coverage-frontend.tar.gz"
+          fi
+          
+          echo "Archives created in archives/ directory"
+        continue-on-error: true
+
+      - name: 'Upload coverage archives'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-archives-compressed
+          path: archives/
+          if-no-files-found: ignore
+
+      - name: 'Upload backend coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend-all-services
+          path: services/*/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend-all
+          path: frontend/coverage/
+          if-no-files-found: ignore
 
       - name: 'Upload all test reports from services'
         if: always()
@@ -1585,6 +1686,52 @@ jobs:
           path: |
             frontend/test-results/
             frontend/reports/
+          if-no-files-found: ignore
+
+      - name: 'Create final artifact summary'
+        if: always()
+        run: |
+          cat > artifact-summary.txt << 'EOF'
+          ========================================
+          ECOTRACK CI/CD ARTIFACT SUMMARY
+          ========================================
+          
+          COVERAGE ARTIFACTS:
+          - reports-coverage-all: All consolidated coverage reports
+          - coverage-backend-all-services: Individual service coverage directories
+          - coverage-frontend-all: Frontend coverage report
+          - coverage-archives-compressed: Compressed tar.gz files for easy download
+          
+          TEST ARTIFACTS:
+          - report-tests-all-services: All backend service test reports (JSON)
+          - report-tests-frontend: Frontend test reports (JSON)
+          - report-integration-*: Individual integration test reports
+          - report-e2e-service-containers: E2E test reports
+          
+          SECURITY ARTIFACTS:
+          - report-dependency-audit-*: npm audit reports for each service (7 total)
+          - report-sast-codeql-results: CodeQL SAST analysis results
+          - report-dast-zap: OWASP ZAP DAST scan results
+          
+          MISC ARTIFACTS:
+          - report-test-pyramid: Test pyramid metrics and analysis
+          
+          DOWNLOAD INSTRUCTIONS:
+          1. Go to GitHub Actions run
+          2. Scroll to "Artifacts" section
+          3. Click on artifact name to download
+          4. For tar.gz files: tar -xzf <file>.tar.gz to extract
+          
+          ========================================
+          EOF
+          cat artifact-summary.txt
+      
+      - name: 'Upload artifact summary'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARTIFACT-SUMMARY
+          path: artifact-summary.txt
           if-no-files-found: ignore
 
   # =========================================================================
