@@ -135,6 +135,15 @@ jobs:
           flags: unittests
         continue-on-error: true
 
+      # Upload coverage as artifact
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-users
+          path: services/service-users/coverage/
+          if-no-files-found: ignore
+
   # =========================================================================
   # JOB 2B: UNIT TESTS - SERVICE-CONTAINERS
   # =========================================================================
@@ -203,6 +212,14 @@ jobs:
           files: ./services/service-containers/coverage/coverage-final.json
           flags: unittests-containers
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-containers
+          path: services/service-containers/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2B1: INTEGRATION TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 2)
@@ -366,6 +383,14 @@ jobs:
           flags: unittests-gamifications
         continue-on-error: true
 
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-gamifications
+          path: services/service-gamifications/coverage/
+          if-no-files-found: ignore
+
   # =========================================================================
   # JOB 2D: UNIT TESTS - SERVICE-IOT (NEW!)
   # =========================================================================
@@ -417,6 +442,14 @@ jobs:
           files: ./services/service-iot/coverage/coverage-final.json
           flags: unittests-iot
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-iot
+          path: services/service-iot/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2D1: INTEGRATION TESTS - SERVICE-IOT (Test Pyramid - Level 2)
@@ -561,6 +594,14 @@ jobs:
           files: ./services/service-analytics/coverage/coverage-final.json
           flags: unittests-analytics
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-analytics
+          path: services/service-analytics/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2E1: INTEGRATION TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 2 ~22%)
@@ -917,6 +958,14 @@ jobs:
           flags: unit-tests-routes
         continue-on-error: true
 
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-routes
+          path: services/service-routes/coverage/
+          if-no-files-found: ignore
+
   # =========================================================================
   # JOB 2F2: INTEGRATION TESTS - SERVICE-ROUTES (Test Pyramid - Level 2 ~2%)
   # =========================================================================
@@ -924,7 +973,7 @@ jobs:
   # Test les interactions entre modules
   
   test-routes-integration:
-    name: '🔗 Integration Tests (2%) - service-routes'
+    name: ' Integration Tests (2%) - service-routes'
     runs-on: ubuntu-latest
     
     needs: test-routes-unit
@@ -1127,6 +1176,14 @@ jobs:
         env:
           NODE_ENV: test
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-api-gateway
+          path: services/api-gateway/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2H2: INTEGRATION TESTS - API-GATEWAY (Test Pyramid - Level 2)
@@ -1392,6 +1449,9 @@ jobs:
       actions: read
       contents: read
       security-events: write
+    
+    env:
+      CODEQL_ACTION_FILE_COVERAGE_ON_PRS: true
 
     steps:
       - name: 'Checkout code'
@@ -1472,9 +1532,10 @@ jobs:
   # Agrège tous les rapports: Coverage, Test Reports, SAST/DAST
 
   collect-reports:
-    name: '📊 Collect All Reports'
+    name: ' Collect All Reports'
     runs-on: ubuntu-latest
     if: always()
+    needs: [test, test-containers, test-containers-integration, test-gamifications, test-iot, test-iot-integration, test-analytics, test-analytics-integration, test-frontend, test-integration, test-pyramid, test-routes-unit, test-routes-integration, test-users-integration, test-api-gateway, test-api-gateway-integration, test-gamifications-integration, test-frontend-integration, security, security-sast]
     
     steps:
       - name: 'Checkout code'
