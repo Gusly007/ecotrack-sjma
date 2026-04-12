@@ -100,50 +100,50 @@ router.get('/iot/measurements/container/:id', requirePermission('iot:read'), val
 /**
  * @swagger
  * /iot/sensors:
- * get:
- * summary: Liste des capteurs
- * tags: [Capteurs]
- * parameters:
- * - in: query
- * name: page
- * schema: { type: integer, default: 1 }
- * - in: query
- * name: limit
- * schema: { type: integer, default: 50 }
- * responses:
- * 200:
- * description: Liste des capteurs
+ *   get:
+ *     summary: Liste des capteurs
+ *     tags: [Capteurs]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 50 }
+ *     responses:
+ *       200:
+ *         description: Liste des capteurs
  */
 router.get('/iot/sensors', requirePermission('iot:read'), validateQuery(paginationSchema), (req, res, next) => controller.getSensors(req, res, next));
 
 /**
  * @swagger
  * /iot/sensors/status:
- * get:
- * summary: Statut des capteurs
- * tags: [Capteurs]
- * responses:
- * 200:
- * description: Statut des capteurs (total, actifs, inactifs)
+ *   get:
+ *     summary: Statut des capteurs
+ *     tags: [Capteurs]
+ *     responses:
+ *       200:
+ *         description: Statut des capteurs (total, actifs, inactifs)
  */
 router.get('/iot/sensors/status', requirePermission('iot:read'), (req, res, next) => controller.getSensorsStatus(req, res, next));
 
 /**
  * @swagger
  * /iot/sensors/{id}:
- * get:
- * summary: Détails d'un capteur
- * tags: [Capteurs]
- * parameters:
- * - in: path
- * name: id
- * required: true
- * schema: { type: integer }
- * responses:
- * 200:
- * description: Détails du capteur
- * 404:
- * description: Capteur non trouvé
+ *   get:
+ *     summary: Détails d'un capteur
+ *     tags: [Capteurs]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Détails du capteur
+ *       404:
+ *         description: Capteur non trouvé
  */
 router.get('/iot/sensors/:id', requirePermission('iot:read'), validateParamId, (req, res, next) => controller.getSensorById(req, res, next));
 
