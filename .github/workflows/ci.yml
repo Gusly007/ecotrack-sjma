@@ -395,7 +395,6 @@ jobs:
           PGPASSWORD: test_pass
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -840,7 +839,6 @@ jobs:
           PGPASSWORD: test_pass
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -1227,7 +1225,6 @@ jobs:
         env:
           NODE_ENV: test
           API_URL: http://localhost:3000
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -1347,7 +1344,6 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -1502,7 +1498,6 @@ jobs:
         working-directory: ecotrack-sjma/services/api-gateway
         env:
           NODE_ENV: test
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -1622,7 +1617,6 @@ jobs:
         env:
           NODE_ENV: test
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
@@ -1736,7 +1730,6 @@ jobs:
       - name: 'Run Vitest E2E tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/frontend
-        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
