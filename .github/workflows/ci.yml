@@ -1799,22 +1799,6 @@ jobs:
           path: archives/
           if-no-files-found: ignore
 
-      - name: 'Upload backend coverage reports'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-backend-all-services
-          path: ecotrack-sjma/services/*/coverage/
-          if-no-files-found: ignore
-
-      - name: 'Upload frontend coverage reports'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-frontend-all
-          path: ecotrack-sjma/frontend/coverage/
-          if-no-files-found: ignore
-
       - name: 'Upload all test reports from services'
         if: always()
         uses: actions/upload-artifact@v4
