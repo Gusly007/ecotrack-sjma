@@ -7,11 +7,9 @@ docs/FRONTEND_METRICS.md
 docs/SECURITY_VULNERABILITIES_REPORT.md
 infra/kubernetes/
 infra/terraform/  
+reports/
 
 
-# Old folders at root (moved to services/)
-/service-users/
-/api-gateway/
 
 # DB Optimization (local notes)
 database/DB_OPTIMIZATION_PROPOSAL.md
