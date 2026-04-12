@@ -1529,7 +1529,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 'Start API Gateway stack'
-        run: docker compose up -d api-gateway service-users service-containers service-routes service-iot service-analytics postgres redis
+        run: docker compose -f ecotrack-sjma/docker-compose.yml up -d api-gateway service-users service-containers service-routes service-iot service-analytics postgres redis
 
       - name: 'Run ZAP Baseline Scan'
         uses: zaproxy/action-baseline@v0.14.0
