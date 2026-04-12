@@ -16,14 +16,6 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "<rootDir>/__tests__/unit/**/*.test.js",
-      "<rootDir>/__tests__/integration/**/*.test.js",
-      "<rootDir>/__tests__/e2e/**/*.e2e.test.js"
-    ]
-  },
   "dependencies": {
     "aedes": "^0.51.3",
     "cors": "^2.8.6",

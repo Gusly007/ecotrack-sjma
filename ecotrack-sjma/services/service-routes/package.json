@@ -18,22 +18,6 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "<rootDir>/__tests__/unit/**/*.test.js",
-      "<rootDir>/__tests__/integration/**/*.test.js",
-      "<rootDir>/__tests__/e2e/**/*.test.js"
-    ],
-    "reporters": [
-      "default",
-      ["jest-html-reporter", {
-        "pageTitle": "EcoTrack - service-routes Test Report",
-        "outputPath": "test-results/test-report.html",
-        "shortFilePaths": true
-      }]
-    ]
-  },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^16.3.1",
