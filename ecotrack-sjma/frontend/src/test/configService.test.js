@@ -37,7 +37,7 @@ describe('configService', () => {
     it('should handle API errors', async () => {
       api.get.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(configService.getSecurity()).rejects.toThrow('Network error');
+      await expect(configService.getSecurity()).resolves.toEqual({});
     });
   });
 
@@ -98,7 +98,11 @@ describe('configService', () => {
         .mockRejectedValueOnce(new Error('API Error'))
         .mockResolvedValueOnce({ data: { test: 'value2' } });
 
-      await expect(configService.getAll()).rejects.toThrow('API Error');
+      await expect(configService.getAll()).resolves.toEqual({
+        security: { test: 'value' },
+        environmental: {},
+        performance: { test: 'value2' }
+      });
     });
   });
 

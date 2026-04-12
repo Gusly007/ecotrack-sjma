@@ -333,19 +333,30 @@ describe('ContainerRepository', () => {
           { id_conteneur: 1, capacite_l: 100 },
           { id_conteneur: 2, capacite_l: 200 }
         ];
-        db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
+        db.query = jest.fn()
+          .mockResolvedValueOnce({ rows: [{ total: 2 }] })
+          .mockResolvedValueOnce({ rows: mockContainers });
 
         const result = await repository.getAllContainers();
-        expect(Array.isArray(result)).toBe(true);
-        expect(result.length).toBe(2);
+        expect(result).toEqual(expect.objectContaining({
+          data: mockContainers,
+          pagination: expect.objectContaining({
+            total: 2,
+            page: 1,
+            limit: 50
+          })
+        }));
       });
 
       it('should return containers with limit and offset', async () => {
         const mockContainers = [{ id_conteneur: 1, capacite_l: 100 }];
-        db.query = jest.fn().mockResolvedValue({ rows: mockContainers });
+        db.query = jest.fn()
+          .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+          .mockResolvedValueOnce({ rows: mockContainers });
 
         const result = await repository.getAllContainers({ limit: 10, offset: 0 });
-        expect(result.length).toBe(1);
+        expect(result.data).toHaveLength(1);
+        expect(result.pagination.limit).toBe(10);
       });
     });
 

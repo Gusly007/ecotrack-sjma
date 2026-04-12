@@ -17,6 +17,15 @@ pool.on('connect', () => {
 });
 
 export const ensureAuthTables = async () => {
+  const utilisateurExistsResult = await pool.query(
+    "SELECT 1 FROM information_schema.tables WHERE table_name = 'utilisateur' LIMIT 1"
+  );
+
+  if (utilisateurExistsResult.rowCount === 0) {
+    logger.warn('UTILISATEUR table not found; skipping auth bootstrap until migrations are applied');
+    return;
+  }
+
   // Some schemas were imported without auto-increment on UTILISATEUR.id_utilisateur.
   // If the column is not IDENTITY, ensure a sequence-backed DEFAULT exists so inserts can omit the id.
   try {

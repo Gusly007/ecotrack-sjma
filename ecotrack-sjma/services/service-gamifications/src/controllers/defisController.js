@@ -6,7 +6,6 @@ import {
   creerParticipation,
   mettreAJourProgression
 } from '../services/defis.service.js';
-import { ApiResponse } from '../utils/api-response.js';
 
 const defiSchema = z.object({
   titre: z.string().min(3),
@@ -43,10 +42,17 @@ export const creerDefiHandler = async (req, res, next) => {
 // Liste les défis existants.
 export const listerDefisHandler = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
-    const { rows, total } = await listerDefis({ page, limit, statut: req.query.statut, typeDefi: req.query.type_defi });
-    res.json(ApiResponse.paginated(rows, page, limit, total, 'Défis récupérés'));
+    const query = req.query || {};
+    const options = {};
+    if (query.page || query.limit || query.statut || query.type_defi) {
+      options.page = parseInt(query.page, 10) || 1;
+      options.limit = Math.min(100, parseInt(query.limit, 10) || 20);
+      if (query.statut) options.statut = query.statut;
+      if (query.type_defi) options.typeDefi = query.type_defi;
+    }
+
+    const defis = await listerDefis(options);
+    res.json(defis);
   } catch (error) {
     next(error);
   }

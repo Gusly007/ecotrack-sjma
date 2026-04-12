@@ -229,9 +229,15 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  const isDocsAsset = req.path === '/api-docs' || req.path.startsWith('/api-docs/');
+  if (isDocsAsset) {
+    // Swagger static assets can be cached briefly to avoid noisy scanner findings.
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  } else {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
@@ -246,13 +252,42 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      styleSrc: ["'self'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "blob:"],
+      fontSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      workerSrc: ["'self'", "blob:"],
     },
   },
-  crossOriginEmbedderPolicy: false // Désactivé pour Swagger UI
+  crossOriginEmbedderPolicy: { policy: 'require-corp' },
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  referrerPolicy: { policy: 'no-referrer' },
+  permissionsPolicy: {
+    features: {
+      accelerometer: [],
+      camera: [],
+      geolocation: [],
+      gyroscope: [],
+      magnetometer: [],
+      microphone: [],
+      payment: [],
+      usb: [],
+      fullscreen: ['self']
+    }
+  }
 }));
+
+// En-têtes de sécurité complémentaires
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), fullscreen=(self)');
+  next();
+});
 
 // Rate limiting global
 app.use(globalRateLimit);
@@ -272,6 +307,21 @@ app.use(jwtValidationMiddleware);
 // =========================================================================
 // DOCUMENTATION API UNIFIÉE
 // =========================================================================
+app.use('/api-docs', (req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; manifest-src 'self'"
+  );
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader(
+    'Permissions-Policy',
+    'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), fullscreen=(self)'
+  );
+  next();
+});
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(unifiedSwaggerSpec, swaggerOptions));
 
 // Documentation individuelle des services (proxies)

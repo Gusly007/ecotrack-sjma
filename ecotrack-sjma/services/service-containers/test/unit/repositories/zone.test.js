@@ -21,7 +21,7 @@ describe('ZoneRepository', () => {
     const model = new ZoneRepository(db);
 
     await expect(
-      model.addZone({ nom: 'Paris', population: 1000, superficie_km2: 10, latitude: 48.8566, longitude: 2.3522 })
+      model.addZone({ population: 1000, superficie_km2: 10, latitude: 48.8566, longitude: 2.3522 })
     ).rejects.toThrow('Tous les champs requis manquent');
   });
 
