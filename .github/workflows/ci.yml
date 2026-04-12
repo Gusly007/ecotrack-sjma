@@ -1640,9 +1640,9 @@ jobs:
         run: |
           echo "Installing dependencies for coverage..."
           for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
-            if [ -d "services/$service" ]; then
+            if [ -d "ecotrack-sjma/services/$service" ]; then
               echo "  → Installing $service..."
-              npm ci --prefix services/$service 2>&1 | tail -5 || echo "  ⚠ Failed to install $service"
+              npm ci --prefix ecotrack-sjma/services/$service 2>&1 | tail -5 || echo "  ⚠ Failed to install $service"
             fi
           done
 
@@ -1650,17 +1650,17 @@ jobs:
         run: |
           echo "Generating coverage reports..."
           for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
-            if [ -d "services/$service" ]; then
+            if [ -d "ecotrack-sjma/services/$service" ]; then
               echo "  → Testing $service..."
-              cd services/$service
+              cd ecotrack-sjma/services/$service
               npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
               if [ -d "coverage" ]; then
                 echo "    ✓ Coverage found, copying..."
-                cp -r coverage ../../reports/coverage/${service} 2>/dev/null || true
+                cp -r coverage ../../../../reports/coverage/${service} 2>/dev/null || true
               else
                 echo "    ⚠ No coverage directory found"
               fi
-              cd ../../
+              cd ../../../../
             fi
           done
         continue-on-error: true
@@ -1669,12 +1669,12 @@ jobs:
       - name: 'Generate frontend coverage'
         run: |
           echo "Generating frontend coverage..."
-          cd frontend
+          cd ecotrack-sjma/frontend
           npm ci 2>&1 | tail -3 || echo "⚠ Failed to install frontend deps"
           npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
           if [ -d "coverage" ]; then
             echo "  ✓ Frontend coverage found, copying..."
-            cp -r coverage ../reports/coverage/frontend
+            cp -r coverage ../../reports/coverage/frontend
           else
             echo "  ⚠ No frontend coverage directory found"
           fi
@@ -1720,12 +1720,12 @@ jobs:
         run: |
           echo "Generating test reports in JSON format..."
           for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
-            if [ -d "services/$service" ]; then
+            if [ -d "ecotrack-sjma/services/$service" ]; then
               echo "  → Generating tests for $service..."
-              mkdir -p services/$service/test-results
-              cd services/$service
+              mkdir -p ecotrack-sjma/services/$service/test-results
+              cd ecotrack-sjma/services/$service
               npm test -- --json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
-              cd ../../
+              cd ../../../../
             fi
           done
         continue-on-error: true
@@ -1733,8 +1733,8 @@ jobs:
       - name: 'Generate frontend test reports'
         run: |
           echo "Generating frontend test reports..."
-          mkdir -p frontend/test-results
-          cd frontend
+          mkdir -p ecotrack-sjma/frontend/test-results
+          cd ecotrack-sjma/frontend
           npm run test -- --reporter=json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
         continue-on-error: true
 
@@ -1748,14 +1748,14 @@ jobs:
           
           echo ""
           echo "✅ COVERAGE REPORTS:"
-          find services frontend -type d -name "coverage" 2>/dev/null | while read dir; do
+          find ecotrack-sjma/services ecotrack-sjma/frontend -type d -name "coverage" 2>/dev/null | while read dir; do
             size=$(du -sh "$dir" 2>/dev/null | cut -f1)
             echo "   ✓ $dir ($size)"
           done
           
           echo ""
           echo "✅ TEST REPORTS:"
-          find services frontend -type f -name "test-report.json" -o -name "junit.xml" 2>/dev/null | while read file; do
+          find ecotrack-sjma/services ecotrack-sjma/frontend -type f -name "test-report.json" -o -name "junit.xml" 2>/dev/null | while read file; do
             size=$(wc -c < "$file" 2>/dev/null | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "$(wc -c < "$file") bytes")
             echo "   ✓ $file ($size)"
           done
@@ -1821,8 +1821,8 @@ jobs:
         with:
           name: report-tests-all-services
           path: |
-            services/*/test-results/
-            services/*/reports/
+            ecotrack-sjma/services/*/test-results/
+            ecotrack-sjma/services/*/reports/
           if-no-files-found: ignore
 
       - name: 'Upload frontend test reports'
@@ -1831,8 +1831,8 @@ jobs:
         with:
           name: report-tests-frontend
           path: |
-            frontend/test-results/
-            frontend/reports/
+            ecotrack-sjma/frontend/test-results/
+            ecotrack-sjma/frontend/reports/
           if-no-files-found: ignore
 
       - name: 'Create final artifact summary'
