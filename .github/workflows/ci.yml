@@ -1924,7 +1924,7 @@ jobs:
       - name: 'Build and push Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./services/${{ matrix.service }}
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
           push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -1985,7 +1985,7 @@ jobs:
       - name: 'Build Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./services/${{ matrix.service }}
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
           load: true
           tags: ${{ matrix.image-name }}:test
       
