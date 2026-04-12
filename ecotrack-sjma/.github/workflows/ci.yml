@@ -1544,7 +1544,7 @@ jobs:
     name: ' Collect All Reports'
     runs-on: ubuntu-latest
     if: always()
-    needs: [test, test-containers, test-containers-integration, test-gamifications, test-iot, test-iot-integration, test-analytics, test-analytics-integration, test-frontend, test-integration, test-pyramid, test-routes-unit, test-routes-integration, test-users-integration, test-api-gateway, test-api-gateway-integration, test-gamifications-integration, test-frontend-integration, security, security-sast]
+    needs: [test, test-containers, test-containers-integration, test-gamifications, test-iot, test-iot-integration, test-analytics, test-analytics-integration, test-analytics-e2e, test-frontend, test-integration, test-pyramid, test-routes-unit, test-routes-integration, test-users-integration, test-api-gateway, test-api-gateway-integration, test-gamifications-integration, test-frontend-integration, security, security-sast, security-dast]
     
     steps:
       - name: 'Checkout code'
