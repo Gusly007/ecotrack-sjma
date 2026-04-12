@@ -1408,6 +1408,14 @@ jobs:
       - name: 'Analyze with CodeQL'
         uses: github/codeql-action/analyze@v3
 
+      - name: 'Upload CodeQL SARIF as artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-sast-codeql-sarif
+          path: ${{ github.workspace }}/results/
+          if-no-files-found: warn
+
   # =========================================================================
   # JOB 3C: DAST - OWASP ZAP BASELINE
   # =========================================================================
@@ -1448,6 +1456,159 @@ jobs:
       #   working-directory: service-users
       #   env:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # =========================================================================
+  # JOB 3D: COLLECT ALL TEST REPORTS & COVERAGE
+  # =========================================================================
+  # Agrège tous les rapports: Coverage, Test Reports, SAST/DAST
+
+  collect-reports:
+    name: '📊 Collect All Reports'
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Create reports directory'
+        run: mkdir -p reports/{coverage,tests,security}
+
+      # ===== COLLECT COVERAGE REPORTS =====
+      - name: 'Install dependencies for coverage collection'
+        run: |
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              npm ci --prefix services/$service
+            fi
+          done
+
+      - name: 'Generate coverage reports'
+        run: |
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              cd services/$service
+              npm run test:coverage 2>/dev/null || true
+              if [ -d "coverage" ]; then
+                cp -r coverage ../../reports/coverage/${service} 2>/dev/null || true
+              fi
+              cd ../../
+            fi
+          done
+        continue-on-error: true
+
+      # ===== COLLECT FRONTEND COVERAGE =====
+      - name: 'Generate frontend coverage'
+        run: |
+          cd frontend
+          npm ci 2>/dev/null || true
+          npm run test:coverage 2>/dev/null || true
+          if [ -d "coverage" ]; then
+            cp -r coverage ../reports/coverage/frontend
+          fi
+        continue-on-error: true
+
+      # ===== UPLOAD CONSOLIDATED REPORTS =====
+      - name: 'Upload consolidated coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-coverage-all
+          path: reports/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload service-specific coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend-all-services
+          path: |
+            services/service-users/coverage/
+            services/service-containers/coverage/
+            services/service-gamifications/coverage/
+            services/service-routes/coverage/
+            services/service-iot/coverage/
+            services/service-analytics/coverage/
+            services/api-gateway/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend-all
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+      # ===== UPLOAD TEST REPORTS =====
+      - name: 'Upload test reports - service-users'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-users
+          path: services/service-users/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - service-containers'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-containers
+          path: services/service-containers/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - service-routes'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-routes
+          path: services/service-routes/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - service-iot'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-iot
+          path: services/service-iot/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - service-analytics'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-analytics
+          path: services/service-analytics/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - service-gamifications'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-service-gamifications
+          path: services/service-gamifications/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - api-gateway'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-api-gateway
+          path: services/api-gateway/test-results/
+          if-no-files-found: ignore
+
+      - name: 'Upload test reports - frontend'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-frontend
+          path: frontend/test-results/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 4: BUILD DOCKER - TOUS LES SERVICES
