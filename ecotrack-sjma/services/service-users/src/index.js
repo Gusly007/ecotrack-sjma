@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import cors from 'cors';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
