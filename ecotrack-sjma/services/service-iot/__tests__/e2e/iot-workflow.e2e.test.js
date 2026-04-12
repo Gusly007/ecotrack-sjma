@@ -113,7 +113,7 @@ describe('IoT Service E2E - Complete Workflows', () => {
       const res = await request(app)
         .post('/measurements')
         .send({
-          deviceId: 'sensor-001'
+          deviceId: 'sensor-001',
           // Missing value
         });
 
@@ -157,7 +157,7 @@ describe('IoT Service E2E - Complete Workflows', () => {
       const res = await request(app)
         .post('/alerts')
         .send({
-          deviceId: 'sensor-001'
+          deviceId: 'sensor-001',
           // Missing severity
         });
 
