@@ -290,7 +290,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -326,7 +326,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
 
   # =========================================================================
@@ -351,7 +351,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -387,7 +387,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
@@ -536,7 +536,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -566,7 +566,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2D2: E2E TESTS - SERVICE-IOT (Test Pyramid - Level 3)
@@ -589,7 +589,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -619,7 +619,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2E: UNIT TESTS - SERVICE-ANALYTICS
@@ -710,7 +710,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -745,7 +745,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2E2: E2E TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 3 ~11%)
@@ -772,7 +772,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -808,7 +808,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2F: UNIT TESTS - FRONTEND
@@ -1092,7 +1092,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1127,7 +1127,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2F3: E2E TESTS - SERVICE-ROUTES (Test Pyramid - Level 3 ~5%)
@@ -1151,7 +1151,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1183,7 +1183,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2G1: INTEGRATION TESTS - SERVICE-USERS (Test Pyramid - Level 2)
@@ -1206,7 +1206,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1237,7 +1237,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2G2: E2E TESTS - SERVICE-USERS (Test Pyramid - Level 3)
@@ -1260,7 +1260,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1291,7 +1291,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2H1: UNIT TESTS - API-GATEWAY (NEW!)
@@ -1352,7 +1352,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1382,7 +1382,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2H3: E2E TESTS - API-GATEWAY (Test Pyramid - Level 3)
@@ -1404,7 +1404,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1434,7 +1434,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2I1: INTEGRATION TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 2)
@@ -1457,7 +1457,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1488,7 +1488,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2I2: E2E TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 3)
@@ -1511,7 +1511,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1542,7 +1542,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2J1: INTEGRATION TESTS - FRONTEND (Test Pyramid - Level 2)
@@ -1565,7 +1565,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1593,7 +1593,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2J2: E2E TESTS - FRONTEND (Test Pyramid - Level 3)
@@ -1616,7 +1616,7 @@ jobs:
           node-version: '20'
 
       - name: 'Start test services (docker-compose)'
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
         timeout-minutes: 3
 
       - name: 'Wait for PostgreSQL to be ready'
@@ -1644,7 +1644,7 @@ jobs:
 
       - name: 'Cleanup test services'
         if: always()
-        run: docker-compose -f ecotrack-sjma/docker-compose.test.yml down -v
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
