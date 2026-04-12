@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --include='**/__tests__/unit/**/*.test.js' --include='**/__tests__/integration/**/*.test.js' --coverage --passWithNoTests",
     "test:integration": "vitest run --include='**/__tests__/integration/**/*.test.js' --passWithNoTests",
     "test:e2e": "vitest run --include='**/__tests__/e2e/**/*.test.js' --passWithNoTests"
   },

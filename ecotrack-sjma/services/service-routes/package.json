@@ -11,7 +11,7 @@
     "test:integration": "jest __tests__/integration --runInBand --passWithNoTests && node clean-report.js",
     "test:e2e": "jest __tests__/e2e --runInBand --passWithNoTests && node clean-report.js",
     "test:all": "jest --runInBand && node clean-report.js",
-    "test:coverage": "jest --runInBand --coverage --coverageReporters=html --coverageReporters=text",
+    "test:coverage": "jest __tests__/unit __tests__/integration --runInBand --coverage --coverageReporters=html --coverageReporters=text --passWithNoTests",
     "test:coverageAll": "jest --runInBand --coverage"
   },
   "keywords": [],

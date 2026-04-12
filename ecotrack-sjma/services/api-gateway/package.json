@@ -6,7 +6,7 @@
     "scripts": {
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
         "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-        "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+        "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/unit __tests__/integration --coverage --passWithNoTests",
         "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/integration --runInBand --passWithNoTests",
         "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/e2e --runInBand --passWithNoTests",
         "dev": "node src/index.js",
