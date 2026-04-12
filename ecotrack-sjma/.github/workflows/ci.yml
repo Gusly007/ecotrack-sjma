@@ -13,11 +13,6 @@
 # │ LEVEL 1: UNIT    │ 60%   │ <2s  │ Coût: Faible  │ Tests fonctions  │
 # └─────────────────────────────────────────────────────────────────────────────┘
 #
-# COUVERTURE CIBLEE PAR SERVICE:
-#   - service-routes:  60% unit / 30% int / 10% e2e
-#   - service-users:  60% unit / 30% int / 10% e2e (à développer)
-#   - containers:     60% unit / 30% int / 10% e2e (à développer)
-#   - api-gateway:    60% unit / 30% int / 10% e2e
 #
 # TRIGGER: Push sur toutes branches + PR
 # ============================================================================
@@ -216,7 +211,7 @@ jobs:
   # Test les interactions entre routes, services, repositories
 
   test-containers-integration:
-    name: '🔗 Integration Tests - service-containers'
+    name: ' Integration Tests - service-containers'
     runs-on: ubuntu-latest
 
     needs: test-containers
@@ -269,7 +264,7 @@ jobs:
   # Test les parcours complets d'accès conteneurs
 
   test-containers-e2e:
-    name: '🌐 E2E Tests - service-containers'
+    name: ' E2E Tests - service-containers'
     runs-on: ubuntu-latest
 
     needs: test-containers-integration
@@ -430,7 +425,7 @@ jobs:
   # Test gateway integration + sensor-measurement-service + cache flows
 
   test-iot-integration:
-    name: '🔗 Integration Tests (20%) - service-iot'
+    name: ' Integration Tests (20%) - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot
     
@@ -476,7 +471,7 @@ jobs:
   # Test complete alert workflows + notification flows + state transitions
 
   test-iot-e2e:
-    name: '🚀 E2E Tests (10%) - service-iot'
+    name: ' E2E Tests (10%) - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot-integration
     
@@ -1009,6 +1004,343 @@ jobs:
         continue-on-error: true
 
   # =========================================================================
+  # JOB 2G1: INTEGRATION TESTS - SERVICE-USERS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 2 tests | Integration tests for user auth flows
+
+  test-users-integration:
+    name: '🔗 Integration Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-users
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/service-users
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2G2: E2E TESTS - SERVICE-USERS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | User workflow E2E
+
+  test-users-e2e:
+    name: '🌐 E2E Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test-users-integration
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-users
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/service-users
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2H1: UNIT TESTS - API-GATEWAY (NEW!)
+  # =========================================================================
+  # Tests unitaires pour l'API Gateway
+
+  test-api-gateway:
+    name: 'Unit Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: lint
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run Jest tests'
+        run: npm test
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2H2: INTEGRATION TESTS - API-GATEWAY (Test Pyramid - Level 2)
+  # =========================================================================
+
+  test-api-gateway-integration:
+    name: '🔗 Integration Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2H3: E2E TESTS - API-GATEWAY (Test Pyramid - Level 3)
+  # =========================================================================
+
+  test-api-gateway-e2e:
+    name: '🌐 E2E Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2I1: INTEGRATION TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 3 tests | Integration tests for gamification flows
+
+  test-gamifications-integration:
+    name: '🔗 Integration Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-gamifications
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2I2: E2E TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | Gamification E2E workflow
+
+  test-gamifications-e2e:
+    name: '🌐 E2E Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications-integration
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-gamifications
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2J1: INTEGRATION TESTS - FRONTEND (Test Pyramid - Level 2)
+  # =========================================================================
+  # Integration tests for frontend components
+
+  test-frontend-integration:
+    name: '🔗 Integration Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: frontend
+
+      - name: 'Run Vitest integration tests'
+        run: npm run test:integration
+        working-directory: frontend
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2J2: E2E TESTS - FRONTEND (Test Pyramid - Level 3)
+  # =========================================================================
+  # E2E tests for frontend workflows
+
+  test-frontend-e2e:
+    name: '🌐 E2E Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: frontend
+
+      - name: 'Run Vitest E2E tests'
+        run: npm run test:e2e
+        working-directory: frontend
+        continue-on-error: true
+
+  # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
   # =========================================================================
   # Détecte les vulnérabilités dans les dépendances
@@ -1152,7 +1484,7 @@ jobs:
             port: 3015
     
     # Attend que tous les tests réussissent
-    needs: [test, test-containers, test-gamifications, test-iot, test-analytics, test-frontend, test-integration, test-e2e, test-pyramid]
+    needs: [test, test-containers, test-gamifications, test-iot, test-analytics, test-frontend, test-integration, test-e2e, test-pyramid, test-users-integration, test-users-e2e, test-api-gateway, test-api-gateway-integration, test-api-gateway-e2e, test-gamifications-integration, test-gamifications-e2e, test-frontend-integration, test-frontend-e2e, test-routes-unit, test-routes-integration, test-routes-e2e]
     
     # Permissions pour pousser sur le registry
     permissions:
