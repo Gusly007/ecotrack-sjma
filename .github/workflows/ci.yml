@@ -296,8 +296,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -305,6 +309,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -357,8 +363,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -366,6 +376,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -542,8 +554,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -551,6 +567,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
       
       - name: 'Install dependencies'
@@ -595,8 +613,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -604,6 +626,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
       
       - name: 'Install dependencies'
@@ -716,8 +740,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -725,6 +753,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -778,8 +808,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -787,6 +821,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1098,8 +1134,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1107,6 +1147,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
       
       - name: 'Install dependencies'
@@ -1157,8 +1199,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1166,6 +1212,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
       
       - name: 'Install dependencies'
@@ -1212,8 +1260,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1221,6 +1273,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1266,8 +1320,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1275,6 +1333,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1358,8 +1418,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1367,6 +1431,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1410,8 +1476,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1419,6 +1489,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1463,8 +1535,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1472,6 +1548,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1517,8 +1595,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1526,6 +1608,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1571,8 +1655,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1580,6 +1668,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
@@ -1622,8 +1712,12 @@ jobs:
       - name: 'Wait for PostgreSQL to be ready'
         run: |
           echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
           for i in {1..30}; do
-            if docker exec ecotrack-sjma_postgres_1 pg_isready -U test_user -d ecotrack_test > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
               echo "✓ PostgreSQL is ready"
               exit 0
             fi
@@ -1631,6 +1725,8 @@ jobs:
             sleep 2
           done
           echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
           exit 1
 
       - name: 'Install dependencies'
