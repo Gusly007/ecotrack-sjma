@@ -138,7 +138,7 @@ app.get('/api/routes', (req, res) => {
 });
 
 // ========== HEALTH CHECK ==========
-app.get('/health', async (req, res) => {
+app.get('/health', limiter, async (req, res) => {
   const health = {
     status: 'OK',
     timestamp: new Date().toISOString(),

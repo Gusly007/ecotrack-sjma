@@ -1,4 +1,7 @@
-export const getPasswordResetHtml = (resetUrl, appUrl) => `
+export const getPasswordResetHtml = (resetUrl, appUrl) => {
+  const escapedResetUrl = escapeHtml(resetUrl);
+  const escapedAppUrl = escapeHtml(appUrl);
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -26,7 +29,7 @@ export const getPasswordResetHtml = (resetUrl, appUrl) => `
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td align="center" style="padding: 30px 0;">
-                        <a href="${resetUrl}" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
+                        <a href="${escapedResetUrl}" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
                           Réinitialiser mon mot de passe
                         </a>
                       </td>
@@ -46,8 +49,8 @@ export const getPasswordResetHtml = (resetUrl, appUrl) => `
                     © 2026 EcoTrack. Tous droits réservés.
                   </p>
                   <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">
-                    <a href="${appUrl}/terms" style="color: #4CAF50; text-decoration: none;">Conditions d'utilisation</a> | 
-                    <a href="${appUrl}/privacy" style="color: #4CAF50; text-decoration: none;">Politique de confidentialité</a>
+                    <a href="${escapedAppUrl}/terms" style="color: #4CAF50; text-decoration: none;">Conditions d'utilisation</a> | 
+                    <a href="${escapedAppUrl}/privacy" style="color: #4CAF50; text-decoration: none;">Politique de confidentialité</a>
                   </p>
                 </td>
               </tr>
@@ -58,6 +61,7 @@ export const getPasswordResetHtml = (resetUrl, appUrl) => `
     </body>
     </html>
 `;
+};
 
 // Security: HTML escape function to prevent XSS  
 const escapeHtml = (text) => {
@@ -72,7 +76,10 @@ const escapeHtml = (text) => {
   return String(text).replace(/[&<>"']/g, (char) => map[char]);
 };
 
-export const getWelcomeHtml = (prenom, appUrl) => `
+export const getWelcomeHtml = (prenom, appUrl) => {
+  const escapedPrenom = escapeHtml(prenom);
+  const escapedAppUrl = escapeHtml(appUrl);
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -92,7 +99,7 @@ export const getWelcomeHtml = (prenom, appUrl) => `
               </tr>
               <tr>
                 <td style="padding: 40px 30px;">
-                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue sur EcoTrack, ${escapeHtml(prenom)} !</h2>
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue sur EcoTrack, ${escapedPrenom} !</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Nous sommes ravis de vous accueillir dans notre communauté engagée pour l'environnement.
                   </p>
@@ -108,7 +115,7 @@ export const getWelcomeHtml = (prenom, appUrl) => `
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td align="center" style="padding: 30px 0;">
-                        <a href="${appUrl}/login" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
+                        <a href="${escapedAppUrl}/login" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
                           Se connecter
                         </a>
                       </td>
@@ -130,8 +137,13 @@ export const getWelcomeHtml = (prenom, appUrl) => `
     </body>
     </html>
 `;
+};
 
 export const getAdminCreatedUserHtml = (prenom, nom, role, password, appUrl) => {
+  const escapedPrenom = escapeHtml(prenom);
+  const escapedNom = escapeHtml(nom);
+  const escapedPassword = escapeHtml(password);
+  const escapedAppUrl = escapeHtml(appUrl);
   const roleLabels = {
     CITOYEN: 'Citoyen',
     AGENT: 'Agent de collecte',
@@ -160,24 +172,24 @@ export const getAdminCreatedUserHtml = (prenom, nom, role, password, appUrl) => 
               </tr>
               <tr>
                 <td style="padding: 40px 30px;">
-                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue, ${escapeHtml(prenom)} ${escapeHtml(nom)} !</h2>
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Bienvenue, ${escapedPrenom} ${escapedNom} !</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Un compte EcoTrack a été créé pour vous par l'administrateur.
                   </p>
                   <div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0;">
                     <p style="margin: 0 0 10px 0; color: #333; font-size: 16px;"><strong>Votre compte :</strong></p>
                     <p style="margin: 5px 0; color: #666; font-size: 14px;">• Rôle : <strong>${roleLabel}</strong></p>
-                    <p style="margin: 5px 0; color: #666; font-size: 14px;">• Email : ${prenom.toLowerCase()}.${nom.toLowerCase()}@ecotrack.local</p>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px;">• Email : ${escapedPrenom.toLowerCase()}.${escapedNom.toLowerCase()}@ecotrack.local</p>
                   </div>
                   <div style="background-color: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
                     <p style="margin: 0 0 10px 0; color: #856404; font-size: 16px;"><strong>🔑 Mot de passe temporaire :</strong></p>
-                    <p style="margin: 0; color: #856404; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${escapeHtml(password)}</strong></p>
+                    <p style="margin: 0; color: #856404; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${escapedPassword}</strong></p>
                     <p style="margin: 10px 0 0 0; color: #856404; font-size: 13px;">Vous devrez changer ce mot de passe lors de votre première connexion.</p>
                   </div>
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td align="center" style="padding: 30px 0;">
-                        <a href="${appUrl}/login" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
+                        <a href="${escapedAppUrl}/login" style="background-color: #4CAF50; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
                           Se connecter
                         </a>
                       </td>
@@ -202,6 +214,8 @@ export const getAdminCreatedUserHtml = (prenom, nom, role, password, appUrl) => 
 };
 
 export const getAccountStatusHtml = (prenom, isActivated, appUrl) => {
+  const escapedPrenom = escapeHtml(prenom);
+  const escapedAppUrl = escapeHtml(appUrl);
   const status = isActivated ? 'activé' : 'désactivé';
   const title = isActivated ? 'Compte activé' : 'Compte désactivé';
   const color = isActivated ? '#4CAF50' : '#f44336';
@@ -229,7 +243,7 @@ export const getAccountStatusHtml = (prenom, isActivated, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">${icon} ${title}</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${escapeHtml(prenom)},
+                    Bonjour ${escapedPrenom},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre compte EcoTrack a été <strong>${status}</strong> par un administrateur.
@@ -238,7 +252,7 @@ export const getAccountStatusHtml = (prenom, isActivated, appUrl) => {
                     ? `<table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td align="center" style="padding: 30px 0;">
-                            <a href="${appUrl}/login" style="background-color: ${color}; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
+                            <a href="${escapedAppUrl}/login" style="background-color: ${color}; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
                               Se connecter
                             </a>
                           </td>
@@ -265,6 +279,8 @@ export const getAccountStatusHtml = (prenom, isActivated, appUrl) => {
 };
 
 export const getRoleChangeHtml = (prenom, oldRole, newRole, appUrl) => {
+  const escapedPrenom = escapeHtml(prenom);
+  const escapedAppUrl = escapeHtml(appUrl);
   const roleLabels = {
     CITOYEN: 'Citoyen',
     AGENT: 'Agent de collecte',
@@ -296,7 +312,7 @@ export const getRoleChangeHtml = (prenom, oldRole, newRole, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">🔄 Rôle modifié</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${escapeHtml(prenom)},
+                    Bonjour ${escapedPrenom},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre rôle sur EcoTrack a été modifié par un administrateur.
@@ -315,7 +331,7 @@ export const getRoleChangeHtml = (prenom, oldRole, newRole, appUrl) => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td align="center" style="padding: 30px 0;">
-                        <a href="${appUrl}/login" style="background-color: #2196F3; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
+                        <a href="${escapedAppUrl}/login" style="background-color: #2196F3; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: 600; display: inline-block;">
                           Se connecter
                         </a>
                       </td>
@@ -340,6 +356,7 @@ export const getRoleChangeHtml = (prenom, oldRole, newRole, appUrl) => {
 };
 
 export const getAccountDeletedHtml = (prenom, appUrl) => {
+  const escapedPrenom = escapeHtml(prenom);
   return `
     <!DOCTYPE html>
     <html>
@@ -362,7 +379,7 @@ export const getAccountDeletedHtml = (prenom, appUrl) => {
                 <td style="padding: 40px 30px;">
                   <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">❌ Compte supprimé</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                    Bonjour ${escapeHtml(prenom)},
+                    Bonjour ${escapedPrenom},
                   </p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
                     Votre compte EcoTrack a été <strong>supprimé</strong> par un administrateur.

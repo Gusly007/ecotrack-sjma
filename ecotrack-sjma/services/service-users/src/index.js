@@ -105,8 +105,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'users' });
 });
 
-// Health check DB
-app.get('/health/db', async (req, res) => {
+// Health check DB - with rate limiting
+app.get('/health/db', apiLimiter, async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'up' });
@@ -115,8 +115,8 @@ app.get('/health/db', async (req, res) => {
   }
 });
 
-// Metrics endpoint
-app.get('/metrics', async (req, res) => {
+// Metrics endpoint - with rate limiting
+app.get('/metrics', apiLimiter, async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });

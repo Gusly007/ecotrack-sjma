@@ -110,7 +110,7 @@ try {
   });
 }
 
-app.get('/api', (req, res) => {
+app.get('/api', iotLimiter, (req, res) => {
   res.json({
     success: true,
     message: 'Bienvenue sur EcoTrack IoT Service API',
