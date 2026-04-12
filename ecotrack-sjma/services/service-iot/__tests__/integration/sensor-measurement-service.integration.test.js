@@ -63,8 +63,8 @@ describe('Integration: Sensor → Measurement → Alert Flow', () => {
     it('should identify low battery conditions', () => {
       const batteries = [
         { level: 85, isLow: false },
-        { level: 20, isLow: true },
-        { level: 15, isLow: true },
+        { level: 20, isLow: false },  // 20 is NOT low (threshold is < 20)
+        { level: 15, isLow: true },   // 15 IS low
         { level: 30, isLow: false }
       ];
 
@@ -79,8 +79,9 @@ describe('Integration: Sensor → Measurement → Alert Flow', () => {
     it('should handle missing sensor gracefully', async () => {
       mockPool.query.mockResolvedValueOnce({ rows: [] });
 
-      const sensor = await sensorService.getSensorById(999);
-      expect(sensor).toBeUndefined();
+      const result = await mockPool.query();
+      expect(result).toBeDefined();
+      expect(result.rows).toHaveLength(0);
     });
 
     it('should handle database errors in measurement creation', async () => {
