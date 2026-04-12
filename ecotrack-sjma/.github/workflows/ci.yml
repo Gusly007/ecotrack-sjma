@@ -1407,14 +1407,15 @@ jobs:
 
       - name: 'Analyze with CodeQL'
         uses: github/codeql-action/analyze@v3
+        id: codeql-analyze
 
       - name: 'Upload CodeQL SARIF as artifact'
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: report-sast-codeql-sarif
-          path: ${{ github.workspace }}/results/
-          if-no-files-found: warn
+          path: '*.sarif'
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 3C: DAST - OWASP ZAP BASELINE
@@ -1482,20 +1483,27 @@ jobs:
       # ===== COLLECT COVERAGE REPORTS =====
       - name: 'Install dependencies for coverage collection'
         run: |
+          echo "Installing dependencies for coverage..."
           for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
             if [ -d "services/$service" ]; then
-              npm ci --prefix services/$service
+              echo "  → Installing $service..."
+              npm ci --prefix services/$service 2>&1 | tail -5 || echo "  ⚠ Failed to install $service"
             fi
           done
 
       - name: 'Generate coverage reports'
         run: |
+          echo "Generating coverage reports..."
           for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
             if [ -d "services/$service" ]; then
+              echo "  → Testing $service..."
               cd services/$service
-              npm run test:coverage 2>/dev/null || true
+              npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
               if [ -d "coverage" ]; then
+                echo "    ✓ Coverage found, copying..."
                 cp -r coverage ../../reports/coverage/${service} 2>/dev/null || true
+              else
+                echo "    ⚠ No coverage directory found"
               fi
               cd ../../
             fi
@@ -1505,11 +1513,15 @@ jobs:
       # ===== COLLECT FRONTEND COVERAGE =====
       - name: 'Generate frontend coverage'
         run: |
+          echo "Generating frontend coverage..."
           cd frontend
-          npm ci 2>/dev/null || true
-          npm run test:coverage 2>/dev/null || true
+          npm ci 2>&1 | tail -3 || echo "⚠ Failed to install frontend deps"
+          npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
           if [ -d "coverage" ]; then
+            echo "  ✓ Frontend coverage found, copying..."
             cp -r coverage ../reports/coverage/frontend
+          else
+            echo "  ⚠ No frontend coverage directory found"
           fi
         continue-on-error: true
 
@@ -1522,19 +1534,22 @@ jobs:
           path: reports/coverage/
           if-no-files-found: ignore
 
+      - name: 'Debug: List coverage directories'
+        if: always()
+        run: |
+          echo "Coverage directories found:"
+          find services -type d -name "coverage" 2>/dev/null | head -20
+          echo ""
+          echo "Reports coverage directories:"
+          find reports -type d 2>/dev/null | head -20
+
       - name: 'Upload service-specific coverage'
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-backend-all-services
           path: |
-            services/service-users/coverage/
-            services/service-containers/coverage/
-            services/service-gamifications/coverage/
-            services/service-routes/coverage/
-            services/service-iot/coverage/
-            services/service-analytics/coverage/
-            services/api-gateway/coverage/
+            services/*/coverage/
           if-no-files-found: ignore
 
       - name: 'Upload frontend coverage'
@@ -1546,68 +1561,30 @@ jobs:
           if-no-files-found: ignore
 
       # ===== UPLOAD TEST REPORTS =====
-      - name: 'Upload test reports - service-users'
+      - name: 'Debug: Find test result files'
+        if: always()
+        run: |
+          echo "Searching for test result files..."
+          find . -type f \( -name "*.json" -o -name "junit.xml" \) -path "*/test*" 2>/dev/null | head -30 || echo "No test result files found"
+
+      - name: 'Upload all test reports from services'
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: report-tests-service-users
-          path: services/service-users/test-results/
+          name: report-tests-all-services
+          path: |
+            services/*/test-results/
+            services/*/reports/
           if-no-files-found: ignore
 
-      - name: 'Upload test reports - service-containers'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-service-containers
-          path: services/service-containers/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - service-routes'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-service-routes
-          path: services/service-routes/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - service-iot'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-service-iot
-          path: services/service-iot/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - service-analytics'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-service-analytics
-          path: services/service-analytics/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - service-gamifications'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-service-gamifications
-          path: services/service-gamifications/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - api-gateway'
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-tests-api-gateway
-          path: services/api-gateway/test-results/
-          if-no-files-found: ignore
-
-      - name: 'Upload test reports - frontend'
+      - name: 'Upload frontend test reports'
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: report-tests-frontend
-          path: frontend/test-results/
+          path: |
+            frontend/test-results/
+            frontend/reports/
           if-no-files-found: ignore
 
   # =========================================================================
