@@ -139,14 +139,14 @@ jobs:
       - name: 'Debug: Check coverage files exist'
         if: always()
         run: |
-          echo "Checking for coverage directory in services/service-users..."
-          if [ -d "services/service-users/coverage" ]; then
+          echo "Checking for coverage directory in ecotrack-sjma/services/service-users..."
+          if [ -d "ecotrack-sjma/services/service-users/coverage" ]; then
             echo "✅ Coverage directory found"
-            ls -lah services/service-users/coverage/ | head -10
+            ls -lah ecotrack-sjma/services/service-users/coverage/ | head -10
           else
             echo "❌ No coverage directory found"
             echo "Available directories:"
-            ls -la services/service-users/ | grep -E '^d'
+            ls -la ecotrack-sjma/services/service-users/ | grep -E '^d'
           fi
 
       - name: 'Upload coverage artifact'
@@ -591,7 +591,7 @@ jobs:
           node-version: '20'
       
       - name: 'Install system dependencies for canvas'
-        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
       
       - name: 'Install dependencies'
         run: npm ci
@@ -656,7 +656,7 @@ jobs:
           node-version: '20'
 
       - name: 'Install system dependencies for canvas'
-        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Install dependencies'
         run: npm ci
@@ -711,7 +711,7 @@ jobs:
           node-version: '20'
 
       - name: 'Install system dependencies for canvas'
-        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Install dependencies'
         run: npm ci
@@ -908,16 +908,16 @@ jobs:
           node-version: '20'
 
       - name: 'Run pyramid metrics script'
-        run: node scripts/test-pyramid-metrics.mjs
+        run: node ecotrack-sjma/scripts/test-pyramid-metrics.mjs
 
       - name: 'Upload pyramid reports'
         uses: actions/upload-artifact@v4
         with:
           name: report-test-pyramid
           path: |
-            reports/pyramid/report.json
-            reports/pyramid/report.md
-            reports/pyramid/index.html
+            ecotrack-sjma/reports/pyramid/report.json
+            ecotrack-sjma/reports/pyramid/report.md
+            ecotrack-sjma/reports/pyramid/index.html
           if-no-files-found: warn
 
   # =========================================================================
@@ -1569,7 +1569,7 @@ jobs:
           node-version: '20'
 
       - name: 'Install system dependencies for canvas'
-        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
       - name: 'Create reports directory'
         run: mkdir -p reports/{coverage,tests,security}
@@ -1581,13 +1581,13 @@ jobs:
           echo "=========================================="
           echo ""
           echo "Backend services:"
-          find services -type d -name "coverage" 2>/dev/null | while read dir; do
+          find ecotrack-sjma/services -type d -name "coverage" 2>/dev/null | while read dir; do
             echo "  ✓ $dir"
           done
           echo ""
           echo "Frontend:"
-          if [ -d "frontend/coverage" ]; then
-            echo "  ✓ frontend/coverage"
+          if [ -d "ecotrack-sjma/frontend/coverage" ]; then
+            echo "  ✓ ecotrack-sjma/frontend/coverage"
           else
             echo "  ✗ frontend/coverage not found"
           fi
@@ -1655,7 +1655,7 @@ jobs:
         if: always()
         run: |
           echo "Coverage directories found:"
-          find services -type d -name "coverage" 2>/dev/null | head -20
+          find ecotrack-sjma/services -type d -name "coverage" 2>/dev/null | head -20
           echo ""
           echo "Reports coverage directories:"
           find reports -type d 2>/dev/null | head -20
@@ -1666,7 +1666,7 @@ jobs:
         with:
           name: coverage-backend-all-services
           path: |
-            services/*/coverage/
+            ecotrack-sjma/services/*/coverage/
           if-no-files-found: ignore
 
       - name: 'Upload frontend coverage'
@@ -1741,13 +1741,13 @@ jobs:
           fi
           
           # Backend coverage archive
-          if find services -type d -name "coverage" | grep -q .; then
-            tar -czf archives/coverage-backend.tar.gz services/*/coverage/ 2>/dev/null && echo "✓ coverage-backend.tar.gz"
+          if find ecotrack-sjma/services -type d -name "coverage" | grep -q .; then
+            tar -czf archives/coverage-backend.tar.gz ecotrack-sjma/services/*/coverage/ 2>/dev/null && echo "✓ coverage-backend.tar.gz"
           fi
           
           # Frontend coverage archive
-          if [ -d "frontend/coverage" ] && [ "$(ls -A frontend/coverage/)" ]; then
-            tar -czf archives/coverage-frontend.tar.gz frontend/coverage/ 2>/dev/null && echo "✓ coverage-frontend.tar.gz"
+          if [ -d "ecotrack-sjma/frontend/coverage" ] && [ "$(ls -A ecotrack-sjma/frontend/coverage/)" ]; then
+            tar -czf archives/coverage-frontend.tar.gz ecotrack-sjma/frontend/coverage/ 2>/dev/null && echo "✓ coverage-frontend.tar.gz"
           fi
           
           echo "Archives created in archives/ directory"
