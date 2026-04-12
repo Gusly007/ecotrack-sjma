@@ -10,9 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --include='**/__tests__/unit/**/*.test.js' --include='**/__tests__/integration/**/*.test.js' --coverage --passWithNoTests",
-    "test:integration": "vitest run --include='**/__tests__/integration/**/*.test.js' --passWithNoTests",
-    "test:e2e": "vitest run --include='**/__tests__/e2e/**/*.test.js' --passWithNoTests"
+    "test:coverage": "vitest run --coverage __tests__/unit __tests__/integration",
+    "test:integration": "vitest run __tests__/integration",
+    "test:e2e": "vitest run __tests__/e2e"
   },
   "dependencies": {
     "axios": "^1.13.5",
