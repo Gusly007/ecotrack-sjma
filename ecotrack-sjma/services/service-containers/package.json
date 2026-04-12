@@ -8,6 +8,7 @@
     "dev": "nodemon index.js",
     "test": "jest --runInBand",
     "test:unit": "jest __tests__/unit --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
     "test:integration": "jest __tests__/integration --runInBand || echo '⚠️ Integration tests require PostgreSQL'",
     "test:integration:skip": "SKIP_DB_TESTS=1 jest __tests__/integration --runInBand",
     "test:e2e": "jest __tests__/e2e --runInBand --detectOpenHandles --passWithNoTests",

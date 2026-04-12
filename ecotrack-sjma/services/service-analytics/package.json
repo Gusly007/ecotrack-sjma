@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest --passWithNoTests",
     "test:unit": "jest __tests__/unit --passWithNoTests",
+    "test:coverage": "jest --coverage --passWithNoTests",
     "test:integration": "jest __tests__/integration --passWithNoTests",
     "test:e2e": "jest __tests__/e2e --passWithNoTests",
     "test:unit:html": "jest __tests__/unit --passWithNoTests && node scripts/junit-to-html.js unit",
