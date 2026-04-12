@@ -1,21 +1,21 @@
 # ============================================================================
-# GITHUB ACTIONS CI/CD PIPELINE
+# GITHUB ACTIONS CI/CD PIPELINE - ECO TRACK
 # ============================================================================
 #
-# CONCEPT: Automatise lint → test → build → scan à chaque push/PR
+# CONCEPT: Test Pyramid avec cibles de couverture
 #
-# TRIGGER: S'exécute sur:
-#   - Push sur toutes les branches (feature/*, feat/*, sans préfixe, etc.)
-#   - Pull request ouvert/modifié vers toutes les branches
+# TEST PYRAMID CIBLES (60% Unit / 30% Integration / 10% E2E):
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │ LEVEL 3: E2E     │ 10%   │ ~20s │ Coût: Élevé    │ Tests parcours      │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ LEVEL 2: INT     │ 30%   │ ~5s  │ Coût: Moyen   │ Tests API/module  │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ LEVEL 1: UNIT    │ 60%   │ <2s  │ Coût: Faible  │ Tests fonctions  │
+# └─────────────────────────────────────────────────────────────────────────────┘
 #
-# JOBS:
-#   1. Code Quality (Lint) - ESLint, indentation, etc.
-#   2. Unit Tests - Jest avec couverture
-#   3. Security Scan - npm audit (vulnérabilités)
-#   4. Build Docker - Construit l'image du service-users
-#   5. Test Docker - Lance le conteneur et le valide
 #
-# RÉSULTAT: PR est "blocked" si un job échoue (protection)
+# TRIGGER: Push sur toutes branches + PR
+# ============================================================================
 # ============================================================================
 
 name: 'CI/CD Pipeline'
@@ -67,12 +67,12 @@ jobs:
       # Étape 3: Installer dépendances
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
       
       # Étape 4: Lancer ESLint (si config existe)
       - name: 'Run ESLint'
         run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         continue-on-error: true
 
   # =========================================================================
@@ -114,12 +114,12 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-users
+        working-directory: services/service-users
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
-        working-directory: ecotrack-sjma/services/service-users
+        working-directory: services/service-users
         env:
           # Base de test dans le service postgres ci-dessus
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -131,9 +131,31 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./ecotrack-sjma/services/service-users/coverage/coverage-final.json
+          files: ./services/service-users/coverage/coverage-final.json
           flags: unittests
         continue-on-error: true
+
+      # Upload coverage as artifact
+      - name: 'Debug: Check coverage files exist'
+        if: always()
+        run: |
+          echo "Checking for coverage directory in services/service-users..."
+          if [ -d "services/service-users/coverage" ]; then
+            echo "✅ Coverage directory found"
+            ls -lah services/service-users/coverage/ | head -10
+          else
+            echo "❌ No coverage directory found"
+            echo "Available directories:"
+            ls -la services/service-users/ | grep -E '^d'
+          fi
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-users
+          path: services/service-users/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2B: UNIT TESTS - SERVICE-CONTAINERS
@@ -174,20 +196,20 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-containers
+        working-directory: services/service-containers
       
       # Initialiser le schéma de test
       - name: 'Initialize test database'
         run: |
           PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
           PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -f src/db/init-db-pg.sql || echo "Schema init skipped"
-        working-directory: ecotrack-sjma/services/service-containers
+        working-directory: services/service-containers
         continue-on-error: true
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:unit
-        working-directory: ecotrack-sjma/services/service-containers
+        working-directory: services/service-containers
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -200,8 +222,122 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./ecotrack-sjma/services/service-containers/coverage/coverage-final.json
+          files: ./services/service-containers/coverage/coverage-final.json
           flags: unittests-containers
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-containers
+          path: services/service-containers/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2B1: INTEGRATION TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 19 tests | Conditional (requires DB) | ~1s | Coût: Moyen
+  # Test les interactions entre routes, services, repositories
+
+  test-containers-integration:
+    name: ' Integration Tests - service-containers'
+    runs-on: ubuntu-latest
+
+    needs: test-containers
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-containers
+
+      - name: 'Run Integration Tests (19 tests)'
+        run: npm run test:integration
+        working-directory: services/service-containers
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2B2: E2E TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 12 tests | 100% passing | ~1s | Coût: Élevé
+  # Test les parcours complets d'accès conteneurs
+
+  test-containers-e2e:
+    name: ' E2E Tests - service-containers'
+    runs-on: ubuntu-latest
+
+    needs: test-containers-integration
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-containers
+
+      - name: 'Run E2E Tests (12 tests)'
+        run: npm run test:e2e
+        working-directory: services/service-containers
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
   # =========================================================================
@@ -241,12 +377,12 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-gamifications
+        working-directory: services/service-gamifications
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
         run: npm run test:coverage
-        working-directory: ecotrack-sjma/services/service-gamifications
+        working-directory: services/service-gamifications
         env:
           NODE_ENV: test
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -256,9 +392,17 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./ecotrack-sjma/services/service-gamifications/coverage/coverage-final.json
+          files: ./services/service-gamifications/coverage/coverage-final.json
           flags: unittests-gamifications
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-gamifications
+          path: services/service-gamifications/coverage/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 2D: UNIT TESTS - SERVICE-IOT (NEW!)
@@ -296,11 +440,11 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-iot
+        working-directory: services/service-iot
       
       - name: 'Run Jest tests'
         run: npm test
-        working-directory: ecotrack-sjma/services/service-iot
+        working-directory: services/service-iot
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -308,9 +452,109 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./ecotrack-sjma/services/service-iot/coverage/coverage-final.json
+          files: ./services/service-iot/coverage/coverage-final.json
           flags: unittests-iot
         continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-iot
+          path: services/service-iot/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2D1: INTEGRATION TESTS - SERVICE-IOT (Test Pyramid - Level 2)
+  # =========================================================================
+  # 6 tests | 20% of pyramid | ~2s | Coût: Moyen
+  # Test gateway integration + sensor-measurement-service + cache flows
+
+  test-iot-integration:
+    name: ' Integration Tests (20%) - service-iot'
+    runs-on: ubuntu-latest
+    needs: test-iot
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-iot
+      
+      - name: 'Run integration tests'
+        run: npm run test:integration
+        working-directory: services/service-iot
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+  # =========================================================================
+  # JOB 2D2: E2E TESTS - SERVICE-IOT (Test Pyramid - Level 3)
+  # =========================================================================
+  # 3 tests | 10% of pyramid | ~2s | Coût: Élevé
+  # Test complete alert workflows + notification flows + state transitions
+
+  test-iot-e2e:
+    name: ' E2E Tests (10%) - service-iot'
+    runs-on: ubuntu-latest
+    needs: test-iot-integration
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-iot
+      
+      - name: 'Run E2E tests'
+        run: npm run test:e2e
+        working-directory: services/service-iot
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
   # =========================================================================
   # JOB 2E: UNIT TESTS - SERVICE-ANALYTICS
@@ -346,13 +590,16 @@ jobs:
         with:
           node-version: '20'
       
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+      
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-analytics
+        working-directory: services/service-analytics
       
       - name: 'Run Jest tests'
         run: npm test
-        working-directory: ecotrack-sjma/services/service-analytics
+        working-directory: services/service-analytics
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -360,8 +607,127 @@ jobs:
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
         with:
-          files: ./ecotrack-sjma/services/service-analytics/coverage/coverage-final.json
+          files: ./services/service-analytics/coverage/coverage-final.json
           flags: unittests-analytics
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-analytics
+          path: services/service-analytics/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2E1: INTEGRATION TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 2 ~22%)
+  # =========================================================================
+  # 32 tests | ~22% coverage | ~5s | Coût: Moyen
+  # Test les interactions entre modules (routes, services, repositories)
+
+  test-analytics-integration:
+    name: '🔗 Integration Tests (22%) - service-analytics'
+    runs-on: ubuntu-latest
+
+    needs: test-analytics
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-analytics
+
+      - name: 'Run Integration Tests (32 tests)'
+        run: npm run test:integration
+        working-directory: services/service-analytics
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+  # =========================================================================
+  # JOB 2E2: E2E TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 3 ~11%)
+  # =========================================================================
+  # 17 tests | ~11% coverage | ~4s | Coût: Élevé
+  # Test les parcours complets (workflows, health checks, concurrent requests)
+
+  test-analytics-e2e:
+    name: '🌐 E2E Tests (11%) - service-analytics'
+    runs-on: ubuntu-latest
+
+    needs: test-analytics-integration
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-analytics
+
+      - name: 'Run E2E Tests (17 tests)'
+        run: npm run test:e2e
+        working-directory: services/service-analytics
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
   # =========================================================================
@@ -384,17 +750,17 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/frontend
+        working-directory: frontend
 
       - name: 'Run Vitest coverage'
         run: npm run test:coverage
-        working-directory: ecotrack-sjma/frontend
+        working-directory: frontend
 
       - name: 'Upload frontend coverage artifact'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-frontend
-          path: ecotrack-sjma/frontend/coverage
+          path: frontend/coverage
           if-no-files-found: warn
 
   # =========================================================================
@@ -442,13 +808,13 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
 
       - name: 'Run integration tests'
         run: |
           mkdir -p reports
           ${{ matrix.command }}
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -462,7 +828,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-integration-${{ matrix.service }}
-          path: ecotrack-sjma/services/${{ matrix.service }}/reports/integration.json
+          path: services/${{ matrix.service }}/reports/integration.json
           if-no-files-found: warn
 
   # =========================================================================
@@ -500,13 +866,13 @@ jobs:
 
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/service-containers
+        working-directory: services/service-containers
 
       - name: 'Run e2e tests'
         run: |
           mkdir -p reports
           npm run test:e2e -- --json --outputFile=reports/e2e.json
-        working-directory: ecotrack-sjma/services/service-containers
+        working-directory: services/service-containers
         env:
           NODE_ENV: test
           PGHOST: localhost
@@ -519,8 +885,539 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-e2e-service-containers
-          path: ecotrack-sjma/services/service-containers/reports/e2e.json
+          path: services/service-containers/reports/e2e.json
           if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2I: TEST PYRAMID METRICS
+  # =========================================================================
+
+  test-pyramid:
+    name: 'Test Pyramid Metrics'
+    runs-on: ubuntu-latest
+    needs: [test-integration, test-e2e]
+    timeout-minutes: 10
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Run pyramid metrics script'
+        run: node scripts/test-pyramid-metrics.mjs
+
+      - name: 'Upload pyramid reports'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-test-pyramid
+          path: |
+            reports/pyramid/report.json
+            reports/pyramid/report.md
+            reports/pyramid/index.html
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2F1: UNIT TESTS - SERVICE-ROUTES (Test Pyramid - Level 1 ~94%)
+  # =========================================================================
+  # ~252 tests | ~90% coverage | <1s | Coût: Faible
+  # Plus nombreux et rapide - exécuté en premier
+  
+  test-routes-unit:
+    name: '📊 Unit Tests (94%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-routes
+      
+      # Lance les tests unitaires avec coverage
+      - name: 'Run Unit Tests (252 tests)'
+        run: npm run test:unit
+        working-directory: services/service-routes
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+      
+      # Upload couverture
+      - name: 'Upload coverage'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./services/service-routes/coverage/coverage-final.json
+          flags: unit-tests-routes
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-routes
+          path: services/service-routes/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2F2: INTEGRATION TESTS - SERVICE-ROUTES (Test Pyramid - Level 2 ~2%)
+  # =========================================================================
+  # 4 tests | ~5% coverage | ~1s | Coût: Moyen
+  # Test les interactions entre modules
+  
+  test-routes-integration:
+    name: ' Integration Tests (2%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: test-routes-unit
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-routes
+      
+      # Lance les tests d'intégration
+      - name: 'Run Integration Tests (4 tests)'
+        run: npm run test:integration
+        working-directory: services/service-routes
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
+  # =========================================================================
+  # JOB 2F3: E2E TESTS - SERVICE-ROUTES (Test Pyramid - Level 3 ~5%)
+  # =========================================================================
+  # 14 tests | ~5% coverage | ~2s | Coût: Élevé
+  # Test le parcours complet - Plus lent
+  
+  test-routes-e2e:
+    name: '🌐 E2E Tests (5%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: test-routes-integration
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-routes
+      
+      # Lance les tests E2E
+      - name: 'Run E2E Tests (14 tests)'
+        run: npm run test:e2e
+        working-directory: services/service-routes
+        env:
+          NODE_ENV: test
+          API_URL: http://localhost:3000
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2G1: INTEGRATION TESTS - SERVICE-USERS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 2 tests | Integration tests for user auth flows
+
+  test-users-integration:
+    name: '🔗 Integration Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-users
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/service-users
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2G2: E2E TESTS - SERVICE-USERS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | User workflow E2E
+
+  test-users-e2e:
+    name: '🌐 E2E Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test-users-integration
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-users
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/service-users
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2H1: UNIT TESTS - API-GATEWAY (NEW!)
+  # =========================================================================
+  # Tests unitaires pour l'API Gateway
+
+  test-api-gateway:
+    name: 'Unit Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: lint
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run Jest tests'
+        run: npm test
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-api-gateway
+          path: services/api-gateway/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2H2: INTEGRATION TESTS - API-GATEWAY (Test Pyramid - Level 2)
+  # =========================================================================
+
+  test-api-gateway-integration:
+    name: '🔗 Integration Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2H3: E2E TESTS - API-GATEWAY (Test Pyramid - Level 3)
+  # =========================================================================
+
+  test-api-gateway-e2e:
+    name: '🌐 E2E Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2I1: INTEGRATION TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 3 tests | Integration tests for gamification flows
+
+  test-gamifications-integration:
+    name: '🔗 Integration Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-gamifications
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2I2: E2E TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | Gamification E2E workflow
+
+  test-gamifications-e2e:
+    name: '🌐 E2E Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications-integration
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: services/service-gamifications
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2J1: INTEGRATION TESTS - FRONTEND (Test Pyramid - Level 2)
+  # =========================================================================
+  # Integration tests for frontend components
+
+  test-frontend-integration:
+    name: '🔗 Integration Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: frontend
+
+      - name: 'Run Vitest integration tests'
+        run: npm run test:integration
+        working-directory: frontend
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2J2: E2E TESTS - FRONTEND (Test Pyramid - Level 3)
+  # =========================================================================
+  # E2E tests for frontend workflows
+
+  test-frontend-e2e:
+    name: '🌐 E2E Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: frontend
+
+      - name: 'Run Vitest E2E tests'
+        run: npm run test:e2e
+        working-directory: frontend
+        continue-on-error: true
 
   # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
@@ -546,21 +1443,21 @@ jobs:
       
       - name: 'Install dependencies'
         run: npm ci
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
       
       # npm audit = audit des dépendances et génération de rapport JSON
       - name: 'Run npm audit and save report'
         run: |
           mkdir -p reports/security
           npm audit --omit=dev --json > reports/security/npm-audit-${{ matrix.service }}.json || true
-        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         continue-on-error: true
 
       - name: 'Upload dependency audit report'
         uses: actions/upload-artifact@v4
         with:
           name: report-dependency-audit-${{ matrix.service }}
-          path: ecotrack-sjma/services/${{ matrix.service }}/reports/security/npm-audit-${{ matrix.service }}.json
+          path: services/${{ matrix.service }}/reports/security/npm-audit-${{ matrix.service }}.json
           if-no-files-found: warn
 
   # =========================================================================
@@ -574,6 +1471,9 @@ jobs:
       actions: read
       contents: read
       security-events: write
+    
+    env:
+      CODEQL_ACTION_FILE_COVERAGE_ON_PRS: true
 
     steps:
       - name: 'Checkout code'
@@ -589,6 +1489,23 @@ jobs:
 
       - name: 'Analyze with CodeQL'
         uses: github/codeql-action/analyze@v3
+        id: codeql-analyze
+
+      - name: 'Upload CodeQL SARIF results'
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'sarif-output'
+          wait-for-processing: false
+        continue-on-error: true
+
+      - name: 'Collect CodeQL results as artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-sast-codeql-results
+          path: 'sarif-output/'
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 3C: DAST - OWASP ZAP BASELINE
@@ -606,7 +1523,7 @@ jobs:
 
       - name: 'Start API Gateway stack'
         run: docker compose up -d api-gateway service-users service-containers service-routes service-iot service-analytics postgres redis
-        working-directory: ecotrack-sjma
+
       - name: 'Run ZAP Baseline Scan'
         uses: zaproxy/action-baseline@v0.14.0
         with:
@@ -630,6 +1547,301 @@ jobs:
       #   working-directory: service-users
       #   env:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # =========================================================================
+  # JOB 3D: COLLECT ALL TEST REPORTS & COVERAGE
+  # =========================================================================
+  # Agrège tous les rapports: Coverage, Test Reports, SAST/DAST
+
+  collect-reports:
+    name: ' Collect All Reports'
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [test, test-containers, test-containers-integration, test-gamifications, test-iot, test-iot-integration, test-analytics, test-analytics-integration, test-analytics-e2e, test-frontend, test-integration, test-pyramid, test-routes-unit, test-routes-integration, test-users-integration, test-api-gateway, test-api-gateway-integration, test-gamifications-integration, test-frontend-integration, security, security-sast, security-dast]
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: apt-get update && apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Create reports directory'
+        run: mkdir -p reports/{coverage,tests,security}
+
+      - name: ' DEBUG: List all artifacts available'
+        run: |
+          echo "=========================================="
+          echo " Looking for coverage directories..."
+          echo "=========================================="
+          echo ""
+          echo "Backend services:"
+          find services -type d -name "coverage" 2>/dev/null | while read dir; do
+            echo "  ✓ $dir"
+          done
+          echo ""
+          echo "Frontend:"
+          if [ -d "frontend/coverage" ]; then
+            echo "  ✓ frontend/coverage"
+          else
+            echo "  ✗ frontend/coverage not found"
+          fi
+          echo ""
+          echo "Reports:"
+          ls -la reports/ 2>/dev/null || echo "  (No reports yet)"
+          echo "=========================================="
+
+
+      # ===== COLLECT COVERAGE REPORTS =====
+      - name: 'Install dependencies for coverage collection'
+        run: |
+          echo "Installing dependencies for coverage..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              echo "  → Installing $service..."
+              npm ci --prefix services/$service 2>&1 | tail -5 || echo "  ⚠ Failed to install $service"
+            fi
+          done
+
+      - name: 'Generate coverage reports'
+        run: |
+          echo "Generating coverage reports..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              echo "  → Testing $service..."
+              cd services/$service
+              npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
+              if [ -d "coverage" ]; then
+                echo "    ✓ Coverage found, copying..."
+                cp -r coverage ../../reports/coverage/${service} 2>/dev/null || true
+              else
+                echo "    ⚠ No coverage directory found"
+              fi
+              cd ../../
+            fi
+          done
+        continue-on-error: true
+
+      # ===== COLLECT FRONTEND COVERAGE =====
+      - name: 'Generate frontend coverage'
+        run: |
+          echo "Generating frontend coverage..."
+          cd frontend
+          npm ci 2>&1 | tail -3 || echo "⚠ Failed to install frontend deps"
+          npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
+          if [ -d "coverage" ]; then
+            echo "  ✓ Frontend coverage found, copying..."
+            cp -r coverage ../reports/coverage/frontend
+          else
+            echo "  ⚠ No frontend coverage directory found"
+          fi
+        continue-on-error: true
+
+      # ===== UPLOAD CONSOLIDATED REPORTS =====
+      - name: 'Upload consolidated coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-coverage-all
+          path: reports/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Debug: List coverage directories'
+        if: always()
+        run: |
+          echo "Coverage directories found:"
+          find services -type d -name "coverage" 2>/dev/null | head -20
+          echo ""
+          echo "Reports coverage directories:"
+          find reports -type d 2>/dev/null | head -20
+
+      - name: 'Upload service-specific coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend-all-services
+          path: |
+            services/*/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend-all
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+      # ===== GENERATE TEST REPORTS WITH JSON OUTPUT =====
+      - name: 'Generate test reports (JSON format)'
+        run: |
+          echo "Generating test reports in JSON format..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "services/$service" ]; then
+              echo "  → Generating tests for $service..."
+              mkdir -p services/$service/test-results
+              cd services/$service
+              npm test -- --json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+              cd ../../
+            fi
+          done
+        continue-on-error: true
+
+      - name: 'Generate frontend test reports'
+        run: |
+          echo "Generating frontend test reports..."
+          mkdir -p frontend/test-results
+          cd frontend
+          npm run test -- --reporter=json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+        continue-on-error: true
+
+      # ===== FINAL VERIFICATION & UPLOAD ALL ARTIFACTS =====
+      - name: 'Final artifact verification'
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📊 ARTIFACT VERIFICATION REPORT"
+          echo "=========================================="
+          
+          echo ""
+          echo "✅ COVERAGE REPORTS:"
+          find services frontend -type d -name "coverage" 2>/dev/null | while read dir; do
+            size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+            echo "   ✓ $dir ($size)"
+          done
+          
+          echo ""
+          echo "✅ TEST REPORTS:"
+          find services frontend -type f -name "test-report.json" -o -name "junit.xml" 2>/dev/null | while read file; do
+            size=$(wc -c < "$file" 2>/dev/null | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "$(wc -c < "$file") bytes")
+            echo "   ✓ $file ($size)"
+          done
+          
+          echo ""
+          echo "✅ COVERAGE DIRECTORIES SUMMARY:"
+          du -sh reports/coverage/* 2>/dev/null || echo "   ⚠ No consolidated coverage yet"
+          
+          echo ""
+          echo "=========================================="
+
+      - name: 'Create downloadable archives'
+        if: always()
+        run: |
+          echo "Creating archives for easy download..."
+          mkdir -p archives
+          
+          # Coverage archive
+          if [ -d "reports/coverage" ] && [ "$(ls -A reports/coverage/)" ]; then
+            tar -czf archives/coverage-all.tar.gz -C reports coverage/ 2>/dev/null && echo "✓ coverage-all.tar.gz"
+          fi
+          
+          # Backend coverage archive
+          if find services -type d -name "coverage" | grep -q .; then
+            tar -czf archives/coverage-backend.tar.gz services/*/coverage/ 2>/dev/null && echo "✓ coverage-backend.tar.gz"
+          fi
+          
+          # Frontend coverage archive
+          if [ -d "frontend/coverage" ] && [ "$(ls -A frontend/coverage/)" ]; then
+            tar -czf archives/coverage-frontend.tar.gz frontend/coverage/ 2>/dev/null && echo "✓ coverage-frontend.tar.gz"
+          fi
+          
+          echo "Archives created in archives/ directory"
+        continue-on-error: true
+
+      - name: 'Upload coverage archives'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-archives-compressed
+          path: archives/
+          if-no-files-found: ignore
+
+      - name: 'Upload backend coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend-all-services
+          path: services/*/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend-all
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload all test reports from services'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-all-services
+          path: |
+            services/*/test-results/
+            services/*/reports/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend test reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-frontend
+          path: |
+            frontend/test-results/
+            frontend/reports/
+          if-no-files-found: ignore
+
+      - name: 'Create final artifact summary'
+        if: always()
+        run: |
+          cat > artifact-summary.txt << 'EOF'
+          ========================================
+          ECOTRACK CI/CD ARTIFACT SUMMARY
+          ========================================
+          
+          COVERAGE ARTIFACTS:
+          - reports-coverage-all: All consolidated coverage reports
+          - coverage-backend-all-services: Individual service coverage directories
+          - coverage-frontend-all: Frontend coverage report
+          - coverage-archives-compressed: Compressed tar.gz files for easy download
+          
+          TEST ARTIFACTS:
+          - report-tests-all-services: All backend service test reports (JSON)
+          - report-tests-frontend: Frontend test reports (JSON)
+          - report-integration-*: Individual integration test reports
+          - report-e2e-service-containers: E2E test reports
+          
+          SECURITY ARTIFACTS:
+          - report-dependency-audit-*: npm audit reports for each service (7 total)
+          - report-sast-codeql-results: CodeQL SAST analysis results
+          - report-dast-zap: OWASP ZAP DAST scan results
+          
+          MISC ARTIFACTS:
+          - report-test-pyramid: Test pyramid metrics and analysis
+          
+          DOWNLOAD INSTRUCTIONS:
+          1. Go to GitHub Actions run
+          2. Scroll to "Artifacts" section
+          3. Click on artifact name to download
+          4. For tar.gz files: tar -xzf <file>.tar.gz to extract
+          
+          ========================================
+          EOF
+          cat artifact-summary.txt
+      
+      - name: 'Upload artifact summary'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARTIFACT-SUMMARY
+          path: artifact-summary.txt
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 4: BUILD DOCKER - TOUS LES SERVICES
@@ -666,7 +1878,7 @@ jobs:
             port: 3015
     
     # Attend que tous les tests réussissent
-    needs: [test, test-containers, test-gamifications, test-iot, test-analytics, test-frontend, test-integration, test-e2e]
+    needs: [test, test-containers, test-gamifications, test-iot, test-analytics, test-frontend, test-integration, test-e2e, test-pyramid, test-users-integration, test-users-e2e, test-api-gateway, test-api-gateway-integration, test-api-gateway-e2e, test-gamifications-integration, test-gamifications-e2e, test-frontend-integration, test-frontend-e2e, test-routes-unit, test-routes-integration, test-routes-e2e]
     
     # Permissions pour pousser sur le registry
     permissions:
@@ -705,7 +1917,7 @@ jobs:
       - name: 'Build and push Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./ecotrack-sjma/services/${{ matrix.service }}
+          context: ./services/${{ matrix.service }}
           push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -766,7 +1978,7 @@ jobs:
       - name: 'Build Docker image'
         uses: docker/build-push-action@v5
         with:
-          context: ./ecotrack-sjma/services/${{ matrix.service }}
+          context: ./services/${{ matrix.service }}
           load: true
           tags: ${{ matrix.image-name }}:test
       
