@@ -1,9 +1,7 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: [
-    '<rootDir>/__tests__/unit/**/*.test.js',
-    '<rootDir>/__tests__/integration/**/*.test.js',
-    '<rootDir>/__tests__/e2e/**/*.test.js'
+    '<rootDir>/__tests__/**/*.test.js'
   ],
   collectCoverageFrom: [
     'src/**/*.js',
@@ -13,6 +11,7 @@ module.exports = {
   ],
   coverageReporters: ['html', 'text', 'lcov', 'json'],
   testTimeout: 10000,
+  passWithNoTests: true,
   reporters: [
     'default',
     ['jest-html-reporter', {
