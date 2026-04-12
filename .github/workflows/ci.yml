@@ -128,6 +128,13 @@ jobs:
           REFRESH_TOKEN_SECRET: test_secret_refresh
         continue-on-error: true
       
+      - name: 'Verify test script exists'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "Available scripts in package.json:"
+          grep -A 10 '"scripts"' package.json
+
       # Upload couverture vers Codecov (optionnel, visualiser la couverture)
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v5
@@ -136,19 +143,29 @@ jobs:
           flags: unittests
         continue-on-error: true
 
-      # Upload coverage as artifact
       - name: 'Debug: Check coverage files exist'
         if: always()
         run: |
-          echo "Checking for coverage directory in ecotrack-sjma/services/service-users..."
+          echo "=== SERVICE: service-users ==="
+          echo ""
+          echo "📁 Service directory structure:"
+          ls -la ecotrack-sjma/services/service-users/ | head -20
+          echo ""
+          echo "🧪 Jest configuration:"
+          if [ -f "ecotrack-sjma/services/service-users/jest.config.js" ]; then
+            echo "✅ jest.config.js found"
+          else
+            echo "⚠️ jest.config.js NOT found"
+          fi
+          echo ""
+          echo "📊 Coverage directory status:"
           if [ -d "ecotrack-sjma/services/service-users/coverage" ]; then
             echo "✅ Coverage directory found"
-            ls -lah ecotrack-sjma/services/service-users/coverage/ | head -10
+            ls -lah ecotrack-sjma/services/service-users/coverage/ | head -15
           else
             echo "❌ No coverage directory found"
-            echo "Available directories:"
-            ls -la ecotrack-sjma/services/service-users/ | grep -E '^d'
           fi
+
 
       - name: 'Upload coverage artifact'
         if: always()
