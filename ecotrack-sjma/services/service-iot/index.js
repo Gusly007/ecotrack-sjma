@@ -57,6 +57,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 app.use(cors());
 
+// Rate limiting middleware for IoT routes (must be declared before use)
+const iotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
+});
+
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -125,13 +132,6 @@ app.get('/api', iotLimiter, (req, res) => {
       simulate: '/api/iot/simulate'
     }
   });
-});
-
-// Rate limiting middleware for IoT routes
-const iotLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Trop de requêtes, veuillez réessayer plus tard'
 });
 
 app.use('/api', iotLimiter, iotRoutes);
