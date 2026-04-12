@@ -9,7 +9,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Installer les dépendances
+# Installer les dépendances système (nc pour tester la connexion)
+RUN apk add --no-cache netcat-openbsd dos2unix
+
+# Installer les dépendances npm
 COPY package*.json ./
 RUN npm install --omit=dev
 
@@ -21,8 +24,7 @@ COPY scripts ./scripts
 
 # Script d'entrée
 COPY docker-entrypoint.sh ./
-RUN apk add --no-cache dos2unix \
-    && dos2unix docker-entrypoint.sh \
+RUN dos2unix docker-entrypoint.sh \
     && chmod +x docker-entrypoint.sh
 
 # Exécuter les migrations et seeds

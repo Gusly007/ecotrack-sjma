@@ -5,12 +5,23 @@
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+// Charger dotenv si le fichier existe, sinon utiliser les variables d'environnement
+try {
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+} catch (e) {
+  console.log('ℹ️  .env file not found, using environment variables instead');
+}
+
+// Vérifier que DATABASE_URL est disponible
+if (!process.env.DATABASE_URL) {
+  console.warn('⚠️  WARNING: DATABASE_URL not set, using default credentials');
+}
 
 module.exports = {
   // Connexion à la base de données
   databaseUrl: process.env.DATABASE_URL ||
-    `postgresql://${process.env.DB_USER || 'ecotrack_user'}:${process.env.DB_PASSWORD || 'ecotrack_password'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'ecotrack'}`,
+    `postgresql://${process.env.DB_USER || 'ecotrack_user'}:${process.env.DB_PASSWORD || 'ecotrack_password'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'ecotrack'}`,
 
   // Dossier contenant les migrations
   dir: path.resolve(__dirname, 'migrations'),
