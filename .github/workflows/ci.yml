@@ -209,7 +209,7 @@ jobs:
       
       # Lance Jest avec couverture
       - name: 'Run Jest tests'
-        run: npm run test:unit
+        run: npm run test:coverage
         working-directory: ecotrack-sjma/services/service-containers
         env:
           PGHOST: localhost
@@ -446,7 +446,7 @@ jobs:
         working-directory: ecotrack-sjma/services/service-iot
       
       - name: 'Run Jest tests'
-        run: npm test
+        run: npm run test:coverage
         working-directory: ecotrack-sjma/services/service-iot
         env:
           NODE_ENV: test
@@ -602,7 +602,7 @@ jobs:
         working-directory: ecotrack-sjma/services/service-analytics
       
       - name: 'Run Jest tests'
-        run: npm test
+        run: npm run test:coverage
         working-directory: ecotrack-sjma/services/service-analytics
         env:
           NODE_ENV: test
@@ -968,7 +968,7 @@ jobs:
       
       # Lance les tests unitaires avec coverage
       - name: 'Run Unit Tests (252 tests)'
-        run: npm run test:unit
+        run: npm run test:coverage
         working-directory: ecotrack-sjma/services/service-routes
         env:
           NODE_ENV: test
@@ -1200,7 +1200,7 @@ jobs:
         working-directory: ecotrack-sjma/services/api-gateway
 
       - name: 'Run Jest tests'
-        run: npm test
+        run: npm run test:coverage
         working-directory: ecotrack-sjma/services/api-gateway
         env:
           NODE_ENV: test
@@ -1502,7 +1502,6 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'sarif-output'
           wait-for-processing: false
         continue-on-error: true
 
@@ -1511,7 +1510,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-sast-codeql-results
-          path: 'sarif-output/'
+          path: 'results/'
           if-no-files-found: ignore
 
   # =========================================================================
