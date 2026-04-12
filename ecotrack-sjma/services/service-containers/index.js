@@ -45,7 +45,13 @@ app.locals.socketService = socketService;
 // ========== MIDDLEWARE ==========
 // Sécurité HTTP headers avec Helmet
 app.use(helmet({
-  contentSecurityPolicy: false, // Désactivé pour Swagger UI
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 
