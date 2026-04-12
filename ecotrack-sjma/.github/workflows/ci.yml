@@ -136,6 +136,19 @@ jobs:
         continue-on-error: true
 
       # Upload coverage as artifact
+      - name: 'Debug: Check coverage files exist'
+        if: always()
+        run: |
+          echo "Checking for coverage directory in services/service-users..."
+          if [ -d "services/service-users/coverage" ]; then
+            echo "✅ Coverage directory found"
+            ls -lah services/service-users/coverage/ | head -10
+          else
+            echo "❌ No coverage directory found"
+            echo "Available directories:"
+            ls -la services/service-users/ | grep -E '^d'
+          fi
+
       - name: 'Upload coverage artifact'
         if: always()
         uses: actions/upload-artifact@v4
@@ -1560,6 +1573,29 @@ jobs:
 
       - name: 'Create reports directory'
         run: mkdir -p reports/{coverage,tests,security}
+
+      - name: ' DEBUG: List all artifacts available'
+        run: |
+          echo "=========================================="
+          echo " Looking for coverage directories..."
+          echo "=========================================="
+          echo ""
+          echo "Backend services:"
+          find services -type d -name "coverage" 2>/dev/null | while read dir; do
+            echo "  ✓ $dir"
+          done
+          echo ""
+          echo "Frontend:"
+          if [ -d "frontend/coverage" ]; then
+            echo "  ✓ frontend/coverage"
+          else
+            echo "  ✗ frontend/coverage not found"
+          fi
+          echo ""
+          echo "Reports:"
+          ls -la reports/ 2>/dev/null || echo "  (No reports yet)"
+          echo "=========================================="
+
 
       # ===== COLLECT COVERAGE REPORTS =====
       - name: 'Install dependencies for coverage collection'
