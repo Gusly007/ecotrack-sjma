@@ -317,6 +317,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-containers
 
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
       - name: 'Run Integration Tests (19 tests)'
         run: npm run test:integration
         working-directory: ecotrack-sjma/services/service-containers
@@ -575,6 +587,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-iot
       
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+      
       - name: 'Run integration tests'
         run: npm run test:integration
         working-directory: ecotrack-sjma/services/service-iot
@@ -762,6 +786,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-analytics
 
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
       - name: 'Run Integration Tests (32 tests)'
         run: npm run test:integration
         working-directory: ecotrack-sjma/services/service-analytics
@@ -927,6 +963,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/${{ matrix.service }}
 
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
       - name: 'Run integration tests'
         run: |
           mkdir -p reports
@@ -1026,7 +1074,8 @@ jobs:
           node-version: '20'
 
       - name: 'Run pyramid metrics script'
-        run: cd ecotrack-sjma && node scripts/test-pyramid-metrics.mjs
+        run: node scripts/test-pyramid-metrics.mjs
+        working-directory: ecotrack-sjma
         continue-on-error: true
 
       - name: 'Upload pyramid reports'
@@ -1157,6 +1206,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-routes
       
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+      
       # Lance les tests d'intégration
       - name: 'Run Integration Tests (4 tests)'
         run: npm run test:integration
@@ -1282,6 +1343,18 @@ jobs:
       - name: 'Install dependencies'
         run: npm ci
         working-directory: ecotrack-sjma/services/service-users
+
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
 
       - name: 'Run Integration Tests'
         run: npm run test:integration
@@ -1441,6 +1514,18 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/api-gateway
 
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
       - name: 'Run Integration Tests'
         run: npm run test:integration
         working-directory: ecotrack-sjma/services/api-gateway
@@ -1557,6 +1642,18 @@ jobs:
       - name: 'Install dependencies'
         run: npm ci
         working-directory: ecotrack-sjma/services/service-gamifications
+
+      - name: 'Run Database Migrations'
+        run: |
+          cd ecotrack-sjma/database
+          npm install
+          npm run migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
 
       - name: 'Run Integration Tests'
         run: npm run test:integration
