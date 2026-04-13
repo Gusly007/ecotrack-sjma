@@ -4,7 +4,17 @@
   "description": "Service Analytics pour ECOTRACK",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "test:unit": "jest __tests__/unit --passWithNoTests",
+    "test:coverage": "jest __tests__/unit __tests__/integration --coverage --passWithNoTests",
+    "test:integration": "jest __tests__/integration --passWithNoTests",
+    "test:e2e": "jest __tests__/e2e --passWithNoTests",
+    "test:unit:html": "jest __tests__/unit --passWithNoTests && node scripts/junit-to-html.js unit",
+    "test:integration:html": "jest __tests__/integration --passWithNoTests && node scripts/junit-to-html.js integration",
+    "test:e2e:html": "jest __tests__/e2e --passWithNoTests && node scripts/junit-to-html.js e2e",
+    "test:all:html": "jest --passWithNoTests && node scripts/junit-to-html.js all",
+    "test:pyramid": "node scripts/test-pyramid-metrics.js",
+    "test:report": "npm run test:all:html && npm run test:pyramid"
   },
   "keywords": [],
   "author": "SJMA",
@@ -36,11 +46,13 @@
     "simple-statistics": "^7.8.8",
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "chartjs-node-canvas": "^5.0.0",
     "jest": "^30.3.0",
+    "jest-junit": "^16.0.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }

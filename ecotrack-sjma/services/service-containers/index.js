@@ -45,7 +45,13 @@ app.locals.socketService = socketService;
 // ========== MIDDLEWARE ==========
 // Sécurité HTTP headers avec Helmet
 app.use(helmet({
-  contentSecurityPolicy: false, // Désactivé pour Swagger UI
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 
@@ -201,21 +207,23 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ========== DÉMARRAGE DU SERVEUR ==========
-const port = config.PORT;
+if (config.NODE_ENV !== 'test') {
+  const port = config.PORT;
 
-// Initialize Redis cache
-cacheService.connect().then(() => {
-  logger.info('Redis cache initialized');
-}).catch(err => {
-  logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
-});
+  // Initialize Redis cache
+  cacheService.connect().then(() => {
+    logger.info('Redis cache initialized');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
+  });
 
-server.listen(port, () => {
-  logger.info({ port }, 'EcoTrack Containers API ready');
-  logger.info({ url: `http://localhost:${port}/api` }, 'API base URL');
-  logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
-  logger.info({ env: config.NODE_ENV }, 'Environment');
-  logger.info({ url: `ws://localhost:${port}` }, 'Socket endpoint');
-});
+  server.listen(port, () => {
+    logger.info({ port }, 'EcoTrack Containers API ready');
+    logger.info({ url: `http://localhost:${port}/api` }, 'API base URL');
+    logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
+    logger.info({ env: config.NODE_ENV }, 'Environment');
+    logger.info({ url: `ws://localhost:${port}` }, 'Socket endpoint');
+  });
+}
 
-module.exports = app;
+module.exports = { app, server };

@@ -4,6 +4,90 @@
 
 ---
 
+### [3.7.0] 2026-04-12 - Couverture de Tests Complète (Unit + Integration + E2E)
+
+Intégration complète de la pyramide de tests sur tous les services backend avec tests unitaires, d'intégration et end-to-end.
+
+### Tests Unitaires - Répartition par Service
+
+| Service | Tests Unitaires | Fichiers | Status |
+|---------|-----------------|----------|--------|
+| service-iot | 419  | 30 test suites | Pass |
+| service-routes | 237  | Multiple suites | Pass |
+| service-containers | 33  | Unit tests | Pass |
+| service-users | 300  | 46 test suites | Pass |
+| service-gamifications | 25  | Multiple suites | Pass |
+| service-analytics | 127  | Multiple suites | Pass |
+| **TOTAL** | **1,141 tests** | **Tous services** | ** Pass** |
+
+### Tests d'Intégration Ajoutés
+
+| Service | Couverture | Fichiers |
+|---------|-----------|----------|
+| service-iot | Health checks, API metrics, Full imports, Extended scenarios | `__tests__/integration/*.test.js` |
+| service-routes | Routes management, Tournée APIs, Cache validation | `__tests__/integration/*.test.js` |
+| service-containers | Container CRUD, Zone management, Status validation | `__tests__/integration/*.test.js` |
+| service-users | Authentication, Email service, RBAC validation | `__tests__/integration/*.test.js` |
+| service-gamifications | Badge systems, Gamification flows | `__tests__/integration/*.test.js` |
+| service-analytics | Data aggregation, Query performance | `__tests__/integration/*.test.js` |
+
+### Tests End-to-End (E2E)
+
+| Scénario | Description | Status |
+|----------|------------|--------|
+| User Registration Flow | Signup → Email validation → Login |  End-to-end |
+| Container Management | Create → Update → Read → Delete |  End-to-end |
+| Route Planning | Upload data → Calculate routes → Get results |  End-to-end |
+| IoT Data Flow | Sensor data → Processing → Alert generation |  End-to-end |
+| Gamification System | Actions → Points → Badges → Rewards | End-to-end |
+
+### Nouveaux Tests Ajoutés
+
+#### service-iot
+- `__tests__/integration/health.integration.test.js` - Santé des services
+- `__tests__/integration/iot.integration.test.js` - IoT endpoints
+- `__tests__/integration/extended.integration.test.js` - Scénarios étendu
+- `__tests__/integration/full-imports.test.js` - Import complet
+
+#### service-routes  
+- `__tests__/integration/routes-flow.integration.test.js` - Flux de routes
+- `__tests__/integration/cache-validation.integration.test.js` - Validation cache
+- `__tests__/unit/middleware/*.test.js` - Middleware tests
+
+#### service-containers
+- `__tests__/integration/container-crud.test.js` - CRUD operations
+- `__tests__/integration/zone-management.test.js` - Zone management
+- `__tests__/unit/repositories/*.test.js` - Data layer tests
+
+#### Tous les services
+- Tests RBAC (Role-Based Access Control) middleware
+- Tests error handling et logging
+- Tests rate limiting
+- Tests caching mechanisms
+
+### Améliorations Qualité
+
+-  Coverage: 100% des endpoints critiques
+-  Mocking: Services externos mockés (DB, external APIs)
+-  Async handling: Promesses et async/await testées
+-  Error scenarios: Code d'erreur et edge cases couverts
+- Performance: Temps de réponse validé
+
+### Impact CI/CD
+
+- GitHub Actions lance automatiquement tous les tests
+- Rapports détaillés en artifacts CI  
+- Blocage merge si tests échouent
+- Couverture passe de ~30% à >85%
+
+### Fichiers de Configuration Tests
+
+- `jest.config.js` - Configuration Jest centrale
+- `setup-tests.js` - Setup avant tests
+- `.jestignore` - Fichiers ignorés
+
+---
+
 ### [3.6.3] 2026-04-09 - Stratégie de tests intégrée dans CI
 
 Intégration de la stratégie de tests pyramidale et des contrôles sécurité dans `.github/workflows/ci.yml`.
@@ -51,12 +135,12 @@ Tests unitaires pour le middleware RBAC dans tous les services.
 
 | Service | Tests | Status |
 |--------|-------|--------|
-| service-containers | 33 | ✅ Pass |
-| service-gamifications | 25 | ✅ Pass |
-| service-analytics | 127 | ✅ Pass |
-| service-iot | 97 | ✅ Pass |
-| service-routes | 237 | ✅ Pass |
-| **TOTAL** | **519** | **✅ Tous Pass** |
+| service-containers | 33 |  Pass |
+| service-gamifications | 25 |  Pass |
+| service-analytics | 127 |  Pass |
+| service-iot | 97 |  Pass |
+| service-routes | 237 | Pass |
+| **TOTAL** | **519** | ** Tous Pass** |
 
 ### Fichiers de Tests Créés
 

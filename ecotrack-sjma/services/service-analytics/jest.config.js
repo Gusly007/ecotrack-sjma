@@ -10,5 +10,19 @@ module.exports = {
   verbose: true,
   transformIgnorePatterns: [
     'node_modules/(?!(pino|pino-pretty)/)'
+  ],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: '<rootDir>/coverage/junit',
+        outputName: 'junit.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+        ancestorSeparator: ' › ',
+        usePathAsClassName: true
+      }
+    ]
   ]
 };

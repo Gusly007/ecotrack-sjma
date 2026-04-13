@@ -10,6 +10,7 @@ const logger = {
 
 
 let transporter = null;
+let transporterPromise = null;
 
 const initTransporter = async () => {
   logger.info('[Email] Configuration SMTP:', {
@@ -47,10 +48,37 @@ const initTransporter = async () => {
   }
 };
 
-await initTransporter();
+const ensureTransporter = async () => {
+  if (transporter) {
+    return transporter;
+  }
+
+  if (!transporterPromise) {
+    transporterPromise = initTransporter()
+      .then(() => transporter)
+      .catch((err) => {
+        transporterPromise = null;
+        throw err;
+      });
+  }
+
+  return transporterPromise;
+};
+
+export const sanitizeHtml = (unsafeHtml) => {
+  if (typeof unsafeHtml !== 'string') return '';
+  return unsafeHtml
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+};
 
 export const sendEmail = async (to, subject, html) => {
   try {
+    await ensureTransporter();
     logger.info(`[Email] Envoi vers ${to}...`);
     
     const info = await transporter.sendMail({

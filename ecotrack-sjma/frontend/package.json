@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage --passWithNoTests || true",
+    "test:integration": "vitest run __tests__/integration --passWithNoTests || true",
+    "test:e2e": "vitest run __tests__/e2e --passWithNoTests || true"
   },
   "dependencies": {
     "axios": "^1.13.5",

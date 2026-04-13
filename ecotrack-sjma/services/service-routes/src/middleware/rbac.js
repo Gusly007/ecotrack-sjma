@@ -27,8 +27,9 @@ const resolveRequestUser = (req) => {
         return req.user;
     }
 
-    const forwardedRole = req.headers['x-user-role'];
-    const forwardedId = req.headers['x-user-id'];
+    const headers = req.headers || {};
+    const forwardedRole = headers['x-user-role'];
+    const forwardedId = headers['x-user-id'];
 
     if (!forwardedRole) {
         return null;

@@ -44,21 +44,30 @@ describe('Auth Middleware', () => {
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
 
-      // Test /auth/register
-      req.path = '/auth/register';
-      jwtValidationMiddleware(req, res, next);
-      expect(next).toHaveBeenCalledTimes(2);
-
       // Test /health
       req.path = '/health';
       req.method = 'GET';
       jwtValidationMiddleware(req, res, next);
-      expect(next).toHaveBeenCalledTimes(3);
+      expect(next).toHaveBeenCalledTimes(2);
 
       // Test /api-docs
       req.path = '/api-docs';
       jwtValidationMiddleware(req, res, next);
-      expect(next).toHaveBeenCalledTimes(4);
+      expect(next).toHaveBeenCalledTimes(3);
+    });
+
+    it('should require auth for /auth/register', () => {
+      req.path = '/auth/register';
+      req.method = 'POST';
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Unauthorized',
+        message: 'Token JWT manquant'
+      });
     });
 
     it('should return 401 if authorization header is missing', () => {

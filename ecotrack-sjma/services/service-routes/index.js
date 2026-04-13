@@ -5,6 +5,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const logger = require('./src/utils/logger');
@@ -37,16 +38,31 @@ const httpRequestDuration = new client.Histogram({
 });
 
 const app = express();
+const isIntegrationSmoke = process.env.INTEGRATION_SMOKE === 'true';
 
 // ========== MIDDLEWARE ==========
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 app.use(cors());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
+});
+app.use('/tournees/', limiter);
+
 app.use(controllersMiddleware);
 
 // ========== SWAGGER ==========
@@ -123,7 +139,7 @@ app.get('/api/routes', (req, res) => {
 });
 
 // ========== HEALTH CHECK ==========
-app.get('/health', async (req, res) => {
+app.get('/health', limiter, async (req, res) => {
   const health = {
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -135,12 +151,16 @@ app.get('/health', async (req, res) => {
     }
   };
 
-  try {
-    await pool.query('SELECT 1');
-    health.services.database = 'healthy';
-  } catch (err) {
-    health.status = 'DEGRADED';
-    health.services.database = 'unhealthy';
+  if (isIntegrationSmoke) {
+    health.services.database = 'skipped';
+  } else {
+    try {
+      await pool.query('SELECT 1');
+      health.services.database = 'healthy';
+    } catch (err) {
+      health.status = 'DEGRADED';
+      health.services.database = 'unhealthy';
+    }
   }
 
   res.status(health.status === 'OK' ? 200 : 503).json(health);

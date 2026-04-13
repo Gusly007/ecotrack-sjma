@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import cors from 'cors';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import roleRoutes from './routes/roles.js';
 import notificationRoutes from './routes/notifications.js';
 import avatarRoutes from './routes/avatars.js';
@@ -69,13 +70,27 @@ if (env.nodeEnv !== 'test') {
 }
 
 app.use(helmet({
-  // Swagger UI can break with strict CSP in dev; keep it simple for now.
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false,
   hsts: env.nodeEnv === 'production' ? undefined : false
 }));
 
 app.use(cors());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
+});
+app.use('/auth/', apiLimiter);
+app.use('/users/', apiLimiter);
+
 app.use(express.json());
 app.use(morgan('combined', {
   stream: {
@@ -90,8 +105,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'users' });
 });
 
-// Health check DB
-app.get('/health/db', async (req, res) => {
+// Health check DB - with rate limiting
+app.get('/health/db', apiLimiter, async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'up' });
@@ -100,8 +115,8 @@ app.get('/health/db', async (req, res) => {
   }
 });
 
-// Metrics endpoint
-app.get('/metrics', async (req, res) => {
+// Metrics endpoint - with rate limiting
+app.get('/metrics', apiLimiter, async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
@@ -120,7 +135,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/auth', publicLimiter, authRoutes);
-app.use('/users', userRoutes);
+app.use('/users', publicLimiter, userRoutes);
 app.use('/users/avatar', avatarRoutes);
 app.use('/admin/roles', roleRoutes);
 app.use('/admin/config', adminConfigRoutes);
@@ -142,43 +157,46 @@ app.use((req, res) => {
 // Error handling (must be last)
 app.use(errorHandler);
 
-const server = app.listen(env.port, () => {
-  logger.info({ port: env.port }, 'Service users ready');
-  logger.info({ url: `http://localhost:${env.port}/api-docs` }, 'Swagger docs ready');
+// Only start server if not in test mode
+if (env.nodeEnv !== 'test') {
+  const server = app.listen(env.port, () => {
+    logger.info({ port: env.port }, 'Service users ready');
+    logger.info({ url: `http://localhost:${env.port}/api-docs` }, 'Swagger docs ready');
 
-  kafkaNotificationConsumer.onAlert(async (alert, meta) => {
-    logger.warn({ topic: meta.topic, alertId: alert?.id_alerte, containerId: alert?.id_conteneur }, 'Kafka alert received by users service');
+    kafkaNotificationConsumer.onAlert(async (alert, meta) => {
+      logger.warn({ topic: meta.topic, alertId: alert?.id_alerte, containerId: alert?.id_conteneur }, 'Kafka alert received by users service');
+    });
+
+    kafkaNotificationConsumer.onNotification(async (payload, meta) => {
+      logger.info({ topic: meta.topic, payloadType: payload?.type }, 'Kafka notification received by users service');
+    });
+
+    kafkaNotificationConsumer.connect().catch((err) => {
+      logger.warn({ err: err.message }, 'Kafka consumer startup failed, continuing without');
+    });
   });
 
-  kafkaNotificationConsumer.onNotification(async (payload, meta) => {
-    logger.info({ topic: meta.topic, payloadType: payload?.type }, 'Kafka notification received by users service');
+  process.on('SIGINT', async () => {
+    logger.info('Shutting down service users');
+    await kafkaNotificationConsumer.disconnect();
+    await pool.end();
+    await cacheService.close();
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
   });
 
-  kafkaNotificationConsumer.connect().catch((err) => {
-    logger.warn({ err: err.message }, 'Kafka consumer startup failed, continuing without');
+  process.on('SIGTERM', async () => {
+    logger.info('Shutting down service users (SIGTERM)');
+    await kafkaNotificationConsumer.disconnect();
+    await pool.end();
+    await cacheService.close();
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
   });
-});
-
-process.on('SIGINT', async () => {
-  logger.info('Shutting down service users');
-  await kafkaNotificationConsumer.disconnect();
-  await pool.end();
-  await cacheService.close();
-  server.close(() => {
-    logger.info('Server closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGTERM', async () => {
-  logger.info('Shutting down service users (SIGTERM)');
-  await kafkaNotificationConsumer.disconnect();
-  await pool.end();
-  await cacheService.close();
-  server.close(() => {
-    logger.info('Server closed');
-    process.exit(0);
-  });
-});
+}
 
 export default app;

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import ConfigurationPage from '../pages/desktop/admin/Configuration';
 import { configService } from '../services/configService';
+
+const showSuccessMock = vi.fn();
+const showErrorMock = vi.fn();
 
 vi.mock('../services/configService');
 vi.mock('../components/common', async () => {
@@ -12,8 +15,8 @@ vi.mock('../components/common', async () => {
     Alert: ({ type, message }) => <div data-testid="alert">{message}</div>,
     useAlert: () => ({
       alert: null,
-      showSuccess: vi.fn(),
-      showError: vi.fn()
+      showSuccess: showSuccessMock,
+      showError: showErrorMock
     })
   };
 });
@@ -46,6 +49,8 @@ const mockConfigData = {
 describe('ConfigurationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    showSuccessMock.mockReset();
+    showErrorMock.mockReset();
     configService.getAll.mockResolvedValue(mockConfigData);
   });
 
@@ -62,6 +67,7 @@ describe('ConfigurationPage', () => {
   };
 
   it('should render loading state initially', () => {
+    configService.getAll.mockReturnValue(new Promise(() => {}));
     renderComponent();
     expect(screen.getByText(/Chargement/i)).toBeInTheDocument();
   });
@@ -112,10 +118,11 @@ describe('ConfigurationPage', () => {
     }, { timeout: 3000 });
 
     const buttons = screen.getAllByRole('button', { name: /Sauvegarder/i });
-    buttons[0].click();
+    fireEvent.click(buttons[0]);
 
     await waitFor(() => {
       expect(configService.updateSecurity).toHaveBeenCalledWith('jwt.access_token_expiration', '24h');
+      expect(showSuccessMock).toHaveBeenCalled();
     }, { timeout: 3000 });
   });
 
@@ -124,10 +131,10 @@ describe('ConfigurationPage', () => {
     
     renderComponent();
     
-    await waitFor(() => {
-      const buttons = screen.getAllByRole('button', { name: /Sauvegarder/i });
-      buttons[2].click();
+    const buttons = await screen.findAllByRole('button', { name: /Sauvegarder/i });
+    fireEvent.click(buttons[2]);
 
+    await waitFor(() => {
       expect(configService.updateEnvironmental).toHaveBeenCalled();
     }, { timeout: 3000 });
   });
@@ -137,10 +144,10 @@ describe('ConfigurationPage', () => {
     
     renderComponent();
     
-    await waitFor(() => {
-      const buttons = screen.getAllByRole('button', { name: /Sauvegarder/i });
-      buttons[1].click();
+    const buttons = await screen.findAllByRole('button', { name: /Sauvegarder/i });
+    fireEvent.click(buttons[1]);
 
+    await waitFor(() => {
       expect(configService.updatePerformance).toHaveBeenCalled();
     }, { timeout: 3000 });
   });
@@ -153,8 +160,82 @@ describe('ConfigurationPage', () => {
     
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
+      expect(showErrorMock).toHaveBeenCalledWith('Erreur de chargement des configurations');
     }, { timeout: 3000 });
     
+    consoleSpy.mockRestore();
+  });
+
+  it('should disable performance save when sum is not equal to 1', async () => {
+    const badPerformance = {
+      ...mockConfigData,
+      performance: {
+        ...mockConfigData.performance,
+        'COLLECTION_RATE_WEIGHT': { value: 0.5, type: 'number' },
+        'COMPLETION_RATE_WEIGHT': { value: 0.3, type: 'number' },
+        'TIME_EFFICIENCY_WEIGHT': { value: 0.15, type: 'number' },
+        'DISTANCE_EFFICIENCY_WEIGHT': { value: 0.15, type: 'number' }
+      }
+    };
+    configService.getAll.mockResolvedValueOnce(badPerformance);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/La somme doit etre egale a 1|La somme doit être égale à 1/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const buttons = screen.getAllByRole('button', { name: /Sauvegarder/i });
+    expect(buttons[1]).toBeDisabled();
+  });
+
+  it('should disable environment save when a required value is empty', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /Sauvegarder/i }).length).toBe(3);
+    }, { timeout: 3000 });
+
+    const envInputs = document.querySelectorAll('input');
+    fireEvent.change(envInputs[9], { target: { value: '' } });
+
+    const buttons = screen.getAllByRole('button', { name: /Sauvegarder/i });
+    expect(buttons[2]).toBeDisabled();
+  });
+
+  it('should show API error message when save fails with backend error', async () => {
+    configService.updateEnvironmental.mockRejectedValueOnce({
+      response: { data: { error: 'Valeur invalide' } }
+    });
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderComponent();
+
+    const buttons = await screen.findAllByRole('button', { name: /Sauvegarder/i });
+    fireEvent.click(buttons[2]);
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith('Erreur: Valeur invalide');
+    }, { timeout: 3000 });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('should fallback to unknown error message when save fails without details', async () => {
+    configService.updatePerformance.mockRejectedValueOnce({});
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderComponent();
+
+    const buttons = await screen.findAllByRole('button', { name: /Sauvegarder/i });
+    fireEvent.click(buttons[1]);
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith('Erreur: Erreur inconnue');
+    }, { timeout: 3000 });
+
     consoleSpy.mockRestore();
   });
 });

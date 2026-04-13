@@ -18,10 +18,16 @@ jest.unstable_mockModule('../../src/middleware/logger.js', () => ({
   error: jest.fn()
 }));
 
-const { HealthCheckService } = await import('../../src/services/healthCheck.js');
+const { HealthCheckService, default: singletonHealthCheckService } = await import('../../src/services/healthCheck.js');
 
 describe('HealthCheck Service', () => {
   let healthCheckService;
+
+  beforeAll(() => {
+    // The module exports a singleton that starts a periodic timer at import time.
+    // Stop it to avoid open handles in Jest.
+    singletonHealthCheckService.stopPeriodicChecks();
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -75,6 +81,19 @@ describe('HealthCheck Service', () => {
       
       expect(result.status).toBe('pending');
       expect(result.message).toBe('Service not configured');
+    });
+
+    it('should block non-allowed URL hosts (SSRF protection)', async () => {
+      healthCheckService.registerService('forbidden-host', {
+        displayName: 'Forbidden Host',
+        baseUrl: 'http://evil.com:3000'
+      });
+
+      const result = await healthCheckService.checkService('forbidden-host');
+
+      expect(result.status).toBe('down');
+      expect(result.error).toContain('URL not allowed');
+      expect(mockAxiosGet).not.toHaveBeenCalled();
     });
 
     it('should return up status for healthy service', async () => {
@@ -336,6 +355,14 @@ describe('HealthCheck Service', () => {
       const services = healthCheckService.getAllServices();
       
       expect(services).toEqual([]);
+    });
+  });
+
+  describe('isUrlAllowed', () => {
+    it('should return false on malformed URLs', () => {
+      const allowed = healthCheckService.isUrlAllowed('not-a-valid-url');
+
+      expect(allowed).toBe(false);
     });
   });
 });
