@@ -458,8 +458,10 @@ describe('Container Routes - Full Integration Tests (Real Database)', () => {
         .query({ page: 1, limit: 10 })
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(3);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('pagination');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThanOrEqual(3);
     });
 
     it('devrait filtrer par statut', async () => {
@@ -468,8 +470,9 @@ describe('Container Routes - Full Integration Tests (Real Database)', () => {
         .query({ statut: 'ACTIF' })
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      response.body.forEach(container => {
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      response.body.data.forEach(container => {
         expect(container.statut).toBe('ACTIF');
       });
     });
@@ -480,8 +483,9 @@ describe('Container Routes - Full Integration Tests (Real Database)', () => {
         .query({ id_zone: testZoneId1 })
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      response.body.forEach(container => {
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      response.body.data.forEach(container => {
         expect(container.id_zone).toBe(testZoneId1);
       });
     });
