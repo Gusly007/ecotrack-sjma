@@ -326,6 +326,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run Integration Tests (19 tests)'
         run: npm run test:integration
@@ -594,6 +595,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
       
       - name: 'Run integration tests'
         run: npm run test:integration
@@ -791,6 +793,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run Integration Tests (32 tests)'
         run: npm run test:integration
@@ -966,6 +969,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run integration tests'
         run: |
@@ -1207,6 +1211,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
       
       # Lance les tests d'intégration
       - name: 'Run Integration Tests (4 tests)'
@@ -1343,6 +1348,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run Integration Tests'
         run: npm run test:integration
@@ -1511,6 +1517,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run Integration Tests'
         run: npm run test:integration
@@ -1638,6 +1645,7 @@ jobs:
           DB_USER: test_user
           DB_PASSWORD: test_pass
           DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Run Integration Tests'
         run: npm run test:integration
