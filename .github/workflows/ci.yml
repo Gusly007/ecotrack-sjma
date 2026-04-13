@@ -319,7 +319,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -587,7 +587,7 @@ jobs:
       
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -784,7 +784,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -959,7 +959,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1200,7 +1200,7 @@ jobs:
       
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1336,7 +1336,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1504,7 +1504,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1631,7 +1631,7 @@ jobs:
 
       - name: 'Run Database Migrations'
         working-directory: ecotrack-sjma/database
-        run: npm run migrate
+        run: npm ci && npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
