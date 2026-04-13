@@ -318,10 +318,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-containers
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -588,10 +586,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-iot
       
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -787,10 +783,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-analytics
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -964,10 +958,8 @@ jobs:
         working-directory: ecotrack-sjma/services/${{ matrix.service }}
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1207,10 +1199,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-routes
       
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1345,10 +1335,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-users
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1515,10 +1503,8 @@ jobs:
         working-directory: ecotrack-sjma/services/api-gateway
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -1644,10 +1630,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-gamifications
 
       - name: 'Run Database Migrations'
-        working-directory: database
-        run: |
-          npm install
-          npm run migrate
+        working-directory: ecotrack-sjma/database
+        run: npm run migrate
         env:
           DB_HOST: localhost
           DB_PORT: 5432
