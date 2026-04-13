@@ -18,6 +18,7 @@
     "reset": "npm run db:reset"
   },
   "dependencies": {
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "node-pg-migrate": "^7.9.1",
     "pg": "^8.11.0",
@@ -32,9 +33,6 @@
   ],
   "author": "EcoTrack Team",
   "license": "MIT",
-  "devDependencies": {
-    "cross-env": "^7.0.3"
-  },
   "overrides": {
     "glob@<=11.1.0": "11.1.0",
     "@isaacs/brace-expansion@<=5.0.1": "5.0.1"

@@ -6,8 +6,16 @@
 
 const request = require('supertest');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const containerRoute = require('../../src/routes/container.route');
 const { pool } = require('../../src/db/connexion');
+
+const TEST_JWT_SECRET = process.env.JWT_SECRET || 'change_me_in_production_access_secret';
+const testAuthToken = jwt.sign(
+  { id: 1, email: 'admin@ecotrack.dev', role: 'ADMIN', role_par_defaut: 'ADMIN' },
+  TEST_JWT_SECRET,
+  { expiresIn: '1h' }
+);
 
 // Check if database is available
 let dbAvailable = false;
@@ -41,6 +49,12 @@ describe('Container Routes - Full Integration Tests (Real Database)', () => {
 
     app = express();
     app.use(express.json());
+    app.use((req, res, next) => {
+      if (!req.headers.authorization) {
+        req.headers.authorization = `Bearer ${testAuthToken}`;
+      }
+      next();
+    });
     
     // Mock du middleware socket
     app.use((req, res, next) => {
@@ -113,6 +127,12 @@ describe('Container Routes - Full Integration Tests (Real Database)', () => {
 
     app = express();
     app.use(express.json());
+    app.use((req, res, next) => {
+      if (!req.headers.authorization) {
+        req.headers.authorization = `Bearer ${testAuthToken}`;
+      }
+      next();
+    });
     
     // Mock du middleware socket
     app.use((req, res, next) => {
