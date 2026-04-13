@@ -1135,38 +1135,6 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/services/service-routes
 
-      - name: 'Run Database Migrations'
-        working-directory: ecotrack-sjma/database
-        run: npm ci && npm run migrate
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: test_user
-          DB_PASSWORD: test_pass
-          DB_NAME: ecotrack_test
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-
-      - name: 'Start service-routes API'
-        run: nohup npm start > service-routes.log 2>&1 &
-        working-directory: ecotrack-sjma/services/service-routes
-        env:
-          NODE_ENV: test
-          APP_PORT: 3012
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
-
-      - name: 'Wait for service-routes API'
-        run: |
-          for i in {1..30}; do
-            if curl -sSf http://localhost:3012/health > /dev/null; then
-              echo "✓ service-routes is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: service-routes not ready yet..."
-            sleep 2
-          done
-          echo "✗ service-routes failed to start"
-          exit 1
-      
       # Lance les tests unitaires avec coverage
       - name: 'Run Unit Tests (252 tests)'
         run: npm run test:coverage
@@ -1320,6 +1288,38 @@ jobs:
       - name: 'Install dependencies'
         run: npm ci
         working-directory: ecotrack-sjma/services/service-routes
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Start service-routes API'
+        run: nohup npm start > service-routes.log 2>&1 &
+        working-directory: ecotrack-sjma/services/service-routes
+        env:
+          NODE_ENV: test
+          APP_PORT: 3012
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Wait for service-routes API'
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://localhost:3012/health > /dev/null; then
+              echo "✓ service-routes is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: service-routes not ready yet..."
+            sleep 2
+          done
+          echo "✗ service-routes failed to start"
+          exit 1
       
       # Lance les tests E2E
       - name: 'Run E2E Tests (14 tests)'
