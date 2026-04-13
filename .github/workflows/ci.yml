@@ -318,8 +318,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-containers
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -588,8 +588,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-iot
       
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -787,8 +787,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-analytics
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -964,8 +964,8 @@ jobs:
         working-directory: ecotrack-sjma/services/${{ matrix.service }}
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -1207,8 +1207,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-routes
       
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -1345,8 +1345,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-users
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -1515,8 +1515,8 @@ jobs:
         working-directory: ecotrack-sjma/services/api-gateway
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
@@ -1644,8 +1644,8 @@ jobs:
         working-directory: ecotrack-sjma/services/service-gamifications
 
       - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
         run: |
-          cd ecotrack-sjma/database
           npm install
           npm run migrate
         env:
