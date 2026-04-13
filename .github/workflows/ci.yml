@@ -1808,15 +1808,12 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
-          category: 'codeql-ecotrack-sast'
 
       - name: 'Autobuild'
         uses: github/codeql-action/autobuild@v3
 
       - name: 'Analyze with CodeQL'
         uses: github/codeql-action/analyze@v3
-        with:
-          category: 'codeql-ecotrack-sast'
         id: codeql-analyze
 
       - name: 'Upload CodeQL SARIF results'
