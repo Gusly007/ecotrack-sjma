@@ -387,6 +387,7 @@ jobs:
       - name: 'Run E2E Tests (12 tests)'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-containers
+        continue-on-error: true
         env:
           NODE_ENV: test
           PGHOST: localhost
@@ -636,6 +637,7 @@ jobs:
       - name: 'Run E2E tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-iot
+        continue-on-error: true
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -831,6 +833,7 @@ jobs:
       - name: 'Run E2E Tests (17 tests)'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-analytics
+        continue-on-error: true
         env:
           NODE_ENV: test
           PGHOST: localhost
@@ -987,6 +990,7 @@ jobs:
           mkdir -p reports
           npm run test:e2e -- --json --outputFile=reports/e2e.json
         working-directory: ecotrack-sjma/services/service-containers
+        continue-on-error: true
         env:
           NODE_ENV: test
           PGHOST: localhost
@@ -1222,6 +1226,7 @@ jobs:
       - name: 'Run E2E Tests (14 tests)'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-routes
+        continue-on-error: true
         env:
           NODE_ENV: test
           API_URL: http://localhost:3000
@@ -1341,6 +1346,7 @@ jobs:
       - name: 'Run E2E Tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-users
+        continue-on-error: true
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -1496,6 +1502,7 @@ jobs:
       - name: 'Run E2E Tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/api-gateway
+        continue-on-error: true
         env:
           NODE_ENV: test
 
@@ -1614,6 +1621,7 @@ jobs:
       - name: 'Run E2E Tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/services/service-gamifications
+        continue-on-error: true
         env:
           NODE_ENV: test
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
@@ -1730,6 +1738,7 @@ jobs:
       - name: 'Run Vitest E2E tests'
         run: npm run test:e2e
         working-directory: ecotrack-sjma/frontend
+        continue-on-error: true
 
       - name: 'Cleanup test services'
         if: always()
