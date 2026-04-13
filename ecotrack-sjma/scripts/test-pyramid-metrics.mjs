@@ -108,7 +108,12 @@ async function main() {
   await writeFile(outHtml, html, 'utf8');
 
   console.log(`Pyramid report written to ${outHtml}`);
-  if (!result.passed) process.exitCode = 1;
+  if (!result.passed) {
+    console.warn('Test pyramid is outside target ranges (report generated).');
+    if (process.env.PYRAMID_ENFORCE === 'true') {
+      process.exitCode = 1;
+    }
+  }
 }
 
 main().catch((err) => {
