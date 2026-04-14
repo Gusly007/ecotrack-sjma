@@ -61,6 +61,9 @@ export const rolePermissions = {
         'tournee:read',
         'tournee:update',
         'tournee:delete',
+
+        // Agents
+        'agent:read',
         
         // Containers (full CRUD)
         'containers:create',
@@ -127,6 +130,7 @@ export const ROLES_BY_INTERFACE = {
 export const PERMISSIONS_BY_SERVICE = {
     signaler: ['signaler:create', 'signaler:read', 'signaler:update', 'signaler:delete'],
     tournee: ['tournee:create', 'tournee:read', 'tournee:update', 'tournee:delete'],
+    agent: ['agent:read'],
     containers: ['containers:create', 'containers:read', 'containers:update', 'containers:delete'],
     zone: ['zone:create', 'zone:read', 'zone:update', 'zone:delete'],
     iot: ['iot:read', 'iot:update'],
@@ -223,6 +227,8 @@ export const ALL_PERMISSIONS = [
     'signaler:create', 'signaler:read', 'signaler:update', 'signaler:delete',
     // Tournées
     'tournee:create', 'tournee:read', 'tournee:update', 'tournee:delete',
+    // Agents
+    'agent:read',
     // Containers
     'containers:create', 'containers:read', 'containers:update', 'containers:delete',
     // Zones
