@@ -25,6 +25,7 @@ import ConfigurationPage from './pages/desktop/admin/Configuration';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
+import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -153,6 +154,13 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <TourneePage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/maintenance" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <MaintenancePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
