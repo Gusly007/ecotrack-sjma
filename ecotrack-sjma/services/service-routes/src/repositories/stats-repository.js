@@ -15,6 +15,7 @@ class StatsRepository {
           COUNT(CASE WHEN statut = 'EN_COURS' THEN 1 END) AS en_cours,
           COUNT(CASE WHEN statut = 'TERMINEE' THEN 1 END) AS terminees,
           COUNT(CASE WHEN statut = 'ANNULEE' THEN 1 END) AS annulees,
+          COUNT(CASE WHEN statut <> 'TERMINEE' AND date_tournee < CURRENT_DATE THEN 1 END) AS en_retard,
           COUNT(CASE WHEN date_tournee = CURRENT_DATE THEN 1 END) AS aujourd_hui
         FROM tournee
       `),

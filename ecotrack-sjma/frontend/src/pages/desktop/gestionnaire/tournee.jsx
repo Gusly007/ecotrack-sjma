@@ -112,7 +112,7 @@ export default function TourneePage() {
 		const totalApi = Number(tourneesStats.total || 0);
 		const activeApi = Number(tourneesStats.en_cours || 0);
 		const completed = Number(tourneesStats.terminees || 0);
-		const delayed = Math.max(0, activeApi - completed);
+		const delayed = Number(tourneesStats.en_retard || 0);
 
 		return [
 			{
