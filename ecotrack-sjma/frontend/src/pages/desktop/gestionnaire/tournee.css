@@ -31,6 +31,20 @@
   margin-bottom: 8px;
 }
 
+.createtourneebtn {
+  border: none;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: #fff;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
 .auto-refresh-btn {
   border: 1px solid #cfd8dc;
   border-radius: 8px;
@@ -273,6 +287,220 @@
   cursor: not-allowed;
 }
 
+.tournee-actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.table-action-btn {
+  border: none;
+  border-radius: 6px;
+  background: #4caf50;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.table-action-btn.secondary {
+  background: #2196f3;
+}
+
+.table-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tournee-view-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tournee-view-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.tournee-view-kpis div {
+  font-size: 0.84rem;
+  color: #374151;
+}
+
+.tournee-view-kpis span {
+  color: #6b7280;
+}
+
+.tournee-view-steps p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.tournee-view-steps ol {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.tournee-view-steps li {
+  font-size: 0.83rem;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.tournee-assign-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tournee-assign-form label {
+  font-size: 0.82rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.tournee-assign-form select {
+  height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.9rem;
+  color: #374151;
+  background: #fff;
+}
+
+.tournee-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tournee-modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tournee-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tournee-modal-field label {
+  font-size: 0.82rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.tournee-modal-field input,
+.tournee-modal-field select {
+  height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.9rem;
+  color: #374151;
+  background: #fff;
+}
+
+.tournee-modal-info {
+  margin: 0;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+}
+
+.tournee-modal-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.tournee-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.tournee-preview-box {
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tournee-preview-box h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #1e3a8a;
+}
+
+.tournee-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tournee-preview-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tournee-preview-item span {
+  font-size: 0.77rem;
+  color: #6b7280;
+}
+
+.tournee-preview-item strong {
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
+.tournee-preview-gain {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #065f46;
+}
+
+.tournee-preview-steps p {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.tournee-preview-steps ol {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.tournee-preview-steps li {
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
 @media (max-width: 900px) {
   .page-header {
     flex-direction: column;
@@ -292,5 +520,17 @@
   .bo-table {
     display: block;
     overflow-x: auto;
+  }
+
+  .tournee-view-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .tournee-modal-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tournee-preview-grid {
+    grid-template-columns: 1fr;
   }
 }
