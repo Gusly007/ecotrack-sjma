@@ -39,20 +39,6 @@ function extractPaginated(payload) {
   return { data, pagination };
 }
 
-function extractList(payload) {
-  const unwrapped = unwrap(payload);
-
-  if (Array.isArray(unwrapped)) {
-    return unwrapped;
-  }
-
-  if (Array.isArray(unwrapped?.data)) {
-    return unwrapped.data;
-  }
-
-  return [];
-}
-
 export async function fetchTourneesStats() {
   const response = await api.get("/api/routes/stats/dashboard");
   return unwrap(response.data) || {};
@@ -141,89 +127,4 @@ export async function fetchTourneesPageData({
     activeTournees,
     activeTourneesPagination,
   };
-}
-
-export async function fetchTourneeCreationOptions() {
-  const [zonesResult, agentsResult, vehiclesResult] = await Promise.allSettled([
-    api.get("/api/zones", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
-    api.get("/users/agents", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
-    api.get("/api/routes/vehicules", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
-  ]);
-
-  if (
-    zonesResult.status === "rejected"
-    && agentsResult.status === "rejected"
-    && vehiclesResult.status === "rejected"
-  ) {
-    throw new Error("Impossible de charger les references de creation");
-  }
-
-  const zones = zonesResult.status === "fulfilled"
-    ? extractList(zonesResult.value.data)
-    : [];
-
-  const agents = agentsResult.status === "fulfilled"
-    ? extractList(agentsResult.value.data)
-    : [];
-
-  const vehicles = vehiclesResult.status === "fulfilled"
-    ? extractList(vehiclesResult.value.data)
-    : [];
-
-  return {
-    zones,
-    agents,
-    vehicles,
-  };
-}
-
-export async function optimizeTournee(payload) {
-  const response = await api.post("/api/routes/optimize", payload);
-  return unwrap(response.data) || response.data;
-}
-
-export async function previewOptimizeTournee(payload) {
-  const response = await api.post("/api/routes/optimize/preview", payload);
-  return unwrap(response.data) || response.data;
-}
-
-export async function fetchTourneeById(id) {
-  const response = await api.get(`/api/routes/tournees/${id}`);
-  return unwrap(response.data) || response.data;
-}
-
-export async function fetchTourneeEtapes(id) {
-  const response = await api.get(`/api/routes/tournees/${id}/etapes`);
-  return extractList(response.data || {});
-}
-
-export async function fetchAgentsForAssignment({ page = 1, limit = 100 } = {}) {
-  const response = await api.get("/users/agents", {
-    params: { page, limit },
-  });
-
-  return extractList(response.data || {});
-}
-
-export async function assignTourneeAgent(id, idAgent) {
-  const response = await api.patch(`/api/routes/tournees/${id}`, {
-    id_agent: Number(idAgent),
-  });
-
-  return unwrap(response.data) || response.data;
 }
