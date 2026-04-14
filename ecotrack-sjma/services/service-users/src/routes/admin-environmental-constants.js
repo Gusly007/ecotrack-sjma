@@ -1,9 +1,31 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRole } from '../middleware/auth.js';
-import { EnvironmentalConstantsRepository, loadEnvironmentalConstants } from '../repositories/environmentalConstants.repository.js';
+import { EnvironmentalConstantsRepository } from '../repositories/environmentalConstants.repository.js';
 
 const router = express.Router();
+
+router.get('/internal',
+    async (req, res) => {
+        try {
+            const constants = await EnvironmentalConstantsRepository.getAll();
+            const formatted = {};
+            constants.forEach(row => {
+                const value = row.type === 'number' ? parseFloat(row.valeur) : row.valeur;
+                formatted[row.cle] = {
+                    value,
+                    unite: row.unite,
+                    description: row.description,
+                    modifiable: row.est_modifiable,
+                    updatedAt: row.updated_at
+                };
+            });
+            res.json(formatted);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+);
 
 router.get('/',
     authenticateToken,

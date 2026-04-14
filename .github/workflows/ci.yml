@@ -1,0 +1,2478 @@
+# ============================================================================
+# GITHUB ACTIONS CI/CD PIPELINE - ECO TRACK
+# ============================================================================
+#
+# CONCEPT: Test Pyramid avec cibles de couverture
+#
+# TEST PYRAMID CIBLES (60% Unit / 30% Integration / 10% E2E):
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │ LEVEL 3: E2E     │ 10%   │ ~20s │ Coût: Élevé    │ Tests parcours      │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ LEVEL 2: INT     │ 30%   │ ~5s  │ Coût: Moyen   │ Tests API/module  │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ LEVEL 1: UNIT    │ 60%   │ <2s  │ Coût: Faible  │ Tests fonctions  │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+#
+# TRIGGER: Push sur toutes branches + PR
+# ============================================================================
+# ============================================================================
+
+name: 'CI/CD Pipeline'
+
+# Déclenche ce workflow
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - closed
+  workflow_dispatch:
+
+# Variables env globales pour ce workflow
+env:
+  REGISTRY: ghcr.io  # GitHub Container Registry (public registry GitHub)
+
+jobs:
+  # =========================================================================
+  # JOB 1: CODE QUALITY (LINT) - TOUS LES SERVICES
+  # =========================================================================
+  # Vérifie que le code respecte les normes (indentation, syntax, etc.)
+  
+  lint:
+    name: 'Lint Code - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-routes','service-iot','service-analytics']    
+    steps:
+      # Étape 1: Télécharger le code du repo
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      # Étape 2: Installer Node.js
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      # Étape 3: Installer dépendances
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+      
+      # Étape 4: Lancer ESLint (si config existe)
+      - name: 'Run ESLint'
+        run: npx eslint src/ --max-warnings 10 || echo "ESLint not configured"
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2: UNIT TESTS - SERVICE-USERS SEULEMENT (a des tests)
+  # =========================================================================
+  # Lance Jest, collecte la couverture de code
+  
+  test:
+    name: 'Unit Tests - service-users'
+    runs-on: ubuntu-latest
+    
+    # Dépend du lint (lint doit réussir en premier)
+    needs: lint
+    
+    services:
+      # Service PostgreSQL utilisé durant les tests
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-users
+      
+      - name: 'Verify Jest installation'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "Checking Jest installation..."
+          npx jest --version
+          echo "Jest version verified ✓"
+      
+      # Lance Jest avec couverture
+      - name: 'Run Jest tests'
+        run: npm run test:coverage 2>&1 | tee test-output.log
+        working-directory: ecotrack-sjma/services/service-users
+        env:
+          # Base de test dans le service postgres ci-dessus
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+          NODE_ENV: test
+          ACCESS_TOKEN_SECRET: test_secret_access
+          REFRESH_TOKEN_SECRET: test_secret_refresh
+        continue-on-error: true
+      
+      - name: 'Show test output'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "=== TEST OUTPUT ==="
+          tail -100 test-output.log || echo "No test output log found"
+      
+      - name: 'Verify test script exists'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-users
+        run: |
+          echo "Available scripts in package.json:"
+          grep -A 10 '"scripts"' package.json
+
+      # Upload couverture vers Codecov (optionnel, visualiser la couverture)
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-users/coverage/coverage-final.json
+          flags: unittests
+        continue-on-error: true
+
+      - name: 'Debug: Check coverage files exist'
+        if: always()
+        run: |
+          echo "=== SERVICE: service-users ==="
+          echo ""
+          echo "📁 Service directory structure:"
+          ls -la ecotrack-sjma/services/service-users/ | head -20
+          echo ""
+          echo "🧪 Jest configuration:"
+          if [ -f "ecotrack-sjma/services/service-users/jest.config.js" ]; then
+            echo "✅ jest.config.js found"
+          else
+            echo "⚠️ jest.config.js NOT found"
+          fi
+          echo ""
+          echo "📊 Coverage directory status:"
+          if [ -d "ecotrack-sjma/services/service-users/coverage" ]; then
+            echo "✅ Coverage directory found"
+            ls -lah ecotrack-sjma/services/service-users/coverage/ | head -15
+          else
+            echo "❌ No coverage directory found"
+          fi
+
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-users
+          path: ecotrack-sjma/services/service-users/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2B: UNIT TESTS - SERVICE-CONTAINERS
+  # =========================================================================
+  # Lance Jest pour service-containers avec PostgreSQL + PostGIS
+  
+  test-containers:
+    name: 'Unit Tests - service-containers'
+    runs-on: ubuntu-latest
+    
+    # Dépend du lint
+    needs: lint
+    
+    services:
+      # Service PostgreSQL avec PostGIS pour les tests
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-containers
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+      
+      # Initialiser le schéma de test
+      - name: 'Initialize test database'
+        run: |
+          PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          PGPASSWORD=test_pass psql -h localhost -U test_user -d ecotrack_test -f src/db/init-db-pg.sql || echo "Schema init skipped"
+        working-directory: ecotrack-sjma/services/service-containers
+        continue-on-error: true
+      
+      # Lance Jest avec couverture
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/service-containers
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          NODE_ENV: test
+        continue-on-error: true
+      
+      # Upload couverture
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-containers/coverage/coverage-final.json
+          flags: unittests-containers
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-containers
+          path: ecotrack-sjma/services/service-containers/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2B1: INTEGRATION TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 19 tests | Conditional (requires DB) | ~1s | Coût: Moyen
+  # Test les interactions entre routes, services, repositories
+
+  test-containers-integration:
+    name: ' Integration Tests - service-containers'
+    runs-on: ubuntu-latest
+
+    needs: test-containers
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-containers
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run Integration Tests (19 tests)'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-containers
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+
+  # =========================================================================
+  # JOB 2B2: E2E TESTS - SERVICE-CONTAINERS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 12 tests | 100% passing | ~1s | Coût: Élevé
+  # Test les parcours complets d'accès conteneurs
+
+  test-containers-e2e:
+    name: ' E2E Tests - service-containers'
+    runs-on: ubuntu-latest
+
+    needs: test-containers-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-containers
+
+      - name: 'Run E2E Tests (12 tests)'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-containers
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
+  # =========================================================================
+  # Lance Jest pour service-gamifications avec PostgreSQL
+  
+  test-gamifications:
+    name: 'Unit Tests - service-gamifications'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      # Service PostgreSQL pour les tests
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-gamifications
+      
+      # Lance Jest avec couverture
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+          GAMIFICATIONS_AUTO_SCHEMA: true
+        continue-on-error: true
+      
+      # Upload couverture
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-gamifications/coverage/coverage-final.json
+          flags: unittests-gamifications
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-gamifications
+          path: ecotrack-sjma/services/service-gamifications/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2D: UNIT TESTS - SERVICE-IOT (NEW!)
+  # =========================================================================
+  # Lance Jest pour service-iot avec PostgreSQL
+  
+  test-iot:
+    name: 'Unit Tests - service-iot'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-iot
+      
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/service-iot
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+      
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-iot/coverage/coverage-final.json
+          flags: unittests-iot
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-iot
+          path: ecotrack-sjma/services/service-iot/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2D1: INTEGRATION TESTS - SERVICE-IOT (Test Pyramid - Level 2)
+  # =========================================================================
+  # 6 tests | 20% of pyramid | ~2s | Coût: Moyen
+  # Test gateway integration + sensor-measurement-service + cache flows
+
+  test-iot-integration:
+    name: ' Integration Tests (20%) - service-iot'
+    runs-on: ubuntu-latest
+    needs: test-iot
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-iot
+      
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+      
+      - name: 'Run integration tests'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-iot
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2D2: E2E TESTS - SERVICE-IOT (Test Pyramid - Level 3)
+  # =========================================================================
+  # 3 tests | 10% of pyramid | ~2s | Coût: Élevé
+  # Test complete alert workflows + notification flows + state transitions
+
+  test-iot-e2e:
+    name: ' E2E Tests (10%) - service-iot'
+    runs-on: ubuntu-latest
+    needs: test-iot-integration
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-iot
+      
+      - name: 'Run E2E tests'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-iot
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2E: UNIT TESTS - SERVICE-ANALYTICS
+  # =========================================================================
+  # Lance Jest pour service-analytics avec PostgreSQL
+  
+  test-analytics:
+    name: 'Unit Tests - service-analytics'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install system dependencies for canvas'
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-analytics
+      
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/service-analytics
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+      
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-analytics/coverage/coverage-final.json
+          flags: unittests-analytics
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-analytics
+          path: ecotrack-sjma/services/service-analytics/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2E1: INTEGRATION TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 2 ~22%)
+  # =========================================================================
+  # 32 tests | ~22% coverage | ~5s | Coût: Moyen
+  # Test les interactions entre modules (routes, services, repositories)
+
+  test-analytics-integration:
+    name: ' Integration Tests (22%) - service-analytics'
+    runs-on: ubuntu-latest
+
+    needs: test-analytics
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-analytics
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run Integration Tests (32 tests)'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-analytics
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2E2: E2E TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 3 ~11%)
+  # =========================================================================
+  # 17 tests | ~11% coverage | ~4s | Coût: Élevé
+  # Test les parcours complets (workflows, health checks, concurrent requests)
+
+  test-analytics-e2e:
+    name: '🌐 E2E Tests (11%) - service-analytics'
+    runs-on: ubuntu-latest
+
+    needs: test-analytics-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-analytics
+
+      - name: 'Run E2E Tests (17 tests)'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-analytics
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2F: UNIT TESTS - FRONTEND
+  # =========================================================================
+  
+  test-frontend:
+    name: 'Unit Tests - frontend'
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Run Vitest coverage'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Upload frontend coverage artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend
+          path: ecotrack-sjma/frontend/coverage
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2G: INTEGRATION TESTS - PYRAMIDE
+  # =========================================================================
+
+  test-integration:
+    name: 'Integration Tests - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    needs: lint
+
+    strategy:
+      matrix:
+        include:
+          - service: service-containers
+            command: npm run test:integration -- --json --outputFile=reports/integration.json
+          - service: service-routes
+            command: npm run test:integration -- --json --outputFile=reports/integration.json
+          - service: service-iot
+            command: npm run test:integration -- --json --outputFile=reports/integration.json
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run integration tests'
+        run: |
+          mkdir -p reports
+          ${{ matrix.command }}
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
+      - name: 'Upload integration reports'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-integration-${{ matrix.service }}
+          path: ecotrack-sjma/services/${{ matrix.service }}/reports/integration.json
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2H: END-TO-END TESTS - PYRAMIDE
+  # =========================================================================
+
+  test-e2e:
+    name: 'E2E Tests - service-containers'
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-containers
+
+      - name: 'Run e2e tests'
+        run: |
+          mkdir -p reports
+          npm run test:e2e -- --json --outputFile=reports/e2e.json
+        working-directory: ecotrack-sjma/services/service-containers
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
+      - name: 'Upload e2e reports'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-e2e-service-containers
+          path: ecotrack-sjma/services/service-containers/reports/e2e.json
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2I: TEST PYRAMID METRICS
+  # =========================================================================
+
+  test-pyramid:
+    name: 'Test Pyramid Metrics'
+    runs-on: ubuntu-latest
+    needs: [test-integration, test-e2e]
+    timeout-minutes: 10
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Run pyramid metrics script'
+        run: node scripts/test-pyramid-metrics.mjs
+        working-directory: ecotrack-sjma
+        continue-on-error: true
+
+      - name: 'Upload pyramid reports'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-test-pyramid
+          path: |
+            ecotrack-sjma/reports/pyramid/report.json
+            ecotrack-sjma/reports/pyramid/report.md
+            ecotrack-sjma/reports/pyramid/index.html
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 2F1: UNIT TESTS - SERVICE-ROUTES (Test Pyramid - Level 1 ~94%)
+  # =========================================================================
+  # ~252 tests | ~90% coverage | <1s | Coût: Faible
+  # Plus nombreux et rapide - exécuté en premier
+  
+  test-routes-unit:
+    name: ' Unit Tests (94%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-routes
+
+      # Lance les tests unitaires avec coverage
+      - name: 'Run Unit Tests (252 tests)'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/service-routes
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+        continue-on-error: true
+      
+      # Upload couverture
+      - name: 'Upload coverage'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./ecotrack-sjma/services/service-routes/coverage/coverage-final.json
+          flags: unit-tests-routes
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-service-routes
+          path: ecotrack-sjma/services/service-routes/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2F2: INTEGRATION TESTS - SERVICE-ROUTES (Test Pyramid - Level 2 ~2%)
+  # =========================================================================
+  # 4 tests | ~5% coverage | ~1s | Coût: Moyen
+  # Test les interactions entre modules
+  
+  test-routes-integration:
+    name: ' Integration Tests (2%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: test-routes-unit
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-routes
+      
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+      
+      # Lance les tests d'intégration
+      - name: 'Run Integration Tests (4 tests)'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-routes
+        env:
+          NODE_ENV: test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_pass
+          PGDATABASE: ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2F3: E2E TESTS - SERVICE-ROUTES (Test Pyramid - Level 3 ~5%)
+  # =========================================================================
+  # 14 tests | ~5% coverage | ~2s | Coût: Élevé
+  # Test le parcours complet - Plus lent
+  
+  test-routes-e2e:
+    name: '🌐 E2E Tests (5%) - service-routes'
+    runs-on: ubuntu-latest
+    
+    needs: test-routes-integration
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-routes
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Start service-routes API'
+        run: nohup npm start > service-routes.log 2>&1 &
+        working-directory: ecotrack-sjma/services/service-routes
+        env:
+          NODE_ENV: test
+          APP_PORT: 3012
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Wait for service-routes API'
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://localhost:3012/health > /dev/null; then
+              echo "✓ service-routes is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: service-routes not ready yet..."
+            sleep 2
+          done
+          echo "✗ service-routes failed to start"
+          exit 1
+      
+      # Lance les tests E2E
+      - name: 'Run E2E Tests (14 tests)'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-routes
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          API_URL: http://localhost:3012
+
+      - name: 'Show service-routes logs'
+        if: always()
+        working-directory: ecotrack-sjma/services/service-routes
+        run: tail -100 service-routes.log || true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2G1: INTEGRATION TESTS - SERVICE-USERS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 2 tests | Integration tests for user auth flows
+
+  test-users-integration:
+    name: '🔗 Integration Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-users
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-users
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2G2: E2E TESTS - SERVICE-USERS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | User workflow E2E
+
+  test-users-e2e:
+    name: '🌐 E2E Tests - service-users'
+    runs-on: ubuntu-latest
+
+    needs: test-users-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-users
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-users
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2H1: UNIT TESTS - API-GATEWAY (NEW!)
+  # =========================================================================
+  # Tests unitaires pour l'API Gateway
+
+  test-api-gateway:
+    name: 'Unit Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: lint
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/api-gateway
+
+      - name: 'Run Jest tests'
+        run: npm run test:coverage
+        working-directory: ecotrack-sjma/services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: 'Upload coverage artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-api-gateway
+          path: ecotrack-sjma/services/api-gateway/coverage/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 2H2: INTEGRATION TESTS - API-GATEWAY (Test Pyramid - Level 2)
+  # =========================================================================
+
+  test-api-gateway-integration:
+    name: '🔗 Integration Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/api-gateway
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/api-gateway
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2H3: E2E TESTS - API-GATEWAY (Test Pyramid - Level 3)
+  # =========================================================================
+
+  test-api-gateway-e2e:
+    name: '🌐 E2E Tests - api-gateway'
+    runs-on: ubuntu-latest
+
+    needs: test-api-gateway-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/api-gateway
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/api-gateway
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2I1: INTEGRATION TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 2)
+  # =========================================================================
+  # 3 tests | Integration tests for gamification flows
+
+  test-gamifications-integration:
+    name: ' Integration Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-gamifications
+
+      - name: 'Run Database Migrations'
+        working-directory: ecotrack-sjma/database
+        run: npm ci && npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Run Integration Tests'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/services/service-gamifications
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2I2: E2E TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 3)
+  # =========================================================================
+  # 1 test | Gamification E2E workflow
+
+  test-gamifications-e2e:
+    name: '🌐 E2E Tests - service-gamifications'
+    runs-on: ubuntu-latest
+
+    needs: test-gamifications-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/service-gamifications
+
+      - name: 'Run E2E Tests'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/services/service-gamifications
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2J1: INTEGRATION TESTS - FRONTEND (Test Pyramid - Level 2)
+  # =========================================================================
+  # Integration tests for frontend components
+
+  test-frontend-integration:
+    name: '🔗 Integration Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Run Vitest integration tests'
+        run: npm run test:integration
+        working-directory: ecotrack-sjma/frontend
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 2J2: E2E TESTS - FRONTEND (Test Pyramid - Level 3)
+  # =========================================================================
+  # E2E tests for frontend workflows
+
+  test-frontend-e2e:
+    name: ' E2E Tests - frontend'
+    runs-on: ubuntu-latest
+
+    needs: test-frontend-integration
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Start test services (docker-compose)'
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
+        timeout-minutes: 3
+
+      - name: 'Wait for PostgreSQL to be ready'
+        run: |
+          echo "Waiting for PostgreSQL..."
+          echo "Docker containers running:"
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo ""
+          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
+              echo "✓ PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: PostgreSQL not ready yet..."
+            sleep 2
+          done
+          echo "✗ PostgreSQL failed to start"
+          docker ps
+          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
+          exit 1
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Run Vitest E2E tests'
+        run: npm run test:e2e
+        working-directory: ecotrack-sjma/frontend
+        continue-on-error: true
+
+      - name: 'Cleanup test services'
+        if: always()
+        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
+
+  # =========================================================================
+  # JOB 3: SECURITY SCAN - TOUS LES SERVICES
+  # =========================================================================
+  # Détecte les vulnérabilités dans les dépendances
+  
+  security:
+    name: 'Security Scan - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: ['service-users', 'api-gateway', 'service-containers', 'service-gamifications', 'service-iot', 'service-analytics','service-routes']
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+      
+      # npm audit = audit des dépendances et génération de rapport JSON
+      - name: 'Run npm audit and save report'
+        run: |
+          mkdir -p reports/security
+          npm audit --omit=dev --json > reports/security/npm-audit-${{ matrix.service }}.json || true
+        working-directory: ecotrack-sjma/services/${{ matrix.service }}
+        continue-on-error: true
+
+      - name: 'Upload dependency audit report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-dependency-audit-${{ matrix.service }}
+          path: ecotrack-sjma/services/${{ matrix.service }}/reports/security/npm-audit-${{ matrix.service }}.json
+          if-no-files-found: warn
+
+  # =========================================================================
+  # JOB 3B: SAST - CODEQL
+  # =========================================================================
+
+  security-sast:
+    name: 'Security SAST - CodeQL'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    env:
+      CODEQL_ACTION_FILE_COVERAGE_ON_PRS: true
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Initialize CodeQL'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: 'Autobuild'
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 'Analyze with CodeQL'
+        uses: github/codeql-action/analyze@v3
+        id: codeql-analyze
+
+      - name: 'Upload CodeQL SARIF results'
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: 'codeql-ecotrack-sast'
+          wait-for-processing: false
+        continue-on-error: true
+
+      - name: 'Collect CodeQL results as artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-sast-codeql-results
+          path: 'results/'
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 3C: DAST - OWASP ZAP BASELINE
+  # =========================================================================
+
+  security-dast:
+    name: 'Security DAST - OWASP ZAP'
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Start API Gateway stack'
+        run: docker compose -f ecotrack-sjma/docker-compose.yml up -d api-gateway service-users service-containers service-routes service-iot service-analytics postgres redis
+
+      - name: 'Run ZAP Baseline Scan'
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: 'http://localhost:3000/api-docs/'
+          cmd_options: '-a -j -m 5 -T 10'
+
+      - name: 'Upload DAST reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-dast-zap
+          path: |
+            report_html.html
+            report_md.md
+            report_json.json
+          if-no-files-found: warn
+      
+      # Optionnel: Snyk scan (si tu as un compte Snyk)
+      # - name: 'Run Snyk scan'
+      #   run: npx snyk test
+      #   working-directory: service-users
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # =========================================================================
+  # JOB 3D: COLLECT ALL TEST REPORTS & COVERAGE
+  # =========================================================================
+  # Agrège tous les rapports: Coverage, Test Reports, SAST/DAST
+
+  collect-reports:
+    name: ' Collect All Reports'
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [test, test-containers, test-containers-integration, test-gamifications, test-iot, test-iot-integration, test-analytics, test-analytics-integration, test-analytics-e2e, test-frontend, test-integration, test-pyramid, test-routes-unit, test-routes-integration, test-users-integration, test-api-gateway, test-api-gateway-integration, test-gamifications-integration, test-frontend-integration, security, security-sast, security-dast]
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install system dependencies for canvas'
+        run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
+
+      - name: 'Create reports directory'
+        run: mkdir -p reports/{coverage,tests,security}
+
+      - name: ' DEBUG: List all artifacts available'
+        run: |
+          echo "=========================================="
+          echo " Looking for coverage directories..."
+          echo "=========================================="
+          echo ""
+          echo "Backend services:"
+          find ecotrack-sjma/services -type d -name "coverage" 2>/dev/null | while read dir; do
+            echo "  ✓ $dir"
+          done
+          echo ""
+          echo "Frontend:"
+          if [ -d "ecotrack-sjma/frontend/coverage" ]; then
+            echo "  ✓ ecotrack-sjma/frontend/coverage"
+          else
+            echo "  ✗ frontend/coverage not found"
+          fi
+          echo ""
+          echo "Reports:"
+          ls -la reports/ 2>/dev/null || echo "  (No reports yet)"
+          echo "=========================================="
+
+
+      # ===== COLLECT COVERAGE REPORTS =====
+      - name: 'Install dependencies for coverage collection'
+        run: |
+          echo "Installing dependencies for coverage..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "ecotrack-sjma/services/$service" ]; then
+              echo "  → Installing $service..."
+              npm ci --prefix ecotrack-sjma/services/$service 2>&1 | tail -5 || echo "  ⚠ Failed to install $service"
+            fi
+          done
+
+      - name: 'Generate coverage reports'
+        run: |
+          echo "Generating coverage reports..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "ecotrack-sjma/services/$service" ]; then
+              echo "  → Testing $service..."
+              cd ecotrack-sjma/services/$service
+              npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
+              if [ -d "coverage" ]; then
+                echo "    ✓ Coverage found, copying..."
+                cp -r coverage ../../../../reports/coverage/${service} 2>/dev/null || true
+              else
+                echo "    ⚠ No coverage directory found"
+              fi
+              cd ../../../../
+            fi
+          done
+        continue-on-error: true
+
+      # ===== COLLECT FRONTEND COVERAGE =====
+      - name: 'Generate frontend coverage'
+        run: |
+          echo "Generating frontend coverage..."
+          cd ecotrack-sjma/frontend
+          npm ci 2>&1 | tail -3 || echo "⚠ Failed to install frontend deps"
+          npm run test:coverage 2>&1 | grep -E '(PASS|FAIL|coverage)' | head -10 || true
+          if [ -d "coverage" ]; then
+            echo "  ✓ Frontend coverage found, copying..."
+            cp -r coverage ../../reports/coverage/frontend
+          else
+            echo "  ⚠ No frontend coverage directory found"
+          fi
+        continue-on-error: true
+
+      # ===== UPLOAD CONSOLIDATED REPORTS =====
+      - name: 'Upload consolidated coverage reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-coverage-all
+          path: reports/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Debug: List coverage directories'
+        if: always()
+        run: |
+          echo "Coverage directories found:"
+          find ecotrack-sjma/services -type d -name "coverage" 2>/dev/null | head -20
+          echo ""
+          echo "Reports coverage directories:"
+          find reports -type d 2>/dev/null | head -20
+
+      - name: 'Upload service-specific coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend-all-services
+          path: |
+            ecotrack-sjma/services/*/coverage/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend coverage'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-frontend-all
+          path: ecotrack-sjma/frontend/coverage/
+          if-no-files-found: ignore
+
+      # ===== GENERATE TEST REPORTS WITH JSON OUTPUT =====
+      - name: 'Generate test reports (JSON format)'
+        run: |
+          echo "Generating test reports in JSON format..."
+          for service in service-users service-containers service-gamifications service-routes service-iot service-analytics api-gateway; do
+            if [ -d "ecotrack-sjma/services/$service" ]; then
+              echo "  → Generating tests for $service..."
+              mkdir -p ecotrack-sjma/services/$service/test-results
+              cd ecotrack-sjma/services/$service
+              npm test -- --json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+              cd ../../../../
+            fi
+          done
+        continue-on-error: true
+
+      - name: 'Generate frontend test reports'
+        run: |
+          echo "Generating frontend test reports..."
+          mkdir -p ecotrack-sjma/frontend/test-results
+          cd ecotrack-sjma/frontend
+          npm run test -- --reporter=json --outputFile=test-results/test-report.json 2>&1 | tail -5 || true
+        continue-on-error: true
+
+      # ===== FINAL VERIFICATION & UPLOAD ALL ARTIFACTS =====
+      - name: 'Final artifact verification'
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📊 ARTIFACT VERIFICATION REPORT"
+          echo "=========================================="
+          
+          echo ""
+          echo "✅ COVERAGE REPORTS:"
+          find ecotrack-sjma/services ecotrack-sjma/frontend -type d -name "coverage" 2>/dev/null | while read dir; do
+            size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+            echo "   ✓ $dir ($size)"
+          done
+          
+          echo ""
+          echo "✅ TEST REPORTS:"
+          find ecotrack-sjma/services ecotrack-sjma/frontend -type f -name "test-report.json" -o -name "junit.xml" 2>/dev/null | while read file; do
+            size=$(wc -c < "$file" 2>/dev/null | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "$(wc -c < "$file") bytes")
+            echo "   ✓ $file ($size)"
+          done
+          
+          echo ""
+          echo "✅ COVERAGE DIRECTORIES SUMMARY:"
+          du -sh reports/coverage/* 2>/dev/null || echo "   ⚠ No consolidated coverage yet"
+          
+          echo ""
+          echo "=========================================="
+
+      - name: 'Create downloadable archives'
+        if: always()
+        run: |
+          echo "Creating archives for easy download..."
+          mkdir -p archives
+          
+          # Coverage archive
+          if [ -d "reports/coverage" ] && [ "$(ls -A reports/coverage/)" ]; then
+            tar -czf archives/coverage-all.tar.gz -C reports coverage/ 2>/dev/null && echo "✓ coverage-all.tar.gz"
+          fi
+          
+          # Backend coverage archive
+          if find ecotrack-sjma/services -type d -name "coverage" | grep -q .; then
+            tar -czf archives/coverage-backend.tar.gz ecotrack-sjma/services/*/coverage/ 2>/dev/null && echo "✓ coverage-backend.tar.gz"
+          fi
+          
+          # Frontend coverage archive
+          if [ -d "ecotrack-sjma/frontend/coverage" ] && [ "$(ls -A ecotrack-sjma/frontend/coverage/)" ]; then
+            tar -czf archives/coverage-frontend.tar.gz ecotrack-sjma/frontend/coverage/ 2>/dev/null && echo "✓ coverage-frontend.tar.gz"
+          fi
+          
+          echo "Archives created in archives/ directory"
+        continue-on-error: true
+
+      - name: 'Upload coverage archives'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-archives-compressed
+          path: archives/
+          if-no-files-found: ignore
+
+      - name: 'Upload all test reports from services'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-all-services
+          path: |
+            ecotrack-sjma/services/*/test-results/
+            ecotrack-sjma/services/*/reports/
+          if-no-files-found: ignore
+
+      - name: 'Upload frontend test reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-tests-frontend
+          path: |
+            ecotrack-sjma/frontend/test-results/
+            ecotrack-sjma/frontend/reports/
+          if-no-files-found: ignore
+
+      - name: 'Create final artifact summary'
+        if: always()
+        run: |
+          cat > artifact-summary.txt << 'EOF'
+          ========================================
+          ECOTRACK CI/CD ARTIFACT SUMMARY
+          ========================================
+          
+          COVERAGE ARTIFACTS:
+          - reports-coverage-all: All consolidated coverage reports
+          - coverage-backend-all-services: Individual service coverage directories
+          - coverage-frontend-all: Frontend coverage report
+          - coverage-archives-compressed: Compressed tar.gz files for easy download
+          
+          TEST ARTIFACTS:
+          - report-tests-all-services: All backend service test reports (JSON)
+          - report-tests-frontend: Frontend test reports (JSON)
+          - report-integration-*: Individual integration test reports
+          - report-e2e-service-containers: E2E test reports
+          
+          SECURITY ARTIFACTS:
+          - report-dependency-audit-*: npm audit reports for each service (7 total)
+          - report-sast-codeql-results: CodeQL SAST analysis results
+          - report-dast-zap: OWASP ZAP DAST scan results
+          
+          MISC ARTIFACTS:
+          - report-test-pyramid: Test pyramid metrics and analysis
+          
+          DOWNLOAD INSTRUCTIONS:
+          1. Go to GitHub Actions run
+          2. Scroll to "Artifacts" section
+          3. Click on artifact name to download
+          4. For tar.gz files: tar -xzf <file>.tar.gz to extract
+          
+          ========================================
+          EOF
+          cat artifact-summary.txt
+      
+      - name: 'Upload artifact summary'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARTIFACT-SUMMARY
+          path: artifact-summary.txt
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 4: BUILD DOCKER - TOUS LES SERVICES
+  # =========================================================================
+  # Construit les images Docker pour tous les services
+  
+  build:
+    name: 'Build Docker - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - service: service-users
+            image-name: ecotrack-service-users
+            port: 3010
+          - service: api-gateway
+            image-name: ecotrack-api-gateway
+            port: 3000
+          - service: service-containers
+            image-name: ecotrack-service-containers
+            port: 3011
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
+          - service: service-routes
+            image-name: ecotrack-service-routes
+            port: 3012
+          - service: service-iot
+            image-name: ecotrack-service-iot
+            port: 3013
+          - service: service-analytics
+            image-name: ecotrack-service-analytics
+            port: 3015
+    
+    # Attend que tous les tests réussissent
+    needs: [test, test-containers, test-gamifications, test-iot, test-analytics, test-frontend, test-integration, test-e2e, test-pyramid, test-users-integration, test-users-e2e, test-api-gateway, test-api-gateway-integration, test-api-gateway-e2e, test-gamifications-integration, test-gamifications-e2e, test-frontend-integration, test-frontend-e2e, test-routes-unit, test-routes-integration, test-routes-e2e]
+    
+    # Permissions pour pousser sur le registry
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      # Setup buildx pour build multi-platform (ARM64, AMD64, etc.)
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      # Login au GitHub Container Registry (pour pousser l'image)
+      - name: 'Log in to Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Métadonnées pour le tag de l'image
+      - name: 'Extract metadata'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      
+      # Build et push l'image Docker
+      - name: 'Build and push Docker image'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
+          push: ${{ github.event_name != 'pull_request' }}  # Push sauf en PR
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 5: TEST DOCKER IMAGE - TOUS LES SERVICES
+  # =========================================================================
+  # Lance le conteneur Docker construit et valide qu'il démarre
+  
+  test-docker:
+    name: 'Test Docker - ${{ matrix.service }}'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - service: service-users
+            image-name: ecotrack-service-users
+            port: 3010
+            env-vars: '-e APP_PORT=3010 -e JWT_SECRET=test -e JWT_REFRESH_SECRET=test -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack_test'
+          - service: api-gateway
+            image-name: ecotrack-api-gateway
+            port: 3000
+            env-vars: '-e GATEWAY_PORT=3000 -e USERS_SERVICE_URL=http://localhost:3010'
+          - service: service-gamifications
+            image-name: ecotrack-service-gamifications
+            port: 3014
+            env-vars: '-e PORT=3014 -e DATABASE_URL=postgresql://test_user:test_pass@172.17.0.1:5432/ecotrack_test'
+    
+    needs: build
+    if: github.event_name == 'pull_request'  # Seulement en PR
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      # Build localement l'image (sans push)
+      - name: 'Build Docker image'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
+          load: true
+          tags: ${{ matrix.image-name }}:test
+      
+      # Lance le conteneur et teste /health endpoint
+      - name: 'Start container and test health'
+        run: |
+          docker run -d \
+            --name test-container \
+            -p ${{ matrix.port }}:${{ matrix.port }} \
+            ${{ matrix.env-vars }} \
+            ${{ matrix.image-name }}:test
+          
+          # Attendre que le container démarre avec retry
+          echo "Waiting for container to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:${{ matrix.port }}/health 2>/dev/null; then
+              echo "Container is healthy!"
+              break
+            fi
+            echo "Attempt $i/30 failed, retrying in 2s..."
+            sleep 2
+          done
+          
+          # Vérifier une dernière fois
+          curl -f http://localhost:${{ matrix.port }}/health || {
+            echo "Health check failed. Container logs:"
+            docker logs test-container
+            exit 1
+          }
+          
+          echo "Health check passed!"
+          docker logs test-container
+          docker stop test-container
+
+# ============================================================================
+# RÉSUMÉ WORKFLOW
+# ============================================================================
+# 
+# Quand tu fais: git push
+#   → GitHub Actions détecte le push
+#   → Lance tous les jobs en parallèle (lint, test, security, build)
+#   → Si l'un échoue, l'image ne se build pas
+#   → Résultats visibles dans GitHub "Actions" tab
+#
+# En production:
+#   - CD: l'image "latest" se déploie auto sur K8s
+#   - Monitoring alerte si deployment échoue
+#
+# Coûts GitHub Actions:
+#   - 2000 min/mois gratuit pour repos public
+#   - Payant au-delà

@@ -18,6 +18,12 @@ const toInteger = (value, fallback) => {
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
+const toMinutesMs = (value, fallbackMinutes) => {
+  const parsed = parseInt(value, 10);
+  const minutes = Number.isNaN(parsed) ? fallbackMinutes : parsed;
+  return minutes * 60 * 1000;
+};
+
 let dbConfigCache = null;
 let dbConfigPromise = null;
 
@@ -91,7 +97,11 @@ const env = {
       return getDbConfig('rate_limit.auth_max_attempts', 5);
     },
     get passwordResetWindowMs() {
-      return getDbConfig('security.lockout_duration_minutes', 60 * 60 * 1000);
+      const dbMinutes = getDbConfig('security.lockout_duration_minutes', undefined);
+      if (dbMinutes !== undefined) {
+        return toMinutesMs(dbMinutes, 60);
+      }
+      return toMinutesMs(process.env.RATE_LIMIT_PASSWORD_RESET_MINUTES, 60);
     },
     get passwordResetMaxAttempts() {
       return getDbConfig('security.max_login_attempts', 3);

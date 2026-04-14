@@ -25,7 +25,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError('Tous les champs sont obligatoires');
       return;
@@ -35,10 +35,26 @@ const LoginPage = () => {
     setError('');
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/');
+      const user = await login(formData.email, formData.password);
+      if (user?.role === 'ADMIN') {
+        navigate('/admin');
+      } else if (user?.role === 'GESTIONNAIRE') {
+        navigate('/gestionnaire');
+      } else if (user?.role === 'AGENT') {
+        navigate('/agent');
+      } else if (user?.role === 'CITOYEN') {
+        navigate('/citoyen');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur de connexion');
+      if (err.response?.status === 429) {
+        setError('Trop de tentatives de connexion. Veuillez patienter quelques instants.');
+      } else if (err.response?.status === 401) {
+        setError('Email ou mot de passe incorrect');
+      } else {
+        setError(err.response?.data?.error || 'Erreur de connexion');
+      }
     } finally {
       setLoading(false);
     }

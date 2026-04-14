@@ -8,7 +8,10 @@
     "start": "node src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest __tests__/unit __tests__/integration --coverage --passWithNoTests",
+    "test:unit": "jest __tests__/unit --runInBand",
+    "test:integration": "jest __tests__/integration --runInBand",
+    "test:e2e": "jest __tests__/e2e --runInBand --detectOpenHandles --passWithNoTests",
     "test:smoke": "node scripts/security_smoke_test.mjs"
   },
   "keywords": [],
@@ -41,6 +44,7 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.0",
     "babel-jest": "^30.3.0",
-    "jest": "^30.3.0"
+    "jest": "^30.3.0",
+    "supertest": "^7.0.0"
   }
 }

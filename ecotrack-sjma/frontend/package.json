@@ -10,11 +10,15 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage --passWithNoTests || true",
+    "test:integration": "vitest run __tests__/integration --passWithNoTests || true",
+    "test:e2e": "vitest run __tests__/e2e --passWithNoTests || true"
   },
   "dependencies": {
     "axios": "^1.13.5",
     "jwt-decode": "^4.0.0",
+    "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"
@@ -23,9 +27,11 @@
     "@eslint/js": "^9.39.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.1.4",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",

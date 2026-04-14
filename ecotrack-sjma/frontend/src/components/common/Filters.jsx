@@ -4,7 +4,11 @@ export default function Filters({ children }) {
   return <div className="filters-section">{children}</div>;
 }
 
-export function SearchBox({ value, onChange, placeholder = 'Rechercher...' }) {
+export function SearchBox({ value, onChange, onSubmit, placeholder = 'Rechercher...' }) {
+  const handleBlur = () => {
+    onSubmit?.();
+  };
+  
   return (
     <div className="search-box">
       <i className="fas fa-search"></i>
@@ -13,6 +17,13 @@ export function SearchBox({ value, onChange, placeholder = 'Rechercher...' }) {
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+          }
+        }}
+        onBlur={handleBlur}
       />
     </div>
   );

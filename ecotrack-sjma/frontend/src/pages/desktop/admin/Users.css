@@ -171,3 +171,15 @@
 .error-state {
   color: #f44336;
 }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  display: block;
+}

@@ -10,6 +10,7 @@ import { jwtValidationMiddleware } from './middleware/auth.js';
 import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
 import healthCheckService from './services/healthCheck.js';
 import centralizedLogging from './services/centralizedLogging.js';
+import dashboardStatsService from './services/dashboardStats.js';
 import cacheService from './services/cacheService.js';
 import client from 'prom-client';
 
@@ -34,6 +35,19 @@ const httpRequestDuration = new client.Histogram({
 });
 
 const app = express();
+
+const localhostIps = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const shouldBypassLocalRateLimit = () => {
+  if (process.env.GATEWAY_RATE_BYPASS_LOCAL === 'true') return true;
+  if (process.env.GATEWAY_RATE_BYPASS_LOCAL === 'false') return false;
+  return (process.env.NODE_ENV || 'development') === 'development';
+};
+
+const hasLocalhostHostHeader = (req) => {
+  const host = (req.headers?.host || '').toLowerCase();
+  const forwardedHost = (req.headers?.['x-forwarded-host'] || '').toLowerCase();
+  return host.includes('localhost') || host.includes('127.0.0.1') || forwardedHost.includes('localhost') || forwardedHost.includes('127.0.0.1');
+};
 /**
  * API Gateway for EcoTrack microservices
  * @type {number}
@@ -71,6 +85,9 @@ const services = {
       { mountPath: '/users' },
       { mountPath: '/notifications' },
       { mountPath: '/admin/roles' },
+      { mountPath: '/admin/config' },
+      { mountPath: '/admin/environmental-constants' },
+      { mountPath: '/admin/agent-performance' },
       { mountPath: '/avatars' },
       { mountPath: '/api/users', rewrite: (path) => path.replace(/^\/api\/users/, '/users') }
     ]
@@ -156,9 +173,14 @@ const globalRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    if (req.path === '/health') return true;
+    if (!shouldBypassLocalRateLimit()) return false;
+    return localhostIps.has(req.ip) || hasLocalhostHostHeader(req);
+  },
   // Logging des rate limit hits
   handler: (req, res, next, options) => {
-    logger.warn({ ip: req.ip }, 'Rate limit exceeded');
+    logger.warn({ ip: req.ip, path: req.originalUrl }, 'Rate limit exceeded');
     res.status(429).json(options.message);
   }
 });
@@ -190,11 +212,37 @@ const createProxy = (target, pathRewrite) => createProxyMiddleware({
 });
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+    } else if (/^http:\/\/localhost:\d+$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With'],
+  exposedHeaders: ['Cache-Control', 'Pragma', 'Expires', 'X-Total-Count'],
+  maxAge: 86400
 }));
+
+app.use((req, res, next) => {
+  const isDocsAsset = req.path === '/api-docs' || req.path.startsWith('/api-docs/');
+  if (isDocsAsset) {
+    // Swagger static assets can be cached briefly to avoid noisy scanner findings.
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  } else {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
 // =========================================================================
 // SÉCURITÉ
@@ -204,13 +252,42 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      styleSrc: ["'self'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "blob:"],
+      fontSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      workerSrc: ["'self'", "blob:"],
     },
   },
-  crossOriginEmbedderPolicy: false // Désactivé pour Swagger UI
+  crossOriginEmbedderPolicy: { policy: 'require-corp' },
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  referrerPolicy: { policy: 'no-referrer' },
+  permissionsPolicy: {
+    features: {
+      accelerometer: [],
+      camera: [],
+      geolocation: [],
+      gyroscope: [],
+      magnetometer: [],
+      microphone: [],
+      payment: [],
+      usb: [],
+      fullscreen: ['self']
+    }
+  }
 }));
+
+// En-têtes de sécurité complémentaires
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), fullscreen=(self)');
+  next();
+});
 
 // Rate limiting global
 app.use(globalRateLimit);
@@ -230,6 +307,21 @@ app.use(jwtValidationMiddleware);
 // =========================================================================
 // DOCUMENTATION API UNIFIÉE
 // =========================================================================
+app.use('/api-docs', (req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; manifest-src 'self'"
+  );
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader(
+    'Permissions-Policy',
+    'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), fullscreen=(self)'
+  );
+  next();
+});
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(unifiedSwaggerSpec, swaggerOptions));
 
 // Documentation individuelle des services (proxies)
@@ -425,8 +517,15 @@ app.get('/api/logs/export', async (req, res) => {
 // Cleanup old logs (admin only)
 app.delete('/api/logs/cleanup', async (req, res) => {
   try {
-    const { days = 30 } = req.query;
-    const deleted = await centralizedLogging.cleanup(parseInt(days));
+    const { days, level, action, service, startDate, endDate } = req.query;
+    const deleted = await centralizedLogging.cleanup({ 
+      days: days ? parseInt(days) : undefined,
+      level: level && level !== 'all' ? level : undefined,
+      action: action && action !== 'all' ? action : undefined,
+      service: service && service !== 'all' ? service : undefined,
+      startDate,
+      endDate
+    });
     res.json({ success: true, deleted });
   } catch (err) {
     logger.error({ err: err.message }, 'Failed to cleanup logs');
@@ -434,54 +533,322 @@ app.delete('/api/logs/cleanup', async (req, res) => {
   }
 });
 
-// Métriques consolidées pour le frontend
-app.get('/api/metrics/status', async (req, res) => {
-  const axios = (await import('axios')).default;
-  
-  const serviceMetrics = [
-    { name: 'api-gateway', url: 'http://api-gateway:3000/metrics' },
-    { name: 'service-users', url: 'http://service-users:3010/metrics' },
-    { name: 'service-containers', url: 'http://service-containers:3011/metrics' },
-    { name: 'service-gamifications', url: 'http://service-gamifications:3014/metrics' }
-  ];
-  
-  try {
-    const results = await Promise.allSettled(
-      serviceMetrics.map(async (s) => {
-        const response = await axios.get(s.url, { timeout: 3000 });
-        const metricsText = response.data;
-        
-        const parseMetric = (text, metricName) => {
-          const lines = text.split('\n');
-          const line = lines.find(l => l.startsWith(metricName + ' '));
-          if (!line) return null;
-          const value = line.split(' ')[1];
-          return parseFloat(value);
-        };
-        
-        return {
-          name: s.name,
-          status: 'up',
-          httpRequests: parseMetric(metricsText, 'http_requests_total') || 0,
-          memoryBytes: parseMetric(metricsText, 'process_resident_memory_bytes') || 0
-        };
-      })
-    );
-    
-    const metrics = results
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value);
-    
-    res.json({
-      timestamp: new Date().toISOString(),
-      services: metrics
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch metrics', message: error.message });
-  }
-});
+// Get all alerts
+  app.get('/api/alerts', async (req, res) => {
+    try {
+      const { status, limit = 50, offset = 0 } = req.query;
+      const axios = (await import('axios')).default;
 
-// Metrics middleware
+      const params = new URLSearchParams({ limit, offset });
+      if (status && status !== 'all') params.append('status', status);
+
+      const response = await axios.get(`http://ecotrack-service-iot:3013/api/alerts?${params.toString()}`, {
+        timeout: 5000
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get alerts');
+      res.status(500).json({ error: 'Failed to get alerts' });
+    }
+  });
+
+  // Update alert status (resolve/ignore)
+  app.patch('/api/alerts/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { statut } = req.body;
+      const axios = (await import('axios')).default;
+
+      const response = await axios.patch(`http://ecotrack-service-iot:3013/api/iot/alerts/${id}`, {
+        statut
+      }, {
+        timeout: 5000
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to update alert');
+      res.status(500).json({ error: 'Failed to update alert' });
+    }
+  });
+
+  // Get unified alerts from all sources
+  app.get('/api/alerts/unified', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+      const { severity, type, status, limit = 50, offset = 0 } = req.query;
+
+      // 1. Get IoT alerts from service-iot (with status filter)
+      const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
+        params: { status, limit: 1000, offset: 0 }, // Get all to filter properly, then paginate
+        timeout: 5000
+      }).catch(() => ({ data: { data: [], total: 0 } }));
+
+      // 2. Get Prometheus alerts (if available) - only if status is 'all' or 'ACTIVE'
+      let prometheusAlerts = [];
+      if (!status || status === 'all' || status === 'ACTIVE') {
+        const prometheusResponse = await axios.get('http://prometheus:9090/api/v1/alerts', {
+          timeout: 3000
+        }).catch(() => ({ data: { data: { alerts: [] } } }));
+        
+        prometheusAlerts = prometheusResponse.data.data?.alerts?.map(alert => ({
+          id: `prom-${alert.labels?.alertname}-${Date.now()}`,
+          type: alert.labels?.alertname,
+          severity: alert.labels?.severity || 'warning',
+          category: alert.labels?.category || 'infrastructure',
+          icon: 'fa-server',
+          title: alert.annotations?.summary || alert.labels?.alertname,
+          description: alert.annotations?.description || '',
+          time: new Date(alert.startsAt).toISOString(),
+          statut: alert.state?.toUpperCase() || 'ACTIVE',
+          valeur: alert.annotations?.current_value || '',
+          seuil: alert.annotations?.threshold || '',
+          source: 'prometheus'
+        })) || [];
+      }
+
+      // Transform IoT alerts
+      const iotAlerts = iotResponse.data.data?.map(alert => {
+        const config = {
+          DEBORDEMENT: { severity: 'critical', category: 'conteneur', icon: 'fa-fill-drip' },
+          BATTERIE_FAIBLE: { severity: 'high', category: 'capteur', icon: 'fa-battery-quarter' },
+          CAPTEUR_DEFAILLANT: { severity: 'medium', category: 'capteur', icon: 'fa-microchip' }
+        }[alert.type_alerte] || { severity: 'low', category: 'autre', icon: 'fa-bell' };
+
+        return {
+          id: alert.id_alerte,
+          type: alert.type_alerte,
+          severity: config.severity,
+          category: config.category,
+          icon: config.icon,
+          title: `${alert.type_alerte} - Conteneur #${alert.id_conteneur}`,
+          description: alert.description || `${alert.type_alerte}: ${alert.valeur_detectee}/${alert.seuil}`,
+          time: alert.date_creation,
+          statut: alert.statut,
+          valeur: alert.valeur_detectee,
+          seuil: alert.seuil,
+          source: 'iot'
+        };
+      }) || [];
+
+      // Combine all alerts
+      let allAlerts = [...iotAlerts, ...prometheusAlerts];
+
+      // Filter by severity
+      if (severity && severity !== 'all') {
+        allAlerts = allAlerts.filter(a => a.severity === severity);
+      }
+
+      // Filter by type/category
+      if (type && type !== 'all') {
+        allAlerts = allAlerts.filter(a => 
+          a.type === type || 
+          a.category === type.toLowerCase()
+        );
+      }
+
+      // Sort by time (newest first)
+      allAlerts.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+      const total = allAlerts.length;
+      const paginatedAlerts = allAlerts.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
+      res.json({
+        success: true,
+        data: paginatedAlerts,
+        total: total
+      });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get unified alerts');
+      res.status(500).json({ error: 'Failed to get alerts' });
+    }
+  });
+
+  // Get alert stats
+  app.get('/api/alerts/stats', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+      
+      const response = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
+        params: { limit: 1000 },
+        timeout: 5000
+      }).catch(() => ({ data: { data: [] } }));
+
+      const alerts = response.data.data || [];
+      
+      const stats = {
+        critical: alerts.filter(a => a.type_alerte === 'DEBORDEMENT').length,
+        high: alerts.filter(a => a.type_alerte === 'BATTERIE_FAIBLE').length,
+        medium: alerts.filter(a => a.type_alerte === 'CAPTEUR_DEFAILLANT').length,
+        low: alerts.filter(a => !['DEBORDEMENT', 'BATTERIE_FAIBLE', 'CAPTEUR_DEFAILLANT'].includes(a.type_alerte)).length,
+        total: alerts.length
+      };
+
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get alert stats');
+      res.status(500).json({ error: 'Failed to get alert stats' });
+    }
+  });
+
+  // Get sensors status
+  app.get('/api/iot/sensors/status', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+
+      const response = await axios.get('http://ecotrack-service-iot:3013/api/iot/sensors/status', {
+        timeout: 5000,
+        headers: {
+          'x-user-id': '1',
+          'x-user-role': 'ADMIN'
+        }
+      });
+
+      res.json(response.data);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get sensors status');
+      res.status(500).json({ error: 'Failed to get sensors status' });
+    }
+  });
+
+// Get all services health
+  app.get('/api/health/all', async (req, res) => {
+    try {
+      const axios = (await import('axios')).default;
+
+      const microservices = [
+        { name: 'api-gateway', url: 'http://localhost:3000/health' },
+        { name: 'service-users', url: 'http://ecotrack-service-users:3010/health' },
+        { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/health' },
+        { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/health' },
+        { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/health' },
+        { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/health' },
+        { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/health' }
+      ];
+
+      const infrastructure = [
+        { name: 'postgresql', url: null, type: 'database' },
+        { name: 'redis', url: null, type: 'cache' },
+        { name: 'kafka', url: null, type: 'messaging' },
+        { name: 'mqtt-broker', url: null, type: 'iot' },
+        { name: 'prometheus', url: 'http://prometheus:9090/-/healthy', type: 'monitoring' },
+        { name: 'grafana', url: 'http://grafana:3000/api/health', type: 'monitoring' }
+      ];
+
+      const results = await Promise.allSettled(
+        microservices.map(async (s) => {
+          try {
+            const response = await axios.get(s.url, { timeout: 3000 });
+            return { name: s.name, status: 'up', ...response.data };
+          } catch (err) {
+            return { name: s.name, status: 'down', error: err.message };
+          }
+        })
+      );
+
+      const infraResults = await Promise.allSettled(
+        infrastructure.map(async (s) => {
+          if (s.url) {
+            try {
+              const response = await axios.get(s.url, { timeout: 3000 });
+              return { name: s.name, status: 'up', type: s.type };
+            } catch (err) {
+              return { name: s.name, status: 'down', type: s.type, error: err.message };
+            }
+          } else {
+            return { name: s.name, status: 'up', type: s.type };
+          }
+        })
+      );
+
+      const microserviceHealth = results.map(r => r.value);
+      const infraHealth = infraResults.map(r => r.value);
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        services: [...microserviceHealth, ...infraHealth]
+      });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get health status');
+      res.status(500).json({ error: 'Failed to get health status' });
+    }
+  });
+
+  // Métriques consolidées pour le frontend
+  app.get('/api/metrics/status', async (req, res) => {
+    const axios = (await import('axios')).default;
+
+  const serviceMetrics = [
+    { name: 'api-gateway', url: 'http://ecotrack-api-gateway:3000/metrics' },
+    { name: 'service-users', url: 'http://ecotrack-service-users:3010/metrics' },
+    { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/metrics' },
+    { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/metrics' },
+    { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/metrics' },
+    { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/metrics' },
+    { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/metrics' }
+  ];
+
+    try {
+      const results = await Promise.allSettled(
+        serviceMetrics.map(async (s) => {
+          try {
+            const response = await axios.get(s.url, { timeout: 3000 });
+            const metricsText = response.data;
+
+            const parseMetric = (text, metricName) => {
+              const lines = text.split('\n');
+              // Sum all metric values (handles both with and without labels)
+              // Format: metric_name{labels} value or metric_name value
+              let total = 0;
+              for (const line of lines) {
+                if (line.startsWith(metricName + ' ') || line.startsWith(metricName + '{')) {
+                  // Extract the value (last part after space)
+                  const parts = line.split(' ');
+                  const value = parseFloat(parts[parts.length - 1]);
+                  if (!isNaN(value)) {
+                    total += value;
+                  }
+                }
+              }
+              return total > 0 ? total : null;
+            };
+
+            return {
+              name: s.name,
+              status: 'up',
+              httpRequests: parseMetric(metricsText, 'http_requests_total') || 0,
+              memoryBytes: parseMetric(metricsText, 'process_resident_memory_bytes') || 0
+            };
+          } catch (err) {
+            return { name: s.name, status: 'down', httpRequests: 0, memoryBytes: 0 };
+          }
+        })
+      );
+
+      const metrics = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        services: metrics
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch metrics', message: error.message });
+    }
+  });
+
+// Dashboard stats endpoint
+  app.get('/api/dashboard/stats', async (req, res) => {
+    try {
+      const stats = await dashboardStatsService.getStats();
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get dashboard stats');
+      res.status(500).json({ success: false, error: 'Failed to get dashboard stats' });
+    }
+  });
+
+  // Metrics middleware
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -645,23 +1012,25 @@ cacheService.connect().then(() => {
   logger.warn({ err: err.message }, 'Cache service connection failed, continuing without');
 });
 
-const server = app.listen(gatewayPort, () => {
-  logger.info({ port: gatewayPort }, 'API Gateway ready');
-  console.table(
-    Object.entries(services).map(([key, svc]) => ({
-      service: key,
-      status: svc.status,
-      target: svc.baseUrl || 'pending'
-    }))
-  );
-});
-
-process.on('SIGINT', () => {
-  logger.info('Shutting down gateway');
-  server.close(() => {
-    logger.info('Gateway closed');
-    process.exit(0);
+if (process.env.DISABLE_AUTO_START !== 'true') {
+  const server = app.listen(gatewayPort, () => {
+    logger.info({ port: gatewayPort }, 'API Gateway ready');
+    console.table(
+      Object.entries(services).map(([key, svc]) => ({
+        service: key,
+        status: svc.status,
+        target: svc.baseUrl || 'pending'
+      }))
+    );
   });
-});
+
+  process.on('SIGINT', () => {
+    logger.info('Shutting down gateway');
+    server.close(() => {
+      logger.info('Gateway closed');
+      process.exit(0);
+    });
+  });
+}
 
 export default app;

@@ -118,6 +118,18 @@ router.get('/iot/sensors', requirePermission('iot:read'), validateQuery(paginati
 
 /**
  * @swagger
+ * /iot/sensors/status:
+ *   get:
+ *     summary: Statut des capteurs
+ *     tags: [Capteurs]
+ *     responses:
+ *       200:
+ *         description: Statut des capteurs (total, actifs, inactifs)
+ */
+router.get('/iot/sensors/status', requirePermission('iot:read'), (req, res, next) => controller.getSensorsStatus(req, res, next));
+
+/**
+ * @swagger
  * /iot/sensors/{id}:
  *   get:
  *     summary: Détails d'un capteur
@@ -195,6 +207,41 @@ router.patch('/iot/alerts/:id', requirePermission('iot:update'), validateParamId
  *         description: Statistiques globales
  */
 router.get('/iot/stats', requirePermission('iot:read'), (req, res, next) => controller.getStats(req, res, next));
+
+router.get('/alerts', async (req, res, next) => {
+  try {
+    const pool = require('../db/connexion');
+    const { status, limit = 50, offset = 0 } = req.query;
+    
+    let query = 'SELECT * FROM alerte_capteur';
+    const params = [];
+    
+    if (status && status !== 'all') {
+      query += ' WHERE statut = $1';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY date_creation DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const result = await pool.query(query, params);
+    
+    const countResult = await pool.query(
+      status && status !== 'all' 
+        ? 'SELECT COUNT(*)::int as total FROM alerte_capteur WHERE statut = $1'
+        : 'SELECT COUNT(*)::int as total FROM alerte_capteur',
+      status && status !== 'all' ? [status] : []
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      total: countResult.rows[0].total
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;
 module.exports.setController = setController;

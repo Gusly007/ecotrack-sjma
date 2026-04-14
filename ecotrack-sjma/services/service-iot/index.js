@@ -3,14 +3,22 @@ const helmet = require('helmet');
 const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const http = require('http');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const logger = require('./src/utils/logger');
 const client = require('prom-client');
 const cacheService = require('./src/services/cacheService');
 const centralizedLogging = require('./src/services/centralizedLogging');
 const kafkaProducer = require('./kafkaProducer');
+const errorHandler = require('./src/middleware/error-handler');
+const requestLogger = require('./src/middleware/request-logger');
+const config = require('./src/config/config');
+const di = require('./src/container-di');
+const iotRoutes = require('./src/routes/iot.route');
 
-// ========== PROMETHEUS METRICS ==========
+const isIntegrationSmoke = process.env.INTEGRATION_SMOKE === 'true';
+
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
 
@@ -29,37 +37,33 @@ const httpRequestDuration = new client.Histogram({
   registers: [register]
 });
 
-// Utilitaires
-const errorHandler = require('./src/middleware/error-handler');
-const requestLogger = require('./src/middleware/request-logger');
-const config = require('./src/config/config');
-
 const app = express();
+const server = http.createServer(app);
 
-// ========== MIDDLEWARE ==========
+iotRoutes.setController(di.iotController);
+
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
-
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
+app.use(cors());
 
-// Metrics middleware (avant les routes pour capturer toutes les requêtes)
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = (Date.now() - start) / 1000;
-    const route = req.route ? req.route.path : req.path;
-    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
-    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, duration);
-  });
-  next();
+// Rate limiting middleware for IoT routes (must be declared before use)
+const iotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Trop de requêtes, veuillez réessayer plus tard'
 });
 
-// ========== DOCUMENTATION API ==========
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -102,16 +106,18 @@ const swaggerOptions = {
   apis: ['./src/routes/*.js']
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+let swaggerSpec;
+try {
+  swaggerSpec = swaggerJsdoc(swaggerOptions);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+} catch (err) {
+  console.error('Swagger initialization failed:', err.message);
+  app.get('/api-docs', (req, res) => {
+    res.json({ message: 'API docs temporarily unavailable' });
+  });
+}
 
-// ========== DEPENDENCY INJECTION ==========
-const di = require('./src/container-di');
-const iotRoutes = require('./src/routes/iot.route');
-iotRoutes.setController(di.iotController);
-
-// ========== ROUTES ==========
-app.get('/api', (req, res) => {
+app.get('/api', iotLimiter, (req, res) => {
   res.json({
     success: true,
     message: 'Bienvenue sur EcoTrack IoT Service API',
@@ -128,9 +134,8 @@ app.get('/api', (req, res) => {
   });
 });
 
-app.use('/api', iotRoutes);
+app.use('/api', iotLimiter, iotRoutes);
 
-// ========== HEALTH CHECK ==========
 app.get('/health', async (req, res) => {
   const healthcheck = {
     status: 'OK',
@@ -144,30 +149,31 @@ app.get('/health', async (req, res) => {
     }
   };
 
-  // Test connexion base de données
-  try {
-    const { pool } = require('./src/db/connexion');
-    await pool.query('SELECT 1');
-    healthcheck.services.database = 'healthy';
-  } catch (error) {
-    healthcheck.status = 'DEGRADED';
-    healthcheck.services.database = 'unhealthy';
-  }
+  if (isIntegrationSmoke) {
+    healthcheck.services.database = 'skipped';
+    healthcheck.services.mqtt = 'skipped';
+  } else {
+    try {
+      const { pool } = require('./src/db/connexion');
+      await pool.query('SELECT 1');
+      healthcheck.services.database = 'healthy';
+    } catch (error) {
+      healthcheck.status = 'DEGRADED';
+      healthcheck.services.database = 'unhealthy';
+    }
 
-  // MQTT broker status
-  healthcheck.services.mqtt = di.mqttBroker.getAedes() ? 'healthy' : 'unavailable';
+    healthcheck.services.mqtt = di.mqttBroker.getAedes() ? 'healthy' : 'unavailable';
+  }
 
   const statusCode = healthcheck.status === 'OK' ? 200 : 503;
   res.status(statusCode).json(healthcheck);
 });
 
-// Metrics endpoint
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
 
-// ========== 404 ==========
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -177,14 +183,24 @@ app.use((req, res) => {
   });
 });
 
-// ========== GESTION DES ERREURS ==========
 app.use(errorHandler);
 
-// ========== START SERVER ==========
 async function startServer() {
+  if (isIntegrationSmoke) {
+    const smokeServer = app.listen(config.PORT, () => {
+      logger.info({
+        port: config.PORT,
+        mqttPort: config.MQTT.port,
+        env: config.NODE_ENV,
+        smoke: true
+      }, `Service IoT started on port ${config.PORT}`);
+    });
+
+    return smokeServer;
+  }
+
   const { testConnection } = require('./src/db/connexion');
 
-  // Test DB connection
   const dbConnected = await testConnection();
   if (!dbConnected) {
     logger.error('Failed to connect to PostgreSQL. Retrying in 5s...');
@@ -192,7 +208,6 @@ async function startServer() {
     return;
   }
 
-  // Initialize Redis cache
   try {
     await cacheService.connect();
     logger.info('Redis cache connected');
@@ -200,7 +215,6 @@ async function startServer() {
     logger.warn({ error: err.message }, 'Redis cache connection failed, continuing without');
   }
 
-  // Start MQTT Broker
   try {
     await di.mqttBroker.start();
     logger.info({ mqttPort: config.MQTT.port }, 'MQTT Broker started');
@@ -208,7 +222,6 @@ async function startServer() {
     logger.error({ error: err.message }, 'Failed to start MQTT Broker');
   }
 
-  // Connect Kafka producer
   try {
     await kafkaProducer.connect();
     logger.info('Kafka producer connected');
@@ -216,7 +229,6 @@ async function startServer() {
     logger.warn({ error: err.message }, 'Kafka producer connection failed, continuing without');
   }
 
-  // Start silent sensor check interval (every hour)
   setInterval(async () => {
     try {
       await di.alertService.checkSilentSensors();
@@ -225,8 +237,7 @@ async function startServer() {
     }
   }, 60 * 60 * 1000);
 
-  // Start HTTP server
-  const server = app.listen(config.PORT, () => {
+  const liveServer = app.listen(config.PORT, () => {
     logger.info({
       port: config.PORT,
       mqttPort: config.MQTT.port,
@@ -234,19 +245,17 @@ async function startServer() {
     }, `Service IoT started on port ${config.PORT}`);
   });
 
-  // Initialize centralized logging
   centralizedLogging.connect().then(() => {
     logger.info('Centralized logging initialized');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Centralized logging connection failed, continuing without');
   });
 
-  // Graceful shutdown
   process.on('SIGINT', async () => {
     logger.info('Shutting down service IoT');
     await kafkaProducer.disconnect();
     await cacheService.close();
-    server.close(() => {
+    liveServer.close(() => {
       logger.info('Server closed');
       process.exit(0);
     });
@@ -256,13 +265,15 @@ async function startServer() {
     logger.info('Shutting down service IoT (SIGTERM)');
     await kafkaProducer.disconnect();
     await cacheService.close();
-    server.close(() => {
+    liveServer.close(() => {
       logger.info('Server closed');
       process.exit(0);
     });
   });
 }
 
-startServer();
+if (process.env.DISABLE_AUTO_START !== 'true') {
+  startServer();
+}
 
 module.exports = app;

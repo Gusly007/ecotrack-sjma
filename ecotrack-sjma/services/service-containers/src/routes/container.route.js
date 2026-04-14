@@ -1,6 +1,10 @@
 const router = require('express').Router();
 const controller = require('../container-di.js');
 const { requirePermission } = require('../middleware/rbac');
+const { authenticateToken } = require('../middleware/auth');
+
+// Apply authentication to all routes
+router.use(authenticateToken);
 
 // POST - Créer un nouveau conteneur
 /**
@@ -224,6 +228,9 @@ router.get('/containers/zone/:id_zone', requirePermission('containers:read'), co
  */
 router.get('/containers/fill-levels', requirePermission('containers:read'), controller.getFillLevels);
 
+// Alias de compatibilite (ancien endpoint frontend)
+router.get('/containers/with-fill-level', requirePermission('containers:read'), controller.getFillLevels);
+
 // GET - Historique des changements de statut
 /**
  * @swagger
@@ -293,6 +300,9 @@ router.get('/containers/:id/status/history', requirePermission('containers:read'
  */
 router.patch('/containers/:id', requirePermission('containers:update'), controller.update);
 
+// Alias de compatibilite frontend
+router.patch('/containers/id/:id', requirePermission('containers:update'), controller.update);
+
 // PATCH - Mettre à jour le statut d'un conteneur
 /**
  * @swagger
@@ -356,6 +366,9 @@ router.patch('/containers/:id/status', requirePermission('containers:update'), c
  *         description: Erreur serveur
  */
 router.delete('/containers/:id', requirePermission('containers:delete'), controller.delete);
+
+// Alias de compatibilite frontend
+router.delete('/containers/id/:id', requirePermission('containers:delete'), controller.delete);
 
 // DELETE - Supprimer tous les conteneurs
 /**

@@ -2,9 +2,11 @@
 import { hashPassword, comparePassword } from '../utils/crypto.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import cacheService from './cacheService.js';
+import * as sessionService from './sessionService.js';
+import { sendAccountStatusEmail, sendRoleChangeEmail, sendAccountDeletedEmail } from './emailService.js';
 
 const USER_PROFILE_TTL = 300; // 5 minutes
-const USER_STATS_TTL = 300;   // 5 minutes
+const USER_STATS_TTL = 30;   // 30 seconds for testing
 
 /**
  * Récupérer un profil utilisateur basique (avec cache)
@@ -68,6 +70,18 @@ export const getProfileWithStats = async (userId) => {
   return result.data;
 };
 
+export const getUserStats = async (userId) => {
+  const cacheKey = `user:${userId}:activity`;
+  
+  const result = await cacheService.getOrSet(
+    cacheKey,
+    () => UserRepository.getUserStats(userId),
+    USER_STATS_TTL
+  );
+  
+  return result.data;
+};
+
 /**
  * Lister les utilisateurs avec pagination/filtrage
  */
@@ -76,10 +90,28 @@ export const listUsers = async (params) => {
 };
 
 /**
- * Mise à jour administrateur d'un utilisateur (invalidate cache)
+ * Mise à jour administrateur d'un utilisateur (invalidate cache + sessions)
  */
 export const updateUserByAdmin = async (userId, data = {}) => {
+  const currentUser = await UserRepository.getUserProfile(userId);
   const result = await UserRepository.updateUserByAdmin(userId, data);
+  
+  if (data.est_active !== undefined && data.est_active !== currentUser.est_active) {
+    try {
+      await sendAccountStatusEmail(currentUser.email, currentUser.prenom, data.est_active);
+    } catch (err) {
+      console.error('Failed to send account status email:', err);
+    }
+  }
+
+  if (data.role_par_defaut && data.role_par_defaut !== currentUser.role_par_defaut) {
+    try {
+      await sendRoleChangeEmail(currentUser.email, currentUser.prenom, currentUser.role_par_defaut, data.role_par_defaut);
+      await sessionService.invalidateAllUserSessions(userId);
+    } catch (err) {
+      console.error('Failed to send role change email:', err);
+    }
+  }
   
   // Invalidate cache
   await cacheService.invalidatePattern(`user:${userId}:*`);
@@ -91,6 +123,14 @@ export const updateUserByAdmin = async (userId, data = {}) => {
  * Suppression d'un utilisateur (invalidate cache)
  */
 export const deleteUser = async (userId) => {
+  const currentUser = await UserRepository.getUserProfile(userId);
+  
+  try {
+    await sendAccountDeletedEmail(currentUser.email, currentUser.prenom);
+  } catch (err) {
+    console.error('Failed to send account deletion email:', err);
+  }
+  
   const result = await UserRepository.deleteUser(userId);
   
   // Invalidate cache

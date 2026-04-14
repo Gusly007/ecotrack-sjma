@@ -41,6 +41,11 @@ SELECT
   NOW() - ((RANDOM() * 60) * INTERVAL '1 minute'),
   c.id_conteneur
 FROM conteneur c
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM capteur existing_capteur
+  WHERE existing_capteur.id_conteneur = c.id_conteneur
+)
 ON CONFLICT (uid_capteur) DO NOTHING;
 
 -- Mesures IoT pour les capteurs

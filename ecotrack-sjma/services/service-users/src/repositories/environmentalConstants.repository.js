@@ -1,9 +1,5 @@
 import pool from '../config/database.js';
 
-let constantsCache = new Map();
-let cacheTimestamp = 0;
-const CACHE_TTL_MS = 30000;
-
 const parseValue = (valeur, type) => {
     switch (type) {
         case 'number':
@@ -55,50 +51,27 @@ export const EnvironmentalConstantsRepository = {
     },
 
     async update(cle, valeur) {
-        const result = await pool.query(
-            `UPDATE environmental_constants 
-             SET valeur = $1, updated_at = CURRENT_TIMESTAMP
-             WHERE cle = $2 AND est_modifiable = true AND est_actif = true
-             RETURNING *`,
-            [String(valeur), cle]
-        );
-        return result.rows[0] || null;
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            const result = await client.query(
+                `UPDATE environmental_constants 
+                 SET valeur = $1, updated_at = CURRENT_TIMESTAMP
+                 WHERE cle = $2 AND est_modifiable = true AND est_actif = true
+                 RETURNING *`,
+                [String(valeur), cle]
+            );
+            
+            await client.query('COMMIT');
+            return result.rows[0] || null;
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     }
-};
-
-export const loadEnvironmentalConstants = async () => {
-    const now = Date.now();
-    if (constantsCache.size > 0 && (now - cacheTimestamp) < CACHE_TTL_MS) {
-        return constantsCache;
-    }
-    try {
-        const constants = await EnvironmentalConstantsRepository.getAllAsMap();
-        constantsCache = new Map(Object.entries(constants));
-        cacheTimestamp = now;
-        return constantsCache;
-    } catch (err) {
-        console.error('Failed to load environmental constants:', err);
-        return new Map();
-    }
-};
-
-export const getEnvironmentalConstant = async (key) => {
-    const cache = await loadEnvironmentalConstants();
-    if (cache.has(key)) {
-        return cache.get(key);
-    }
-    const row = await EnvironmentalConstantsRepository.getByKey(key);
-    if (row) {
-        const value = parseValue(row.valeur, row.type);
-        cache.set(key, value);
-        return value;
-    }
-    return null;
-};
-
-export const invalidateEnvironmentalConstantsCache = () => {
-    constantsCache = new Map();
-    cacheTimestamp = 0;
 };
 
 export default EnvironmentalConstantsRepository;

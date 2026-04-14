@@ -10,6 +10,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer_en_prod
 // Routes publiques qui ne nécessitent pas d'authentification
 const publicRoutes = [
   { path: '/auth/login', methods: ['POST'] },
+  { path: '/auth/refresh', methods: ['POST'] },
+  { path: '/auth/forgot-password', methods: ['POST'] },
+  { path: '/auth/reset-password', methods: ['POST'] },
+  { path: '/auth/activate', methods: ['POST'] },
   // Register désactivé - inscription uniquement par ADMIN
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
@@ -18,6 +22,10 @@ const publicRoutes = [
   { path: '/metrics', methods: ['GET'] }, // Prometheus metrics
   { path: '/api/metrics/status', methods: ['GET'] }, // Frontend metrics
   { path: '/api/analytics', methods: ['GET'] }, // Analytics (public for now)
+  { path: '/api/health/all', methods: ['GET'] }, // All services health
+  { path: '/api/iot/sensors/status', methods: ['GET'] }, // Sensors status
+  { path: '/api/alerts', methods: ['GET'] }, // Alerts for monitoring
+  { path: '/api/dashboard/stats', methods: ['GET'] }, // Dashboard stats
 ];
 
 /**

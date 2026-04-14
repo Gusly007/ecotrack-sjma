@@ -132,3 +132,63 @@
   flex: 1;
   color: #333;
 }
+
+.logs-date-filters {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-input-group label {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.log-service {
+  padding: 2px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 100px;
+  text-align: center;
+}
+
+.log-action {
+  padding: 2px 8px;
+  background: #e8f5e9;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #4CAF50;
+  min-width: 60px;
+  text-align: center;
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-size: 0.9rem;
+}

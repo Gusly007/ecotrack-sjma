@@ -7,20 +7,15 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest --runInBand",
-    "test:unit": "jest test/unit --runInBand",
-    "test:integration": "jest test/integration --runInBand"
+    "test:unit": "jest __tests__/unit --runInBand",
+    "test:integration": "jest __tests__/integration --runInBand --passWithNoTests",
+    "test:e2e": "jest __tests__/e2e --runInBand --passWithNoTests",
+    "test:coverage": "jest __tests__/unit __tests__/integration --coverage --runInBand --collectCoverageFrom='src/**/*.js' --coverageReporters=html --coverageReporters=text --passWithNoTests"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "<rootDir>/test/unit/**/*.test.js",
-      "<rootDir>/test/integration/**/*.test.js"
-    ]
-  },
   "dependencies": {
     "aedes": "^0.51.3",
     "cors": "^2.8.6",
@@ -42,6 +37,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   }
 }

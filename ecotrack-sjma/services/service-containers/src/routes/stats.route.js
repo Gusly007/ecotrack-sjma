@@ -9,6 +9,7 @@
 const express = require('express');
 const { statsController } = require('../container-di');
 const { requirePermission } = require('../middleware/rbac');
+const { authenticateToken } = require('../middleware/auth');
 const {
   validateQuery,
   validateParams,
@@ -21,6 +22,9 @@ const {
 } = require('../middleware/validate-request');
 
 const router = express.Router();
+
+// Apply authentication to all routes
+router.use(authenticateToken);
 
 // ── Tableau de bord agrégé ──
 router.get('/dashboard', requirePermission('analytics:read'), statsController.getDashboard);

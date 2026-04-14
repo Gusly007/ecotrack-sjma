@@ -1,0 +1,76 @@
+/* Signalement Table Styles */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #e8eaf6;
+  color: #5c6bc0;
+}
+
+.urgence-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.urgence-haute { background: #ffebee; color: #c62828; }
+.urgence-moyenne { background: #fff3e0; color: #ef6c00; }
+.urgence-basse { background: #e8f5e9; color: #2e7d32; }
+
+.statut-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.statut-badge.statut-nouveau { background: #e3f2fd; color: #1565c0; }
+.statut-badge.statut-cours { background: #fff3e0; color: #ef6c00; }
+.statut-badge.statut-resolu { background: #e8f5e9; color: #2e7d32; }
+.statut-badge.statut-rejete { background: #f5f5f5; color: #757575; }
+
+.statut-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statut-dot.statut-nouveau { background: #2196F3; }
+.statut-dot.statut-cours { background: #FF9800; }
+.statut-dot.statut-resolu { background: #4CAF50; }
+.statut-dot.statut-rejete { background: #9e9e9e; }
+
+/* Button styles */
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-sm.btn-info { background: #e3f2fd; border: 1px solid #2196F3; color: #2196F3; }
+.btn-sm.btn-info:hover { background: #2196F3; color: #fff; }
+
+.btn-sm.btn-warning { background: #fff3e0; border: 1px solid #FF9800; color: #FF9800; }
+.btn-sm.btn-warning:hover { background: #FF9800; color: #fff; }
+
+.btn-sm.btn-danger { background: #fff; border: 1px solid #f44336; color: #f44336; }
+.btn-sm.btn-danger:hover { background: #f44336; color: #fff; }

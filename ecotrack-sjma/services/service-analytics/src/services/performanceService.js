@@ -1,6 +1,6 @@
 const AgentPerformanceRepository = require('../repositories/agentPerformanceRepository');
 const EnvironmentalImpactRepository = require('../repositories/environmentalImpactRepository');
-const ENV = require('../utils/environmentalConstants');
+const EnvironmentalConstantsService = require('./environmentalConstantsService');
 const DateUtils = require('../utils/dateUtils');
 const logger = require('../utils/logger');
 
@@ -22,7 +22,8 @@ class PerformanceService {
         EnvironmentalImpactRepository.getImpactByZone(start, end)
       ]);
 
-      // Calculer l'impact environnemental
+      await EnvironmentalConstantsService.getEnvironmentalConstants();
+
       const environmental = this._calculateEnvironmentalMetrics(environmentalData);
 
       return {
@@ -58,11 +59,10 @@ class PerformanceService {
     const actualDuration = parseFloat(data.actual_duration_min) || 0;
     const durationSaved = Math.max(0, plannedDuration - actualDuration);
 
-    // Calculs
-    const co2Saved = ENV.calculateCO2(distanceSaved);
-    const fuelSaved = ENV.calculateFuelConsumption(distanceSaved);
-    const totalCostSaved = ENV.calculateTotalCostSaved(distanceSaved, durationSaved);
-    const equivalents = ENV.calculateCO2Equivalents(co2Saved);
+    const co2Saved = EnvironmentalConstantsService.calculateCO2(distanceSaved);
+    const fuelSaved = EnvironmentalConstantsService.calculateFuelConsumption(distanceSaved);
+    const totalCostSaved = EnvironmentalConstantsService.calculateTotalCostSaved(distanceSaved, durationSaved);
+    const equivalents = EnvironmentalConstantsService.calculateCO2Equivalents(co2Saved);
 
     const reductionPct = plannedDistance > 0 
       ? Math.round((distanceSaved / plannedDistance) * 100 * 100) / 100 
@@ -87,9 +87,9 @@ class PerformanceService {
       },
       costs: {
         total: totalCostSaved,
-        fuel: ENV.calculateFuelCost(distanceSaved),
-        labor: ENV.calculateLaborCost(durationSaved),
-        maintenance: ENV.calculateMaintenanceCost(distanceSaved)
+        fuel: EnvironmentalConstantsService.calculateFuelCost(distanceSaved),
+        labor: EnvironmentalConstantsService.calculateLaborCost(durationSaved),
+        maintenance: EnvironmentalConstantsService.calculateMaintenanceCost(distanceSaved)
       },
       routes: {
         completed: parseInt(data.completed_routes) || 0,

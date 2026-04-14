@@ -1,7 +1,7 @@
 import express from 'express';
 import * as authController from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { publicLimiter, loginLimiter } from '../config/rateLimit.js';
+import { publicLimiter, loginLimiter, passwordResetLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
 import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
@@ -475,7 +475,7 @@ router.post('/logout-all', authenticateToken, sessionController.logoutAll);
  *       500:
  *         description: Erreur serveur
  */
-router.post('/forgot-password', publicLimiter, authController.forgotPassword);
+router.post('/forgot-password', passwordResetLimiter, authController.forgotPassword);
 
 /**
  * @swagger
@@ -524,7 +524,7 @@ router.post('/forgot-password', publicLimiter, authController.forgotPassword);
  *       500:
  *         description: Erreur serveur
  */
-router.post('/reset-password', publicLimiter, authController.resetPassword);
+router.post('/reset-password', passwordResetLimiter, authController.resetPassword);
 
 router.post('/activate', publicLimiter, authController.activateAccount);
 

@@ -16,6 +16,10 @@ export const errorHandler = (err, req, res, next) => {
   if (err.status === 404) {
     return res.status(404).json({ error: err.message });
   }
+
+  if (Number.isInteger(err.status) && err.status >= 400 && err.status < 500) {
+    return res.status(err.status).json({ error: err.message || 'Requête invalide.' });
+  }
   
   if (err.code === '23005' || err.code === '23505') {
     return res.status(409).json({ message: 'Conflit : Ressource déjà existante.' });
@@ -25,16 +29,19 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(409).json({ message: 'Conflit : Ressource déjà existante.' });
   }
 
-   if (err.message.includes('not found')) {
+  const message = typeof err?.message === 'string' ? err.message : '';
+  const messageLower = message.toLowerCase();
+
+   if (messageLower.includes('not found')) {
     return res.status(404).json({ message: err.message });
   }
 
-    if (err.message.includes('token')) {
-    return res.status(401).json({ message: 'Token invalide ou expiré.' });
+    if (messageLower.includes('token')) {
+    return res.status(400).json({ error: 'Token invalide ou expiré.' });
   }
 
-    if (err.message.includes('Validation')) {
-    return res.status(400).json({ message: 'Données invalides.' });
+    if (messageLower.includes('validation')) {
+    return res.status(400).json({ error: 'Données invalides.' });
   }
   const isProd = (process.env.NODE_ENV || 'development') === 'production';
   const verbose = process.env.VERBOSE_ERRORS === '1' && !isProd;

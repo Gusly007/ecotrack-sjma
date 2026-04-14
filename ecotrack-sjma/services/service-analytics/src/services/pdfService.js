@@ -3,8 +3,38 @@ const fs = require('fs');
 const path = require('path');
 const DateUtils = require('../utils/dateUtils');
 const logger = require('../utils/logger');
+const ChartService = require('./chartService');
+
+// Instance unique de ChartService pour générer les graphiques
+const chartService = new ChartService();
 
 class PDFService {
+  /**
+   * Ajouter un graphique au document PDF
+   * @param {PDFDocument} doc - Document PDF
+   * @param {Buffer} chartBuffer - Buffer de l'image du graphique
+   * @param {Object} options - Options de positionnement
+   */
+  static async _addChartToDoc(doc, chartBuffer, options = {}) {
+    if (!chartBuffer) {
+      logger.warn('Chart buffer is null, skipping chart insertion');
+      return;
+    }
+    
+    const { width = 400, height = 200, x = 100, align = 'center' } = options;
+    
+    try {
+      // Centrer le graphique si demandé
+      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const xPos = align === 'center' ? (pageWidth - width) / 2 + doc.page.margins.left : x;
+      
+      doc.image(chartBuffer, xPos, doc.y, { width, height });
+      doc.moveDown(height / 12); // Ajuster l'espacement après le graphique
+    } catch (error) {
+      logger.error('Error adding chart to PDF:', error);
+    }
+  }
+
   /**
    * Générer un rapport PDF
    */
@@ -352,10 +382,10 @@ class PDFService {
   }
 
   /**
-   * Rapport d'Impact Environnemental
+   * Rapport d'Impact Environnemental (avec graphiques)
    */
   static async generateEnvironmentalReport(data, period = 'week') {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const fileName = `environmental_${period}_${Date.now()}.pdf`;
         const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
@@ -388,13 +418,39 @@ class PDFService {
 
         doc.moveDown(1);
 
+        // Générer graphique des économies (Bar Chart)
+        try {
+          const costs = data.environmental?.costs || {};
+          const economiesChartData = {
+            labels: ['Carburant', 'Main d\'œuvre', 'Maintenance'],
+            values: [
+              parseFloat(costs.fuel || 0),
+              parseFloat(costs.labor || 0),
+              parseFloat(costs.maintenance || 0)
+            ]
+          };
+          
+          const barChartBuffer = await chartService.generateBarChart(economiesChartData, {
+            title: 'Répartition des Économies (€)',
+            label: 'Économies',
+            colors: ['#10B981', '#3B82F6', '#F59E0B']
+          });
+          
+          if (barChartBuffer) {
+            doc.fontSize(12).fillColor('#10B981').text('Graphique des Économies', { align: 'center' }).moveDown(0.5);
+            await this._addChartToDoc(doc, barChartBuffer, { width: 350, height: 175 });
+          }
+        } catch (chartError) {
+          logger.warn('Could not generate bar chart for environmental report:', chartError.message);
+        }
+
         // Fuel
         doc.fontSize(14).fillColor('#10B981').text('Carburant', { underline: true }).moveDown(0.5);
         const fuel = data.environmental?.fuel || {};
         doc.fontSize(11).fillColor('#000').text(`Carburant économisé:`, { continued: true }).fillColor('#10B981').text(` ${fuel.saved || 0} L`).moveDown(1);
 
         // Coûts
-        doc.fontSize(14).fillColor('#10B981').text('Économies', { underline: true }).moveDown(0.5);
+        doc.fontSize(14).fillColor('#10B981').text('Économies Détaillées', { underline: true }).moveDown(0.5);
         const costs = data.environmental?.costs || {};
         const fuelCost = parseFloat(costs.fuel || 0);
         const laborCost = parseFloat(costs.labor || 0);
@@ -421,6 +477,31 @@ class PDFService {
         doc.fontSize(11).fillColor('#000').text(`Distance prévue: ${distance.planned || 0} km`).moveDown(0.3)
            .text(`Distance réelle: ${distance.actual || 0} km`).moveDown(0.3)
            .text(`Distance économisée: ${distance.saved || 0} km (${distance.reductionPct || 0}%)`).moveDown(1);
+
+        // Générer graphique évolution si données disponibles
+        if (data.evolution && data.evolution.length > 0) {
+          try {
+            const evolutionChartData = {
+              labels: data.evolution.map(d => d.date || d.day),
+              values: data.evolution.map(d => d.co2_saved || d.value || 0)
+            };
+            
+            const lineChartBuffer = await chartService.generateLineChart(evolutionChartData, {
+              title: 'Évolution CO2 Économisé',
+              label: 'CO2 (kg)',
+              color: '#10B981',
+              maxY: 100
+            });
+            
+            if (lineChartBuffer) {
+              doc.addPage();
+              doc.fontSize(14).fillColor('#10B981').text('Évolution dans le temps', { underline: true }).moveDown(1);
+              await this._addChartToDoc(doc, lineChartBuffer, { width: 400, height: 200 });
+            }
+          } catch (chartError) {
+            logger.warn('Could not generate line chart for environmental report:', chartError.message);
+          }
+        }
 
         // Recommandations
         if (data.recommendations?.length > 0) {

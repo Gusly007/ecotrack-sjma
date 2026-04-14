@@ -9,18 +9,17 @@ class EnvironmentalImpactRepository {
     try {
       const query = `
         SELECT 
-          COALESCE(SUM(t.distance_prevue_km), 0) as planned_distance_km,
-          COALESCE(SUM(t.distance_reelle_km), 0) as actual_distance_km,
-          COALESCE(SUM(t.duree_prevue_min), 0) as planned_duration_min,
-          COALESCE(SUM(t.duree_reelle_min), 0) as actual_duration_min,
-          COUNT(DISTINCT t.id_tournee) FILTER (WHERE t.statut = 'TERMINEE') as completed_routes,
-          COUNT(DISTINCT t.id_tournee) as total_routes,
-          COUNT(DISTINCT et.id_conteneur) as total_containers,
-          COUNT(DISTINCT et.id_conteneur) FILTER (WHERE et.collectee = true) as collected_containers
-        FROM TOURNEE t
-        LEFT JOIN ETAPE_TOURNEE et ON et.id_tournee = t.id_tournee
-        WHERE t.date_tournee BETWEEN $1 AND $2
-          AND t.statut IN ('TERMINEE', 'EN_COURS');
+          COALESCE(SUM(distance_prevue_km), 0) as planned_distance_km,
+          COALESCE(SUM(distance_reelle_km), 0) as actual_distance_km,
+          COALESCE(SUM(duree_prevue_min), 0) as planned_duration_min,
+          COALESCE(SUM(duree_reelle_min), 0) as actual_duration_min,
+          COUNT(*) FILTER (WHERE statut = 'TERMINEE') as completed_routes,
+          COUNT(*) as total_routes,
+          0 as total_containers,
+          0 as collected_containers
+        FROM TOURNEE
+        WHERE date_tournee BETWEEN $1 AND $2
+          AND statut IN ('TERMINEE', 'EN_COURS');
       `;
 
       const result = await db.query(query, [startDate, endDate]);

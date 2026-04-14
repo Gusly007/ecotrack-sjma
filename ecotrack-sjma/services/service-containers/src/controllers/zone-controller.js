@@ -24,12 +24,12 @@ class ZoneController {
      */
     async create(req, res, next) {
         try {
-            const { code, nom, population, superficie_km2, latitude, longitude } = req.body;
+            const { nom, population, superficie_km2 } = req.body;
 
-            // Validation des champs requis
-            if (!code || !nom || population == null || superficie_km2 == null || latitude == null || longitude == null) {
+            // Validation des champs requis (code est auto-généré si absent)
+            if (!nom || population == null || superficie_km2 == null) {
                 return res.status(400).json({
-                    message: 'Champs requis manquants: code, nom, population, superficie_km2, latitude, longitude'
+                    message: 'Champs requis manquants: nom, population, superficie_km2'
                 });
             }
 
