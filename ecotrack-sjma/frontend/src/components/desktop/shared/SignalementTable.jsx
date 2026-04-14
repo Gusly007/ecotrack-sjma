@@ -11,6 +11,7 @@ export default function SignalementTable({
   role
 }) {
   const navigate = useNavigate();
+  const routePrefix = role === 'ADMIN' ? '/admin' : '/gestionnaire';
   const getUrgenceClass = (urgence) => {
     switch (urgence?.toUpperCase()) {
       case 'HAUTE': return 'urgence-haute';
@@ -123,7 +124,7 @@ export default function SignalementTable({
         <button 
           className="btn-sm btn-info" 
           title="Voir détails"
-          onClick={(e) => { e.stopPropagation(); navigate(`/admin/signalements/${row.id_signalement || row.id}`); }}
+          onClick={(e) => { e.stopPropagation(); navigate(`${routePrefix}/signalements/${row.id_signalement || row.id}`); }}
         >
           <i className="fas fa-external-link-alt"></i>
         </button>
@@ -138,7 +139,7 @@ export default function SignalementTable({
       data={signalements}
       loading={loading}
       emptyMessage="Aucun signalement trouvé"
-      onRowClick={(row) => navigate(`/admin/signalements/${row.id_signalement || row.id}`)}
+      onRowClick={(row) => navigate(`${routePrefix}/signalements/${row.id_signalement || row.id}`)}
     />
   );
 }
