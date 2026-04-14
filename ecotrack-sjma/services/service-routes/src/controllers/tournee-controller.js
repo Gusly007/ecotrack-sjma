@@ -16,6 +16,7 @@ class TourneeController {
     this.getEtapes = this.getEtapes.bind(this);
     this.getProgress = this.getProgress.bind(this);
     this.optimize = this.optimize.bind(this);
+    this.previewOptimize = this.previewOptimize.bind(this);
   }
 
   async create(req, res, next) {
@@ -128,6 +129,15 @@ class TourneeController {
     try {
       const result = await this.service.optimizeTournee(req.body, this.db);
       return res.status(201).json(ApiResponse.success(result, 'Tournée optimisée créée', 201));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async previewOptimize(req, res, next) {
+    try {
+      const result = await this.service.previewOptimization(req.body, this.db);
+      return res.status(200).json(ApiResponse.success(result, 'Prévisualisation de tournée optimisée'));
     } catch (err) {
       next(err);
     }
