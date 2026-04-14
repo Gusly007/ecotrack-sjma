@@ -5,7 +5,6 @@ const cacheService = require('./cacheService');
 
 const TOURNEE_TTL = 60; // 1 minute
 const TOURNEES_LIST_TTL = 30; // 30 seconds
-const FUEL_CONSUMPTION_PER_100KM = 35;
 
 class TourneeService {
   constructor(tourneeRepository, collecteRepository) {
@@ -235,82 +234,6 @@ class TourneeService {
         duree_prevue_min: dureePrevue
       },
       etapes: await this.tourneeRepo.findEtapes(tournee.id_tournee)
-    };
-  }
-
-  /**
-   * Prévisualise une tournée optimisée sans persister en base
-   */
-  async previewOptimization(data, db) {
-    const validated = validateSchema(optimizeSchema, data);
-    const {
-      id_zone,
-      seuil_remplissage = 70,
-      algorithme = '2opt'
-    } = validated;
-
-    const contenteursResult = await db.query(
-      `SELECT
-        c.id_conteneur, c.uid, c.capacite_l,
-        ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude,
-        COALESCE(m.niveau_remplissage_pct, 0) AS fill_level
-       FROM conteneur c
-       LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
-       LEFT JOIN LATERAL (
-         SELECT niveau_remplissage_pct
-         FROM mesure
-         WHERE id_capteur = cap.id_capteur
-         ORDER BY date_heure_mesure DESC
-         LIMIT 1
-       ) m ON TRUE
-       WHERE c.id_zone = $1
-         AND c.statut = 'ACTIF'
-         AND c.position IS NOT NULL
-       ORDER BY fill_level DESC NULLS LAST`,
-      [id_zone]
-    );
-
-    let conteneurs = contenteursResult.rows;
-
-    conteneurs = conteneurs.filter(c => {
-      const fl = parseFloat(c.fill_level) || 0;
-      return fl >= seuil_remplissage || (seuil_remplissage === 0);
-    });
-
-    if (conteneurs.length === 0) {
-      throw ApiError.badRequest(
-        `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${id_zone}`
-      );
-    }
-
-    const result = optimizeRoute(conteneurs, algorithme);
-    const dureeOptimisee = estimateDuration(result.distance_km, result.nb_conteneurs);
-    const dureeManuelle = estimateDuration(result.distance_originale_km, result.nb_conteneurs);
-
-    const carburantOptimise = parseFloat(((result.distance_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
-    const carburantManuel = parseFloat(((result.distance_originale_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
-
-    return {
-      optimisation: {
-        algorithme_utilise: result.algorithme_utilise,
-        nb_conteneurs: result.nb_conteneurs,
-        distance_prevue_km: result.distance_km,
-        distance_originale_km: result.distance_originale_km,
-        gain_pct: result.gain_pct,
-        duree_prevue_min: dureeOptimisee,
-        duree_originale_min: dureeManuelle,
-        carburant_prevu_l: carburantOptimise,
-        carburant_original_l: carburantManuel,
-        carburant_economise_l: parseFloat((carburantManuel - carburantOptimise).toFixed(2))
-      },
-      etapes_preview: result.route.map((conteneur, idx) => ({
-        sequence: idx + 1,
-        id_conteneur: conteneur.id_conteneur,
-        uid: conteneur.uid,
-        fill_level: parseFloat(conteneur.fill_level) || 0,
-        latitude: parseFloat(conteneur.latitude),
-        longitude: parseFloat(conteneur.longitude)
-      }))
     };
   }
 }
