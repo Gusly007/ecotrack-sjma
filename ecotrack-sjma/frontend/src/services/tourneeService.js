@@ -212,6 +212,11 @@ export async function fetchTourneeEtapes(id) {
   return extractList(response.data || {});
 }
 
+export async function fetchTourneeProgress(id) {
+  const response = await api.get(`/api/routes/tournees/${id}/progress`);
+  return unwrap(response.data) || {};
+}
+
 export async function fetchAgentsForAssignment({ page = 1, limit = 100 } = {}) {
   const response = await api.get("/users/agents", {
     params: { page, limit },

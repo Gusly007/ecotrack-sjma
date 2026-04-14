@@ -25,6 +25,7 @@ import ConfigurationPage from './pages/desktop/admin/Configuration';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
+import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
 import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
 import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
 import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
@@ -156,6 +157,13 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <TourneePage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/suivi" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SuiviTempsReelPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
