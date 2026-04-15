@@ -5,7 +5,6 @@ const cacheService = require('./cacheService');
 
 const TOURNEE_TTL = 60; // 1 minute
 const TOURNEES_LIST_TTL = 30; // 30 seconds
-const FUEL_CONSUMPTION_PER_100KM = 35;
 
 class TourneeService {
   constructor(tourneeRepository, collecteRepository) {
@@ -237,7 +236,6 @@ class TourneeService {
       etapes: await this.tourneeRepo.findEtapes(tournee.id_tournee)
     };
   }
-
   /**
    * Prévisualise une tournée optimisée sans persister en base
    */

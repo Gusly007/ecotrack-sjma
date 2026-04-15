@@ -152,49 +152,6 @@ const changePasswordSchema = {
  *           items:
  *             $ref: '#/components/schemas/UserProfileResponse'
  *
- *     AgentListResponse:
- *       type: object
- *       properties:
- *         pagination:
- *           type: object
- *           properties:
- *             total:
- *               type: integer
- *               example: 25
- *             page:
- *               type: integer
- *               example: 1
- *             limit:
- *               type: integer
- *               example: 20
- *             pages:
- *               type: integer
- *               example: 2
- *         data:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               id_utilisateur:
- *                 type: integer
- *                 example: 42
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "agent@example.com"
- *               prenom:
- *                 type: string
- *                 example: "Amine"
- *               nom:
- *                 type: string
- *                 example: "Dupont"
- *               role_par_defaut:
- *                 type: string
- *                 example: "AGENT"
- *               est_active:
- *                 type: boolean
- *                 example: true
- *
  *     PasswordChangeResponse:
  *       type: object
  *       properties:
@@ -364,7 +321,7 @@ router.get('/profile-with-stats', userController.getProfileWithStats);
  *     summary: Lister tous les utilisateurs
  *     description: |
  *       Liste tous les utilisateurs avec pagination.
- *       Nécessite la permission 'users:read' (typiquement ADMIN).
+ *       Nécessite la permission 'users:read' (typiquement GESTIONNAIRE et ADMIN).
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -409,47 +366,6 @@ router.get(
   '/',
   requirePermission('users:read'),
   userController.listUsers
-);
-
-/**
- * @swagger
- * /users/agents:
- *   get:
- *     summary: Lister les agents disponibles
- *     description: |
- *       Retourne uniquement les utilisateurs AGENT actifs ou non, avec une permission dédiée.
- *       Pensé pour l'affectation aux tournées.
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *           maximum: 100
- *     responses:
- *       200:
- *         description: Liste des agents
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AgentListResponse'
- *       401:
- *         description: Authentification requise
- *       403:
- *         description: Permission insuffisante
- */
-router.get(
-  '/agents',
-  requirePermission('agent:read'),
-  userController.listAgents
 );
 
 /**
