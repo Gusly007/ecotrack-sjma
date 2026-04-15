@@ -78,7 +78,7 @@ export default function TourneePage() {
 			setStats(statsData);
 			setLastUpdated(new Date());
 			setRefreshNonce((prev) => prev + 1);
-		} catch (err) {
+		} catch {
 			// Silent fail to preserve last valid state in UI.
 		} finally {
 			if (isRefresh) {

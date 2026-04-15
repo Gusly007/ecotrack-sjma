@@ -278,9 +278,11 @@ class TourneeService {
     });
 
     if (conteneurs.length === 0) {
-      throw ApiError.badRequest(
-        `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${id_zone}`
-      );
+      return {
+        optimisation: null,
+        etapes_preview: [],
+        warning: `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${id_zone}`
+      };
     }
 
     const result = optimizeRoute(conteneurs, algorithme);
