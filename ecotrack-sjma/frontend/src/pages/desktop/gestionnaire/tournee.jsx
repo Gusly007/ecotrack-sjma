@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAutoRefresh } from "../../../hooks";
 import { Alert, Modal, StatCard, useAlert } from "../../../components/common";
 import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
 import ToutesTourneesTable from "../../../components/desktop/gestionnaire/ToutesTourneesTable";
@@ -54,7 +55,6 @@ export default function TourneePage() {
 	const { alert, showSuccess, showError, clearAlert } = useAlert();
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 	const [lastUpdated, setLastUpdated] = useState(null);
 	const [statusFilter, setStatusFilter] = useState("TOUS");
 	const [searchTerm, setSearchTerm] = useState("");
@@ -103,19 +103,7 @@ export default function TourneePage() {
 		loadStats(false);
 	}, [loadStats]);
 
-	useEffect(() => {
-		if (!autoRefreshEnabled) {
-			return undefined;
-		}
-
-		const intervalId = setInterval(() => {
-			if (!loading && !refreshing) {
-				loadStats(true);
-			}
-		}, 60000);
-
-		return () => clearInterval(intervalId);
-	}, [autoRefreshEnabled, loadStats, loading, refreshing]);
+	const [autoRefreshEnabled, toggleAutoRefresh] = useAutoRefresh(() => loadStats(true));
 
 	const statCards = useMemo(() => {
 		const tourneesStats = (stats || {}).tournees || {};
@@ -537,7 +525,7 @@ export default function TourneePage() {
 					<button
 						type="button"
 						className={`auto-refresh-btn ${autoRefreshEnabled ? "enabled" : ""}`}
-						onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+						onClick={toggleAutoRefresh}
 					>
 						<i className={`fas ${autoRefreshEnabled ? "fa-toggle-on" : "fa-toggle-off"}`}></i>
 						Auto-refresh 60s

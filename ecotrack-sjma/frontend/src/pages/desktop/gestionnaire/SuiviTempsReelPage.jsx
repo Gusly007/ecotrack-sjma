@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatCard } from "../../../components/common";
+import { useAutoRefresh } from "../../../hooks";
 import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
 import { fetchTourneesStats } from "../../../services/tourneeService";
 import "./SuiviTempsReelPage.css";
@@ -7,7 +8,6 @@ import "./SuiviTempsReelPage.css";
 export default function SuiviTempsReelPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
@@ -20,8 +20,6 @@ export default function SuiviTempsReelPage() {
       } else {
         setLoading(true);
       }
-
-      // Fetch stats and trigger TourneesActivesPanel refresh
       const stats = await fetchTourneesStats();
       setStatsData(stats || {});
       setRefreshNonce((prev) => prev + 1);
@@ -37,6 +35,8 @@ export default function SuiviTempsReelPage() {
     }
   }, []);
 
+  const [autoRefreshEnabled, toggleAutoRefresh] = useAutoRefresh(() => loadLiveData(true));
+
   // Throttle manual refresh: max 1 call per 5 seconds
   const handleManualRefresh = useCallback(() => {
     const now = Date.now();
@@ -50,35 +50,11 @@ export default function SuiviTempsReelPage() {
     loadLiveData(false);
   }, [loadLiveData]);
 
-  useEffect(() => {
-    if (!autoRefreshEnabled) {
-      return undefined;
-    }
-
-    const intervalId = setInterval(() => {
-      if (!loading && !refreshing) {
-        loadLiveData(true);
-      }
-    }, 60000);
-
-    return () => clearInterval(intervalId);
-  }, [autoRefreshEnabled, loadLiveData, loading, refreshing]);
-
   function formatDateTime(value) {
-    if (!value) {
-      return "-";
-    }
-
+    if (!value) return "-";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return "-";
-    }
-
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   }
 
   const statCards = useMemo(() => {
@@ -137,7 +113,7 @@ export default function SuiviTempsReelPage() {
           <button
             type="button"
             className={`auto-refresh-btn ${autoRefreshEnabled ? "enabled" : ""}`}
-            onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+            onClick={toggleAutoRefresh}
           >
             <i className={`fas ${autoRefreshEnabled ? "fa-toggle-on" : "fa-toggle-off"}`}></i>
             Auto-refresh 60s
