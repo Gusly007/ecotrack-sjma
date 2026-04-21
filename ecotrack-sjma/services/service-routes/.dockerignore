@@ -1,0 +1,27 @@
+# Dependencies (reinstalled in container)
+node_modules/
+
+# Logs and caches
+*.log
+logs/
+coverage/
+.jest_cache/
+test-results/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# VCS / IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
