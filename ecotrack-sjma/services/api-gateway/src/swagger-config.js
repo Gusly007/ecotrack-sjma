@@ -301,61 +301,6 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-    '/users/agents': {
-      get: {
-        tags: ['Users'],
-        summary: 'Lister les agents disponibles pour les tournées',
-        description: 'Endpoint dédié pour récupérer les utilisateurs AGENT via l API Gateway.',
-        operationId: 'getAgents',
-        servers: [{ url: 'http://localhost:3000' }],
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          {
-            name: 'page',
-            in: 'query',
-            schema: { type: 'integer', default: 1 },
-            description: 'Numéro de page'
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            schema: { type: 'integer', default: 100, maximum: 100 },
-            description: 'Nombre d éléments par page'
-          }
-        ],
-        responses: {
-          200: {
-            description: 'Liste des agents',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    pagination: { type: 'object' },
-                    data: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          id_utilisateur: { type: 'integer' },
-                          email: { type: 'string', format: 'email' },
-                          prenom: { type: 'string' },
-                          nom: { type: 'string' },
-                          role_par_defaut: { type: 'string', example: 'AGENT' },
-                          est_active: { type: 'boolean' }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          401: { description: 'Authentification requise' },
-          403: { description: 'Permission insuffisante' }
-        }
-      }
-    },
     '/api/containers': {
       get: {
         tags: ['Containers'],
@@ -1429,35 +1374,6 @@ Obtenez un token via \`POST /auth/login\`
       },
       responses: {
         201: { description: 'Tournée optimisée créée' },
-        400: { description: 'Données invalides ou aucun conteneur éligible' }
-      }
-    }
-  },
-  '/api/routes/optimize/preview': {
-    post: {
-      tags: ['Routes - Optimisation'],
-      summary: 'Prévisualise une tournée optimisée sans création',
-      requestBody: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              required: ['id_zone', 'date_tournee', 'id_agent'],
-              properties: {
-                id_zone: { type: 'integer' },
-                date_tournee: { type: 'string', format: 'date' },
-                seuil_remplissage: { type: 'number', default: 70 },
-                id_agent: { type: 'integer' },
-                id_vehicule: { type: 'integer' },
-                algorithme: { type: 'string', enum: ['nearest_neighbor', '2opt'], default: '2opt' }
-              }
-            }
-          }
-        }
-      },
-      responses: {
-        200: { description: 'Prévisualisation calculée' },
         400: { description: 'Données invalides ou aucun conteneur éligible' }
       }
     }
