@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAutoRefresh } from "../../../hooks";
+import { formatDuration, getErrorMessage } from "../../../utils/formatters";
 import { Alert, Modal, StatCard, useAlert } from "../../../components/common";
 import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
 import ToutesTourneesTable from "../../../components/desktop/gestionnaire/ToutesTourneesTable";
@@ -23,24 +24,6 @@ function getTodayIsoDate() {
 	return new Date().toISOString().slice(0, 10);
 }
 
-function formatDuration(minutes) {
-	const total = Number(minutes || 0);
-	const h = Math.floor(total / 60);
-	const m = total % 60;
-	if (h <= 0) {
-		return `${m} min`;
-	}
-	return `${h}h ${String(m).padStart(2, "0")}min`;
-}
-
-function getErrorMessage(error, fallback) {
-	return (
-		error?.response?.data?.message
-		|| error?.response?.data?.error
-		|| error?.message
-		|| fallback
-	);
-}
 
 const INITIAL_FORM = {
 	date_tournee: getTodayIsoDate(),
@@ -282,7 +265,7 @@ export default function TourneePage() {
 	}, [closeCreateModal, createForm, loadStats, showSuccess]);
 
 	if (loading) {
-		return <div className="tournees-page">Chargement des tournees...</div>;
+		return <div className="tournees-page"><i className="fas fa-spinner fa-spin"></i> Chargement des tournees...</div>;
 	}
 
 	const renderModal = () => (
