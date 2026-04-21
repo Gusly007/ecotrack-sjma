@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Alert, useAlert } from "../../../components/common";
 import { signalementService } from "../../../services/signalementService";
+import { formatDate, getErrorMessage } from "../../../utils/formatters";
 import "./MaintenancePage.css";
 
 const SEVERITY_ORDER = {
@@ -8,19 +10,6 @@ const SEVERITY_ORDER = {
   MOYENNE: 1,
   FAIBLE: 0,
 };
-
-function formatDate(dateValue) {
-  if (!dateValue) return "-";
-  try {
-    return new Date(dateValue).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return "-";
-  }
-}
 
 function normalizeIntervention(item) {
   const urgenceRaw = String(item.urgence || "MOYENNE").toUpperCase();
@@ -45,54 +34,46 @@ function statusClass(status) {
   return "pending";
 }
 
+const INITIAL_PLANNING = { technicien: "", datePrevue: "", commentaire: "" };
+
 export default function MaintenancePage() {
+  const { alert, showSuccess, showError, clearAlert } = useAlert();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("TOUS");
   const [priorityFilter, setPriorityFilter] = useState("TOUS");
   const [interventions, setInterventions] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [planning, setPlanning] = useState({
-    technicien: "",
-    datePrevue: "",
-    commentaire: "",
-  });
+  const [planning, setPlanning] = useState(INITIAL_PLANNING);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
       setError("");
-
       try {
         const response = await signalementService.getAll(1, 200, {});
+        if (controller.signal.aborted) return;
         const payload = response?.data?.data || response?.data || response || [];
         const list = Array.isArray(payload) ? payload.map(normalizeIntervention) : [];
-
-        if (!mounted) return;
-
         setInterventions(list);
         if (list.length > 0) {
           setSelectedId((current) => current || list[0].id);
         }
-      } catch {
-        if (!mounted) return;
-        setError("Impossible de charger les interventions maintenance.");
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(getErrorMessage(err, "Impossible de charger les interventions maintenance."));
         setInterventions([]);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, []);
 
   const filteredInterventions = useMemo(() => {
@@ -123,7 +104,6 @@ export default function MaintenancePage() {
       setSelectedId(null);
       return;
     }
-
     const exists = filteredInterventions.some((item) => item.id === selectedId);
     if (!exists) {
       setSelectedId(filteredInterventions[0].id);
@@ -141,14 +121,7 @@ export default function MaintenancePage() {
     const inProgress = interventions.filter((i) => i.statut === "EN_COURS").length;
     const resolved = interventions.filter((i) => i.statut === "RESOLU").length;
     const critical = interventions.filter((i) => i.urgence === "CRITIQUE").length;
-
-    return {
-      total,
-      open,
-      inProgress,
-      resolved,
-      critical,
-    };
+    return { total, open, inProgress, resolved, critical };
   }, [interventions]);
 
   function handlePlanningChange(event) {
@@ -156,21 +129,32 @@ export default function MaintenancePage() {
     setPlanning((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handlePlanningSubmit(event) {
+  async function handlePlanningSubmit(event) {
     event.preventDefault();
     if (!selected) return;
 
-    setInterventions((prev) => prev.map((item) => (
-      item.id === selected.id
-        ? {
-            ...item,
-            statut: "EN_COURS",
-            assigneA: planning.technicien || item.assigneA,
-          }
-        : item
-    )));
+    try {
+      setSubmitting(true);
+      await signalementService.saveTreatment(selected.id, {
+        technicien: planning.technicien,
+        date_prevue: planning.datePrevue,
+        commentaire: planning.commentaire,
+        statut: "EN_COURS",
+      });
 
-    setPlanning({ technicien: "", datePrevue: "", commentaire: "" });
+      // Reflect change locally without a full reload
+      setInterventions((prev) => prev.map((item) =>
+        item.id === selected.id
+          ? { ...item, statut: "EN_COURS", assigneA: planning.technicien || item.assigneA }
+          : item
+      ));
+      setPlanning(INITIAL_PLANNING);
+      showSuccess("Intervention démarrée avec succès.");
+    } catch (err) {
+      showError(getErrorMessage(err, "Impossible de démarrer l'intervention."));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -181,6 +165,8 @@ export default function MaintenancePage() {
           <p>Supervisez les interventions, priorisez les incidents et planifiez les actions terrain.</p>
         </div>
       </header>
+
+      {alert && <Alert type={alert.type} message={alert.message} onClose={clearAlert} />}
 
       <section className="maintenance-kpis">
         <article className="maintenance-kpi-card">
@@ -237,7 +223,9 @@ export default function MaintenancePage() {
           </div>
 
           {loading ? (
-            <div className="maintenance-empty">Chargement des interventions...</div>
+            <div className="maintenance-empty">
+              <i className="fas fa-spinner fa-spin"></i> Chargement des interventions...
+            </div>
           ) : error ? (
             <div className="maintenance-empty error">{error}</div>
           ) : !filteredInterventions.length ? (
@@ -323,6 +311,7 @@ export default function MaintenancePage() {
                   onChange={handlePlanningChange}
                   placeholder="Nom du technicien"
                   required
+                  disabled={submitting}
                 />
 
                 <label htmlFor="datePrevue">Date prevue</label>
@@ -333,6 +322,7 @@ export default function MaintenancePage() {
                   value={planning.datePrevue}
                   onChange={handlePlanningChange}
                   required
+                  disabled={submitting}
                 />
 
                 <label htmlFor="commentaire">Commentaire</label>
@@ -343,9 +333,14 @@ export default function MaintenancePage() {
                   value={planning.commentaire}
                   onChange={handlePlanningChange}
                   placeholder="Instructions pour l'equipe terrain"
+                  disabled={submitting}
                 />
 
-                <button type="submit">Demarrer l'intervention</button>
+                <button type="submit" disabled={submitting}>
+                  {submitting
+                    ? <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
+                    : "Demarrer l'intervention"}
+                </button>
               </form>
             </>
           )}
