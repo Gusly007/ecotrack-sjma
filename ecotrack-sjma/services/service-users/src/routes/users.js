@@ -370,6 +370,44 @@ router.get(
 
 /**
  * @swagger
+ * /users/agents:
+ *   get:
+ *     summary: Lister uniquement les agents de collecte
+ *     description: |
+ *       Retourne la liste des utilisateurs ayant le rôle AGENT et actifs.
+ *       Endpoint réservé au gestionnaire (permission 'tournee:create') pour
+ *       l'assignation d'un agent lors de la création d'une tournée optimisée.
+ *       Filtre figé côté serveur : le rôle ne peut pas être surchargé par le client.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 100, maximum: 100 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: "Filtre textuel sur email ou prénom"
+ *     responses:
+ *       200:
+ *         description: Liste paginée des agents actifs
+ *       401:
+ *         description: Authentification requise
+ *       403:
+ *         description: Permission insuffisante (réservé aux gestionnaires)
+ */
+router.get(
+  '/agents',
+  requirePermission('tournee:create'),
+  userController.listAgents
+);
+
+/**
+ * @swagger
  * /users/{id}:
  *   get:
  *     summary: Récupérer le profil d'un utilisateur
