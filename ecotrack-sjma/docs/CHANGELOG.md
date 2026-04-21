@@ -4,6 +4,105 @@
 
 ---
 
+### [3.8.1] 2026-04-20 - Hotfix : ReferenceError sur /optimize/preview
+
+**Bug corrigé**
+- `POST /api/routes/optimize/preview` renvoyait `500 Internal Server Error` à chaque appel.
+- Cause : la méthode `previewOptimization()` de `tournee-service.js` utilisait la constante `FUEL_CONSUMPTION_PER_100KM` qui n'était ni définie localement ni importée → `ReferenceError`.
+- Côté frontend, cela remontait en `timeout of 10000ms exceeded` quand axios finissait par abandonner.
+
+**Correctifs**
+- `services/service-routes/src/services/optimization-service.js` : ajout et export de la constante `FUEL_CONSUMPTION_PER_100KM = 35` (consommation moyenne d'une benne à ordures, 30-40 L/100km).
+- `services/service-routes/src/services/tournee-service.js` : import de `FUEL_CONSUMPTION_PER_100KM` depuis `optimization-service`.
+- `frontend/src/services/tourneeService.js` : timeout axios augmenté à **30 s** sur `optimizeTournee()` et `previewOptimizeTournee()` (l'algo 2-opt sur une zone peuplée peut dépasser 10 s).
+
+**Tests ajoutés (trou de couverture corrigé)**
+- `services/service-routes/__tests__/unit/services/tournee-service.test.js` : +5 tests **service-niveau** qui exécutent la vraie logique (les tests contrôleur précédents mockaient le service et ne détectaient pas ce `ReferenceError`).
+  - Vérifie la présence des champs `carburant_prevu_l`, `carburant_original_l`, `carburant_economise_l`.
+  - Vérifie qu'aucun repository n'est appelé (non-persistance).
+  - Vérifie le warning sans throw quand aucun conteneur n'est éligible.
+  - Vérifie la validation Joi (`id_agent` manquant → rejet).
+  - Vérifie l'ordre séquentiel des étapes.
+- **Résultat** : `service-routes/__tests__/unit` → **256 / 256 ✅** (251 précédemment + 5 ajoutés).
+
+**Leçon**
+Les tests contrôleur avec service mocké n'exerçaient pas le corps de la méthode. Règle à appliquer : toute méthode service nouvelle doit avoir au moins un test **service-niveau** qui mocke uniquement le `repository` et le `db.query`, pas le service lui-même.
+
+---
+
+### [3.8.0] 2026-04-20 - Création de tournée optimisée (Gestionnaire)
+
+Ajout du parcours complet permettant au gestionnaire de créer une tournée **optimisée** (nearest_neighbor ou 2-opt) avec assignation d'un agent, prévisualisation en temps réel et feedback utilisateur explicite.
+
+#### Backend - service-routes (port 3012)
+
+- **Nouveau endpoint** `POST /api/routes/optimize/preview`
+  - Prévisualise distance / durée / gain / carburant / étapes d'une tournée optimisée **sans persister** en base.
+  - Permission : `tournee:read` (accessible gestionnaire).
+  - Body : `{ id_zone, date_tournee, id_agent, id_vehicule?, seuil_remplissage?, algorithme? }`.
+- `tournee-controller.js` : méthode `previewOptimization()` ajoutée et bindée.
+- `tournee.route.js` : route `POST /optimize/preview` + documentation Swagger.
+- Aucune modification du service `previewOptimization()` (déjà implémenté mais jamais exposé auparavant).
+
+#### Backend - service-users (port 3010)
+
+- **Nouveau endpoint** `GET /users/agents`
+  - Liste filtrée UNIQUEMENT sur `role = AGENT` et `est_active = true`.
+  - Permission : `tournee:create` (seul le gestionnaire la détient) — le rôle AGENT est forcé côté serveur, toute tentative de surcharge client (ex. `?role=ADMIN`) est ignorée.
+  - Route placée AVANT `/:id` pour éviter qu'Express matche "agents" comme paramètre `id`.
+  - Body : `{ page?, limit?, search? }`.
+- `userController.js` : contrôleur `listAgents()` ajouté.
+- `users.js` (routes) : route `GET /agents` ajoutée.
+
+#### Frontend - React 18 (Vite)
+
+- `tourneeService.js` :
+  - `fetchTourneeCreationOptions()` utilise désormais `/users/agents` (au lieu de `/users?role=AGENT` ambigu).
+  - `fetchAgentsForAssignment()` pour l'assignation après création.
+  - `previewOptimizeTournee()` et `optimizeTournee()` branchés sur les nouvelles routes.
+- `pages/desktop/gestionnaire/tournee.jsx` :
+  - Nouveau bouton toolbar **"Créer une tournée"** (classe `.createtournee-btn`).
+  - Modale complète avec champs : date, zone, agent, véhicule, seuil de remplissage, algorithme (`nearest_neighbor` / `2opt`).
+  - Prévisualisation **live debouncée 350 ms** : distance optimisée / manuelle, durée, carburant, gain %, 10 premières étapes.
+  - Garde-fou métier : bouton "Créer et optimiser" désactivé si aucun agent disponible.
+  - Feedback utilisateur :
+    - Erreurs transformées en toasts via `useAlert` (plus de `console.error` silencieux).
+    - Succès : toast `Tournée optimisée créée avec succès : N conteneurs, gain estimé X.X%`.
+  - Auto-refresh 60 s conservé.
+- `tournee.css` : ajout des styles modale + preview (`.tournee-modal-form`, `.tournee-modal-row`, `.tournee-preview-box`, `.tournee-preview-grid`, `.tournee-preview-gain`, `.tournee-preview-steps`, `.btn-primary`, `.btn-secondary`, responsive <700px et <480px).
+
+#### Tests
+
+| Suite | Tests ajoutés | Total passants |
+|-------|---------------|----------------|
+| `service-routes/__tests__/unit/controllers/tournee-controller.test.js` | +3 (`previewOptimization`) | 17 / 17 ✅ |
+| `service-users/__tests__/controllers/userController.test.js` | +3 (`listAgents`) | 12 / 12 ✅ |
+| `frontend/src/test/dashboardTourneeServices.test.js` | +5 (`fetchTourneeCreationOptions`, `fetchAgentsForAssignment`, `optimizeTournee`, `previewOptimizeTournee`) | 12 / 12 ✅ |
+| **service-routes** unit complet | — | **251 / 251 ✅** |
+| **service-users** controllers complet | — | **38 / 38 ✅** |
+
+Cas couverts par les nouveaux tests :
+- `previewOptimization` ne persiste pas (pas d'appel à `optimizeTournee`/`createTournee`) et propage les erreurs via `next()`.
+- `listAgents` force `role=AGENT` même si le client envoie `?role=ADMIN`, applique `est_active=true` et des valeurs par défaut `page=1/limit=100`.
+- Le service frontend agrège correctement zones/agents/véhicules, tolère un échec partiel, échoue uniquement si TOUT échoue.
+
+#### Plan de test navigateur (à exécuter par le gestionnaire avant release)
+
+1. Se connecter en GESTIONNAIRE → naviguer vers `/gestionnaire/tournees`.
+2. Vérifier la présence du bouton **"Créer une tournée"** dans la toolbar.
+3. Cliquer → modale s'ouvre, zones/agents/véhicules se chargent.
+4. Sélectionner une zone, un agent, un véhicule, une date, `seuil=70`, `algorithme=2opt`.
+5. Vérifier l'apparition de l'aperçu après ~350 ms (distance, durée, gain %, étapes).
+6. Changer l'algorithme → l'aperçu se recalcule automatiquement.
+7. Soumettre → toast de succès avec `N conteneurs, gain estimé X.X%`, modale fermée, liste rafraîchie.
+8. Cas d'erreur : sélectionner une zone sans conteneur éligible → avertissement visible (pas d'écran blanc).
+
+#### Motivation métier
+
+Avant ce patch, le gestionnaire ne pouvait pas créer de tournée optimisée depuis l'interface : le backend exposait `optimizeTournee()` mais sans `preview` utilisable en amont, et le frontend n'avait ni endpoint fiable pour lister les agents actifs, ni retour visible en cas d'erreur (toast manquant). Cette version rend le parcours complet, sécurisé (filtre agent forcé côté serveur) et ergonomique (prévisualisation live + feedback explicite).
+
+---
+
 ### [3.7.0] 2026-04-12 - Couverture de Tests Complète (Unit + Integration + E2E)
 
 Intégration complète de la pyramide de tests sur tous les services backend avec tests unitaires, d'intégration et end-to-end.
