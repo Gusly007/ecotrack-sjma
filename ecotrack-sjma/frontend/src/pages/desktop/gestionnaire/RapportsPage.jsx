@@ -32,7 +32,7 @@ function formatDateTime(value) {
 }
 
 export default function RapportsPage() {
-  const { alert, showSuccess, showError } = useAlert();
+  const { alert, showSuccess, showError, clearAlert } = useAlert();
   const [generating, setGenerating] = useState(false);
   const [reportType, setReportType] = useState('monthly_complete');
   const [format, setFormat] = useState('pdf');
@@ -50,7 +50,7 @@ export default function RapportsPage() {
     try {
       setGenerating(true);
 
-      if (startDate && endDate && startDate > endDate) {
+      if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
         showError('La date de debut doit etre inferieure a la date de fin.');
         return;
       }
@@ -98,7 +98,7 @@ export default function RapportsPage() {
         </div>
       </div>
 
-      {alert && <Alert type={alert.type} message={alert.message} onClose={() => {}} />}
+      {alert && <Alert type={alert.type} message={alert.message} onClose={clearAlert} />}
 
       <section className="rapports-generator panel">
         <h3>Generer un rapport</h3>
@@ -157,7 +157,7 @@ export default function RapportsPage() {
             onClick={handleGenerate}
             disabled={generating}
           >
-            {generating ? 'Generation...' : `Generer ${format.toUpperCase()}`}
+            {generating ? <><i className="fas fa-spinner fa-spin"></i> Generation...</> : `Generer ${format.toUpperCase()}`}
           </Button>
         </div>
       </section>

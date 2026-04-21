@@ -143,7 +143,7 @@ export default function GestionnaireKpisPage() {
   }, [zonePerformance]);
 
   if (loading) {
-    return <div className="gestionnaire-kpis-page">Chargement des KPIs...</div>;
+    return <div className="gestionnaire-kpis-page"><i className="fas fa-spinner fa-spin"></i> Chargement des KPIs...</div>;
   }
 
   return (

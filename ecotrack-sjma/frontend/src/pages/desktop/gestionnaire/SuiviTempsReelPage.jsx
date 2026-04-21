@@ -98,7 +98,7 @@ export default function SuiviTempsReelPage() {
   }, [statsData]);
 
   if (loading) {
-    return <div className="suivi-page">Chargement du suivi en temps reel...</div>;
+    return <div className="suivi-page"><i className="fas fa-spinner fa-spin"></i> Chargement du suivi en temps reel...</div>;
   }
 
   return (

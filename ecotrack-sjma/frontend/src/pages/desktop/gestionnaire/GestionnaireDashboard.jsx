@@ -142,7 +142,7 @@ export default function GestionnaireDashboard() {
 	}, [dashboardData.activeTournees]);
 
 	if (loading) {
-		return <div className="gestionnaire-dashboard">Chargement du dashboard...</div>;
+		return <div className="gestionnaire-dashboard"><i className="fas fa-spinner fa-spin"></i> Chargement du dashboard...</div>;
 	}
 
 	return (
