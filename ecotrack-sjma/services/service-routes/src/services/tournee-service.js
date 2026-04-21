@@ -1,5 +1,5 @@
 const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSchema, optimizeSchema } = require('../validators/tournee.validator');
-const { optimizeRoute, estimateDuration } = require('./optimization-service');
+const { optimizeRoute, estimateDuration, FUEL_CONSUMPTION_PER_100KM } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
 const cacheService = require('./cacheService');
 

@@ -129,6 +129,7 @@ Base URL (direct)      : `http://localhost:3012/api/routes`
 GET    /tournees                        # Liste paginée + filtres
 POST   /tournees                        # Créer une tournée
 POST   /optimize                        # Créer une tournée optimisée automatiquement
+POST   /optimize/preview                # Prévisualise une tournée optimisée (sans persistance)
 GET    /tournees/active                 # Tournées EN_COURS
 GET    /my-tournee                      # Tournée du jour de l'agent (X-User-Id)
 GET    /tournees/:id                    # Détail tournée

@@ -117,6 +117,37 @@ const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
+ * /routes/optimize/preview:
+ *   post:
+ *     summary: Prévisualise une tournée optimisée (sans persistance)
+ *     description: |
+ *       Calcule l'itinéraire optimisé, la distance, la durée et le gain estimé
+ *       pour une zone donnée sans créer la tournée en base. Utilisé par le
+ *       formulaire gestionnaire pour afficher l'aperçu en temps réel.
+ *     tags: [Optimisation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id_zone, date_tournee, id_agent]
+ *             properties:
+ *               id_zone: { type: integer }
+ *               date_tournee: { type: string, format: date }
+ *               seuil_remplissage: { type: number, default: 70 }
+ *               id_agent: { type: integer }
+ *               id_vehicule: { type: integer }
+ *               algorithme: { type: string, enum: [nearest_neighbor, 2opt], default: 2opt }
+ *     responses:
+ *       200:
+ *         description: Prévisualisation générée (sans persistance)
+ *       400:
+ *         description: Paramètres invalides ou aucun conteneur éligible
+ */
+
+/**
+ * @swagger
  * /routes/tournees/{id}:
  *   get:
  *     summary: Récupère une tournée par ID
@@ -273,6 +304,7 @@ router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => r
 router.get('/tournees/active', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActive(req, res, next));
 router.get('/my-tournee', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getMyTournee(req, res, next));
 router.post('/optimize', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.optimize(req, res, next));
+router.post('/optimize/preview', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.previewOptimization(req, res, next));
 router.post('/tournees', requirePermission('tournee:create'), (req, res, next) => req.controllers.tournee.create(req, res, next));
 router.get('/tournees/:id', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getById(req, res, next));
 router.patch('/tournees/:id', requirePermission('tournee:update'), (req, res, next) => req.controllers.tournee.update(req, res, next));

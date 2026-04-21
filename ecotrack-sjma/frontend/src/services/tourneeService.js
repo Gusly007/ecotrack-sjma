@@ -192,13 +192,22 @@ export async function fetchTourneeCreationOptions() {
   };
 }
 
+// L'optimisation 2-opt sur une zone avec beaucoup de conteneurs peut prendre
+// plusieurs secondes (matrice de distances + itérations d'amélioration).
+// On override le timeout axios (défaut 10 s) à 30 s pour ces 2 endpoints.
+const OPTIMIZE_TIMEOUT_MS = 30000;
+
 export async function optimizeTournee(payload) {
-  const response = await api.post("/api/routes/optimize", payload);
+  const response = await api.post("/api/routes/optimize", payload, {
+    timeout: OPTIMIZE_TIMEOUT_MS,
+  });
   return unwrap(response.data) || response.data;
 }
 
 export async function previewOptimizeTournee(payload) {
-  const response = await api.post("/api/routes/optimize/preview", payload);
+  const response = await api.post("/api/routes/optimize/preview", payload, {
+    timeout: OPTIMIZE_TIMEOUT_MS,
+  });
   return unwrap(response.data) || response.data;
 }
 
