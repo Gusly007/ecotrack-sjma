@@ -58,29 +58,20 @@ export async function fetchTourneesStats() {
   return unwrap(response.data) || {};
 }
 
-export async function fetchActiveTournees({ page = 1, limit = 6 } = {}) {
+export async function fetchActiveTournees({ page = 1, limit = 6, signal } = {}) {
   const response = await api.get("/api/routes/tournees", {
-    params: {
-      page,
-      limit,
-      statut: "EN_COURS",
-    },
+    params: { page, limit, statut: "EN_COURS" },
+    signal,
   });
-
   return extractPaginated(response.data || {});
 }
 
-export async function fetchAllTournees({ statut, page = 1, limit = 12 } = {}) {
+export async function fetchAllTournees({ statut, page = 1, limit = 12, signal } = {}) {
   const statutFilter = statut && statut !== "TOUS" ? statut : undefined;
-
   const response = await api.get("/api/routes/tournees", {
-    params: {
-      page,
-      limit,
-      statut: statutFilter,
-    },
+    params: { page, limit, statut: statutFilter },
+    signal,
   });
-
   return extractPaginated(response.data || {});
 }
 

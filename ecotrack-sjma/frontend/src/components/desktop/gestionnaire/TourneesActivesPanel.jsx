@@ -34,35 +34,24 @@ export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 })
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
       try {
-        const result = await fetchActiveTournees({ page, limit: pageSize });
-        if (!mounted) {
-          return;
-        }
-
+        const result = await fetchActiveTournees({ page, limit: pageSize, signal: controller.signal });
         setRows((result.data || []).map(normalizeActiveTournee));
         setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit: pageSize });
-      } catch (_err) {
-        if (!mounted) {
-          return;
-        }
+      } catch (err) {
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") return;
         setRows([]);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, [page, pageSize, refreshNonce]);
 
   const hasRows = useMemo(() => rows.length > 0, [rows]);

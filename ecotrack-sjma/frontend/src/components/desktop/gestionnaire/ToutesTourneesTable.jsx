@@ -60,7 +60,7 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
   }, [statusFilter, searchTerm]);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
@@ -69,31 +69,20 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
           statut: statusFilter,
           page,
           limit: pageSize,
+          signal: controller.signal,
         });
-
-        if (!mounted) {
-          return;
-        }
-
         setRows((result.data || []).map(normalizeTournee));
         setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit: pageSize });
-      } catch (_err) {
-        if (!mounted) {
-          return;
-        }
+      } catch (err) {
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") return;
         setRows([]);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, [statusFilter, page, pageSize, refreshNonce]);
 
   const filteredRows = useMemo(() => {
@@ -153,7 +142,9 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
 
       <div className="pagination-row">
         <span className="pagination-meta">
-          Toutes: page {pagination.page} / {pagination.pages || 1} • {pagination.total || 0} tournées
+          {searchTerm.trim()
+            ? `${filteredRows.length} résultat(s) sur ${pagination.total || 0} tournées (filtre actif)`
+            : `Page ${pagination.page} / ${pagination.pages || 1} • ${pagination.total || 0} tournées`}
         </span>
         <div className="pagination-actions">
           <button
