@@ -77,7 +77,7 @@ export default function MaintenancePage() {
         if (list.length > 0) {
           setSelectedId((current) => current || list[0].id);
         }
-      } catch (err) {
+      } catch {
         if (!mounted) return;
         setError("Impossible de charger les interventions maintenance.");
         setInterventions([]);
