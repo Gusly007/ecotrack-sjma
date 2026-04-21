@@ -20,7 +20,7 @@ function clampPercent(value) {
 }
 
 export default function GestionnaireKpisPage() {
-  const { alert, showError } = useAlert();
+  const { alert, showError, showWarning, clearAlert } = useAlert();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKpis] = useState(null);
@@ -62,13 +62,17 @@ export default function GestionnaireKpisPage() {
         setEnvironmental(environmentalResult.value?.data?.environmental || null);
       }
 
-      if (
-        kpisResult.status === 'rejected'
-        && trendsResult.status === 'rejected'
-        && zoneResult.status === 'rejected'
-        && environmentalResult.status === 'rejected'
-      ) {
-        showError('Impossible de charger les KPIs pour le moment.');
+      const failed = [
+        kpisResult.status === 'rejected' && 'KPIs',
+        trendsResult.status === 'rejected' && 'Tendances',
+        zoneResult.status === 'rejected' && 'Zones',
+        environmentalResult.status === 'rejected' && 'Environnement',
+      ].filter(Boolean);
+
+      if (failed.length === 4) {
+        showError('Impossible de charger les données. Vérifiez votre connexion.');
+      } else if (failed.length > 0) {
+        showWarning(`Données partiellement indisponibles : ${failed.join(', ')}.`);
       }
 
       setLastUpdated(new Date());
@@ -168,7 +172,7 @@ export default function GestionnaireKpisPage() {
       </div>
 
       {alert && (
-        <Alert type={alert.type} message={alert.message} onClose={() => {}} />
+        <Alert type={alert.type} message={alert.message} onClose={clearAlert} />
       )}
 
       <StatsGrid>
