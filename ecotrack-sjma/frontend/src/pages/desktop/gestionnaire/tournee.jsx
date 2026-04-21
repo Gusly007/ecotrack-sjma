@@ -210,7 +210,6 @@ export default function TourneePage() {
 		&& createForm.date_tournee
 		&& createForm.id_zone
 		&& createForm.id_agent
-		&& createForm.id_vehicule
 		&& createForm.algorithme
 		&& createForm.seuil_remplissage !== ""
 	);
@@ -233,7 +232,7 @@ export default function TourneePage() {
 					date_tournee: createForm.date_tournee,
 					id_zone: Number(createForm.id_zone),
 					id_agent: Number(createForm.id_agent),
-					id_vehicule: Number(createForm.id_vehicule),
+					id_vehicule: Number(createForm.id_vehicule) || null,
 					seuil_remplissage: Number(createForm.seuil_remplissage),
 					algorithme: createForm.algorithme,
 				};
@@ -273,7 +272,7 @@ export default function TourneePage() {
 				date_tournee: createForm.date_tournee,
 				id_zone: Number(createForm.id_zone),
 				id_agent: Number(createForm.id_agent),
-				id_vehicule: Number(createForm.id_vehicule),
+				id_vehicule: Number(createForm.id_vehicule) || null,
 				seuil_remplissage: Number(createForm.seuil_remplissage),
 				algorithme: createForm.algorithme,
 			};
