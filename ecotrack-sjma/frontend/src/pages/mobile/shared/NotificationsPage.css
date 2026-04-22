@@ -1,0 +1,27 @@
+.notif-item {
+  position: relative;
+}
+
+.notif-unread .mobile-list-item {
+  background: #f0faf0;
+  border-left: 3px solid #4CAF50;
+}
+
+.notif-delete-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #ccc;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.notif-delete-btn:active {
+  background: #fef0f0;
+  color: #f44336;
+}

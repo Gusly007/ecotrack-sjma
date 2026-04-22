@@ -1,0 +1,83 @@
+.edit-profil-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-mobile label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.form-input-mobile {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.form-input-mobile:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.form-input-mobile:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.btn-primary-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btn-primary-mobile:active {
+  opacity: 0.9;
+}
+
+.btn-primary-mobile:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-outline-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-outline-mobile:active {
+  background: #f5f5f5;
+}
