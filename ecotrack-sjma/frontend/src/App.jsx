@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
-import CookieBanner from './components/common/CookieBanner';
+import MobileLayout from './components/mobile/MobileLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -11,7 +11,8 @@ import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
 import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
-import ProfilePage from './pages/auth/ProfilePage';
+
+// Desktop - Admin
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
 import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
@@ -30,17 +31,35 @@ import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
 import NotificationsPage from './pages/desktop/NotificationsPage';
 
+// Desktop - Gestionnaire
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
-import TourneePage from './pages/desktop/gestionnaire/tournee';
-import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
+import GestionnaireTourneePage from './pages/desktop/gestionnaire/tournee';
+
+// Mobile - Agent
+import AgentDashboard from './pages/mobile/agent/AgentDashboard';
+import AgentTourneePage from './pages/mobile/agent/TourneePage';
+import EtapeDetail from './pages/mobile/agent/EtapeDetail';
+import ScanPage from './pages/mobile/agent/ScanPage';
+import ScanResult from './pages/mobile/agent/ScanResult';
+import AnomaliePage from './pages/mobile/agent/AnomaliePage';
+import AnomalieForm from './pages/mobile/agent/AnomalieForm';
+import TerminerTournee from './pages/mobile/agent/TerminerTournee';
+import AgentHistorique from './pages/mobile/agent/HistoriquePage';
+import AgentStats from './pages/mobile/agent/StatsPage';
+
+// Mobile - Shared
+import ProfilPage from './pages/mobile/shared/ProfilPage';
+import EditProfilPage from './pages/mobile/shared/EditProfilPage';
+import NotificationsPage from './pages/mobile/shared/NotificationsPage';
+import NotificationSettings from './pages/mobile/shared/NotificationSettings';
 
 function RootRedirect() {
   const { user } = useAuth();
   const role = user?.role || user?.role_par_defaut;
 
-  if (role === 'GESTIONNAIRE') {
-    return <Navigate to="/gestionnaire" replace />;
-  }
+  if (role === 'CITOYEN') return <Navigate to="/citoyen" replace />;
+  if (role === 'AGENT') return <Navigate to="/agent" replace />;
+  if (role === 'GESTIONNAIRE') return <Navigate to="/gestionnaire" replace />;
   return <Navigate to="/admin" replace />;
 }
 
@@ -151,6 +170,22 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Mobile Routes - Agent */}
+          <Route path="/agent" element={<ProtectedRoute><AgentDashboard /></ProtectedRoute>} />
+          <Route path="/agent/tournee" element={<ProtectedRoute><AgentTourneePage /></ProtectedRoute>} />
+          <Route path="/agent/tournee/etape/:id" element={<ProtectedRoute><EtapeDetail /></ProtectedRoute>} />
+          <Route path="/agent/scan" element={<ProtectedRoute><ScanPage /></ProtectedRoute>} />
+          <Route path="/agent/scan/result/:uid" element={<ProtectedRoute><ScanResult /></ProtectedRoute>} />
+          <Route path="/agent/anomalie" element={<ProtectedRoute><AnomaliePage /></ProtectedRoute>} />
+          <Route path="/agent/anomalie/form" element={<ProtectedRoute><AnomalieForm /></ProtectedRoute>} />
+          <Route path="/agent/tournee/terminer" element={<ProtectedRoute><TerminerTournee /></ProtectedRoute>} />
+          <Route path="/agent/historique" element={<ProtectedRoute><AgentHistorique /></ProtectedRoute>} />
+          <Route path="/agent/stats" element={<ProtectedRoute><AgentStats /></ProtectedRoute>} />
+          <Route path="/agent/profil" element={<ProtectedRoute><ProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/profil/edit" element={<ProtectedRoute><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications" element={<ProtectedRoute><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications/settings" element={<ProtectedRoute><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
+
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
@@ -162,7 +197,7 @@ function App() {
           <Route path="/gestionnaire/tournees" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <TourneePage />
+                <GestionnaireTourneePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
