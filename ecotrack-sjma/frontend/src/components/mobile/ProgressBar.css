@@ -1,0 +1,27 @@
+.mobile-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mobile-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.mobile-progress-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  min-width: 40px;
+  text-align: right;
+}

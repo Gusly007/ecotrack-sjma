@@ -1,0 +1,40 @@
+.qr-scanner-wrapper {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: #000;
+}
+
+.qr-scanner-region {
+  width: 100%;
+  min-height: 300px;
+}
+
+.qr-scanner-region video {
+  border-radius: 16px;
+}
+
+.qr-scanner-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  gap: 12px;
+}
+
+.qr-scanner-loading i {
+  font-size: 2rem;
+}
+
+.qr-scanner-loading p {
+  font-size: 0.9rem;
+}
+
+#qr-scanner-region img {
+  display: none;
+}

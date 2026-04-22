@@ -20,6 +20,11 @@
   --text-dark: #1a1a2e;
   --text-light: #e0e0e0;
   --border: #ddd;
+
+  /* Mobile layout */
+  --mobile-header-height: 56px;
+  --mobile-bottom-nav-height: 64px;
+  --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Reset & Base */
