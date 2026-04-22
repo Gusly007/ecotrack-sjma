@@ -100,6 +100,16 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// ========== RECONSTRUCT USER FROM GATEWAY HEADERS ==========
+app.use((req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  const userRole = req.headers['x-user-role'];
+  if (userId && userRole) {
+    req.user = { id: parseInt(userId, 10), role: userRole };
+  }
+  next();
+});
+
 // ========== ROUTES ==========
 const tourneeRoutes = require('./src/routes/tournee.route');
 const vehiculeRoutes = require('./src/routes/vehicule.route');
