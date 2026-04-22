@@ -1,0 +1,76 @@
+.next-etape-card {
+  background: #e8f5e9 !important;
+  border: none;
+  cursor: pointer;
+}
+
+.etape-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #e0e0e0;
+  color: #555;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.etape-number.highlight {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.fill-indicator {
+  flex-shrink: 0;
+}
+
+.fill-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.fill-pct.high {
+  color: #f44336;
+  background: #fef0f0;
+}
+
+.fill-pct.medium {
+  color: #FF9800;
+  background: #fff8e1;
+}
+
+.fill-pct.low {
+  color: #4CAF50;
+  background: #e8f5e9;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #555;
+  margin: 16px 0 8px;
+}
+
+.btn-primary-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary-mobile:active {
+  opacity: 0.9;
+}
