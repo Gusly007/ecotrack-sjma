@@ -568,7 +568,6 @@ export default function TourneePage() {
 			</div>
 
 			<div className="tournees-grid">
-				<TourneesActivesPanel pageSize={6} refreshNonce={refreshNonce} />
 				<ToutesTourneesTable
 					statusFilter={statusFilter}
 					searchTerm={searchTerm}
