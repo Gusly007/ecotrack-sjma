@@ -85,15 +85,15 @@ export default function ZoneCreationModal({
   const handleZoneCreated = (zoneData) => {
     setDrawnZone(zoneData);
     const estimates = estimateZoneData(zoneData);
-    
+
     setFormData(prev => ({
       ...prev,
       ...estimates,
       couleur: prev.couleur // Garder la couleur sélectionnée
     }));
-    
+
     setIsDrawing(false);
-    setStep(2);
+    // Ne pas passer à l'étape 2 automatiquement : l'utilisateur doit cliquer "Continuer"
   };
 
   const validateForm = () => {
@@ -155,18 +155,29 @@ export default function ZoneCreationModal({
       </div>
 
       <div className="zone-creation-actions">
-        <Button 
-          variant={isDrawing ? "secondary" : "primary"}
-          onClick={() => setIsDrawing(!isDrawing)}
-          icon={isDrawing ? "fa-lock" : "fa-draw-polygon"}
-        >
-          {isDrawing ? "Désactiver le dessin" : "Activer le dessin"}
-        </Button>
-        
-        {drawnZone && (
-          <Button variant="success" onClick={() => setStep(2)}>
-            Continuer vers le formulaire
+        {!drawnZone && (
+          <Button
+            variant={isDrawing ? "secondary" : "primary"}
+            onClick={() => setIsDrawing(!isDrawing)}
+            icon={isDrawing ? "fa-lock" : "fa-draw-polygon"}
+          >
+            {isDrawing ? "Désactiver le dessin" : "Activer le dessin"}
           </Button>
+        )}
+
+        {drawnZone && (
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => { setDrawnZone(null); setIsDrawing(true); }}
+              icon="fa-redo"
+            >
+              Recommencer
+            </Button>
+            <Button variant="success" onClick={() => setStep(2)} icon="fa-check">
+              Terminer et continuer
+            </Button>
+          </>
         )}
       </div>
 
