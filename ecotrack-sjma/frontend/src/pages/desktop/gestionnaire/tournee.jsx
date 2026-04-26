@@ -27,6 +27,7 @@ function getTodayIsoDate() {
 
 const INITIAL_FORM = {
 	date_tournee: getTodayIsoDate(),
+	heure_debut_prevue: "07:30", // défaut métier (depuis 3.9.0)
 	id_zone: "",
 	id_agent: "",
 	id_vehicule: "",
@@ -201,6 +202,7 @@ export default function TourneePage() {
 
 				const payload = {
 					date_tournee: createForm.date_tournee,
+					heure_debut_prevue: createForm.heure_debut_prevue || "07:30",
 					id_zone: Number(createForm.id_zone),
 					id_agent: Number(createForm.id_agent),
 					id_vehicule: Number(createForm.id_vehicule) || null,
@@ -241,6 +243,7 @@ export default function TourneePage() {
 
 			const payload = {
 				date_tournee: createForm.date_tournee,
+				heure_debut_prevue: createForm.heure_debut_prevue || "07:30",
 				id_zone: Number(createForm.id_zone),
 				id_agent: Number(createForm.id_agent),
 				id_vehicule: Number(createForm.id_vehicule) || null,
@@ -291,6 +294,24 @@ export default function TourneePage() {
 							required
 							disabled={creationLoading || creationSubmitting}
 						/>
+					</div>
+
+					<div className="tournee-modal-field">
+						<label htmlFor="heure_debut_prevue">
+							Heure de départ prévue
+						</label>
+						<input
+							id="heure_debut_prevue"
+							name="heure_debut_prevue"
+							type="time"
+							value={createForm.heure_debut_prevue}
+							onChange={handleFieldChange}
+							required
+							disabled={creationLoading || creationSubmitting}
+						/>
+						<small className="tournee-modal-hint">
+							La tournée sera marquée « en retard » si elle dépasse cette heure + la durée prévue.
+						</small>
 					</div>
 
 					<div className="tournee-modal-field">

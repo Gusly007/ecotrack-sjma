@@ -15,7 +15,15 @@ class StatsRepository {
           COUNT(CASE WHEN statut = 'EN_COURS' THEN 1 END) AS en_cours,
           COUNT(CASE WHEN statut = 'TERMINEE' THEN 1 END) AS terminees,
           COUNT(CASE WHEN statut = 'ANNULEE' THEN 1 END) AS annulees,
-          COUNT(CASE WHEN statut <> 'TERMINEE' AND date_tournee < CURRENT_DATE THEN 1 END) AS en_retard,
+          -- EN_RETARD : tournée encore PLANIFIEE/EN_COURS dont l'heure prévue de fin est dépassée.
+          -- Heure prévue de fin = date_tournee + heure_debut_prevue + duree_prevue_min minutes.
+          -- Avant : on considérait en retard toute tournée non terminée dès le lendemain de date_tournee.
+          COUNT(CASE
+            WHEN statut IN ('PLANIFIEE','EN_COURS')
+             AND ((date_tournee + heure_debut_prevue)
+                  + (COALESCE(duree_prevue_min, 0) || ' minutes')::interval) < NOW()
+            THEN 1
+          END) AS en_retard,
           COUNT(CASE WHEN date_tournee = CURRENT_DATE THEN 1 END) AS aujourd_hui
         FROM tournee
       `),

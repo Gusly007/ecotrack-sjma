@@ -1,5 +1,11 @@
 const Joi = require('joi');
 
+// Format HH:MM (24h) — ex: 07:30, 14:45. Accepte aussi HH:MM:SS pour compat PostgreSQL TIME.
+const HEURE_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+const heureMessages = {
+  'string.pattern.base': "L'heure de début doit être au format HH:MM (ex: 07:30)"
+};
+
 const createTourneeSchema = Joi.object({
   code: Joi.string().max(20).optional(),
   date_tournee: Joi.string().isoDate().required().messages({
@@ -11,6 +17,7 @@ const createTourneeSchema = Joi.object({
   duree_prevue_min: Joi.number().integer().positive().required().messages({
     'any.required': 'La durée prévue est requise'
   }),
+  heure_debut_prevue: Joi.string().pattern(HEURE_PATTERN).default('07:30').messages(heureMessages),
   id_vehicule: Joi.number().integer().positive().optional().allow(null),
   id_zone: Joi.number().integer().positive().required().messages({
     'any.required': 'La zone est requise'
@@ -26,6 +33,7 @@ const updateTourneeSchema = Joi.object({
   duree_prevue_min: Joi.number().integer().positive().optional(),
   duree_reelle_min: Joi.number().integer().min(0).optional(),
   distance_reelle_km: Joi.number().min(0).optional(),
+  heure_debut_prevue: Joi.string().pattern(HEURE_PATTERN).optional().messages(heureMessages),
   id_vehicule: Joi.number().integer().positive().optional().allow(null),
   id_zone: Joi.number().integer().positive().optional(),
   id_agent: Joi.number().integer().positive().optional()
@@ -50,6 +58,7 @@ const optimizeSchema = Joi.object({
     'any.required': "L'agent est requis"
   }),
   id_vehicule: Joi.number().integer().positive().optional().allow(null),
+  heure_debut_prevue: Joi.string().pattern(HEURE_PATTERN).default('07:30').messages(heureMessages),
   algorithme: Joi.string().valid('nearest_neighbor', '2opt').default('2opt')
 });
 

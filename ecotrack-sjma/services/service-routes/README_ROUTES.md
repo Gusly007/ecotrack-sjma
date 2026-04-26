@@ -34,6 +34,9 @@ Le Service Routes est un microservice Node.js dédié à la gestion complète de
 - Filtrage par statut, zone, agent, dates
 - Changement de statut avec audit trail (`historique_statut`)
 - Suppression protégée (impossible si EN_COURS)
+- **Heure de début prévue** (`heure_debut_prevue`, défaut `07:30`) configurable à la création (depuis 3.9.0).
+- **Flag `est_en_retard`** calculé côté SQL : `TRUE` si la tournée n'est pas clôturée et que `(date_tournee + heure_debut_prevue) + duree_prevue_min < NOW()` (depuis 3.9.0).
+- **Transition automatique `PLANIFIEE → EN_COURS`** déclenchée par le premier enregistrement de collecte agent (depuis 3.9.0).
 
 ### Optimisation des itinéraires
 - Algorithme **Nearest Neighbor** (O(n²)) — rapide

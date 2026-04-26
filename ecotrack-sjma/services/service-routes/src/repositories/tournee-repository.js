@@ -1,5 +1,19 @@
 const { v4: uuidv4 } = require('uuid');
 
+/**
+ * Expression SQL réutilisable pour calculer le flag "en retard" d'une tournée.
+ * Une tournée est en retard si elle est encore PLANIFIEE/EN_COURS et que l'heure
+ * actuelle dépasse (date_tournee + heure_debut_prevue + duree_prevue_min minutes).
+ *
+ * NB : on alias la table en `t` partout pour rester cohérent. Si tu utilises un autre
+ * alias, passe-le en paramètre via une template-string.
+ */
+const EST_EN_RETARD_SQL = `
+  (t.statut IN ('PLANIFIEE','EN_COURS')
+    AND ((t.date_tournee + t.heure_debut_prevue)
+         + (COALESCE(t.duree_prevue_min, 0) || ' minutes')::interval) < NOW())
+`;
+
 class TourneeRepository {
   constructor(db) {
     this.db = db;
@@ -29,6 +43,7 @@ class TourneeRepository {
       statut = 'PLANIFIEE',
       distance_prevue_km,
       duree_prevue_min,
+      heure_debut_prevue = '07:30',
       id_vehicule,
       id_zone,
       id_agent
@@ -38,10 +53,21 @@ class TourneeRepository {
 
     const result = await this.db.query(
       `INSERT INTO tournee
-        (code, date_tournee, statut, distance_prevue_km, duree_prevue_min, id_vehicule, id_zone, id_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (code, date_tournee, statut, distance_prevue_km, duree_prevue_min,
+         heure_debut_prevue, id_vehicule, id_zone, id_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [tourneeCode, date_tournee, statut, distance_prevue_km || null, duree_prevue_min, id_vehicule || null, id_zone, id_agent]
+      [
+        tourneeCode,
+        date_tournee,
+        statut,
+        distance_prevue_km || null,
+        duree_prevue_min,
+        heure_debut_prevue,
+        id_vehicule || null,
+        id_zone,
+        id_agent
+      ]
     );
 
     return result.rows[0];
@@ -54,6 +80,7 @@ class TourneeRepository {
     const result = await this.db.query(
       `SELECT
         t.*,
+        ${EST_EN_RETARD_SQL} AS est_en_retard,
         z.code AS zone_code, z.nom AS zone_nom,
         u.nom AS agent_nom, u.prenom AS agent_prenom, u.email AS agent_email,
         v.numero_immatriculation, v.modele AS vehicule_modele, v.capacite_kg,
@@ -124,6 +151,7 @@ class TourneeRepository {
     const result = await this.db.query(
       `SELECT
         t.*,
+        ${EST_EN_RETARD_SQL} AS est_en_retard,
         z.code AS zone_code, z.nom AS zone_nom,
         u.nom AS agent_nom, u.prenom AS agent_prenom,
         v.numero_immatriculation, v.modele AS vehicule_modele,
@@ -152,6 +180,7 @@ class TourneeRepository {
     const result = await this.db.query(
       `SELECT
         t.*,
+        ${EST_EN_RETARD_SQL} AS est_en_retard,
         z.code AS zone_code, z.nom AS zone_nom,
         u.nom AS agent_nom, u.prenom AS agent_prenom, u.email AS agent_email,
         v.numero_immatriculation, v.modele AS vehicule_modele,
@@ -177,6 +206,7 @@ class TourneeRepository {
     const result = await this.db.query(
       `SELECT
         t.*,
+        ${EST_EN_RETARD_SQL} AS est_en_retard,
         z.code AS zone_code, z.nom AS zone_nom,
         v.numero_immatriculation, v.modele AS vehicule_modele, v.capacite_kg,
         COUNT(e.id_etape) AS total_etapes,
@@ -207,6 +237,7 @@ class TourneeRepository {
       duree_prevue_min,
       duree_reelle_min,
       distance_reelle_km,
+      heure_debut_prevue,
       id_vehicule,
       id_zone,
       id_agent
@@ -221,6 +252,7 @@ class TourneeRepository {
     if (duree_prevue_min !== undefined) { updates.push(`duree_prevue_min = $${idx++}`); values.push(duree_prevue_min); }
     if (duree_reelle_min !== undefined) { updates.push(`duree_reelle_min = $${idx++}`); values.push(duree_reelle_min); }
     if (distance_reelle_km !== undefined) { updates.push(`distance_reelle_km = $${idx++}`); values.push(distance_reelle_km); }
+    if (heure_debut_prevue !== undefined) { updates.push(`heure_debut_prevue = $${idx++}`); values.push(heure_debut_prevue); }
     if (id_vehicule !== undefined) { updates.push(`id_vehicule = $${idx++}`); values.push(id_vehicule); }
     if (id_zone !== undefined) { updates.push(`id_zone = $${idx++}`); values.push(id_zone); }
     if (id_agent !== undefined) { updates.push(`id_agent = $${idx++}`); values.push(id_agent); }

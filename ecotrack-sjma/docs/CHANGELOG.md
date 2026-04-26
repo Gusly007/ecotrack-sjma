@@ -4,6 +4,101 @@
 
 ---
 
+### [3.9.0] 2026-04-26 - Gestion fine du retard de tournée (heure de début prévue)
+
+Refonte complète de la logique "tournée en retard" et du cycle de vie `PLANIFIEE → EN_COURS → TERMINEE`.
+
+**Contexte / bug client**
+Toutes les tournées étaient affichées soit comme **PLANIFIEE**, soit comme **"en retard"**, jamais comme **EN_COURS**. Trois causes indépendantes se cumulaient :
+1. Pas d'heure de début prévue stockée → l'heure 07:30 était hardcodée côté `tournee-service`.
+2. Pas de transition automatique au premier scan → la tournée restait `PLANIFIEE` même quand un agent collectait.
+3. Heuristique frontend buggée : `progression <= 20%` était traduit en "en retard" dans `ToutesTourneesTable.jsx` et `TourneesActivesPanel.jsx`, indépendamment du temps écoulé.
+
+**Décision design**
+- `EN_RETARD` = **flag calculé** (pas un statut DB) — la tournée garde son statut métier (`PLANIFIEE`/`EN_COURS`/`TERMINEE`/`ANNULEE`) et un booléen `est_en_retard` est calculé côté SQL à chaque lecture.
+- Règle métier : `est_en_retard = TRUE` ssi `statut ∈ {PLANIFIEE, EN_COURS}` ET `(date_tournee + heure_debut_prevue) + duree_prevue_min < NOW()`.
+- Transition `PLANIFIEE → EN_COURS` : automatique au **premier enregistrement de collecte** (pas d'action manuelle requise).
+- `heure_debut_prevue` modifiable dans la modale de création (défaut **07:30**).
+
+#### Database
+
+- **Migration `021_add_heure_debut_prevue_tournee.sql`** : ajoute la colonne `heure_debut_prevue TIME NOT NULL DEFAULT '07:30:00'` sur `tournee`. Backfill des lignes existantes à `07:30:00`. Commentaire de schéma documenté.
+
+#### Backend - service-routes (port 3012)
+
+- `validators/tournee.validator.js` : nouveau pattern `HEURE_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/`. Champ `heure_debut_prevue` ajouté à `createTourneeSchema`, `updateTourneeSchema`, `optimizeSchema` (défaut `'07:30'`).
+- `repositories/tournee-repository.js` :
+  - Constante réutilisable `EST_EN_RETARD_SQL` : expression PostgreSQL `(t.statut IN ('PLANIFIEE','EN_COURS') AND ((t.date_tournee + t.heure_debut_prevue) + (COALESCE(t.duree_prevue_min, 0) || ' minutes')::interval) < NOW())`.
+  - `findById`, `findAll`, `findActive`, `findAgentTodayTournee` exposent désormais `est_en_retard`.
+  - `create()` insère le 9ᵉ paramètre `heure_debut_prevue`.
+  - `update()` autorise la modification de `heure_debut_prevue`.
+- `repositories/stats-repository.js` : la stat "tournées en retard" utilise la nouvelle règle (heure prévue + durée prévue dépassée), plus l'ancien `date_tournee < CURRENT_DATE` qui était trop large.
+- `services/tournee-service.js` :
+  - Helper `parseHeureToMinutes()` : `"HH:MM" → minutes depuis minuit` (fallback 450 = 07:30).
+  - `optimizeTournee()` propage `heure_debut_prevue` à `tourneeRepo.create` et utilise `parseHeureToMinutes` comme `baseMinutes` pour les `heure_estimee` des étapes.
+  - `previewOptimization()` accepte `heure_debut_prevue`, le retourne dans `optimisation.heure_debut_prevue`, et l'utilise pour le calcul des étapes prévisionnelles.
+- `services/collecte-service.js` :
+  - `recordCollecte()` : si `tournee.statut === 'PLANIFIEE'` → bascule auto vers `'EN_COURS'` avant d'enregistrer.
+  - Refus explicite des collectes sur `TERMINEE` / `ANNULEE`.
+
+#### Frontend - React 18 (Vite)
+
+- `pages/desktop/gestionnaire/tournee.jsx` :
+  - `INITIAL_FORM.heure_debut_prevue = "07:30"`.
+  - Nouveau champ `<input type="time" name="heure_debut_prevue">` dans la modale de création, avec helper `.tournee-modal-hint` ("Sera utilisée pour calculer le retard et l'heure estimée de chaque étape.").
+  - Le payload `previewOptimizeTournee` ET `optimizeTournee` envoie systématiquement `heure_debut_prevue`.
+- `components/desktop/gestionnaire/ToutesTourneesTable.jsx` :
+  - **Suppression de l'heuristique buggée `progression <= 20`**.
+  - `mapStatus()` reflète strictement le statut métier (`PLANIFIEE` / `EN_COURS` / `TERMINEE` / `ANNULEE`).
+  - Nouveau badge orange séparé `⚠ EN RETARD` affiché ssi `est_en_retard === true` ET statut ∉ {`TERMINEE`, `ANNULEE`}.
+- `components/desktop/gestionnaire/TourneesActivesPanel.jsx` :
+  - Même nettoyage : `est_en_retard` vient désormais du backend, plus de calcul frontend.
+  - Nouvelles propriétés normalisées : `statusText`, `statusColor`, `estEnRetard`.
+- `pages/desktop/gestionnaire/tournee.css` : nouvelles classes `.tournee-modal-hint` et `.tournee-retard-badge` (badge orange avec animation pulse douce).
+
+#### Tests
+
+| Suite | Tests ajoutés / modifiés | Total |
+|-------|--------------------------|-------|
+| `service-routes/__tests__/unit/services/tournee-service.test.js` | +4 (bloc "heure_debut_prevue (3.9.0)") : propagation à `repo.create`, défaut 07:30, `heure_estimee` partant de `heure_debut_prevue`, rejet Joi format invalide | ✅ |
+| `service-routes/__tests__/unit/services/collecte-service.test.js` | +3 modifiés : auto PLANIFIEE → EN_COURS, idempotence si déjà EN_COURS, refus sur TERMINEE/ANNULEE | ✅ |
+| `frontend/src/test/tourneeCreationService.test.js` | +1 : `optimizeTournee` envoie `heure_debut_prevue` dans le body | 7 / 7 ✅ |
+| `frontend/src/test/tourneeRetardBadge.test.jsx` (nouveau fichier) | +3 : badge `EN RETARD` rendu uniquement pour statut non clôturé, mapStatus strict, propagation est_en_retard dans le panel actif | 3 / 3 ✅ |
+| **Total Vitest frontend** | | **79 / 79 ✅** sur 11 fichiers |
+
+**Migration**
+```bash
+cd database && npm run migrate
+# Applique 021_add_heure_debut_prevue_tournee.sql
+```
+
+**Note historique**
+Les tournées créées avant cette version reçoivent `heure_debut_prevue = '07:30:00'` par défaut. Pour celles déjà clôturées (TERMINEE/ANNULEE), le flag `est_en_retard` est ignoré côté UI — pas de pollution rétroactive.
+
+**Seed de démonstration**
+- `database/seeds/022_tournees_3_9_0_demo.sql` (NEW) : 14 tournées de test idempotentes pour valider la 3.9.0 en navigateur :
+  - 7 tournées scénarisées : `T-DEMO-RETARD-PLAN`, `T-DEMO-RETARD-COURS`, `T-DEMO-OK-PLAN`, `T-DEMO-OK-COURS`, `T-DEMO-TERMINEE`, `T-DEMO-ANNULEE`, `T-DEMO-TRANSITION` (cf. matrice ci-dessous).
+  - 7 tournées de progression : `T-DEMO-PROG-000`/`012`/`025`/`050`/`075`/`087`/`095` — couvrent tout le spectre de la barre (0 % → 95 %) sans déclencher le badge "en retard" (heure de début 23:00).
+- Réexécutable sans casse (`WHERE NOT EXISTS` + `ON CONFLICT DO NOTHING`).
+
+| Tournée | Statut | Date | Heure début | Durée | Étapes collectées | Badge attendu |
+|---------|--------|------|-------------|-------|-------------------|---------------|
+| `T-DEMO-RETARD-PLAN` | PLANIFIEE | hier | 07:30 | 120 min | 0/3 | ⚠ EN RETARD |
+| `T-DEMO-RETARD-COURS` | EN_COURS | aujourd'hui | 05:00 | 60 min | 1/3 | ⚠ EN RETARD |
+| `T-DEMO-OK-PLAN` | PLANIFIEE | demain | 07:30 | 150 min | 0/3 | — |
+| `T-DEMO-OK-COURS` | EN_COURS | aujourd'hui | 23:00 | 60 min | 2/3 | — |
+| `T-DEMO-TERMINEE` | TERMINEE | hier | 07:30 | 180 min | 3/3 | — (statut clôturé) |
+| `T-DEMO-ANNULEE` | ANNULEE | hier | 07:30 | 90 min | 0/3 | — |
+| `T-DEMO-TRANSITION` | PLANIFIEE | aujourd'hui | 23:30 | 75 min | 0/3 | — — *Premier scan agent → bascule auto en EN_COURS* |
+| `T-DEMO-PROG-000` à `095` | EN_COURS | aujourd'hui | 23:00 | variable | 0%, 12%, 25%, 50%, 75%, 87%, 95% | — (visuel barre) |
+
+```bash
+# Lancement (après `npm run migrate`)
+cd database && npm run seed
+```
+
+---
+
 ### [3.8.1] 2026-04-20 - Hotfix : ReferenceError sur /optimize/preview
 
 **Bug corrigé**

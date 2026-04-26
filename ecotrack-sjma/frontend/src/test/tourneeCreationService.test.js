@@ -101,6 +101,28 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     expect(result).toEqual(serverPayload);
   });
 
+  it('optimizeTournee envoie heure_debut_prevue dans le body (3.9.0)', async () => {
+    const payload = {
+      id_zone: 1,
+      date_tournee: '2026-04-30',
+      id_agent: 5,
+      heure_debut_prevue: '08:15',
+      algorithme: '2opt',
+      seuil_remplissage: 70,
+    };
+    api.post.mockResolvedValueOnce({
+      data: { success: true, data: { tournee: { id_tournee: 99 }, optimisation: {} } }
+    });
+
+    await optimizeTournee(payload);
+
+    expect(api.post).toHaveBeenCalledWith(
+      '/api/routes/optimize',
+      expect.objectContaining({ heure_debut_prevue: '08:15' }),
+      expect.any(Object)
+    );
+  });
+
   it('previewOptimizeTournee POST /api/routes/optimize/preview et ne persiste pas', async () => {
     const payload = {
       id_zone: 1,

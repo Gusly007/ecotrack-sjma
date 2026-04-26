@@ -12,29 +12,28 @@ function getProgression(tournee) {
   return Math.max(0, Math.min(100, Math.round((etapesCollectees / totalEtapes) * 100)));
 }
 
-function mapStatus(statut, progression) {
+// Reflète UNIQUEMENT le statut métier de la tournée (PLANIFIEE/EN_COURS/TERMINEE/ANNULEE).
+// Le retard est désormais une *information indépendante* dérivée de est_en_retard
+// renvoyé par le backend (cf. 3.9.0). On ne mélange plus les deux.
+function mapStatus(statut) {
   const normalized = String(statut || "").toUpperCase();
 
-  if (normalized === "TERMINEE") {
-    return { label: "Terminee", color: "green" };
-  }
-  if (normalized === "ANNULEE") {
-    return { label: "Annulee", color: "gray" };
-  }
-  if (normalized === "PLANIFIEE") {
-    return { label: "Planifiee", color: "blue" };
-  }
-
-  if (progression <= 20) {
-    return { label: "En retard", color: "orange" };
-  }
-
-  return { label: "En cours", color: "green" };
+  if (normalized === "TERMINEE") return { label: "Terminée", color: "green" };
+  if (normalized === "ANNULEE") return { label: "Annulée", color: "gray" };
+  if (normalized === "EN_COURS") return { label: "En cours", color: "green" };
+  // PLANIFIEE par défaut
+  return { label: "Planifiée", color: "blue" };
 }
 
 function normalizeTournee(tournee) {
   const progression = getProgression(tournee);
-  const status = mapStatus(tournee.statut, progression);
+  const status = mapStatus(tournee.statut);
+  // Le flag est renvoyé par le backend. On ne le calcule plus côté front
+  // pour rester cohérent (un seul lieu de vérité = la requête SQL).
+  // Ne pas afficher "en retard" sur une tournée déjà clôturée.
+  const estEnRetard = Boolean(tournee.est_en_retard)
+    && tournee.statut !== "TERMINEE"
+    && tournee.statut !== "ANNULEE";
 
   return {
     id: tournee.id_tournee,
@@ -46,6 +45,7 @@ function normalizeTournee(tournee) {
     progression,
     statusLabel: status.label,
     statusColor: status.color,
+    estEnRetard,
   };
 }
 
@@ -133,6 +133,14 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
                     <span className="status-dot"></span>
                     {tournee.statusLabel}
                   </span>
+                  {tournee.estEnRetard && (
+                    <span
+                      className="status-pill orange tournee-retard-badge"
+                      title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
+                    >
+                      ⚠ EN RETARD
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

@@ -242,6 +242,88 @@ describe('TourneeService.getTourneeProgress', () => {
   });
 });
 
+describe('TourneeService - heure_debut_prevue (3.9.0)', () => {
+  // Mock minimal : 2 conteneurs, suffit pour exercer la logique
+  const mockDb = {
+    query: jest.fn().mockResolvedValue({
+      rows: [
+        { id_conteneur: 1, uid: 'C-001', capacite_l: 1100, latitude: 48.85, longitude: 2.35, fill_level: '90' },
+        { id_conteneur: 2, uid: 'C-002', capacite_l: 1100, latitude: 48.86, longitude: 2.36, fill_level: '85' }
+      ]
+    })
+  };
+
+  beforeEach(() => {
+    mockDb.query.mockClear();
+    mockTourneeRepo.create.mockReset();
+    mockTourneeRepo.addEtapes.mockReset();
+    mockTourneeRepo.findEtapes.mockReset();
+  });
+
+  it('devrait propager heure_debut_prevue au repo.create', async () => {
+    mockTourneeRepo.create.mockResolvedValue({ id_tournee: 42 });
+    mockTourneeRepo.addEtapes.mockResolvedValue([]);
+    mockTourneeRepo.findEtapes.mockResolvedValue([]);
+
+    await service.optimizeTournee({
+      id_zone: 1,
+      date_tournee: '2026-04-30',
+      id_agent: 5,
+      heure_debut_prevue: '08:15',
+      algorithme: '2opt'
+    }, mockDb);
+
+    expect(mockTourneeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ heure_debut_prevue: '08:15' })
+    );
+  });
+
+  it('devrait utiliser 07:30 par défaut si heure_debut_prevue absente', async () => {
+    mockTourneeRepo.create.mockResolvedValue({ id_tournee: 43 });
+    mockTourneeRepo.addEtapes.mockResolvedValue([]);
+    mockTourneeRepo.findEtapes.mockResolvedValue([]);
+
+    await service.optimizeTournee({
+      id_zone: 1,
+      date_tournee: '2026-04-30',
+      id_agent: 5,
+      algorithme: '2opt'
+    }, mockDb);
+
+    expect(mockTourneeRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ heure_debut_prevue: '07:30' })
+    );
+  });
+
+  it('devrait calculer heure_estimee de la 1re étape à partir de heure_debut_prevue', async () => {
+    mockTourneeRepo.create.mockResolvedValue({ id_tournee: 44 });
+    mockTourneeRepo.addEtapes.mockImplementation((id, etapes) => Promise.resolve(etapes));
+    mockTourneeRepo.findEtapes.mockResolvedValue([]);
+
+    await service.optimizeTournee({
+      id_zone: 1,
+      date_tournee: '2026-04-30',
+      id_agent: 5,
+      heure_debut_prevue: '09:00',
+      algorithme: '2opt'
+    }, mockDb);
+
+    // La 1re étape doit commencer à 09:00, pas à 07:30 (anciennement codé en dur)
+    const etapesArg = mockTourneeRepo.addEtapes.mock.calls[0][1];
+    expect(etapesArg[0].heure_estimee).toBe('09:00');
+  });
+
+  it('devrait rejeter un format heure invalide via Joi', async () => {
+    await expect(service.optimizeTournee({
+      id_zone: 1,
+      date_tournee: '2026-04-30',
+      id_agent: 5,
+      heure_debut_prevue: '25:99',
+      algorithme: '2opt'
+    }, mockDb)).rejects.toThrow(/HH:MM/i);
+  });
+});
+
 describe('TourneeService.previewOptimization', () => {
   // Simule 3 conteneurs d'une zone donnée, tous éligibles (fill_level ≥ 70%)
   const mockDb = {
