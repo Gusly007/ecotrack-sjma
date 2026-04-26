@@ -1,0 +1,19 @@
+# ============================================================================
+# Heroku Container Stack — EcoTrack API Gateway
+# ============================================================================
+# Ce fichier DOIT être à la racine du repo pour être détecté par Heroku.
+#
+# Le build context est automatiquement le dossier contenant le Dockerfile
+# (ecotrack-sjma/services/api-gateway/), donc les COPY du Dockerfile
+# fonctionnent correctement.
+#
+# Prérequis (une seule fois par app) :
+#   heroku stack:set container -a <nom-app>
+#
+# Déploiement :
+#   git push heroku main
+# ============================================================================
+
+build:
+  docker:
+    web: ecotrack-sjma/services/api-gateway/Dockerfile
