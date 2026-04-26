@@ -1,0 +1,27 @@
+# ============================================================================
+# DOCKERFILE.DEV POUR API-GATEWAY (développement avec hot reload)
+# ============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Installer nodemon globalement pour le hot reload
+RUN npm install -g nodemon
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer TOUTES les dépendances (y compris devDependencies)
+RUN npm install
+
+# Copier le code source (sera écrasé par le volume en dev)
+COPY . .
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=10 --start-period=30s \
+  CMD node healthcheck.cjs
+
+# Utiliser nodemon pour le hot reload
+CMD ["nodemon", "--watch", "src", "--ext", "js,json", "src/index.js"]

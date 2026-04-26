@@ -1,0 +1,61 @@
+# Fichiers et dossiers à exclure du build Docker
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+test/
+*.test.js
+coverage/
+.nyc_output/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Configuration locale
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Développement
+*.development
+Dockerfile.dev
+docker-compose*.yml
+
+# Scripts de test
+test-*.js
+*.spec.js
+
+# Fichiers temporaires
+tmp/
+temp/
+*.tmp

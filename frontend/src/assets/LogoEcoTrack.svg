@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150">
+  <!-- Fond Bleu-Noir ajouté pour le Dark Mode (Coins légèrement arrondis) -->
+  <rect width="100%" height="100%" fill="#0F172A" rx="10" />
+
+  <!-- Définition des dégradés (Éclaircis pour contraster avec le fond sombre) -->
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" /> <!-- Emerald 500 -->
+      <stop offset="100%" style="stop-color:#6EE7B7;stop-opacity:1" /> <!-- Emerald 300 -->
+    </linearGradient>
+    <linearGradient id="techGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" /> <!-- Blue 500 -->
+      <stop offset="100%" style="stop-color:#93C5FD;stop-opacity:1" /> <!-- Blue 300 -->
+    </linearGradient>
+  </defs>
+
+  <!-- Groupe Icône (Gauche) -->
+  <g transform="translate(20, 25)">
+    <!-- Partie 1 : La Feuille (Nature) -->
+    <path d="M50 100 C 20 100, 0 80, 0 50 C 0 20, 20 0, 50 0 C 80 0, 100 20, 100 50 C 100 80, 80 100, 50 100 Z" 
+          fill="url(#leafGradient)" opacity="0.15" />
+    
+    <!-- Forme de feuille stylisée -->
+    <path d="M50 90 C 30 90, 15 75, 15 50 C 15 25, 35 10, 50 10 C 65 10, 85 25, 85 50 C 85 75, 70 90, 50 90" 
+          fill="none" stroke="url(#leafGradient)" stroke-width="4" stroke-linecap="round" />
+    
+    <!-- Partie 2 : Le Circuit (Technologie/IoT) -->
+    <path d="M50 85 L 50 15" stroke="url(#techGradient)" stroke-width="3" stroke-linecap="round" />
+    
+    <!-- Noeuds de circuit (Passés en bleu clair #60A5FA pour être visibles) -->
+    <circle cx="50" cy="25" r="4" fill="#60A5FA" /> <!-- S -->
+    <circle cx="50" cy="75" r="4" fill="#60A5FA" /> <!-- J -->
+    
+    <!-- Branches connectées -->
+    <path d="M50 40 L 75 30" stroke="url(#techGradient)" stroke-width="2" />
+    <circle cx="75" cy="30" r="3" fill="#60A5FA" /> <!-- M -->
+    
+    <path d="M50 60 L 25 70" stroke="url(#techGradient)" stroke-width="2" />
+    <circle cx="25" cy="70" r="3" fill="#60A5FA" /> <!-- A -->
+  </g>
+
+  <!-- Groupe Texte (Droite) -->
+  <g transform="translate(130, 85)">
+    <!-- Titre Principal : "Eco" en blanc cassé pour le fond noir -->
+    <text font-family="Arial, sans-serif" font-weight="bold" font-size="48" fill="#F8FAFC">
+      Eco<tspan fill="#34D399">Track</tspan>
+    </text>
+    
+    <!-- Slogan / Sous-titre éclairci -->
+    <text x="5" y="25" font-family="Arial, sans-serif" font-size="14" fill="#94A3B8" letter-spacing="1">
+      SMART WASTE SOLUTIONS
+    </text>
+    
+    <!-- Signature Team SJMA en bleu clair lumineux -->
+    <text x="5" y="45" font-family="monospace" font-size="10" fill="#60A5FA" opacity="0.9">
+      SJMA
+    </text>
+  </g>
+</svg>

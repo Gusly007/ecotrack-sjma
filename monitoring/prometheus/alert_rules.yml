@@ -1,0 +1,301 @@
+groups:
+  # ============================================
+  # EcoTrack - Infrastructure Alerts
+  # ============================================
+  - name: ecotrack-infrastructure
+    interval: 30s
+    rules:
+      # CPU Alerts
+      - alert: HighCPU
+        expr: (1 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "CPU usage is high on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% (threshold: 80%)"
+          current_value: "{{ $value | humanize }}%"
+          threshold: "80%"
+          action: "Check running processes or scale service"
+
+      - alert: CriticalCPU
+        expr: (1 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "CRITICAL: CPU usage is critical on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% (threshold: 95%)"
+          action: "Restart service immediately or scale horizontally"
+
+      # Memory Alerts
+      - alert: HighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Memory usage is high on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanize }}% (threshold: 85%)"
+          action: "OOM kill imminent - consider scaling service"
+
+      - alert: CriticalMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "CRITICAL: Memory usage is critical on {{ $labels.instance }}"
+          action: "Immediate action required - restart or scale"
+
+      # Disk Alerts
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk space is running low on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanize }}% (threshold: 85%)"
+          action: "Clean up logs or expand storage"
+
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "CRITICAL: Disk space critical on {{ $labels.instance }}"
+          action: "URGENT: Expand storage or delete files immediately"
+
+      # Network Alerts
+      - alert: HighNetworkReceive
+        expr: rate(node_network_receive_bytes_total[5m]) * 8 / 1000000 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High network ingress on {{ $labels.instance }}"
+          description: "Network ingress: {{ $value | humanize }} Mbps"
+          action: "Investigate traffic source"
+
+  # ============================================
+  # EcoTrack - Services Alerts
+  # ============================================
+  - name: ecotrack-services
+    interval: 30s
+    rules:
+      # Service Down
+      - alert: ServiceDown
+        expr: up{job=~"service-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "{{ $labels.job }} is DOWN"
+          description: "Service {{ $labels.job }} on port {{ $labels.port }} is not responding"
+          service: "{{ $labels.job }}"
+          action: "docker compose restart {{ $labels.job }}"
+
+      # Latency Alerts
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High latency detected on {{ $labels.job }}"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 500ms)"
+          current_value: "{{ $value | humanizeDuration }}"
+          threshold: "500ms"
+          action: "Investigate slow endpoints with profiling"
+
+      - alert: CriticalLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)) > 1
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "CRITICAL: Latency is critical on {{ $labels.job }}"
+          action: "Scale service immediately"
+
+      # Error Rate Alerts
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (job) / sum(rate(http_requests_total[5m])) by (job) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          category: reliability
+        annotations:
+          summary: "Error rate is high on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+          action: "Check logs for 5xx errors"
+
+      - alert: CriticalErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (job) / sum(rate(http_requests_total[5m])) by (job) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          category: reliability
+        annotations:
+          summary: "CRITICAL: Error rate is critical on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          action: "Incident response - consider rollback"
+
+  # ============================================
+  # EcoTrack - IoT Alerts
+  # ============================================
+  - name: ecotrack-iot
+    interval: 60s
+    rules:
+      - alert: SensorsInactive
+        expr: ecotrack_iot_sensors_inactive_12h > 10
+        for: 1h
+        labels:
+          severity: warning
+          category: iot
+        annotations:
+          summary: "{{ $value }} sensors have been inactive for more than 12 hours"
+          action: "Check sensor connectivity or replace"
+
+      - alert: SensorsLowBattery
+        expr: ecotrack_iot_sensors_low_battery > 5
+        for: 1h
+        labels:
+          severity: warning
+          category: iot
+        annotations:
+          summary: "{{ $value }} sensors have low battery (<20%)"
+          action: "Schedule battery replacement"
+
+      - alert: NoRecentMeasurements
+        expr: ecotrack_iot_last_measurement_age > 3600
+        for: 30m
+        labels:
+          severity: warning
+          category: iot
+        annotations:
+          summary: "No recent IoT measurements received"
+          description: "Last measurement was {{ $value }} seconds ago"
+          action: "Check IoT service connectivity"
+
+      - alert: ContainerOverflowRisk
+        expr: ecotrack_containers_critical > 5
+        for: 15m
+        labels:
+          severity: critical
+          category: iot
+        annotations:
+          summary: "{{ $value }} containers are above 90% fill level"
+          action: "Schedule emergency collection route"
+
+  # ============================================
+  # EcoTrack - Kafka Alerts
+  # ============================================
+  - name: ecotrack-kafka
+    interval: 30s
+    rules:
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: messaging
+        annotations:
+          summary: "Kafka broker is DOWN"
+          action: "Restart Kafka broker"
+
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_group_lag > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: messaging
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "Consumer lag: {{ $value }} messages"
+          action: "Scale consumers or investigate processing issue"
+
+      - alert: KafkaUnderReplicatedPartitions
+        expr: kafka_topic_partition_under_replicated_partition > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: messaging
+        annotations:
+          summary: "Kafka has under-replicated partitions"
+          action: "Investigate broker health"
+
+  # ============================================
+  # EcoTrack - Database Alerts
+  # ============================================
+  - name: ecotrack-database
+    interval: 60s
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL is DOWN"
+          action: "Restart PostgreSQL immediately"
+
+      - alert: PostgresHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL connections are high"
+          description: "Connection usage: {{ $value | humanizePercentage }}"
+          action: "Consider connection pooling or PgBouncer"
+
+      - alert: PostgresLowCacheHitRatio
+        expr: rate(pg_stat_database_blks_hit[5m]) / (rate(pg_stat_database_blks_hit[5m]) + rate(pg_stat_database_blks_read[5m])) < 0.9
+        for: 30m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL cache hit ratio is low"
+          description: "Cache hit ratio: {{ $value | humanizePercentage }}"
+          action: "Optimize queries or increase shared_buffers"
+
+  # ============================================
+  # EcoTrack - Redis Alerts
+  # ============================================
+  - name: ecotrack-redis
+    interval: 60s
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: cache
+        annotations:
+          summary: "Redis is DOWN"
+          action: "Restart Redis immediately"
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Redis memory usage is high"
+          action: "Review memory usage or restart Redis"

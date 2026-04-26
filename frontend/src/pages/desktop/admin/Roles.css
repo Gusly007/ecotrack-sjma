@@ -1,0 +1,96 @@
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.panel h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.permissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 0 auto;
+}
+
+.permissions-table thead {
+  background: #f8f9fa;
+}
+
+.permissions-table th {
+  padding: 14px 20px;
+  text-align: center;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.permissions-table th:first-child {
+  text-align: left;
+}
+
+.permissions-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.permissions-table td:first-child {
+  text-align: left;
+}
+
+.permissions-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.permission-name {
+  font-family: monospace;
+  color: #333;
+}
+
+.permission-cell {
+  text-align: center;
+  width: 120px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.role-badge.citoyen {
+  background: #e3f2fd;
+  color: #1976D2;
+}
+
+.role-badge.agent {
+  background: #fff3e0;
+  color: #F57C00;
+}
+
+.role-badge.gestionnaire {
+  background: #e8f5e9;
+  color: #388E3C;
+}
+
+.role-badge.admin {
+  background: #fce4ec;
+  color: #C2185B;
+}

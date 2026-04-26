@@ -1,0 +1,151 @@
+.alerts-page {
+  padding: 20px;
+}
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.alerts-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.alerts-page-context {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+
+.alerts-list {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.alert-center-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+}
+
+.alert-center-item:last-child {
+  margin-bottom: 0;
+}
+
+.alert-center-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.alert-center-content {
+  flex: 1;
+}
+
+.alert-center-content strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.alert-center-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.alert-center-time {
+  font-size: 0.8rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.alert-category {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  text-transform: uppercase;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.alert-header .alert-category {
+  margin-top: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.alert-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
+.alert-severity {
+  font-weight: 600;
+}
+
+.alert-threshold {
+  color: #666;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 40px;
+  color: #4CAF50;
+  font-size: 1rem;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  font-size: 1rem;
+}
+
+.error {
+  color: #f44336;
+}
+
+@media (max-width: 768px) {
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .alerts-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

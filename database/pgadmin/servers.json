@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "EcoTrack Local",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "ecotrack",
+      "Username": "ecotrack_user",
+      "PassFile": "/pgadmin4/pgpass",
+      "SSLMode": "prefer",
+      "Comment": "Base de données EcoTrack locale (Docker)"
+    }
+  }
+}

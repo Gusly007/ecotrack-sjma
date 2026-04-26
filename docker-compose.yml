@@ -1,0 +1,649 @@
+# ============================================================================
+# DOCKER-COMPOSE.YML - ECOTRACK (Microservices + PostgreSQL + PgAdmin)
+# ============================================================================
+#
+# COMMANDES PRINCIPALES:
+#   docker compose up -d                    # Démarrer tous les services
+#   docker compose up -d postgres pgadmin   # Démarrer uniquement DB + PgAdmin
+#   docker compose up -d prometheus grafana # Démarrer monitoring
+#   docker compose down                     # Arrêter
+#   docker compose down -v                  # Arrêter + supprimer volumes (RESET)
+#   docker compose logs -f postgres         # Logs PostgreSQL
+#
+# ACCÈS:
+#   - Frontend:      http://localhost:5173
+#   - API Gateway:   http://localhost:3000
+#   - Service Users:  http://localhost:3010
+#   - PgAdmin:       http://localhost:5050 (admin@ecotrack.dev / admin)
+#   - PostgreSQL:     localhost:5432 (ecotrack_user / ecotrack_password)
+#   - Prometheus:    http://localhost:9090
+#   - Grafana:       http://localhost:3001 (admin / admin)
+#
+# ============================================================================
+
+services:
+  # =========================================================================
+  # POSTGRESQL 16 + POSTGIS (Base de données locale)
+  # =========================================================================
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ecotrack-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-ecotrack_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      POSTGRES_DB: ${DB_NAME:-ecotrack}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script d'initialisation (extensions, etc.)
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ecotrack_user} -d ${DB_NAME:-ecotrack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # PGADMIN 4 (Interface graphique pour PostgreSQL)
+  # =========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ecotrack-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ecotrack.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./database/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - ecotrack
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # REDIS (Cache & Sessions)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ecotrack-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # =========================================================================
+  # KAFKA (Message Broker)
+  # =========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: ecotrack-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: ecotrack-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecotrack-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - ecotrack
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  # =========================================================================
+  # MIGRATIONS (s'exécute automatiquement au démarrage)
+  # =========================================================================
+  migrations:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: ecotrack-migrations
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      RUN_SEEDS: ${RUN_SEEDS:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecotrack
+    # Ce container s'arrête après avoir terminé les migrations
+    restart: "no"
+
+  # =========================================================================
+  # API GATEWAY (port 3000)
+  # =========================================================================
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: ecotrack-api-gateway
+    environment:
+      GATEWAY_PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USERS_PORT: 3010
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
+      USERS_SERVICE_URL: http://ecotrack-service-users:3010
+      CONTAINERS_SERVICE_URL: http://ecotrack-service-containers:3011
+      ROUTES_SERVICE_URL: http://ecotrack-service-routes:3012
+      IOT_SERVICE_URL: http://ecotrack-service-iot:3013
+      GAMIFICATIONS_SERVICE_URL: http://ecotrack-service-gamifications:3014
+      ANALYTICS_SERVICE_URL: http://ecotrack-service-analytics:3015
+      GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
+      GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+    ports:
+      - "3000:3000"
+    depends_on:
+      service-users:
+        condition: service_healthy
+      service-routes:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # FRONTEND (port 5173)
+  # =========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecotrack-frontend
+    environment:
+      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # SERVICE-USERS (port 3010)
+  # =========================================================================
+  service-users:
+    build:
+      context: ./services/service-users
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-users
+    environment:
+      APP_PORT: 3010
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_in_production_refresh_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
+    ports:
+      - "3010:3010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # SERVICE-CONTAINERS (port 3011) - Gestion des conteneurs et zones
+  # =========================================================================
+  service-containers:
+    build:
+      context: ./services/service-containers
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-containers
+    environment:
+      APP_PORT: 3011
+      # Variables PostgreSQL
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-ecotrack_user}
+      PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      PGDATABASE: ${DB_NAME:-ecotrack}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
+    ports:
+      - "3011:3011"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # SERVICE-ROUTES (port 3012) - Gestion des tournées et collectes
+  # =========================================================================
+
+  service-routes:
+    build:
+      context: ./services/service-routes
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-routes
+    environment:
+      APP_PORT: 3012
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3012:3012"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # SERVICE-IOT (port 3013) - Capteurs IoT et alertes automatiques
+  # =========================================================================
+  service-iot:
+    build:
+      context: ./services/service-iot
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-iot
+    environment:
+      APP_PORT: 3013
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-ecotrack_user}
+      PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      PGDATABASE: ${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      DB_NAME: ${DB_NAME:-ecotrack}
+      MQTT_PORT: 1883
+      MQTT_HOST: 0.0.0.0
+      ALERT_FILL_LEVEL_CRITICAL: ${ALERT_FILL_LEVEL_CRITICAL:-90}
+      ALERT_BATTERY_LOW: ${ALERT_BATTERY_LOW:-20}
+      ALERT_SENSOR_TIMEOUT_HOURS: ${ALERT_SENSOR_TIMEOUT_HOURS:-24}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      NODE_ENV: ${NODE_ENV:-production}
+      REDIS_HOST: redis
+    ports:
+      - "3013:3013"
+      - "${MQTT_PORT:-1883}:1883"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  service-gamifications:
+    build:
+      context: ./services/service-gamifications
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-gamifications
+    environment:
+      PORT: 3014
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "3014:3014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  service-analytics:
+    build:
+      context: ./services/service-analytics
+      dockerfile: Dockerfile
+    container_name: ecotrack-service-analytics
+    environment:
+      APP_PORT: 3015
+      DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecotrack}
+      DB_USER: ${DB_USER:-ecotrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
+      NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ecotrack@ingetis.fr}
+      REPORTS_DIR: /app/reports
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-http://prometheus:9090}
+      USERS_SERVICE_URL: http://ecotrack-service-users:3010
+    ports:
+      - "3015:3015"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  # =========================================================================
+  # PROMETHEUS (Monitoring & Métriques)
+  # =========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecotrack-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # GRAFANA (Visualisation des métriques)
+  # =========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecotrack-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - ecotrack
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # NODE EXPORTER (System metrics: CPU, RAM, Disk, Network)
+  # =========================================================================
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ecotrack-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+
+  # =========================================================================
+  # POSTGRES EXPORTER (PostgreSQL metrics)
+  # =========================================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: ecotrack-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    volumes:
+      - ./monitoring/prometheus/postgres-queries.yml:/etc/postgres-exporter/queries.yml:ro
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # =========================================================================
+  # REDIS EXPORTER (Redis cache metrics)
+  # =========================================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: ecotrack-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ""
+    ports:
+      - "9121:9121"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # =========================================================================
+  # KAFKA EXPORTER (Kafka metrics)
+  # =========================================================================
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: ecotrack-kafka-exporter
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+    ports:
+      - "9308:9308"
+    networks:
+      - ecotrack
+    restart: unless-stopped
+    depends_on:
+      - kafka
+
+# ============================================================================
+# VOLUMES (Persistance des données)
+# ============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  redis_data:
+    driver: local
+  kafka_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ============================================================================
+# RÉSEAU
+# ============================================================================
+networks:
+  ecotrack:
+    driver: bridge

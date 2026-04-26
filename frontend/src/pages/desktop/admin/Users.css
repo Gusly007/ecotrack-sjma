@@ -1,0 +1,185 @@
+.users-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.page-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.users-header .btn-primary {
+  margin-left: auto;
+  width: 150px;
+  padding: 4px 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-primary {
+  padding: 4px 10px;
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-primary:hover {
+  background: #43A047;
+}
+
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow-x: auto;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table thead {
+  background: #f8f9fa;
+}
+
+.users-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.users-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+}
+
+.users-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  color: #1976D2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.user-avatar.admin-avatar {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.role-badge.citoyen {
+  background: #e3f2fd;
+  color: #1976D2;
+}
+
+.role-badge.agent {
+  background: #fff3e0;
+  color: #F57C00;
+}
+
+.role-badge.gestionnaire {
+  background: #e8f5e9;
+  color: #388E3C;
+}
+
+.role-badge.admin {
+  background: #fce4ec;
+  color: #C2185B;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background: #4CAF50;
+}
+
+.status-dot.disabled {
+  background: #f44336;
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-state {
+  color: #f44336;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  display: block;
+}

@@ -1,0 +1,61 @@
+sequenceDiagram
+    participant C as Client
+    participant G as API Gateway
+    participant Svc as Service
+    participant Redis as Redis
+    participant DB as PostgreSQL
+
+    Note over C,G: First request (Cache Miss)
+
+    C->>G: GET /api/zones
+    G->>Svc: Forward request
+    
+    Svc->>Redis: GET cache:zones:all
+    Redis-->>Svc: null (miss)
+    
+    Svc->>DB: SELECT * FROM zones
+    DB-->>Svc: zones data (50 rows)
+    
+    Svc->>Svc: Process data
+    
+    Svc->>Redis: SET cache:zones:all<br/>VALUE: JSON<br/>EX: 1800 (30min)
+    Redis-->>Svc: OK
+    
+    Svc-->>G: Response + data
+    G-->>C: 200 OK
+
+    Note over C,G: Second request (Cache Hit)
+
+    C->>G: GET /api/zones
+    G->>Svc: Forward request
+    
+    Svc->>Redis: GET cache:zones:all
+    Redis-->>Svc: cached data
+    
+    Svc-->>G: Response (no DB call!)
+    G-->>C: 200 OK (X-Cache-Status: HIT)
+
+    Note over C,G: Cache Invalidation
+
+    Svc->>G: POST /api/zones<br/>{new zone}
+    G->>Svc: Forward
+    
+    Svc->>DB: INSERT new zone
+    DB-->>Svc: OK
+    
+    Svc->>Redis: DEL cache:zones:all
+    Svc->>Redis: DEL cache:stats:*
+    Svc->>Redis: DEL cache:containers:*
+    
+    Redis-->>Svc: OK
+    
+    Svc-->>G: 201 Created
+    G-->>C: 201 Created (cache cleared)
+    %% Cache Strategy
+    %% Endpoint | TTL | Strategy
+    %% /zones | 30 min | Cache-first
+    %% /containers | 5 min | Cache-first
+    %% /stats | 2 min | Cache-first
+    %% /measurements | 1 min | Cache-first
+    %% /tournees/active | 30 sec | No cache
+    %% /users/* | No cache | -

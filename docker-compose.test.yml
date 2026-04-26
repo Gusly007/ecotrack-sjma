@@ -1,0 +1,54 @@
+# ============================================================================
+# DOCKER-COMPOSE.TEST.YML - Infrastructure for CI/CD Integration & E2E Tests
+# ============================================================================
+# Services database & cache infrastructure needed for testing
+# Microservices run locally via npm start during tests
+# Used in GitHub Actions workflows for integration and e2e tests
+
+version: '3.8'
+
+services:
+  # =========================================================================
+  # POSTGRESQL 16 + POSTGIS (Test Database)
+  # =========================================================================
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+      POSTGRES_DB: ecotrack_test
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d ecotrack_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: on-failure
+
+  # =========================================================================
+  # REDIS (Test Cache & Sessions)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: on-failure
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_test_data:
+  redis_test_data:

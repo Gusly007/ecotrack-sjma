@@ -1,0 +1,98 @@
+.admin-sidebar {
+  width: 250px;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 20px 0;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999;
+  overflow-y: auto;
+  transition: width 0.3s ease;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.admin-sidebar.collapsed {
+  width: 60px;
+}
+
+.admin-sidebar.collapsed .sidebar-logo span,
+.admin-sidebar.collapsed .sidebar-menu li a span,
+.admin-sidebar.collapsed .sidebar-section {
+  display: none !important;
+}
+
+.admin-sidebar.collapsed .sidebar-logo {
+  justify-content: center;
+  padding: 0 5px 20px;
+}
+
+.admin-sidebar.collapsed .sidebar-logo i {
+  margin: 0;
+}
+
+.admin-sidebar.collapsed .sidebar-menu li a {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-logo i {
+  color: #4CAF50;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li a {
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+}
+
+.sidebar-menu li a:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+.sidebar-menu li a.active {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border-left: 3px solid #4CAF50;
+}
+
+.sidebar-menu li a i {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-section {
+  padding: 16px 20px 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 1px;
+  font-weight: 600;
+}

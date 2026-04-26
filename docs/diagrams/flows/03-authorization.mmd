@@ -1,0 +1,49 @@
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant G as API Gateway
+    participant RBAC as RBAC Middleware
+    participant Svc as Service
+
+    Note over U,F: User makes request with JWT
+
+    F->>G: GET /api/containers<br/>Authorization: Bearer JWT
+    G->>G: Validate JWT signature
+    alt JWT invalid
+        G-->>F: 401 Unauthorized
+    else JWT valid
+        G->>Svc: Forward + decoded JWT<br/>{user: {id, role}}
+        
+        Note over RBAC: Check permissions
+        
+        RBAC->>RBAC: hasPermission(role, 'containers:read')
+        
+        alt Permission granted
+            RBAC->>Svc: Allow request
+            Svc-->>G: Response data
+            G-->>F: 200 OK
+        else Permission denied
+            RBAC-->>G: 403 Forbidden<br/>{error, required, role}
+            G-->>F: 403 Forbidden
+        end
+    end
+
+    Note over U,F: User tries to create (requires higher permission)
+
+    F->>G: POST /api/containers<br/>Authorization: Bearer JWT
+    G->>Svc: Forward + JWT
+    Svc->>RBAC: requirePermission('containers:create')
+    
+    alt User is ADMIN
+        RBAC->>Svc: Allow
+    else User is CITOYEN
+        RBAC-->>G: 403 Forbidden
+        G-->>F: 403 - Insufficient permissions
+    end
+
+    Note over U,F: Permission Matrix
+    %% Role | containers:read | containers:create | zone:create
+    %% CITOYEN | yes | no | no
+    %% AGENT | yes | no | no
+    %% GESTIONNAIRE | yes | yes | yes
+    %% ADMIN | yes | yes | yes

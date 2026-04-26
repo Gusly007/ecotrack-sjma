@@ -1,0 +1,25 @@
+.env
+*.env.local
+node_modules/
+coverage/
+**/coverage/
+docs/FRONTEND_METRICS.md
+docs/SECURITY_VULNERABILITIES_REPORT.md
+infra/kubernetes/
+infra/terraform/  
+reports/
+
+
+
+# DB Optimization (local notes)
+database/DB_OPTIMIZATION_PROPOSAL.md
+
+# Task Analysis (local notes - not to be committed)
+.TASK_ANALYSIS.md
+# Task Analysis
+.ASK_ANALYSIS.md
+DEPLOYMENT_GUIDE.md
+Deployment_SETUP.md
+
+/maquette/
+docs/SECURITY_FIXES.md

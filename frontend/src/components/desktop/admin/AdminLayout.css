@@ -1,0 +1,216 @@
+.admin-layout {
+  position: relative;
+  min-height: 100vh;
+  background: #f5f6fa;
+}
+
+.admin-content {
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.admin-content.collapsed {
+  margin-left: 60px;
+}
+
+.admin-topbar {
+  background: #fff;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.admin-topbar h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 1.1rem;
+  color: #666;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.menu-toggle:hover {
+  background: #f5f5f5;
+  color: #4CAF50;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.topbar-date {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  position: relative;
+  padding: 8px;
+  transition: color 0.2s;
+}
+
+.icon-btn:hover {
+  color: #4CAF50;
+}
+
+.badge-notif {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #f44336;
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #333;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.user-info i {
+  color: #4CAF50;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #f44336;
+  padding: 8px;
+  transition: opacity 0.2s;
+}
+
+.logout-btn:hover {
+  opacity: 0.8;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px;
+}
+
+/* Logout Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  padding: 24px;
+}
+
+.modal-box.text-center {
+  text-align: center;
+}
+
+.modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 1.5rem;
+}
+
+.modal-icon.warning {
+  background: #fff3e0;
+  color: #FF9800;
+}
+
+.modal-box h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.modal-box p {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0 0 20px 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #f0f2f5;
+  color: #333;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.btn-confirm-danger {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn-confirm-danger:hover {
+  background: #d32f2f;
+}

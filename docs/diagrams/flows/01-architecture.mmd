@@ -1,0 +1,79 @@
+flowchart TB
+    subgraph Client["Client"]
+        Frontend["Frontend Mobile/Web"]
+    end
+
+    subgraph Infrastructure["Infrastructure"]
+        DNS[DNS]
+        CDN[CDN/Vercel]
+        LoadBalancer[Load Balancer]
+    end
+
+    subgraph Gateway["API Gateway :3000"]
+        RateLimiter[Rate Limiter]
+        JWTMiddleware[JWT Validator]
+        Proxy[Reverse Proxy]
+    end
+
+    subgraph Services["Microservices"]
+        direction LR
+        S1[service-users<br/>:3010]
+        S2[service-containers<br/>:3011]
+        S3[service-routes<br/>:3012]
+        S4[service-iot<br/>:3013]
+        S5[service-gamifications<br/>:3014]
+        S6[service-analytics<br/>:3015]
+    end
+
+    subgraph Data["Data Layer"]
+        Redis[(Redis<br/>Cache)]
+        PG[(PostgreSQL<br/>Database)]
+    end
+
+    subgraph Messaging["Messaging"]
+        Kafka[Kafka]
+        MQTT[MQTT Broker]
+    end
+
+    Frontend --> CDN
+    CDN --> DNS
+    DNS --> LoadBalancer
+    LoadBalancer --> Gateway
+    Gateway --> RateLimiter --> JWTMiddleware --> Proxy
+    
+    Proxy --> S1
+    Proxy --> S2
+    Proxy --> S3
+    Proxy --> S4
+    Proxy --> S5
+    Proxy --> S6
+
+    S1 --> Redis
+    S2 --> Redis
+    S3 --> Redis
+    S4 --> Redis
+    S5 --> Redis
+    S6 --> Redis
+
+    S1 --> PG
+    S2 --> PG
+    S3 --> PG
+    S4 --> PG
+    S5 --> PG
+    S6 --> PG
+
+    S4 --> Kafka
+    Kafka --> S6
+    S4 --> MQTT
+    %% Ports
+    %% api-gateway: 3000 (Entrypoint)
+    %% service-users: 3010 (Auth)
+    %% service-containers: 3011 (Containers)
+    %% service-routes: 3012 (Routes)
+    %% service-iot: 3013 (IoT)
+    %% service-gamifications: 3014 (Gamification)
+    %% service-analytics: 3015 (Analytics)
+    %% PostgreSQL: 5432 (DB)
+    %% Redis: 6379 (Cache)
+    %% Kafka: 9092 (Events)
+    %% Grafana: 3001 (Monitoring)

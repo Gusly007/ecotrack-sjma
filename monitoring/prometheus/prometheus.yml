@@ -1,0 +1,78 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (System metrics: CPU, RAM, Disk, Network)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # API Gateway
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    metrics_path: '/metrics'
+
+  # Service Users
+  - job_name: 'service-users'
+    static_configs:
+      - targets: ['service-users:3010']
+    metrics_path: '/metrics'
+
+  # Service Containers
+  - job_name: 'service-containers'
+    static_configs:
+      - targets: ['service-containers:3011']
+    metrics_path: '/metrics'
+
+  # Service Routes
+  - job_name: 'service-routes'
+    static_configs:
+      - targets: ['service-routes:3012']
+    metrics_path: '/metrics'
+
+  # Service IoT
+  - job_name: 'service-iot'
+    static_configs:
+      - targets: ['service-iot:3013']
+    metrics_path: '/metrics'
+
+  # Service Gamifications
+  - job_name: 'service-gamifications'
+    static_configs:
+      - targets: ['service-gamifications:3014']
+    metrics_path: '/metrics'
+
+  # Service Analytics
+  - job_name: 'service-analytics'
+    static_configs:
+      - targets: ['service-analytics:3015']
+    metrics_path: '/metrics'
+
+  # PostgreSQL (postgres-exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Kafka Exporter
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-exporter:9308']

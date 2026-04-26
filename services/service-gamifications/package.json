@@ -1,0 +1,37 @@
+{
+  "name": "service-gamifications",
+  "version": "1.0.0",
+  "description": "Microservice de gamification (points, badges, défis)",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:watch": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest __tests__/unit __tests__/integration --coverage --passWithNoTests",
+    "test:integration": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest __tests__/integration --runInBand --passWithNoTests",
+    "test:e2e": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest __tests__/e2e --runInBand --passWithNoTests"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "pg": "^8.16.3",
+    "pino": "10.1.1",
+    "pino-pretty": "^11.3.0",
+    "prom-client": "^15.1.3",
+    "redis": "^4.7.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.3.0",
+    "cross-env": "^10.1.0",
+    "jest": "^30.3.0"
+  }
+}

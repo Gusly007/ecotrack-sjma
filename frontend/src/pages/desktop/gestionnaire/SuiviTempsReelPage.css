@@ -1,0 +1,171 @@
+.suivi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.suivi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.suivi-title-wrap h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.35rem;
+}
+
+.suivi-title-wrap p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.suivi-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.chart-container h3 {
+  font-size: 1rem;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.bo-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bo-table th,
+.bo-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.bo-table th {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bo-table td {
+  font-size: 0.9rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #4caf50;
+  border-radius: 4px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-dot.green {
+  background: #4caf50;
+}
+
+.status-dot.orange {
+  background: #ff9800;
+}
+
+.status-dot.red {
+  background: #f44336;
+}
+
+.pagination-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pagination-meta {
+  font-size: 0.82rem;
+  color: #607d8b;
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  color: #37474f;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.suivi-table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.suivi-table-wrap h3 {
+  font-size: 1rem;
+  color: #333;
+  margin: 0 0 14px 0;
+}
+
+.progress-cell {
+  min-width: 170px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .suivi-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .suivi-toolbar {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .progress-cell {
+    min-width: 120px;
+  }
+}

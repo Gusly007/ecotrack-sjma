@@ -1,0 +1,74 @@
+/* General table-footer styles */
+.table-footer {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  margin: 0;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.results-count {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.pagination {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pagination-ellipsis {
+  color: #888;
+  padding: 0 4px;
+}
+
+.table-footer .btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  white-space: nowrap;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-footer .btn-sm.btn-primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.table-footer .btn-sm.btn-outline {
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.table-footer .btn-sm.btn-outline:hover:not(:disabled) {
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.table-footer .btn-sm.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Zones list panel specific */
+.zones-list-panel .table-footer {
+  border-radius: 0 0 12px 12px;
+}
+
+/* Conteneurs panel specific */
+.conteneurs-panel .table-footer {
+  border-radius: 0 0 12px 12px;
+}

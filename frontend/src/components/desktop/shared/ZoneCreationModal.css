@@ -1,0 +1,242 @@
+.zone-creation-modal {
+  padding: 20px;
+}
+
+/* Steps indicator */
+.zone-creation-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.zone-creation-steps .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.5;
+}
+
+.zone-creation-steps .step.active {
+  opacity: 1;
+}
+
+.zone-creation-steps .step.completed {
+  opacity: 1;
+}
+
+.zone-creation-steps .step.completed .step-number {
+  background: #4CAF50;
+  color: white;
+}
+
+.zone-creation-steps .step.active .step-number {
+  background: #2196F3;
+  color: white;
+}
+
+.zone-creation-steps .step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.zone-creation-steps .step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.zone-creation-steps .step-divider {
+  width: 60px;
+  height: 2px;
+  background: #e0e0e0;
+  margin: 0 16px;
+  margin-bottom: 20px;
+}
+
+/* Instructions */
+.zone-creation-instructions {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.zone-creation-instructions h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 15px;
+}
+
+.zone-creation-instructions p {
+  margin: 4px 0;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Actions */
+.zone-creation-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.zone-creation-map-wrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+/* Preview section */
+.zone-creation-preview {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.zone-creation-preview h5 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.preview-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.preview-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+}
+
+.preview-label {
+  font-size: 13px;
+  color: #666;
+}
+
+.preview-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Form styles */
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.zone-creation-preview-map {
+  margin: 20px 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.zone-creation-preview-map h5 {
+  padding: 12px 16px;
+  margin: 0;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Navigation */
+.zone-creation-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.zone-creation-actions-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* Error */
+.zone-creation-error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zone-creation-error i {
+  font-size: 16px;
+}
+
+/* Step content */
+.zone-creation-step {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .zone-creation-steps {
+    padding: 0 20px 20px;
+  }
+  
+  .zone-creation-steps .step-divider {
+    width: 30px;
+  }
+  
+  .preview-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .zone-creation-navigation {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .zone-creation-actions-right {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .zone-creation-actions-right button {
+    flex: 1;
+  }
+}

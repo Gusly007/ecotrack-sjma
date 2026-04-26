@@ -1,0 +1,112 @@
+# PostgreSQL Exporter - Custom Queries for EcoTrack
+
+# IoT Sensors metrics
+ecotrack_iot_sensors_total:
+  query: "SELECT COUNT(*) as value FROM capteur"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Total number of sensors"
+
+ecotrack_iot_sensors_inactive_12h:
+  query: "SELECT COUNT(*) as value FROM capteur WHERE updated_at < NOW() - INTERVAL '12 hours'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Sensors inactive for more than 12 hours"
+
+ecotrack_iot_sensors_low_battery:
+  query: "SELECT COUNT(*) as value FROM capteur WHERE batterie < 20"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Sensors with battery below 20%"
+
+ecotrack_iot_last_measurement_age:
+  query: "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(created_at)))::float as value FROM mesure"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Age of the last measurement in seconds"
+
+# Containers metrics
+ecotrack_containers_critical:
+  query: "SELECT COUNT(*) as value FROM conteneur WHERE niveau_remplissage > 90"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Containers above 90% fill level"
+
+ecotrack_containers_warning:
+  query: "SELECT COUNT(*) as value FROM conteneur WHERE niveau_remplissage > 75 AND niveau_remplissage <= 90"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Containers between 75-90% fill level"
+
+ecotrack_containers_avg_fill_level:
+  query: "SELECT AVG(niveau_remplissage)::float as value FROM conteneur"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Average container fill level percentage"
+
+# Tournées metrics
+ecotrack_tournees_en_cours:
+  query: "SELECT COUNT(*) as value FROM tournee WHERE statut = 'EN_COURS'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Tournées currently in progress"
+
+ecotrack_tournees_terminees_aujourdhui:
+  query: "SELECT COUNT(*) as value FROM tournee WHERE statut = 'TERMINEE' AND updated_at >= CURRENT_DATE"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Tournées completed today"
+
+# Signalements metrics
+ecotrack_signalements_en_attente:
+  query: "SELECT COUNT(*) as value FROM signalement WHERE statut = 'EN_ATTENTE'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Signalements pending"
+
+ecotrack_signalements_urgents:
+  query: "SELECT COUNT(*) as value FROM signalement WHERE priorite = 'CRITIQUE' AND statut != 'RESOLU'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Urgent signalements not resolved"
+
+# Database connections
+ecotrack_db_connections:
+  query: "SELECT count(*) as value FROM pg_stat_activity WHERE state = 'active'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Active database connections"
+
+ecotrack_db_max_connections:
+  query: "SELECT setting::int as value FROM pg_settings WHERE name = 'max_connections'"
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Maximum database connections"
+
+# Cache hit ratio
+ecotrack_db_cache_hit_ratio:
+  query: |
+    SELECT 
+      CASE 
+        WHEN (blks_hit + blks_read) = 0 THEN 0
+        ELSE (blks_hit::float / (blks_hit + blks_read)::float * 100)
+      END as value 
+    FROM pg_stat_database 
+    WHERE datname = current_database()
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Database cache hit ratio percentage"
