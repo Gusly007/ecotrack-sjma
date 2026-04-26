@@ -71,7 +71,9 @@ const hasLocalhostHostHeader = (req) => {
  * // Access the health check at http://localhost:3000/health
  * // Access the API docs overview at http://localhost:3000/api-docs
  */
-const gatewayPort = parseInt(process.env.GATEWAY_PORT, 10) || 3000
+// Heroku impose process.env.PORT (assigné dynamiquement). On prend PORT en
+// priorité, sinon GATEWAY_PORT (compose local), sinon 3000 (fallback dev).
+const gatewayPort = parseInt(process.env.PORT || process.env.GATEWAY_PORT, 10) || 3000
 
 const services = {
   users: {

@@ -19,9 +19,13 @@ const logger = pino(
       })
 );
 
+// Heroku assigne le port via $PORT (variable d'env). En local Docker on retombe
+// sur GATEWAY_PORT, sinon 3000 par défaut.
+const port = parseInt(process.env.PORT || process.env.GATEWAY_PORT, 10) || 3000;
+
 const options = {
   hostname: 'localhost',
-  port: 3000,
+  port,
   path: '/health',
   method: 'GET',
   timeout: 3000
