@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAllTournees } from "../../../services/tourneeService";
+import Modal from "../../common/Modal";
+import DetailView from "../../common/DetailView";
+import TourneeEditModal from "./TourneeEditModal";
 
 function getProgression(tournee) {
   const totalEtapes = Number(tournee.total_etapes || 0);
@@ -49,11 +52,26 @@ function normalizeTournee(tournee) {
   };
 }
 
-export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm = "", pageSize = 12, refreshNonce = 0 }) {
+function buildDetailItems(tournee) {
+  return [
+    { label: "Identifiant", value: tournee.code },
+    { label: "Date", value: tournee.dateDebut },
+    { label: "Agent", value: tournee.agent },
+    { label: "Zone", value: tournee.zone },
+    { label: "Véhicule", value: tournee.vehicule },
+    { label: "Statut", value: tournee.statusLabel },
+    { label: "Progression", value: `${tournee.progression}%` },
+    { label: "En retard", value: tournee.estEnRetard ? "Oui" : "Non" },
+  ];
+}
+
+export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm = "", pageSize = 12, refreshNonce = 0, onActionSuccess }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
+  const [selectedTournee, setSelectedTournee] = useState(null);
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     setPage(1);
@@ -100,79 +118,119 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
   }, [rows, searchTerm]);
 
   return (
-    <div className="chart-container">
-      <h3>Toutes les tournées</h3>
-      {loading && rows.length === 0 ? (
-        <div className="empty-state">Chargement des tournees...</div>
-      ) : filteredRows.length === 0 ? (
-        <div className="empty-state">Aucune tournee ne correspond aux filtres.</div>
-      ) : (
-        <table className="bo-table">
-          <thead>
-            <tr>
-              <th>Tournée</th>
-              <th>Date</th>
-              <th>Agent</th>
-              <th>Zone</th>
-              <th>Vehicule</th>
-              <th>Progression</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.map((tournee) => (
-              <tr key={`all-${tournee.id}`}>
-                <td>{tournee.code}</td>
-                <td>{tournee.dateDebut}</td>
-                <td>{tournee.agent}</td>
-                <td>{tournee.zone}</td>
-                <td>{tournee.vehicule}</td>
-                <td>{tournee.progression}%</td>
-                <td>
-                  <span className={`status-pill ${tournee.statusColor}`}>
-                    <span className="status-dot"></span>
-                    {tournee.statusLabel}
-                  </span>
-                  {tournee.estEnRetard && (
-                    <span
-                      className="status-pill orange tournee-retard-badge"
-                      title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
-                    >
-                      ⚠ EN RETARD
-                    </span>
-                  )}
-                </td>
+    <>
+      <div className="chart-container">
+        <h3>Toutes les tournées</h3>
+        {loading && rows.length === 0 ? (
+          <div className="empty-state">Chargement des tournees...</div>
+        ) : filteredRows.length === 0 ? (
+          <div className="empty-state">Aucune tournee ne correspond aux filtres.</div>
+        ) : (
+          <table className="bo-table">
+            <thead>
+              <tr>
+                <th>Tournée</th>
+                <th>Date</th>
+                <th>Agent</th>
+                <th>Zone</th>
+                <th>Vehicule</th>
+                <th>Progression</th>
+                <th>Statut</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {filteredRows.map((tournee) => (
+                <tr key={`all-${tournee.id}`}>
+                  <td>{tournee.code}</td>
+                  <td>{tournee.dateDebut}</td>
+                  <td>{tournee.agent}</td>
+                  <td>{tournee.zone}</td>
+                  <td>{tournee.vehicule}</td>
+                  <td>{tournee.progression}%</td>
+                  <td>
+                    <span className={`status-pill ${tournee.statusColor}`}>
+                      <span className="status-dot"></span>
+                      {tournee.statusLabel}
+                    </span>
+                    {tournee.estEnRetard && (
+                      <span
+                        className="status-pill orange tournee-retard-badge"
+                        title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
+                      >
+                        ⚠ EN RETARD
+                      </span>
+                    )}
+                  </td>
+                  <td className="tournee-actions-cell">
+                    <button
+                      type="button"
+                      className="btn-icon-detail"
+                      title="Voir le détail"
+                      onClick={() => setSelectedTournee(tournee)}
+                    >
+                      <i className="fas fa-eye"></i>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-icon-edit"
+                      title="Modifier"
+                      onClick={() => setEditId(tournee.id)}
+                    >
+                      <i className="fas fa-pen"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-      <div className="pagination-row">
-        <span className="pagination-meta">
-          {searchTerm.trim()
-            ? `${filteredRows.length} résultat(s) sur ${pagination.total || 0} tournées (filtre actif)`
-            : `Page ${pagination.page} / ${pagination.pages || 1} • ${pagination.total || 0} tournées`}
-        </span>
-        <div className="pagination-actions">
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-            disabled={loading || pagination.page <= 1}
-          >
-            Précédent
-          </button>
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
-            disabled={loading || pagination.page >= (pagination.pages || 1)}
-          >
-            Suivant
-          </button>
+        <div className="pagination-row">
+          <span className="pagination-meta">
+            {searchTerm.trim()
+              ? `${filteredRows.length} résultat(s) sur ${pagination.total || 0} tournées (filtre actif)`
+              : `Page ${pagination.page} / ${pagination.pages || 1} • ${pagination.total || 0} tournées`}
+          </span>
+          <div className="pagination-actions">
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={loading || pagination.page <= 1}
+            >
+              Précédent
+            </button>
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
+              disabled={loading || pagination.page >= (pagination.pages || 1)}
+            >
+              Suivant
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <Modal
+        isOpen={Boolean(selectedTournee)}
+        onClose={() => setSelectedTournee(null)}
+        title={selectedTournee ? `Détail — ${selectedTournee.code}` : ""}
+        headerIcon="fa-route"
+        size="sm"
+      >
+        {selectedTournee && (
+          <DetailView items={buildDetailItems(selectedTournee)} />
+        )}
+      </Modal>
+
+      <TourneeEditModal
+        tourneeId={editId}
+        isOpen={editId !== null}
+        onClose={() => setEditId(null)}
+        onSuccess={onActionSuccess}
+      />
+    </>
   );
 }

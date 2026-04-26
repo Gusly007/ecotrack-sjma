@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAutoRefresh } from "../../../hooks";
 import { formatDuration, getErrorMessage } from "../../../utils/formatters";
 import { Alert, Modal, StatCard, useAlert } from "../../../components/common";
-import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
 import ToutesTourneesTable from "../../../components/desktop/gestionnaire/ToutesTourneesTable";
 import {
 	fetchTourneeCreationOptions,

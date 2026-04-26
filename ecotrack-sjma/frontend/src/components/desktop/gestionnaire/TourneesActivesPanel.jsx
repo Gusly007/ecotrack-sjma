@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TourneesEnCoursTable from "./TourneesEnCoursTable";
 import { fetchActiveTournees } from "../../../services/tourneeService";
 
@@ -28,6 +28,7 @@ function normalizeActiveTournee(tournee) {
 
   return {
     id: `T-${tournee.id_tournee}`,
+    rawId: tournee.id_tournee,
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigne",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
     progression,
@@ -41,11 +42,12 @@ function normalizeActiveTournee(tournee) {
   };
 }
 
-export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 }) {
+export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0, onActionSuccess }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
+  const [editNonce, setEditNonce] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,7 +68,12 @@ export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 })
 
     load();
     return () => controller.abort();
-  }, [page, pageSize, refreshNonce]);
+  }, [page, pageSize, refreshNonce, editNonce]);
+
+  const handleActionSuccess = useCallback((msg) => {
+    setEditNonce((n) => n + 1);
+    onActionSuccess?.(msg);
+  }, [onActionSuccess]);
 
   const hasRows = useMemo(() => rows.length > 0, [rows]);
 
@@ -77,7 +84,7 @@ export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 })
   return (
     <>
       {hasRows ? (
-        <TourneesEnCoursTable tourneesEnCours={rows} />
+        <TourneesEnCoursTable tourneesEnCours={rows} onActionSuccess={handleActionSuccess} />
       ) : (
         <div className="empty-state">Aucune tournee active pour le moment.</div>
       )}

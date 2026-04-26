@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Modal from "../../common/Modal";
 import DetailView from "../../common/DetailView";
+import TourneeEditModal from "./TourneeEditModal";
 
 const defaultTourneesEnCours = [
   {
     id: "T-2026-00042",
+    rawId: 42,
     agent: "Marc Lefebvre",
     zone: "Centre-Ville",
     progression: 73,
@@ -17,6 +19,7 @@ const defaultTourneesEnCours = [
   },
   {
     id: "T-2026-00043",
+    rawId: 43,
     agent: "Julie Renard",
     zone: "Zone Nord",
     progression: 45,
@@ -29,6 +32,7 @@ const defaultTourneesEnCours = [
   },
   {
     id: "T-2026-00044",
+    rawId: 44,
     agent: "Pierre Morel",
     zone: "Zone Sud",
     progression: 92,
@@ -41,6 +45,7 @@ const defaultTourneesEnCours = [
   },
   {
     id: "T-2026-00045",
+    rawId: 45,
     agent: "Luc Bernard",
     zone: "Zone Est",
     progression: 10,
@@ -69,8 +74,9 @@ function buildDetailItems(tournee) {
   ];
 }
 
-export default function TourneesEnCoursTable({ tourneesEnCours = defaultTourneesEnCours }) {
+export default function TourneesEnCoursTable({ tourneesEnCours = defaultTourneesEnCours, onActionSuccess }) {
   const [selectedTournee, setSelectedTournee] = useState(null);
+  const [editId, setEditId] = useState(null);
 
   return (
     <>
@@ -106,7 +112,7 @@ export default function TourneesEnCoursTable({ tourneesEnCours = defaultTournees
                   <span className={`status-dot ${tournee.statusColor}`}></span>
                   {tournee.statusText}
                 </td>
-                <td>
+                <td className="tournee-actions-cell">
                   <button
                     type="button"
                     className="btn-icon-detail"
@@ -114,6 +120,14 @@ export default function TourneesEnCoursTable({ tourneesEnCours = defaultTournees
                     onClick={() => setSelectedTournee(tournee)}
                   >
                     <i className="fas fa-eye"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon-edit"
+                    title="Modifier"
+                    onClick={() => setEditId(tournee.rawId)}
+                  >
+                    <i className="fas fa-pen"></i>
                   </button>
                 </td>
               </tr>
@@ -133,6 +147,13 @@ export default function TourneesEnCoursTable({ tourneesEnCours = defaultTournees
           <DetailView items={buildDetailItems(selectedTournee)} />
         )}
       </Modal>
+
+      <TourneeEditModal
+        tourneeId={editId}
+        isOpen={editId !== null}
+        onClose={() => setEditId(null)}
+        onSuccess={onActionSuccess}
+      />
     </>
   );
 }

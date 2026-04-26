@@ -232,3 +232,13 @@ export async function assignTourneeAgent(id, idAgent) {
 
   return unwrap(response.data) || response.data;
 }
+
+export async function updateTournee(id, data) {
+  const response = await api.patch(`/api/routes/tournees/${id}`, data);
+  return unwrap(response.data) || response.data;
+}
+
+export async function updateTourneeStatut(id, statut) {
+  const response = await api.patch(`/api/routes/tournees/${id}/statut`, { statut });
+  return unwrap(response.data) || response.data;
+}
