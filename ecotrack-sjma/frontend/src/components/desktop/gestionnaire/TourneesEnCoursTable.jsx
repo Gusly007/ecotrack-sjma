@@ -1,3 +1,7 @@
+import { useState } from "react";
+import Modal from "../../common/Modal";
+import DetailView from "../../common/DetailView";
+
 const defaultTourneesEnCours = [
   {
     id: "T-2026-00042",
@@ -6,6 +10,10 @@ const defaultTourneesEnCours = [
     progression: 73,
     statusText: "En cours",
     statusColor: "green",
+    statut: "EN_COURS",
+    totalEtapes: 15,
+    etapesCollectees: 11,
+    heureDebutPrevue: null,
   },
   {
     id: "T-2026-00043",
@@ -14,6 +22,10 @@ const defaultTourneesEnCours = [
     progression: 45,
     statusText: "En cours",
     statusColor: "green",
+    statut: "EN_COURS",
+    totalEtapes: 20,
+    etapesCollectees: 9,
+    heureDebutPrevue: null,
   },
   {
     id: "T-2026-00044",
@@ -22,6 +34,10 @@ const defaultTourneesEnCours = [
     progression: 92,
     statusText: "Bientôt fini",
     statusColor: "green",
+    statut: "EN_COURS",
+    totalEtapes: 12,
+    etapesCollectees: 11,
+    heureDebutPrevue: null,
   },
   {
     id: "T-2026-00045",
@@ -30,43 +46,93 @@ const defaultTourneesEnCours = [
     progression: 10,
     statusText: "Retard",
     statusColor: "orange",
+    statut: "EN_COURS",
+    totalEtapes: 18,
+    etapesCollectees: 2,
+    heureDebutPrevue: null,
   },
 ];
 
+function buildDetailItems(tournee) {
+  return [
+    { label: "Identifiant", value: tournee.id },
+    { label: "Agent", value: tournee.agent },
+    { label: "Zone", value: tournee.zone },
+    { label: "Statut", value: tournee.statusText },
+    { label: "Statut système", value: tournee.statut },
+    { label: "Étapes collectées", value: `${tournee.etapesCollectees} / ${tournee.totalEtapes}` },
+    { label: "Progression", value: `${tournee.progression}%` },
+    ...(tournee.heureDebutPrevue
+      ? [{ label: "Heure de début prévue", value: tournee.heureDebutPrevue }]
+      : []),
+    { label: "En retard", value: tournee.estEnRetard ? "Oui" : "Non" },
+  ];
+}
+
 export default function TourneesEnCoursTable({ tourneesEnCours = defaultTourneesEnCours }) {
+  const [selectedTournee, setSelectedTournee] = useState(null);
+
   return (
-    <div className="chart-container">
-      <h3>Tournées en cours</h3>
-      <table className="bo-table">
-        <thead>
-          <tr>
-            <th>Tournée</th>
-            <th>Agent</th>
-            <th>Zone</th>
-            <th>Progression</th>
-            <th>Statut</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tourneesEnCours.map((tournee) => (
-            <tr key={tournee.id}>
-              <td>{tournee.id}</td>
-              <td>{tournee.agent}</td>
-              <td>{tournee.zone}</td>
-              <td>
-                <div
-                  className="progress-bar"
-                  style={{ width: "120px", display: "inline-block", verticalAlign: "middle" }}
-                >
-                  <div className="progress-fill" style={{ width: `${tournee.progression}%` }}></div>
-                </div>{" "}
-                {tournee.progression}%
-              </td>
-              <td><span className={`status-dot ${tournee.statusColor}`}></span>{tournee.statusText}</td>
+    <>
+      <div className="chart-container">
+        <h3>Tournées en cours</h3>
+        <table className="bo-table">
+          <thead>
+            <tr>
+              <th>Tournée</th>
+              <th>Agent</th>
+              <th>Zone</th>
+              <th>Progression</th>
+              <th>Statut</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {tourneesEnCours.map((tournee) => (
+              <tr key={tournee.id}>
+                <td>{tournee.id}</td>
+                <td>{tournee.agent}</td>
+                <td>{tournee.zone}</td>
+                <td>
+                  <div
+                    className="progress-bar"
+                    style={{ width: "120px", display: "inline-block", verticalAlign: "middle" }}
+                  >
+                    <div className="progress-fill" style={{ width: `${tournee.progression}%` }}></div>
+                  </div>{" "}
+                  {tournee.progression}%
+                </td>
+                <td>
+                  <span className={`status-dot ${tournee.statusColor}`}></span>
+                  {tournee.statusText}
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-icon-detail"
+                    title="Voir le détail"
+                    onClick={() => setSelectedTournee(tournee)}
+                  >
+                    <i className="fas fa-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal
+        isOpen={Boolean(selectedTournee)}
+        onClose={() => setSelectedTournee(null)}
+        title={selectedTournee ? `Détail — ${selectedTournee.id}` : ""}
+        headerIcon="fa-route"
+        size="sm"
+      >
+        {selectedTournee && (
+          <DetailView items={buildDetailItems(selectedTournee)} />
+        )}
+      </Modal>
+    </>
   );
 }

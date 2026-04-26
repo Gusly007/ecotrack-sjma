@@ -7,13 +7,22 @@ function normalizeActiveTournee(tournee) {
   const done = Number(tournee.etapes_collectees || 0);
   const progression = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  // Statut métier prioritaire : on reflète le vrai statut, pas une heuristique sur la progression.
+  // Le retard est désormais une info indépendante, alimentée par le flag backend est_en_retard.
   let statusText = "En cours";
   let statusColor = "green";
 
   if (progression >= 90) {
-    statusText = "Bientot fini";
-  } else if (progression <= 20) {
-    statusText = "Retard";
+    statusText = "Bientôt fini";
+  }
+
+  // est_en_retard prime visuellement quand la tournée n'est pas terminée
+  const estEnRetard = Boolean(tournee.est_en_retard)
+    && tournee.statut !== "TERMINEE"
+    && tournee.statut !== "ANNULEE";
+
+  if (estEnRetard) {
+    statusText = "En retard";
     statusColor = "orange";
   }
 
@@ -24,6 +33,11 @@ function normalizeActiveTournee(tournee) {
     progression,
     statusText,
     statusColor,
+    estEnRetard,
+    statut: tournee.statut || "—",
+    totalEtapes: total,
+    etapesCollectees: done,
+    heureDebutPrevue: tournee.heure_debut_prevue || null,
   };
 }
 
