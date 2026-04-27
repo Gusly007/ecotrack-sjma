@@ -105,7 +105,3 @@ src/
 | `GET /api/routes/stats/dashboard` | Stats |
 | `GET /api/routes/stats/kpis` | KPIs |
 
-## Backend a ajouter (Citoyen - Phase 2)
-
-- Routes signalement CRUD dans service-containers
-- Endpoint historique points dans service-gamifications
