@@ -32,17 +32,17 @@ src/
 │   │   ├── NotificationsPage.jsx
 │   │   └── NotificationSettings.jsx
 │   ├── agent/                  # 10 pages agent
-│   │   ├── AgentDashboard.jsx
-│   │   ├── TourneePage.jsx
-│   │   ├── EtapeDetail.jsx
-│   │   ├── ScanPage.jsx
-│   │   ├── ScanResult.jsx
-│   │   ├── AnomaliePage.jsx
-│   │   ├── AnomalieForm.jsx
-│   │   ├── TerminerTournee.jsx
-│   │   ├── HistoriquePage.jsx
-│   │   └── StatsPage.jsx
-│   └── citoyen/                # 14 pages citoyen (Phase 2)
+│      ├── AgentDashboard.jsx
+│      ├── TourneePage.jsx
+│      ├── EtapeDetail.jsx
+│      ├── ScanPage.jsx
+│      ├── ScanResult.jsx
+│      ├── AnomaliePage.jsx
+│      ├── AnomalieForm.jsx
+│      ├── TerminerTournee.jsx
+│      ├── HistoriquePage.jsx
+│      └── StatsPage.jsx
+│   
 │
 ├── services/                   # NOUVEAU - Services API
 │   ├── tourneeService.js       # /api/routes/*
@@ -88,25 +88,6 @@ src/
 | `/agent/profil/edit` | EditProfilPage (shared) |
 | `/agent/notifications` | NotificationsPage (shared) |
 | `/agent/notifications/settings` | NotificationSettings (shared) |
-
-## Routes Citoyen (/citoyen/*) - Phase 2
-
-| Route | Page |
-|-------|------|
-| `/citoyen` | CitoyenDashboard |
-| `/citoyen/carte` | CartePage |
-| `/citoyen/signalement` | SignalementForm |
-| `/citoyen/signalement/success` | SignalementSuccess |
-| `/citoyen/signalements` | MesSignalements |
-| `/citoyen/signalements/:id` | SignalementDetail |
-| `/citoyen/conteneurs/:id` | ConteneurDetail |
-| `/citoyen/defis` | DefisPage |
-| `/citoyen/defis/:id` | DefiDetail |
-| `/citoyen/boutique` | BoutiquePage |
-| `/citoyen/points` | HistoriquePoints |
-| `/citoyen/statistiques` | StatistiquesPage |
-| `/citoyen/horaires` | HorairesPage |
-| `/citoyen/tri` | TriGuidePage |
 
 ## API Backend utilisees (Agent)
 
