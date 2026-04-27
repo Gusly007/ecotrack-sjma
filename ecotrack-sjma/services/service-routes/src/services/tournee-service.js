@@ -1,10 +1,23 @@
 const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSchema, optimizeSchema } = require('../validators/tournee.validator');
-const { optimizeRoute, estimateDuration } = require('./optimization-service');
+const { optimizeRoute, estimateDuration, FUEL_CONSUMPTION_PER_100KM } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
 const cacheService = require('./cacheService');
 
 const TOURNEE_TTL = 60; // 1 minute
 const TOURNEES_LIST_TTL = 30; // 30 seconds
+
+/**
+ * Convertit une heure "HH:MM" (ou "HH:MM:SS") en nombre total de minutes depuis minuit.
+ * Ex: "07:30" → 450, "14:45:00" → 885.
+ * Retourne la valeur par défaut (07:30 = 450) si l'entrée est invalide — la validation Joi
+ * en amont garantit normalement un format correct, c'est juste un filet de sécurité.
+ */
+function parseHeureToMinutes(heure, defaultMinutes = 7 * 60 + 30) {
+  if (typeof heure !== 'string') return defaultMinutes;
+  const match = heure.match(/^([01]\d|2[0-3]):([0-5]\d)/);
+  if (!match) return defaultMinutes;
+  return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+}
 
 class TourneeService {
   constructor(tourneeRepository, collecteRepository) {
@@ -151,6 +164,7 @@ class TourneeService {
       seuil_remplissage = 70,
       id_agent,
       id_vehicule,
+      heure_debut_prevue = '07:30',
       algorithme = '2opt'
     } = validated;
 
@@ -202,14 +216,16 @@ class TourneeService {
       statut: 'PLANIFIEE',
       distance_prevue_km: result.distance_km,
       duree_prevue_min: dureePrevue,
+      heure_debut_prevue,
       id_vehicule: id_vehicule || null,
       id_zone,
       id_agent
     });
 
-    // Créer les étapes dans l'ordre optimisé
+    // Créer les étapes dans l'ordre optimisé.
+    // L'heure de la 1re étape = heure_debut_prevue (au lieu d'être codée en dur à 07:30).
     const minutesParEtape = result.nb_conteneurs > 0 ? Math.ceil(dureePrevue / result.nb_conteneurs) : 15;
-    const baseMinutes = 7 * 60 + 30; // 07:30
+    const baseMinutes = parseHeureToMinutes(heure_debut_prevue);
     const etapes = result.route.map((conteneur, idx) => {
       const totalMinutes = baseMinutes + idx * minutesParEtape;
       const hh = String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0');
@@ -231,9 +247,89 @@ class TourneeService {
         distance_prevue_km: result.distance_km,
         distance_originale_km: result.distance_originale_km,
         gain_pct: result.gain_pct,
-        duree_prevue_min: dureePrevue
+        duree_prevue_min: dureePrevue,
+        heure_debut_prevue
       },
       etapes: await this.tourneeRepo.findEtapes(tournee.id_tournee)
+    };
+  }
+  /**
+   * Prévisualise une tournée optimisée sans persister en base
+   */
+  async previewOptimization(data, db) {
+    const validated = validateSchema(optimizeSchema, data);
+    const {
+      id_zone,
+      seuil_remplissage = 70,
+      heure_debut_prevue = '07:30',
+      algorithme = '2opt'
+    } = validated;
+
+    const contenteursResult = await db.query(
+      `SELECT
+        c.id_conteneur, c.uid, c.capacite_l,
+        ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude,
+        COALESCE(m.niveau_remplissage_pct, 0) AS fill_level
+       FROM conteneur c
+       LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
+       LEFT JOIN LATERAL (
+         SELECT niveau_remplissage_pct
+         FROM mesure
+         WHERE id_capteur = cap.id_capteur
+         ORDER BY date_heure_mesure DESC
+         LIMIT 1
+       ) m ON TRUE
+       WHERE c.id_zone = $1
+         AND c.statut = 'ACTIF'
+         AND c.position IS NOT NULL
+       ORDER BY fill_level DESC NULLS LAST`,
+      [id_zone]
+    );
+
+    let conteneurs = contenteursResult.rows;
+
+    conteneurs = conteneurs.filter(c => {
+      const fl = parseFloat(c.fill_level) || 0;
+      return fl >= seuil_remplissage || (seuil_remplissage === 0);
+    });
+
+    if (conteneurs.length === 0) {
+      return {
+        optimisation: null,
+        etapes_preview: [],
+        warning: `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${id_zone}`
+      };
+    }
+
+    const result = optimizeRoute(conteneurs, algorithme);
+    const dureeOptimisee = estimateDuration(result.distance_km, result.nb_conteneurs);
+    const dureeManuelle = estimateDuration(result.distance_originale_km, result.nb_conteneurs);
+
+    const carburantOptimise = parseFloat(((result.distance_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
+    const carburantManuel = parseFloat(((result.distance_originale_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
+
+    return {
+      optimisation: {
+        algorithme_utilise: result.algorithme_utilise,
+        nb_conteneurs: result.nb_conteneurs,
+        distance_prevue_km: result.distance_km,
+        distance_originale_km: result.distance_originale_km,
+        gain_pct: result.gain_pct,
+        duree_prevue_min: dureeOptimisee,
+        duree_originale_min: dureeManuelle,
+        heure_debut_prevue, // remontée pour info dans la preview
+        carburant_prevu_l: carburantOptimise,
+        carburant_original_l: carburantManuel,
+        carburant_economise_l: parseFloat((carburantManuel - carburantOptimise).toFixed(2))
+      },
+      etapes_preview: result.route.map((conteneur, idx) => ({
+        sequence: idx + 1,
+        id_conteneur: conteneur.id_conteneur,
+        uid: conteneur.uid,
+        fill_level: parseFloat(conteneur.fill_level) || 0,
+        latitude: parseFloat(conteneur.latitude),
+        longitude: parseFloat(conteneur.longitude)
+      }))
     };
   }
 }

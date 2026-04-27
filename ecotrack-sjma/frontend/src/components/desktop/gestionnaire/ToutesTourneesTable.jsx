@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAllTournees } from "../../../services/tourneeService";
+import Modal from "../../common/Modal";
+import DetailView from "../../common/DetailView";
+import TourneeEditModal from "./TourneeEditModal";
 
 function getProgression(tournee) {
   const totalEtapes = Number(tournee.total_etapes || 0);
@@ -12,29 +15,28 @@ function getProgression(tournee) {
   return Math.max(0, Math.min(100, Math.round((etapesCollectees / totalEtapes) * 100)));
 }
 
-function mapStatus(statut, progression) {
+// Reflète UNIQUEMENT le statut métier de la tournée (PLANIFIEE/EN_COURS/TERMINEE/ANNULEE).
+// Le retard est désormais une *information indépendante* dérivée de est_en_retard
+// renvoyé par le backend (cf. 3.9.0). On ne mélange plus les deux.
+function mapStatus(statut) {
   const normalized = String(statut || "").toUpperCase();
 
-  if (normalized === "TERMINEE") {
-    return { label: "Terminee", color: "green" };
-  }
-  if (normalized === "ANNULEE") {
-    return { label: "Annulee", color: "gray" };
-  }
-  if (normalized === "PLANIFIEE") {
-    return { label: "Planifiee", color: "blue" };
-  }
-
-  if (progression <= 20) {
-    return { label: "En retard", color: "orange" };
-  }
-
-  return { label: "En cours", color: "green" };
+  if (normalized === "TERMINEE") return { label: "Terminée", color: "green" };
+  if (normalized === "ANNULEE") return { label: "Annulée", color: "gray" };
+  if (normalized === "EN_COURS") return { label: "En cours", color: "green" };
+  // PLANIFIEE par défaut
+  return { label: "Planifiée", color: "blue" };
 }
 
 function normalizeTournee(tournee) {
   const progression = getProgression(tournee);
-  const status = mapStatus(tournee.statut, progression);
+  const status = mapStatus(tournee.statut);
+  // Le flag est renvoyé par le backend. On ne le calcule plus côté front
+  // pour rester cohérent (un seul lieu de vérité = la requête SQL).
+  // Ne pas afficher "en retard" sur une tournée déjà clôturée.
+  const estEnRetard = Boolean(tournee.est_en_retard)
+    && tournee.statut !== "TERMINEE"
+    && tournee.statut !== "ANNULEE";
 
   return {
     id: tournee.id_tournee,
@@ -46,21 +48,37 @@ function normalizeTournee(tournee) {
     progression,
     statusLabel: status.label,
     statusColor: status.color,
+    estEnRetard,
   };
 }
 
-export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm = "", pageSize = 12, refreshNonce = 0 }) {
+function buildDetailItems(tournee) {
+  return [
+    { label: "Identifiant", value: tournee.code },
+    { label: "Date", value: tournee.dateDebut },
+    { label: "Agent", value: tournee.agent },
+    { label: "Zone", value: tournee.zone },
+    { label: "Véhicule", value: tournee.vehicule },
+    { label: "Statut", value: tournee.statusLabel },
+    { label: "Progression", value: `${tournee.progression}%` },
+    { label: "En retard", value: tournee.estEnRetard ? "Oui" : "Non" },
+  ];
+}
+
+export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm = "", pageSize = 12, refreshNonce = 0, onActionSuccess }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
+  const [selectedTournee, setSelectedTournee] = useState(null);
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     setPage(1);
   }, [statusFilter, searchTerm]);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
     async function load() {
       setLoading(true);
@@ -69,31 +87,20 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
           statut: statusFilter,
           page,
           limit: pageSize,
+          signal: controller.signal,
         });
-
-        if (!mounted) {
-          return;
-        }
-
         setRows((result.data || []).map(normalizeTournee));
         setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit: pageSize });
-      } catch (_err) {
-        if (!mounted) {
-          return;
-        }
+      } catch (err) {
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") return;
         setRows([]);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, [statusFilter, page, pageSize, refreshNonce]);
 
   const filteredRows = useMemo(() => {
@@ -111,69 +118,119 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
   }, [rows, searchTerm]);
 
   return (
-    <div className="chart-container">
-      <h3>Toutes les tournées</h3>
-      {loading && rows.length === 0 ? (
-        <div className="empty-state">Chargement des tournees...</div>
-      ) : filteredRows.length === 0 ? (
-        <div className="empty-state">Aucune tournee ne correspond aux filtres.</div>
-      ) : (
-        <table className="bo-table">
-          <thead>
-            <tr>
-              <th>Tournée</th>
-              <th>Date</th>
-              <th>Agent</th>
-              <th>Zone</th>
-              <th>Vehicule</th>
-              <th>Progression</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.map((tournee) => (
-              <tr key={`all-${tournee.id}`}>
-                <td>{tournee.code}</td>
-                <td>{tournee.dateDebut}</td>
-                <td>{tournee.agent}</td>
-                <td>{tournee.zone}</td>
-                <td>{tournee.vehicule}</td>
-                <td>{tournee.progression}%</td>
-                <td>
-                  <span className={`status-pill ${tournee.statusColor}`}>
-                    <span className="status-dot"></span>
-                    {tournee.statusLabel}
-                  </span>
-                </td>
+    <>
+      <div className="chart-container">
+        <h3>Toutes les tournées</h3>
+        {loading && rows.length === 0 ? (
+          <div className="empty-state">Chargement des tournees...</div>
+        ) : filteredRows.length === 0 ? (
+          <div className="empty-state">Aucune tournee ne correspond aux filtres.</div>
+        ) : (
+          <table className="bo-table">
+            <thead>
+              <tr>
+                <th>Tournée</th>
+                <th>Date</th>
+                <th>Agent</th>
+                <th>Zone</th>
+                <th>Vehicule</th>
+                <th>Progression</th>
+                <th>Statut</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {filteredRows.map((tournee) => (
+                <tr key={`all-${tournee.id}`}>
+                  <td>{tournee.code}</td>
+                  <td>{tournee.dateDebut}</td>
+                  <td>{tournee.agent}</td>
+                  <td>{tournee.zone}</td>
+                  <td>{tournee.vehicule}</td>
+                  <td>{tournee.progression}%</td>
+                  <td>
+                    <span className={`status-pill ${tournee.statusColor}`}>
+                      <span className="status-dot"></span>
+                      {tournee.statusLabel}
+                    </span>
+                    {tournee.estEnRetard && (
+                      <span
+                        className="status-pill orange tournee-retard-badge"
+                        title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
+                      >
+                        ⚠ EN RETARD
+                      </span>
+                    )}
+                  </td>
+                  <td className="tournee-actions-cell">
+                    <button
+                      type="button"
+                      className="btn-icon-detail"
+                      title="Voir le détail"
+                      onClick={() => setSelectedTournee(tournee)}
+                    >
+                      <i className="fas fa-eye"></i>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-icon-edit"
+                      title="Modifier"
+                      onClick={() => setEditId(tournee.id)}
+                    >
+                      <i className="fas fa-pen"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-      <div className="pagination-row">
-        <span className="pagination-meta">
-          Toutes: page {pagination.page} / {pagination.pages || 1} • {pagination.total || 0} tournées
-        </span>
-        <div className="pagination-actions">
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-            disabled={loading || pagination.page <= 1}
-          >
-            Précédent
-          </button>
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
-            disabled={loading || pagination.page >= (pagination.pages || 1)}
-          >
-            Suivant
-          </button>
+        <div className="pagination-row">
+          <span className="pagination-meta">
+            {searchTerm.trim()
+              ? `${filteredRows.length} résultat(s) sur ${pagination.total || 0} tournées (filtre actif)`
+              : `Page ${pagination.page} / ${pagination.pages || 1} • ${pagination.total || 0} tournées`}
+          </span>
+          <div className="pagination-actions">
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={loading || pagination.page <= 1}
+            >
+              Précédent
+            </button>
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
+              disabled={loading || pagination.page >= (pagination.pages || 1)}
+            >
+              Suivant
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <Modal
+        isOpen={Boolean(selectedTournee)}
+        onClose={() => setSelectedTournee(null)}
+        title={selectedTournee ? `Détail — ${selectedTournee.code}` : ""}
+        headerIcon="fa-route"
+        size="sm"
+      >
+        {selectedTournee && (
+          <DetailView items={buildDetailItems(selectedTournee)} />
+        )}
+      </Modal>
+
+      <TourneeEditModal
+        tourneeId={editId}
+        isOpen={editId !== null}
+        onClose={() => setEditId(null)}
+        onSuccess={onActionSuccess}
+      />
+    </>
   );
 }
