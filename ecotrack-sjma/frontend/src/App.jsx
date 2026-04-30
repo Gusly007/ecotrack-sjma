@@ -52,6 +52,9 @@ import ProfilPage from './pages/mobile/shared/ProfilPage';
 import EditProfilPage from './pages/mobile/shared/EditProfilPage';
 import NotificationsPage from './pages/mobile/shared/NotificationsPage';
 import NotificationSettings from './pages/mobile/shared/NotificationSettings';
+import QRCodePage from './pages/QRCodePage';
+import SharedScanPage from './pages/mobile/shared/ScanPage';
+import SharedScanResult from './pages/mobile/shared/ScanResult';
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -185,7 +188,14 @@ function App() {
           <Route path="/agent/profil/edit" element={<ProtectedRoute><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
           <Route path="/agent/notifications" element={<ProtectedRoute><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
           <Route path="/agent/notifications/settings" element={<ProtectedRoute><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
+          
+{/* Public QR Codes Page - no auth required */}
+<Route path="/qr-codes" element={<QRCodePage />} />
 
+{/* Universal Scan Routes - accessible to all roles */}
+<Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
+<Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
+          
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>

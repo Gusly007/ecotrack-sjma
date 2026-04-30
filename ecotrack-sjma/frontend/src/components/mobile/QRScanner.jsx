@@ -9,9 +9,14 @@ export default function QRScanner({ onScan, onError }) {
 
   useEffect(() => {
     const scannerId = 'qr-scanner-region';
-
+    
     const startScanner = async () => {
       try {
+        // Clear any existing scanner first
+        if (html5QrRef.current && html5QrRef.current.isScanning) {
+          await html5QrRef.current.stop();
+        }
+        
         const html5QrCode = new Html5Qrcode(scannerId);
         html5QrRef.current = html5QrCode;
 
@@ -21,7 +26,9 @@ export default function QRScanner({ onScan, onError }) {
           (decodedText) => {
             if (onScan) onScan(decodedText);
           },
-          () => {}
+          (errorMessage) => {
+            // Ignore scan errors, only report start errors
+          }
         );
         setIsScanning(true);
       } catch (err) {
@@ -37,7 +44,7 @@ export default function QRScanner({ onScan, onError }) {
         html5QrRef.current.stop().catch(() => {});
       }
     };
-  }, []);
+  }, [onScan, onError]);
 
   return (
     <div className="qr-scanner-wrapper">

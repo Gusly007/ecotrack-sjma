@@ -18,3 +18,5 @@ database/DB_OPTIMIZATION_PROPOSAL.md
 /maquette/
 docs/SECURITY_FIXES.md
 /EcoTrack_Docs
+frontend/public/qrcodes/
+*.png
