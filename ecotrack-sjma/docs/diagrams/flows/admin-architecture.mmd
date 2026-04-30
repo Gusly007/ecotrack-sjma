@@ -1,0 +1,13 @@
+flowchart TD
+    AD[Administrateur] --> API[API Gateway]
+    API --> S[service-users]
+    API --> P[Prometheus]
+    
+    P --> G[Grafana]
+    P --> A[Alertmanager]
+    
+    AD --> PG[(PostgreSQL)]
+    AD --> R[(Redis)]
+    
+    AD --> K[Kafka]
+    K --> L[services]

@@ -1,0 +1,32 @@
+flowchart TD
+    U[Utilisateurs] --> FE[Frontend React]
+    FE --> API[API Gateway :3000]
+    
+    API --> S1[service-users :3010]
+    API --> S2[service-routes :3012]
+    API --> S3[service-containers :3011]
+    API --> S4[service-iot :3013]
+    API --> S5[service-gamifications :3014]
+    API --> S6[service-analytics :3015]
+    
+    S1 --> PG[(PostgreSQL)]
+    S2 --> PG
+    S3 --> PG
+    S4 --> PG
+    S5 --> PG
+    S6 --> PG
+    
+    API --> R[(Redis)]
+    
+    S4 --> K[Kafka]
+    K --> N[Notifications]
+    
+    P[Prometheus] --> API
+    P --> S1
+    P --> S2
+    P --> S3
+    P --> S4
+    P --> S5
+    P --> S6
+    
+    G[Grafana] --> P
