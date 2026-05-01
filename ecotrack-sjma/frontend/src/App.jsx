@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import MobileLayout from './components/mobile/MobileLayout';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import MfaPage from './pages/auth/MfaPage';
@@ -73,6 +74,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -188,14 +190,15 @@ function App() {
           <Route path="/agent/profil/edit" element={<ProtectedRoute><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
           <Route path="/agent/notifications" element={<ProtectedRoute><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
           <Route path="/agent/notifications/settings" element={<ProtectedRoute><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
-          
-{/* Public QR Codes Page - no auth required */}
-<Route path="/qr-codes" element={<QRCodePage />} />
 
-{/* Universal Scan Routes - accessible to all roles */}
-<Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
-<Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
-          
+          {/* Public QR Codes Page - no auth required */}
+          <Route path="/qr-codes" element={<QRCodePage />} />
+
+          {/* Universal Scan Routes - accessible to all roles */}
+          <Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
+          <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
+
+
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
