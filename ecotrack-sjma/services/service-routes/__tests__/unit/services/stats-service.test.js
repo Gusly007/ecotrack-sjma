@@ -3,6 +3,7 @@ const StatsService = require('../../../src/services/stats-service');
 const mockStatsRepo = {
   getDashboard: jest.fn(),
   getKpis: jest.fn(),
+  getAgentStats: jest.fn(),
   getCollecteStats: jest.fn(),
   getAlgorithmComparison: jest.fn()
 };
@@ -40,6 +41,23 @@ describe('StatsService.getKpis', () => {
 
     await service.getKpis();
     expect(mockStatsRepo.getKpis).toHaveBeenCalledWith({});
+  });
+});
+
+describe('StatsService.getAgentStats', () => {
+  it('devrait déléguer agentId + period au repo', async () => {
+    const stats = { period: 'semaine', total_tournees: 4 };
+    mockStatsRepo.getAgentStats.mockResolvedValue(stats);
+
+    const result = await service.getAgentStats(42, 'semaine');
+    expect(result).toEqual(stats);
+    expect(mockStatsRepo.getAgentStats).toHaveBeenCalledWith(42, 'semaine');
+  });
+
+  it("utilise mois par defaut si aucune periode passee", async () => {
+    mockStatsRepo.getAgentStats.mockResolvedValue({});
+    await service.getAgentStats(42);
+    expect(mockStatsRepo.getAgentStats).toHaveBeenCalledWith(42, 'mois');
   });
 });
 
