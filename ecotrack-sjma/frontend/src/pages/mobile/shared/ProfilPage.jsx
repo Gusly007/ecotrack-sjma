@@ -35,7 +35,14 @@ export default function ProfilPage({ basePath = '/agent' }) {
     <MobileLayout title="Mon Profil">
       <div className="profil-header">
         <div className="profil-avatar">
-          <i className="fas fa-user-circle"></i>
+          {displayUser.avatar_thumbnail || displayUser.avatar_url ? (
+            <img
+              src={displayUser.avatar_thumbnail || displayUser.avatar_url}
+              alt="avatar"
+            />
+          ) : (
+            <i className="fas fa-user-circle"></i>
+          )}
         </div>
         <h2>{displayUser.prenom} {displayUser.nom}</h2>
         <p className="profil-role">{displayUser.role || displayUser.role_par_defaut}</p>
