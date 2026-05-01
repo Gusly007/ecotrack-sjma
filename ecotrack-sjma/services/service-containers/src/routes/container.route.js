@@ -3,36 +3,31 @@ const controller = require('../container-di.js');
 const { requirePermission } = require('../middleware/rbac');
 const { authenticateToken } = require('../middleware/auth');
 const QRCode = require('qrcode');
-const Pool = require('pg').Pool;
-
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: process.env.POSTGRES_PORT || 5432,
-  user: process.env.POSTGRES_USER || 'ecotrack_user',
-  password: process.env.POSTGRES_PASSWORD || 'ecotrack_password',
-  database: process.env.POSTGRES_DB || 'ecotrack',
-  ssl: false
-});
+const { pool } = require('../db/connexion');
 
 // QR Code - PUBLIC (no auth, placed BEFORE auth middleware)
-router.get('/qrcode/:uid', async (req, res, next) => {
+// Mounted at /api/containers/qrcode/:uid via service index, proxied through gateway.
+router.get('/containers/qrcode/:uid', async (req, res, next) => {
   try {
     const { uid } = req.params;
     if (!uid) return res.status(400).json({ message: 'UID requis' });
-    
+
     const result = await pool.query('SELECT uid FROM conteneur WHERE uid = $1', [uid]);
     if (result.rows.length === 0) return res.status(404).json({ message: 'Conteneur introuvable' });
-    
+
     const baseUrl = process.env.PUBLIC_URL || `http://${req.headers.host || 'localhost:5173'}`;
-    const qrUrl = `${baseUrl}/agent/scan/result/${encodeURIComponent(uid)}`;
-    
-    const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 300, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } });
-    
+    const qrUrl = `${baseUrl}/scan/result/${encodeURIComponent(uid)}`;
+
+    const qrBuffer = await QRCode.toBuffer(qrUrl, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' }
+    });
+
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=31536000');
     return res.send(qrBuffer);
   } catch (error) {
-    console.error('QR Code error:', error);
     next(error);
   }
 });
@@ -573,40 +568,6 @@ router.get('/check/uid/:uid', requirePermission('containers:read'), controller.e
  *       500:
  *         description: Erreur serveur
  */
-  router.get('/stats', requirePermission('containers:read'), controller.getStatistics);
-
-// QR Code generation - dynamic PNG generation
-router.get('/qrcode/:uid', async (req, res, next) => {
-  try {
-    const { uid } = req.params;
-    
-    if (!uid) {
-      return res.status(400).json({ message: 'UID requis' });
-    }
-
-    // Vérifier que le conteneur existe
-    const result = await pool.query('SELECT uid FROM conteneur WHERE uid = $1', [uid]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Conteneur introuvable' });
-    }
-
-    // Générer le QR code avec l'URL complète
-    const baseUrl = process.env.PUBLIC_URL || `http://${req.headers.host || 'localhost:5173'}`;
-    const qrUrl = `${baseUrl}/agent/scan/result/${encodeURIComponent(uid)}`;
-    
-    const qrBuffer = await QRCode.toBuffer(qrUrl, {
-      width: 300,
-      margin: 2,
-      color: { dark: '#000000', light: '#FFFFFF' }
-    });
-
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
-    return res.send(qrBuffer);
-    
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/stats', requirePermission('containers:read'), controller.getStatistics);
 
 module.exports = router;
