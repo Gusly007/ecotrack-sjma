@@ -78,6 +78,7 @@ async function runSeeds(client) {
 
   logInfo(`Exécution de ${seedFiles.length} fichiers de seed...`);
 
+  const failed = [];
   for (const file of seedFiles) {
     const filePath = path.join(SEEDS_DIR, file);
     try {
@@ -85,8 +86,12 @@ async function runSeeds(client) {
       logSuccess(`Seed: ${file}`);
     } catch (err) {
       logError(`Erreur dans ${file}: ${err.message}`);
-      throw err;
+      failed.push({ file, message: err.message });
+      // Best-effort: continue with remaining seeds (demo data is non-critical)
     }
+  }
+  if (failed.length > 0) {
+    logWarning(`${failed.length} seed(s) en erreur (ignorés): ${failed.map((f) => f.file).join(', ')}`);
   }
 }
 
