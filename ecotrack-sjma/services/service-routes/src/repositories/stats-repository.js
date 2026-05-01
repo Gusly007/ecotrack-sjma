@@ -93,6 +93,56 @@ class StatsRepository {
   }
 
   /**
+   * Statistiques d'un agent spécifique sur une période
+   * @param {number} agentId - id_utilisateur de l'agent
+   * @param {string} period - 'jour' | 'semaine' | 'mois' (défaut: mois)
+   */
+  async getAgentStats(agentId, period = 'mois') {
+    const intervalMap = {
+      jour: '1 day',
+      semaine: '7 days',
+      mois: '30 days',
+    };
+    const interval = intervalMap[period] || '30 days';
+
+    const result = await this.db.query(
+      `SELECT
+        COUNT(DISTINCT t.id_tournee) AS total_tournees,
+        COUNT(DISTINCT CASE WHEN t.statut = 'TERMINEE' THEN t.id_tournee END) AS tournees_terminees,
+        COUNT(DISTINCT col.id_collecte) AS total_collectes,
+        COALESCE(SUM(col.quantite_kg), 0) AS total_kg,
+        COALESCE(SUM(t.distance_reelle_km), 0) AS distance_totale_km,
+        ROUND(
+          COALESCE(SUM(t.distance_reelle_km), 0) * 0.27, 2
+        ) AS co2_economise_kg,
+        ROUND(
+          COUNT(DISTINCT CASE WHEN t.statut = 'TERMINEE' THEN t.id_tournee END)::numeric /
+          NULLIF(COUNT(DISTINCT t.id_tournee), 0) * 100, 2
+        ) AS taux_reussite_pct,
+        (SELECT COUNT(*) FROM signalement WHERE id_citoyen = $1
+          AND date_creation >= CURRENT_DATE - $2::interval) AS total_anomalies
+       FROM tournee t
+       LEFT JOIN collecte col ON col.id_tournee = t.id_tournee
+       WHERE t.id_agent = $1
+         AND t.date_tournee >= CURRENT_DATE - $2::interval`,
+      [agentId, interval]
+    );
+
+    const row = result.rows[0] || {};
+    return {
+      period,
+      total_tournees: parseInt(row.total_tournees, 10) || 0,
+      tournees_terminees: parseInt(row.tournees_terminees, 10) || 0,
+      total_collectes: parseInt(row.total_collectes, 10) || 0,
+      total_kg: parseFloat(row.total_kg) || 0,
+      distance_totale_km: parseFloat(row.distance_totale_km) || 0,
+      co2_economise_kg: parseFloat(row.co2_economise_kg) || 0,
+      taux_reussite_pct: parseFloat(row.taux_reussite_pct) || 0,
+      total_anomalies: parseInt(row.total_anomalies, 10) || 0,
+    };
+  }
+
+  /**
    * Statistiques des collectes par période
    */
   async getCollecteStats(options = {}) {
