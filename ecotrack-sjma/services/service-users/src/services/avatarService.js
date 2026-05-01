@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import { AvatarRepository } from '../repositories/avatar.repository.js';
+import cacheService from './cacheService.js';
 import logger from '../utils/logger.js';
 
 const AVATARS_DIR = 'storage/avatars';
@@ -75,6 +76,12 @@ export const saveAvatarUrls = async (userId, urls) => {
   const user = await AvatarRepository.saveAvatarUrls(userId, urls);
   if (!user) {
     throw new Error('User not found');
+  }
+  // Invalider le cache du profil pour que /users/profile renvoie le nouvel avatar
+  try {
+    await cacheService.del(`user:${userId}:profile`);
+  } catch (err) {
+    logger.warn({ err: err.message, userId }, 'Could not invalidate profile cache');
   }
   return user;
 };

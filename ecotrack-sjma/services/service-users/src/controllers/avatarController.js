@@ -1,4 +1,5 @@
 import * as avatarService from '../services/avatarService.js';
+import cacheService from '../services/cacheService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import fs from 'fs/promises';
 import sharp from 'sharp';
@@ -79,7 +80,7 @@ export const deleteAvatar = asyncHandler(async (req, res) => {
   );
 
   // Invalider le cache du profil
-  await cacheService.invalidatePattern(`user:${userId}:*`);
+  try { await cacheService.del(`user:${userId}:profile`); } catch { /* noop */ }
 
   res.json({ message: 'Avatar deleted successfully' });
 });
