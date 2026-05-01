@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
 import { useNotifications } from '../../../hooks';
-import { fetchMyTournee } from '../../../services/tourneeService';
+import { fetchMyTournee, changeStatut } from '../../../services/tourneeService';
 import './AgentDashboard.css';
 
 export default function AgentDashboard() {
@@ -13,20 +13,34 @@ export default function AgentDashboard() {
   const { unreadCount } = useNotifications();
   const [tournee, setTournee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await fetchMyTournee();
-        setTournee(res);
-      } catch {
-        setTournee(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
+  const loadTournee = async () => {
+    try {
+      const res = await fetchMyTournee();
+      setTournee(res);
+    } catch {
+      setTournee(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadTournee(); }, []);
+
+  const handleStart = async () => {
+    if (!tournee?.id_tournee) return;
+    setStarting(true);
+    try {
+      await changeStatut(tournee.id_tournee, 'EN_COURS');
+      await loadTournee();
+      navigate('/agent/tournee');
+    } catch (err) {
+      console.error('Erreur démarrage tournée:', err);
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const prenom = user?.prenom || 'Agent';
 
@@ -42,16 +56,16 @@ export default function AgentDashboard() {
     </div>
   );
 
+  const dateLabel = new Date().toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
   return (
     <MobileLayout
-      title=""
+      title={`Bonjour, ${prenom}`}
+      subtitle={dateLabel}
       rightAction={headerRight}
     >
-      <div className="agent-greeting">
-        <p className="greeting-text">Bonjour, {prenom}</p>
-        <p className="greeting-date">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      </div>
-
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#4CAF50' }}></i>
@@ -109,16 +123,35 @@ export default function AgentDashboard() {
             </div>
           </MobileCard>
 
-          <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')} style={{ marginBottom: 16 }}>
-            <i className="fas fa-play"></i> {tournee.statut === 'EN_COURS' ? 'Continuer la tournee' : 'Voir la tournee'}
-          </button>
+          {tournee.statut === 'PLANIFIEE' ? (
+            <button
+              className="btn-primary-mobile"
+              onClick={handleStart}
+              disabled={starting}
+              style={{ marginBottom: 16 }}
+            >
+              {starting
+                ? <><i className="fas fa-spinner fa-spin"></i> Demarrage...</>
+                : <><i className="fas fa-play"></i> Demarrer la tournee</>
+              }
+            </button>
+          ) : (
+            <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')} style={{ marginBottom: 16 }}>
+              <i className="fas fa-play"></i> {tournee.statut === 'EN_COURS' ? 'Continuer la tournee' : 'Voir la tournee'}
+            </button>
+          )}
         </>
       ) : (
         <MobileCard>
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <i className="fas fa-calendar-check" style={{ fontSize: '2rem', color: '#ccc', marginBottom: 12 }}></i>
             <h3 style={{ color: '#888' }}>Pas de tournee aujourd'hui</h3>
-            <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Aucune tournee ne vous est assignee pour le moment.</p>
+            <p style={{ fontSize: '0.85rem', color: '#aaa', marginBottom: 16 }}>
+              Aucune tournee planifiee dans les 7 prochains jours.
+            </p>
+            <button className="btn-outline-mobile" onClick={() => navigate('/agent/historique')}>
+              <i className="fas fa-history"></i> Voir l'historique
+            </button>
           </div>
         </MobileCard>
       )}

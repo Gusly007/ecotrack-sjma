@@ -6,7 +6,7 @@ import { citoyenNavData } from './citoyenNavData';
 import { agentNavData } from './agentNavData';
 import './MobileLayout.css';
 
-export default function MobileLayout({ children, title, showBack = false, onBack, rightAction }) {
+export default function MobileLayout({ children, title, subtitle, showBack = false, onBack, rightAction }) {
   const { user } = useAuth();
   const location = useLocation();
   const role = user?.role || user?.role_par_defaut;
@@ -20,7 +20,7 @@ export default function MobileLayout({ children, title, showBack = false, onBack
 
   return (
     <div className="mobile-layout">
-      <MobileHeader title={title} showBack={showBack} onBack={onBack} rightAction={rightAction} />
+      <MobileHeader title={title} subtitle={subtitle} showBack={showBack} onBack={onBack} rightAction={rightAction} />
       <main className="mobile-content">
         {children}
       </main>

@@ -148,6 +148,11 @@ export async function fetchKpis() {
   return unwrap(response.data);
 }
 
+export async function fetchAgentStats(period = 'mois') {
+  const response = await api.get('/api/routes/stats/agent', { params: { period } });
+  return unwrap(response.data) || {};
+}
+
 export async function fetchTourneesPageData({
   statut,
   allPage = 1,
