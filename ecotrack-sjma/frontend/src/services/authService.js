@@ -48,49 +48,6 @@ export const authService = {
     return user;
   },
 
-  async loginWithMfa(userId, code) {
-    const response = await api.post('/auth/login/mfa', { userId, code });
-    console.log('[authService] loginWithMfa response:', response.data);
-    const token = response.data?.token || response.data?.accessToken;
-    const refreshToken = response.data?.refreshToken;
-    const user = response.data?.user;
-
-    if (!token || !user) {
-      throw new Error('Réponse MFA invalide: token ou utilisateur manquant');
-    }
-
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    localStorage.removeItem('mfa_user_id');
-    
-    // Retourner la réponse complète pour MfaPage
-    return { ...response.data, user };
-  },
-
-  async generateMfaSetup(userId) {
-    // Génère un nouveau setup MFA (sans auth complète - juste avec userId)
-    const response = await api.post('/auth/mfa/regenerate', { userId: Number(userId) });
-    return response.data;
-  },
-  
-  async verifyMfaSetup(userId, code, secret) {
-    // Setup initial: endpoint public qui active MFA et connecte l'utilisateur
-    const response = await api.post('/auth/mfa/complete-setup', { userId, code, secret });
-    return response.data;
-  },
-
-  async register(userData) {
-    const response = await api.post('/auth/register', userData);
-    const { token, refreshToken, user } = response.data;
-    
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    
-    return user;
-  },
-
   async logout() {
     try {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);

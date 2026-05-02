@@ -39,12 +39,8 @@ export const AuthProvider = ({ children }) => {
     return result;
   };
 
-  const register = async (userData) => {
-    const result = await authService.register(userData);
-    setUser(authService.getCurrentUser());
-    setIsAuthenticated(true);
-    return result;
-  };
+  // Inscription désactivée - only ADMIN can create users via API.
+  // See LoginPage / RegisterPage: there is no public /register entry point.
 
   const logout = async () => {
     try {
@@ -77,7 +73,6 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
-    register,
     logout,
     forgotPassword,
     resetPassword,

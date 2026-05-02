@@ -4,7 +4,6 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import MobileLayout from './components/mobile/MobileLayout';
 import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import MfaPage from './pages/auth/MfaPage';
@@ -74,7 +73,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -175,21 +173,21 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Mobile Routes - Agent */}
-          <Route path="/agent" element={<ProtectedRoute><AgentDashboard /></ProtectedRoute>} />
-          <Route path="/agent/tournee" element={<ProtectedRoute><AgentTourneePage /></ProtectedRoute>} />
-          <Route path="/agent/tournee/etape/:id" element={<ProtectedRoute><EtapeDetail /></ProtectedRoute>} />
-          <Route path="/agent/scan" element={<ProtectedRoute><ScanPage /></ProtectedRoute>} />
-          <Route path="/agent/scan/result/:uid" element={<ProtectedRoute><ScanResult /></ProtectedRoute>} />
-          <Route path="/agent/anomalie" element={<ProtectedRoute><AnomaliePage /></ProtectedRoute>} />
-          <Route path="/agent/anomalie/form" element={<ProtectedRoute><AnomalieForm /></ProtectedRoute>} />
-          <Route path="/agent/tournee/terminer" element={<ProtectedRoute><TerminerTournee /></ProtectedRoute>} />
-          <Route path="/agent/historique" element={<ProtectedRoute><AgentHistorique /></ProtectedRoute>} />
-          <Route path="/agent/stats" element={<ProtectedRoute><AgentStats /></ProtectedRoute>} />
-          <Route path="/agent/profil" element={<ProtectedRoute><ProfilPage basePath="/agent" /></ProtectedRoute>} />
-          <Route path="/agent/profil/edit" element={<ProtectedRoute><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
-          <Route path="/agent/notifications" element={<ProtectedRoute><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
-          <Route path="/agent/notifications/settings" element={<ProtectedRoute><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
+          {/* Mobile Routes - Agent (role-gated) */}
+          <Route path="/agent" element={<ProtectedRoute requiredRole="AGENT"><AgentDashboard /></ProtectedRoute>} />
+          <Route path="/agent/tournee" element={<ProtectedRoute requiredRole="AGENT"><AgentTourneePage /></ProtectedRoute>} />
+          <Route path="/agent/tournee/etape/:id" element={<ProtectedRoute requiredRole="AGENT"><EtapeDetail /></ProtectedRoute>} />
+          <Route path="/agent/scan" element={<ProtectedRoute requiredRole="AGENT"><ScanPage /></ProtectedRoute>} />
+          <Route path="/agent/scan/result/:uid" element={<ProtectedRoute requiredRole="AGENT"><ScanResult /></ProtectedRoute>} />
+          <Route path="/agent/anomalie" element={<ProtectedRoute requiredRole="AGENT"><AnomaliePage /></ProtectedRoute>} />
+          <Route path="/agent/anomalie/form" element={<ProtectedRoute requiredRole="AGENT"><AnomalieForm /></ProtectedRoute>} />
+          <Route path="/agent/tournee/terminer" element={<ProtectedRoute requiredRole="AGENT"><TerminerTournee /></ProtectedRoute>} />
+          <Route path="/agent/historique" element={<ProtectedRoute requiredRole="AGENT"><AgentHistorique /></ProtectedRoute>} />
+          <Route path="/agent/stats" element={<ProtectedRoute requiredRole="AGENT"><AgentStats /></ProtectedRoute>} />
+          <Route path="/agent/profil" element={<ProtectedRoute requiredRole="AGENT"><ProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/profil/edit" element={<ProtectedRoute requiredRole="AGENT"><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications" element={<ProtectedRoute requiredRole="AGENT"><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications/settings" element={<ProtectedRoute requiredRole="AGENT"><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
 
           {/* Public QR Codes Page - no auth required */}
           <Route path="/qr-codes" element={<QRCodePage />} />
