@@ -44,11 +44,10 @@ export default function ConteneursPage() {
   const [selectedConteneur, setSelectedConteneur] = useState(null);
 
   // Permissions selon le rôle
-  const role = user?.role || user?.role_par_defaut || 'GESTIONNAIRE';
-  const normalizedRole = typeof role === 'string' ? role.toUpperCase() : '';
-  const canCreate = normalizedRole === 'ADMIN' || normalizedRole === 'GESTIONNAIRE';
-  const canEdit = normalizedRole === 'ADMIN' || normalizedRole === 'GESTIONNAIRE';
-  const canDelete = normalizedRole === 'ADMIN';
+  const role = user?.role || user?.role_par_defaut || 'MANAGER';
+  const canCreate = role === 'ADMIN';
+  const canEdit = role === 'ADMIN';
+  const canDelete = role === 'ADMIN';
 
   // Charger les types de conteneurs
   const loadTypes = useCallback(async () => {
