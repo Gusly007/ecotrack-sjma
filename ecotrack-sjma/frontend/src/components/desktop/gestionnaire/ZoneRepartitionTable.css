@@ -1,0 +1,173 @@
+.zrt-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zrt-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.zrt-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.zrt-count {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.zrt-retry-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  color: #3b82f6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.zrt-retry-btn:hover {
+  background: #eff6ff;
+}
+
+.zrt-empty {
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.zrt-empty.zrt-error {
+  color: #ef4444;
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.zrt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.zrt-table thead tr {
+  background: #f8fafc;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.zrt-table th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.zrt-table th:hover {
+  color: #1d4ed8;
+}
+
+.zrt-th-zone {
+  min-width: 120px;
+}
+
+.zrt-th-bar {
+  min-width: 120px;
+  cursor: default !important;
+}
+
+.zrt-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.zrt-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.zrt-td-label {
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.zrt-td-num {
+  padding: 10px 12px;
+  color: #374151;
+  text-align: right;
+}
+
+.zrt-td-rate {
+  padding: 10px 12px;
+  text-align: right;
+}
+
+.zrt-rate-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.zrt-rate-badge.ok {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.zrt-rate-badge.warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.zrt-rate-badge.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.zrt-td-bar {
+  padding: 10px 12px;
+  min-width: 120px;
+}
+
+.zrt-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.zrt-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.zrt-sort-icon {
+  margin-left: 5px;
+  font-size: 0.72rem;
+}
+
+.zrt-sort-icon.muted {
+  opacity: 0.35;
+}
+

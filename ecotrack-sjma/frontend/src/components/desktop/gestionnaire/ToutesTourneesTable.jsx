@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAllTournees } from "../../../services/tourneeService";
+import { Pagination } from "../../common";
 import Modal from "../../common/Modal";
 import DetailView from "../../common/DetailView";
 import TourneeEditModal from "./TourneeEditModal";
@@ -186,31 +187,15 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
           </table>
         )}
 
-        <div className="pagination-row">
-          <span className="pagination-meta">
-            {searchTerm.trim()
-              ? `${filteredRows.length} résultat(s) sur ${pagination.total || 0} tournées (filtre actif)`
-              : `Page ${pagination.page} / ${pagination.pages || 1} • ${pagination.total || 0} tournées`}
-          </span>
-          <div className="pagination-actions">
-            <button
-              type="button"
-              className="pagination-btn"
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={loading || pagination.page <= 1}
-            >
-              Précédent
-            </button>
-            <button
-              type="button"
-              className="pagination-btn"
-              onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
-              disabled={loading || pagination.page >= (pagination.pages || 1)}
-            >
-              Suivant
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages || 1}
+          onPageChange={setPage}
+          showingFrom={(pagination.page - 1) * pageSize + 1}
+          showingTo={Math.min(pagination.page * pageSize, pagination.total || 0)}
+          totalItems={searchTerm.trim() ? filteredRows.length : (pagination.total || 0)}
+          label="tournée"
+        />
       </div>
 
       <Modal
