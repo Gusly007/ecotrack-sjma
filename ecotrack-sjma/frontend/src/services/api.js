@@ -1,14 +1,12 @@
 import axios from 'axios';
 
-// Détection dynamique du port API
 const getAPIBaseURL = () => {
-  // 1. Vérifier la variable d'environnement
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
-  // 2. Fallback: localhost:3000 (API gateway)
-  return 'http://localhost:3000';
+  // En production, URL relative → nginx proxyfie vers api-gateway (évite Mixed Content)
+  // En dev, localhost direct
+  return import.meta.env.PROD ? '' : 'http://localhost:3000';
 };
 
 const API_BASE_URL = getAPIBaseURL();
