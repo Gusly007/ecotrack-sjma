@@ -181,7 +181,7 @@ services:
       VITE_API_URL: ${FRONTEND_API_URL}
       NODE_ENV: production
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       api-gateway:
         condition: service_healthy
