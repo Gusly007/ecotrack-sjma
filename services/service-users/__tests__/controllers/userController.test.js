@@ -7,7 +7,8 @@ import {
   getUserProfile,
   getUserStats,
   updateUserByAdmin,
-  deleteUser
+  deleteUser,
+  assignZone
 } from '../../src/controllers/userController.js';
 import * as userService from '../../src/services/userService.js';
 
@@ -116,6 +117,47 @@ describe('User Controller', () => {
 
     expect(userService.updateUserByAdmin).toHaveBeenCalledWith(9, { nom: 'Neo' });
     expect(userService.deleteUser).toHaveBeenCalledWith(9);
+  });
+
+  describe('assignZone', () => {
+    it('returns 400 for invalid user id', async () => {
+      const req = { params: { id: 'abc' }, body: { id_zone: 1 } };
+      const res = mockResponse();
+
+      await assignZone(req, res, jest.fn());
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(userService.assignZone).not.toHaveBeenCalled();
+    });
+
+    it('calls service with numeric id and id_zone, returns 200', async () => {
+      const req = { params: { id: '7' }, body: { id_zone: 1 } };
+      const res = mockResponse();
+      const zoneData = { id_zone: 1, code: 'Z01', nom: 'Centre', id_gestionnaire: 7 };
+      userService.assignZone.mockResolvedValue(zoneData);
+
+      await assignZone(req, res, jest.fn());
+
+      expect(userService.assignZone).toHaveBeenCalledWith(7, 1);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Zone assignée avec succès',
+        data: zoneData,
+      });
+    });
+
+    it('propagates service error via asyncHandler', async () => {
+      const err = Object.assign(new Error('Zone not found'), { status: 404 });
+      userService.assignZone.mockRejectedValue(err);
+
+      // asyncHandler ne retourne pas la Promise interne → on attend que next() soit appelé
+      let capturedError;
+      await new Promise(resolve => {
+        const next = (e) => { capturedError = e; resolve(); };
+        assignZone({ params: { id: '7' }, body: { id_zone: 999 } }, mockResponse(), next);
+      });
+
+      expect(capturedError).toBe(err);
+    });
   });
 
   it('calls getProfileWithStats with extracted id variant', async () => {

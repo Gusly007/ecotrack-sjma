@@ -52,7 +52,7 @@ describe('Auth Service', () => {
   });
 
   describe('registerUser', () => {
-    it('should register a new user successfully', async () => {
+    it('should register a new CITOYEN without id_zone', async () => {
       AuthRepository.findUserByEmailOrPrenom.mockResolvedValue([]);
       AuthRepository.insertUser.mockResolvedValue({ id_utilisateur: 1, email: 'test@example.com', nom: 'Test', prenom: 'user', role_par_defaut: 'CITOYEN' });
       hashPassword.mockResolvedValue('hashedpassword');
@@ -63,11 +63,37 @@ describe('Auth Service', () => {
 
       expect(AuthRepository.findUserByEmailOrPrenom).toHaveBeenCalledWith('test@example.com', 'user');
       expect(hashPassword).toHaveBeenCalledWith('password123');
-      expect(AuthRepository.insertUser).toHaveBeenCalledWith('test@example.com', 'Test', 'user', 'hashedpassword', 'CITOYEN');
+      // id_zone vaut null par défaut
+      expect(AuthRepository.insertUser).toHaveBeenCalledWith('test@example.com', 'Test', 'user', 'hashedpassword', 'CITOYEN', null);
       expect(generateToken).toHaveBeenCalled();
       expect(generateRefreshToken).toHaveBeenCalled();
       expect(result).toHaveProperty('accessToken', 'accesstoken');
       expect(result).toHaveProperty('refreshToken', 'refreshtoken');
+    });
+
+    it('should register a GESTIONNAIRE and forward id_zone', async () => {
+      AuthRepository.findUserByEmailOrPrenom.mockResolvedValue([]);
+      AuthRepository.insertUser.mockResolvedValue({ id_utilisateur: 2, email: 'g@example.com', nom: 'G', prenom: 'Test', role_par_defaut: 'GESTIONNAIRE' });
+      hashPassword.mockResolvedValue('hashedpassword');
+      generateToken.mockReturnValue('accesstoken');
+      generateRefreshToken.mockReturnValue('refreshtoken');
+
+      const result = await registerUser('g@example.com', 'G', 'Test', 'password123', 'GESTIONNAIRE', 3);
+
+      expect(AuthRepository.insertUser).toHaveBeenCalledWith('g@example.com', 'G', 'Test', 'hashedpassword', 'GESTIONNAIRE', 3);
+      expect(result.user.id_utilisateur).toBe(2);
+    });
+
+    it('should register an ADMIN and forward id_zone', async () => {
+      AuthRepository.findUserByEmailOrPrenom.mockResolvedValue([]);
+      AuthRepository.insertUser.mockResolvedValue({ id_utilisateur: 3, email: 'a@example.com', nom: 'A', prenom: 'Test', role_par_defaut: 'ADMIN' });
+      hashPassword.mockResolvedValue('hashedpassword');
+      generateToken.mockReturnValue('accesstoken');
+      generateRefreshToken.mockReturnValue('refreshtoken');
+
+      await registerUser('a@example.com', 'A', 'Test', 'password123', 'ADMIN', 5);
+
+      expect(AuthRepository.insertUser).toHaveBeenCalledWith('a@example.com', 'A', 'Test', 'hashedpassword', 'ADMIN', 5);
     });
 
     it('should throw an error if user already exists', async () => {
