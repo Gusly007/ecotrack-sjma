@@ -373,13 +373,6 @@ ecotrack:api:error_rate_5xx * 100
 ecotrack:services:health_ratio * 100
 ```
 
-### Avantage
-
-- ✅ **Plus rapide** : Métriques déjà calculées (pas de calcul à la volée)
-- ✅ **Persistant** : Stockées dans TSDB Prometheus
-- ✅ **Réutilisable** : Pour alertes et dashboards Grafana
-- ✅ **Moins de charge** : Calculée une fois toutes les 30s
-
 ## Commandes Utiles
 
 ```bash
