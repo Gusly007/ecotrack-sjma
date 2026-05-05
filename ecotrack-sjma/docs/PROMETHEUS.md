@@ -324,12 +324,61 @@ const crit = await fetch('/api/metrics/alerts?severity=critical').then(r => r.js
 | Redis | 6379 | ✅ |
 
 ## Configuration
-
+ 
 - **Config** : `monitoring/prometheus/prometheus.yml`
 - **Alert rules** : `monitoring/prometheus/alert_rules.yml`
+- **Recording rules** : `monitoring/prometheus/recording_rules.yml`
 - **PostgreSQL queries** : `monitoring/prometheus/postgres-queries.yml`
 - **Intervalle scrape** : 15s
 - **Rétention** : 15j
+
+## Recording Rules (Métriques Pré-calculées)
+
+Les recording rules sont définies dans `monitoring/prometheus/recording_rules.yml` et calculées toutes les 30s.
+
+### Métriques disponibles
+
+| Métrique | Description | Expression |
+|----------|-------------|------------|
+| `ecotrack:containers:critical_count` | Nombre de conteneurs critiques (>90%) | `count(ecotrack_containers_critical > 0)` |
+| `ecotrack:iot:sensors_inactive_ratio` | Ratio de capteurs inactifs (12h) | `ecotrack_iot_sensors_inactive_12h / ecotrack_iot_sensors_total` |
+| `ecotrack:tournees:completion_rate_24h` | Taux de complétion sur 24h | `rate(tournées TERMINÉES) / rate(toutes tournées)` |
+| `ecotrack:tournees:avg_duration_min` | Durée moyenne réelle | `avg(ecotrack_tournee_duree_reelle_min)` |
+| `ecotrack:collecte:total_kg_24h` | Déchets collectés (kg) sur 24h | `increase(ecotrack_collecte_quantite_kg_sum[24h])` |
+| `ecotrack:api:error_rate_5xx` | Taux d'erreurs 5xx API Gateway | `rate(http_requests_total{status=~"5.."}[5m])` |
+| `ecotrack:services:health_ratio` | Ratio de services healthy | `avg(up{job=~"service-.*"})` |
+
+### Utilisation
+
+```promql
+# Conteneurs critiques (métrique pré-calculée)
+ecotrack:containers:critical_count
+
+# Ratio capteurs inactifs
+ecotrack:iot:sensors_inactive_ratio * 100
+
+# Taux complétion tournées (24h)
+ecotrack:tournees:completion_rate_24h
+
+# Durée moyenne tournées (minutes)
+ecotrack:tournees:avg_duration_min
+
+# Déchets collectés (kg) dernières 24h
+ecotrack:collecte:total_kg_24h
+
+# Erreurs API (%)
+ecotrack:api:error_rate_5xx * 100
+
+# Santé services (%)
+ecotrack:services:health_ratio * 100
+```
+
+### Avantage
+
+- ✅ **Plus rapide** : Métriques déjà calculées (pas de calcul à la volée)
+- ✅ **Persistant** : Stockées dans TSDB Prometheus
+- ✅ **Réutilisable** : Pour alertes et dashboards Grafana
+- ✅ **Moins de charge** : Calculée une fois toutes les 30s
 
 ## Commandes Utiles
 
