@@ -218,5 +218,40 @@ export const UserRepository = {
     );
     if (result.rows.length === 0) throw new Error('User not found');
     return { message: 'User deleted successfully' };
+  },
+
+  async assignZone(id_utilisateur, id_zone) {
+    // Récupérer le rôle de l'utilisateur
+    const userResult = await pool.query(
+      'SELECT role_par_defaut FROM UTILISATEUR WHERE id_utilisateur = $1',
+      [id_utilisateur]
+    );
+    if (userResult.rows.length === 0) throw new Error('User not found');
+
+    const role = userResult.rows[0].role_par_defaut;
+    if (role !== 'GESTIONNAIRE' && role !== 'ADMIN') {
+      const err = new Error("Seuls les utilisateurs avec le rôle GESTIONNAIRE ou ADMIN peuvent être assignés à une zone");
+      err.status = 400;
+      throw err;
+    }
+
+    // Vérifier que la zone existe
+    const zoneResult = await pool.query(
+      'SELECT id_zone FROM zone WHERE id_zone = $1',
+      [id_zone]
+    );
+    if (zoneResult.rows.length === 0) {
+      const err = new Error(`Zone avec l'ID ${id_zone} non trouvée`);
+      err.status = 404;
+      throw err;
+    }
+
+    const column = role === 'GESTIONNAIRE' ? 'id_gestionnaire' : 'id_admin';
+    const updated = await pool.query(
+      `UPDATE zone SET ${column} = $1 WHERE id_zone = $2
+       RETURNING id_zone, code, nom, ${column}`,
+      [id_utilisateur, id_zone]
+    );
+    return updated.rows[0];
   }
 };

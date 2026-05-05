@@ -98,3 +98,13 @@ export const deleteUser = asyncHandler(async (req, res) => {
   await userService.deleteUser(targetId);
   res.json({ message: 'User deleted successfully' });
 });
+
+export const assignZone = asyncHandler(async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(targetId)) {
+    return res.status(400).json({ error: 'Invalid user id' });
+  }
+  const { id_zone } = req.body;
+  const result = await userService.assignZone(targetId, id_zone);
+  res.json({ message: 'Zone assignée avec succès', data: result });
+});

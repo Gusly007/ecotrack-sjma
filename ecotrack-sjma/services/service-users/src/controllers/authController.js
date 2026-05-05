@@ -7,13 +7,13 @@ import * as userService from '../services/userService.js';
  */
 
 export const register = asyncHandler(async (req, res) => {
-  const { email, nom, prenom, password, role } = req.body;
+  const { email, nom, prenom, password, role, id_zone } = req.body;
 
   if (!email || !nom || !prenom || !password) {
     return res.status(400).json({ error: 'Champs manquants' });
   }
 
-  const result = await authService.registerUser(email, nom, prenom, password, role);
+  const result = await authService.registerUser(email, nom, prenom, password, role, id_zone ?? null);
 
   res.status(201).json({
     message: 'Registration reussie',
