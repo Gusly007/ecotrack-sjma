@@ -29,7 +29,7 @@ describe('Auth Controller', () => {
     });
 
     describe('register', () => {
-        it('should register a user and return tokens', async () => {
+        it('should register a user without id_zone and return tokens', async () => {
             const req = mockRequest({ email: 'test@example.com', nom: 'Test', prenom: 'test', password: 'password' });
             const res = mockResponse();
             const serviceResult = { accessToken: 'access', refreshToken: 'refresh', user: {} };
@@ -37,11 +37,32 @@ describe('Auth Controller', () => {
 
             await register(req, res, mockNext);
 
-            expect(authService.registerUser).toHaveBeenCalledWith('test@example.com', 'Test', 'test', 'password', undefined);
+            // id_zone absent du body → null transmis au service
+            expect(authService.registerUser).toHaveBeenCalledWith('test@example.com', 'Test', 'test', 'password', undefined, null);
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 token: 'access',
             }));
+        });
+
+        it('should forward id_zone to registerUser when provided', async () => {
+            const req = mockRequest({ email: 'g@example.com', nom: 'G', prenom: 'Test', password: 'password', role: 'GESTIONNAIRE', id_zone: 3 });
+            const res = mockResponse();
+            authService.registerUser.mockResolvedValue({ accessToken: 'tok', refreshToken: 'ref', user: {} });
+
+            await register(req, res, mockNext);
+
+            expect(authService.registerUser).toHaveBeenCalledWith('g@example.com', 'G', 'Test', 'password', 'GESTIONNAIRE', 3);
+        });
+
+        it('should return 400 when required fields are missing', async () => {
+            const req = mockRequest({ email: 'test@example.com' });
+            const res = mockResponse();
+
+            await register(req, res, mockNext);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(authService.registerUser).not.toHaveBeenCalled();
         });
     });
 
