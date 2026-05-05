@@ -78,14 +78,15 @@ function nearestNeighborAlgorithm(containers) {
 function twoOptAlgorithm(route) {
   if (route.length <= 3) return [...route];
 
-  // 2-opt is O(n²) per iteration — cap iterations to keep response time under ~2s
-  // n<=50: 1000 it, n<=100: 200 it, n<=150: 50 it, n>150: skip (use NN result directly)
+  // 2-opt is O(n²) per iteration — skip for large n to avoid timeouts
+  // For n>100, the improvement is marginal compared to time cost
   const n = route.length;
+  if (n > 100) return [...route];
+
+  // Adaptive iteration cap based on n
   let maxIterations;
-  if (n > 150) return [...route];
-  else if (n > 100) maxIterations = 50;
-  else if (n > 50) maxIterations = 200;
-  else maxIterations = 1000;
+  if (n > 50) maxIterations = 50;
+  else maxIterations = 500;
 
   let improved = true;
   let bestRoute = [...route];
@@ -140,8 +141,8 @@ function optimizeRoute(containers, algorithme = '2opt') {
   if (algorithme === '2opt') {
     finalRoute = twoOptAlgorithm(nnRoute);
     finalDistance = totalDistance(finalRoute);
-    // twoOptAlgorithm returns nnRoute unchanged when n > 150 (perf guard)
-    algorithmeUtilise = finalRoute === nnRoute ? 'nearest_neighbor' : '2opt';
+    // Compare distances to detect if 2-opt improved the route
+    algorithmeUtilise = Math.abs(finalDistance - nnDistance) < 0.001 ? 'nearest_neighbor' : '2opt';
   } else {
     finalRoute = nnRoute;
     finalDistance = nnDistance;
