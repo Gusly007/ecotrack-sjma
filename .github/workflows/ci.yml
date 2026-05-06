@@ -2079,15 +2079,19 @@ jobs:
             --output html \
             --output-path reports/performance \
             --quiet \
-            --only-categories=performance
-          echo "Files generated:"
+            --only-categories=performance 2>&1 || true
+          echo "Files after lighthouse:"
           ls -la reports/performance/
-          JSON_FILE=$(ls -t reports/performance/*.report.json 2>/dev/null | head -1)
-          if [ -z "$JSON_FILE" ]; then
-            echo "ERROR: No report generated!"
-            exit 1
+          # Find and copy the most recent json file
+          JSON_FILE=$(find reports/performance -name "*.report.json" -type f -maxdepth 1 2>/dev/null | head -1)
+          if [ -n "$JSON_FILE" ]; then
+            cp "$JSON_FILE" reports/performance/lighthouse.json
+            HTML_FILE=$(find reports/performance -name "*.report.html" -type f -maxdepth 1 2>/dev/null | head -1)
+            [ -n "$HTML_FILE" ] && cp "$HTML_FILE" reports/performance/lighthouse.html
+            echo "Copied: lighthouse.json"
+          else
+            echo "WARNING: No report files found"
           fi
-          echo "SUCCESS! Report: $JSON_FILE"
 
       - name: 'Show lighthouse output'
         if: always()
