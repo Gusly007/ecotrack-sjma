@@ -2075,8 +2075,10 @@ jobs:
           echo "Running Lighthouse via npx..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
-            --output json --output html \
-            --output-path ./reports/performance/lighthouse \
+            --output json \
+            --output-file reports/performance/lighthouse.json \
+            --output html \
+            --output-file reports/performance/lighthouse.html \
             --quiet \
             --only-categories=performance
           echo "Files generated:"
@@ -2084,17 +2086,12 @@ jobs:
 
       - name: 'Show lighthouse output'
         if: always()
-        working-directory: ecotrack-sjma/frontend
         run: |
           echo "=== Lighthouse output ==="
-          ls -la reports/performance/ || echo "No directory found"
-          if [ -f "reports/performance/lighthouse.report.json" ]; then
-            cat reports/performance/lighthouse.report.json | jq -r '
-              .runs[0].artifacts["lighthouseResult"].audits | 
           ls -la reports/performance/ || echo "No reports generated"
-          if [ -f "reports/performance/lighthouse.report.json" ]; then # Check for the correct filename
-            cat reports/performance/lighthouse.report.json | jq -r ' # Use the correct filename
-              .audits | # Simplified path for direct CLI output
+          if [ -f "reports/performance/lighthouse.json" ]; then
+            cat reports/performance/lighthouse.json | jq -r '
+              .runs[0].artifacts["lighthouseResult"].audits | 
               to_entries[] | 
               select(.key | 
               test("first-contentfulpaint|first-meaningfulpaint|largest-contentfulpaint|speed-index|cumulative-layout-shift|total-blocking-time|server-response-time|main-thread-work|network-requests|longtasks")) | 
@@ -2107,7 +2104,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-performance-lighthouse
-          path: ecotrack-sjma/frontend/reports/performance/
+          path: reports/performance/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2175,8 +2172,10 @@ jobs:
           echo "Running Lighthouse via npx..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
-            --output json --output html \
-            --output-path ./reports/accessibility/lighthouse-accessibility \
+            --output json \
+            --output-file reports/accessibility/lighthouse-accessibility.json \
+            --output html \
+            --output-file reports/accessibility/lighthouse-accessibility.html \
             --quiet \
             --only-categories=accessibility
           echo "Files generated:"
@@ -2184,20 +2183,15 @@ jobs:
 
       - name: 'Extract WCAG audit results'
         if: always()
-        working-directory: ecotrack-sjma/frontend
         run: |
           echo "=== WCAG ACCESSIBILITY REPORT ==="
-          if [ -f "reports/accessibility/lighthouse-accessibility.report.json" ]; then
-          if [ -f "reports/accessibility/lighthouse-accessibility.report.json" ]; then # Check for correct filename
+          if [ -f "reports/accessibility/lighthouse-accessibility.json" ]; then
             echo "Score accessibility:"
-            cat reports/accessibility/lighthouse-accessibility.report.json | jq -r '.runs[0].artifacts["lighthouseResult"].categories.accessibility.score * 100 | floor'
-            cat reports/accessibility/lighthouse-accessibility.report.json | jq -r '.categories.accessibility.score * 100 | floor' # Simplified jq path
+            cat reports/accessibility/lighthouse-accessibility.json | jq -r '.runs[0].artifacts["lighthouseResult"].categories.accessibility.score * 100 | floor'
             echo ""
             echo "Audits détaillés:"
-            cat reports/accessibility/lighthouse-accessibility.report.json | jq -r '
+            cat reports/accessibility/lighthouse-accessibility.json | jq -r '
               .runs[0].artifacts["lighthouseResult"].audits | 
-            cat reports/accessibility/lighthouse-accessibility.report.json | jq -r ' # Use correct filename
-              .audits | # Simplified jq path
               to_entries[] | 
               select(.value.details?.items?) | 
               "\(.key): \(.value.details.items | length) élément(s)"
@@ -2209,7 +2203,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-accessibility-wcag
-          path: ecotrack-sjma/frontend/reports/accessibility/
+          path: reports/accessibility/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2277,8 +2271,10 @@ jobs:
           echo "Running Lighthouse via npx..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
-            --output json --output html \
-            --output-path ./reports/seo/lighthouse-seo \
+            --output json \
+            --output-file reports/seo/lighthouse-seo.json \
+            --output html \
+            --output-file reports/seo/lighthouse-seo.html \
             --quiet \
             --only-categories=seo,best-practices
           echo "Files generated:"
@@ -2289,7 +2285,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-seo-best-practices
-          path: ecotrack-sjma/frontend/reports/seo/
+          path: reports/seo/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2731,4 +2727,73 @@ jobs:
           POSTGRES_PASSWORD: test_pass
           POSTGRES_DB: ecotrack_test
         options: >-
-          --h
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+      
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      # Build localement l'image (sans push)
+      - name: 'Build Docker image'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ecotrack-sjma/services/${{ matrix.service }}
+          load: true
+          tags: ${{ matrix.image-name }}:test
+      
+      # Lance le conteneur et teste /health endpoint
+      - name: 'Start container and test health'
+        run: |
+          docker run -d \
+            --name test-container \
+            -p ${{ matrix.port }}:${{ matrix.port }} \
+            ${{ matrix.env-vars }} \
+            ${{ matrix.image-name }}:test
+          
+          # Attendre que le container démarre avec retry
+          echo "Waiting for container to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:${{ matrix.port }}/health 2>/dev/null; then
+              echo "Container is healthy!"
+              break
+            fi
+            echo "Attempt $i/30 failed, retrying in 2s..."
+            sleep 2
+          done
+          
+          # Vérifier une dernière fois
+          curl -f http://localhost:${{ matrix.port }}/health || {
+            echo "Health check failed. Container logs:"
+            docker logs test-container
+            exit 1
+          }
+          
+          echo "Health check passed!"
+          docker logs test-container
+          docker stop test-container
+
+# ============================================================================
+# RÉSUMÉ WORKFLOW
+# ============================================================================
+# 
+# Quand tu fais: git push
+#   → GitHub Actions détecte le push
+#   → Lance tous les jobs en parallèle (lint, test, security, build)
+#   → Si l'un échoue, l'image ne se build pas
+#   → Résultats visibles dans GitHub "Actions" tab
+#
+# En production:
+#   - CD: l'image "latest" se déploie auto sur K8s
+#   - Monitoring alerte si deployment échoue
+#
+# Coûts GitHub Actions:
+#   - 2000 min/mois gratuit pour repos public
+#   - Payant au-delà
