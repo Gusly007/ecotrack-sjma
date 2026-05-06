@@ -24,6 +24,9 @@ Exécuter les seeds dans cet ordre:
 - `017_configurations_default.sql` - Configurations
 - `018_environmental_constants.sql` - Constantes environnementales
 - `019_agent_performance_constants.sql` - Constantes agents
+- `020_complete_massive_seed.sql` - Seed massif (1 989 conteneurs)
+- `021_signalements.sql` - Signalements de démo
+- `022_tournees_3_9_0_demo.sql` - **(3.9.0)** Tournées de démo pour valider la gestion fine du retard et la simulation de progression (7 scénarios métier + 7 paliers de progression 0 % → 95 %). Idempotent, ré-exécutable. Codes : `T-DEMO-*` et `T-DEMO-PROG-*`.
 
 ### 2. Seed massif de mesures (dernier à exécuter)
 **⚠️ ATTENTION: À exécuter SEULEMENT si vous voulez beaucoup de données**

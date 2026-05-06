@@ -158,7 +158,7 @@ services:
     container_name: ecotrack-migrations
     environment:
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
-      RUN_SEEDS: ${RUN_SEEDS:-false}
+      RUN_SEEDS: ${RUN_SEEDS:-true}
     depends_on:
       postgres:
         condition: service_healthy

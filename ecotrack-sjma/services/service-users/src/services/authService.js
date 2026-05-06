@@ -10,7 +10,7 @@ import crypto from 'crypto';
  * Inscrire un nouvel utilisateur
  */
 
-export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN', id_zone = null) => {
+export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN') => {
   // Vérifier si l'utilisateur existe déjà
   const existingUser = await AuthRepository.findUserByEmailOrPrenom(email, prenom);
   if (existingUser.length > 0) {
@@ -18,14 +18,14 @@ export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN
     error.status = 409;
     throw error;
   }
-
+  
   if (!password || password.length < 6) {
     throw new Error('Le mot de passe doit contenir au moins 6 caractères');
   }
   // Hasher le mot de passe
   const hashedPassword = await hashPassword(password);
   // Créer l'utilisateur dans la base de données
-  const newUser = await AuthRepository.insertUser(email, nom, prenom, hashedPassword, role, id_zone);
+  const newUser = await AuthRepository.insertUser(email, nom, prenom, hashedPassword, role);
   // Générer les tokens JWT
   const accessToken = generateToken(newUser.id_utilisateur, newUser.role_par_defaut);
   const refreshToken = generateRefreshToken(newUser.id_utilisateur);

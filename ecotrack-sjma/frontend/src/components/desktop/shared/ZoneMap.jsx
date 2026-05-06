@@ -31,7 +31,13 @@ export default function ZoneMap({
   const drawControlRef = useRef(null);
   const drawnLayerRef = useRef(null);
   const zonesLayerRef = useRef(null);
+  const onZoneCreatedRef = useRef(onZoneCreated);
   const [mapReady, setMapReady] = useState(false);
+
+  // Garder la ref à jour sans déclencher de re-render ni de reset du dessin
+  useEffect(() => {
+    onZoneCreatedRef.current = onZoneCreated;
+  });
 
   // Initialiser la carte
   useEffect(() => {
@@ -139,17 +145,18 @@ export default function ZoneMap({
           area = (Math.PI * radiusMeters * radiusMeters) / 1000000;
           centerLat = center.lat;
           centerLng = center.lng;
-          
-          // Convertir le cercle en polygone (polygoniser)
-          const centerPoint = L.latLng(centerLat, centerLng);
+
+          // Convertir le cercle en polygone GeoJSON (approximation 64 points)
           const numPoints = 64;
           const coords = [];
+          const latRad = centerLat * Math.PI / 180;
           for (let i = 0; i <= numPoints; i++) {
             const angle = (i / numPoints) * 2 * Math.PI;
             const dx = radiusMeters * Math.cos(angle);
             const dy = radiusMeters * Math.sin(angle);
-            const point = L.CRS.Earth.unproject(L.latLng(centerLat + dy / 111320, centerLng + dx / (111320 * Math.cos(centerLat * Math.PI / 180))));
-            coords.push([point.lng, point.lat]);
+            const lat = centerLat + (dy / 111320);
+            const lng = centerLng + (dx / (111320 * Math.cos(latRad)));
+            coords.push([lng, lat]);
           }
           geometry = {
             type: 'Polygon',
@@ -170,8 +177,8 @@ export default function ZoneMap({
           geometry = geoJson.geometry;
         }
         
-        if (onZoneCreated) {
-          onZoneCreated({
+        if (onZoneCreatedRef.current) {
+          onZoneCreatedRef.current({
             geometry: geometry,
             coordinates: geometry.coordinates,
             area: Math.round(area * 100) / 100,
@@ -186,14 +193,6 @@ export default function ZoneMap({
 
       map.on(L.Draw.Event.CREATED, onDrawCreated);
 
-      // Automatically start polygon drawing after a short delay
-      setTimeout(() => {
-        if (drawControlRef.current && drawControlRef.current._toolbars.draw) {
-          const polygonHandler = new L.Draw.Polygon(map, drawControlRef.current.options.draw.polygon);
-          polygonHandler.enable();
-        }
-      }, 100);
-
       return () => {
         if (drawControlRef.current) {
           map.removeControl(drawControlRef.current);
@@ -202,7 +201,7 @@ export default function ZoneMap({
         map.off(L.Draw.Event.CREATED, onDrawCreated);
       };
     }
-  }, [isDrawing, mapReady, readOnly, onZoneCreated, drawingColor]);
+  }, [isDrawing, mapReady, readOnly, drawingColor]);
 
   // Afficher les zones sur la carte
   useEffect(() => {

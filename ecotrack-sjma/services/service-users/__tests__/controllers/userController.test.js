@@ -4,11 +4,11 @@ import {
   changePassword,
   getProfileWithStats,
   listUsers,
+  listAgents,
   getUserProfile,
   getUserStats,
   updateUserByAdmin,
-  deleteUser,
-  assignZone
+  deleteUser
 } from '../../src/controllers/userController.js';
 import * as userService from '../../src/services/userService.js';
 
@@ -119,47 +119,6 @@ describe('User Controller', () => {
     expect(userService.deleteUser).toHaveBeenCalledWith(9);
   });
 
-  describe('assignZone', () => {
-    it('returns 400 for invalid user id', async () => {
-      const req = { params: { id: 'abc' }, body: { id_zone: 1 } };
-      const res = mockResponse();
-
-      await assignZone(req, res, jest.fn());
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(userService.assignZone).not.toHaveBeenCalled();
-    });
-
-    it('calls service with numeric id and id_zone, returns 200', async () => {
-      const req = { params: { id: '7' }, body: { id_zone: 1 } };
-      const res = mockResponse();
-      const zoneData = { id_zone: 1, code: 'Z01', nom: 'Centre', id_gestionnaire: 7 };
-      userService.assignZone.mockResolvedValue(zoneData);
-
-      await assignZone(req, res, jest.fn());
-
-      expect(userService.assignZone).toHaveBeenCalledWith(7, 1);
-      expect(res.json).toHaveBeenCalledWith({
-        message: 'Zone assignée avec succès',
-        data: zoneData,
-      });
-    });
-
-    it('propagates service error via asyncHandler', async () => {
-      const err = Object.assign(new Error('Zone not found'), { status: 404 });
-      userService.assignZone.mockRejectedValue(err);
-
-      // asyncHandler ne retourne pas la Promise interne → on attend que next() soit appelé
-      let capturedError;
-      await new Promise(resolve => {
-        const next = (e) => { capturedError = e; resolve(); };
-        assignZone({ params: { id: '7' }, body: { id_zone: 999 } }, mockResponse(), next);
-      });
-
-      expect(capturedError).toBe(err);
-    });
-  });
-
   it('calls getProfileWithStats with extracted id variant', async () => {
     const req = { user: { id_utilisateur: '3' } };
     const res = mockResponse();
@@ -169,5 +128,68 @@ describe('User Controller', () => {
 
     expect(userService.getProfileWithStats).toHaveBeenCalledWith(3);
     expect(res.json).toHaveBeenCalledWith({ data: { id_utilisateur: 3, badge_count: 2 } });
+  });
+
+  describe('listAgents', () => {
+    it('force le filtre role=AGENT même si un autre rôle est fourni en query', async () => {
+      const req = {
+        query: { page: '1', limit: '100', role: 'ADMIN', search: 'dupont' }
+      };
+      const res = mockResponse();
+      userService.listUsers.mockResolvedValue({
+        data: [{ id_utilisateur: 5, role: 'AGENT', prenom: 'Jean' }],
+        pagination: { total: 1 }
+      });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(userService.listUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'AGENT',
+          est_active: true,
+          search: 'dupont'
+        })
+      );
+      // Vérifie que le rôle ADMIN du client n'a PAS été conservé
+      expect(userService.listUsers).not.toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'ADMIN' })
+      );
+    });
+
+    it('applique des valeurs par défaut quand page/limit sont absents', async () => {
+      const req = { query: {} };
+      const res = mockResponse();
+      userService.listUsers.mockResolvedValue({ data: [], pagination: {} });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(userService.listUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          limit: 100,
+          role: 'AGENT',
+          est_active: true
+        })
+      );
+    });
+
+    it('retourne la liste des agents actifs uniquement', async () => {
+      const req = { query: {} };
+      const res = mockResponse();
+      const agents = [
+        { id_utilisateur: 5, role: 'AGENT', prenom: 'Jean', est_active: true },
+        { id_utilisateur: 9, role: 'AGENT', prenom: 'Marc', est_active: true }
+      ];
+      userService.listUsers.mockResolvedValue({
+        data: agents,
+        pagination: { total: 2 }
+      });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ data: agents })
+      );
+    });
   });
 });

@@ -71,7 +71,9 @@ const hasLocalhostHostHeader = (req) => {
  * // Access the health check at http://localhost:3000/health
  * // Access the API docs overview at http://localhost:3000/api-docs
  */
-const gatewayPort = parseInt(process.env.GATEWAY_PORT, 10) || 3000
+// Heroku impose process.env.PORT (assigné dynamiquement). On prend PORT en
+// priorité, sinon GATEWAY_PORT (compose local), sinon 3000 (fallback dev).
+const gatewayPort = parseInt(process.env.PORT || process.env.GATEWAY_PORT, 10) || 3000
 
 const services = {
   users: {
@@ -185,10 +187,10 @@ const globalRateLimit = rateLimit({
   }
 });
 
-const createProxy = (target, pathRewrite) => createProxyMiddleware({
+const createProxy = (target, pathRewrite, timeoutMs = 10_000) => createProxyMiddleware({
   target,
   changeOrigin: true,
-  proxyTimeout: 10_000,
+  proxyTimeout: timeoutMs,
   pathRewrite: (path, req) => {
     // When mounted under a path (e.g. app.use('/auth', proxy)), Express removes the
     // mount prefix from req.url. Re-add it so upstream receives the expected paths.
@@ -907,6 +909,14 @@ app.get('/health/:service', async (req, res) => {
     });
   }
 });
+
+// Optimize endpoints need a longer timeout than the default 10s
+const OPTIMIZE_TIMEOUT_MS = 35_000;
+const routesBaseUrl = services.routes?.baseUrl;
+if (routesBaseUrl) {
+  app.use('/api/routes/optimize/preview', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
+  app.use('/api/routes/optimize', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
+}
 
 Object.entries(services).forEach(([key, svc]) => {
   if (!svc.routes) {

@@ -370,6 +370,44 @@ router.get(
 
 /**
  * @swagger
+ * /users/agents:
+ *   get:
+ *     summary: Lister uniquement les agents de collecte
+ *     description: |
+ *       Retourne la liste des utilisateurs ayant le rôle AGENT et actifs.
+ *       Endpoint réservé au gestionnaire (permission 'tournee:create') pour
+ *       l'assignation d'un agent lors de la création d'une tournée optimisée.
+ *       Filtre figé côté serveur : le rôle ne peut pas être surchargé par le client.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 100, maximum: 100 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: "Filtre textuel sur email ou prénom"
+ *     responses:
+ *       200:
+ *         description: Liste paginée des agents actifs
+ *       401:
+ *         description: Authentification requise
+ *       403:
+ *         description: Permission insuffisante (réservé aux gestionnaires)
+ */
+router.get(
+  '/agents',
+  requirePermission('tournee:create'),
+  userController.listAgents
+);
+
+/**
+ * @swagger
  * /users/{id}:
  *   get:
  *     summary: Récupérer le profil d'un utilisateur
@@ -507,92 +545,6 @@ router.get(
   '/:id/stats',
   authorizeRole(['ADMIN', 'GESTIONNAIRE']),
   userController.getUserStats
-);
-
-const assignZoneSchema = {
-  body: z.object({
-    id_zone: z.number().int().positive()
-  }).strict()
-};
-
-/**
- * @swagger
- * /users/{id}/assign-zone:
- *   patch:
- *     summary: Assigner une zone à un gestionnaire ou admin
- *     description: |
- *       Assigne la zone spécifiée à l'utilisateur cible.
- *       - Si l'utilisateur est GESTIONNAIRE → met à jour `id_gestionnaire` de la zone
- *       - Si l'utilisateur est ADMIN → met à jour `id_admin` de la zone
- *       Accessible uniquement par les ADMIN.
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: "ID de l'utilisateur (GESTIONNAIRE ou ADMIN)"
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - id_zone
- *             properties:
- *               id_zone:
- *                 type: integer
- *                 description: "ID de la zone à assigner"
- *                 example: 3
- *     responses:
- *       200:
- *         description: Zone assignée avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Zone assignée avec succès"
- *                 data:
- *                   type: object
- *                   properties:
- *                     id_zone:
- *                       type: integer
- *                       example: 3
- *                     code:
- *                       type: string
- *                       example: "Z01"
- *                     nom:
- *                       type: string
- *                       example: "Centre-Ville"
- *                     id_gestionnaire:
- *                       type: integer
- *                       nullable: true
- *                       example: 7
- *                     id_admin:
- *                       type: integer
- *                       nullable: true
- *                       example: null
- *       400:
- *         description: Rôle incompatible (ni GESTIONNAIRE ni ADMIN) ou id_zone invalide
- *       401:
- *         description: Authentification requise
- *       403:
- *         description: Permission insuffisante (ADMIN requis)
- *       404:
- *         description: Utilisateur ou zone non trouvé
- */
-router.patch(
-  '/:id/assign-zone',
-  authorizeRole(['ADMIN']),
-  validate(assignZoneSchema),
-  userController.assignZone
 );
 
 export default router;

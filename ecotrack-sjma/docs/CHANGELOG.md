@@ -4,6 +4,200 @@
 
 ---
 
+### [3.9.0] 2026-04-26 - Gestion fine du retard de tournée (heure de début prévue)
+
+Refonte complète de la logique "tournée en retard" et du cycle de vie `PLANIFIEE → EN_COURS → TERMINEE`.
+
+**Contexte / bug client**
+Toutes les tournées étaient affichées soit comme **PLANIFIEE**, soit comme **"en retard"**, jamais comme **EN_COURS**. Trois causes indépendantes se cumulaient :
+1. Pas d'heure de début prévue stockée → l'heure 07:30 était hardcodée côté `tournee-service`.
+2. Pas de transition automatique au premier scan → la tournée restait `PLANIFIEE` même quand un agent collectait.
+3. Heuristique frontend buggée : `progression <= 20%` était traduit en "en retard" dans `ToutesTourneesTable.jsx` et `TourneesActivesPanel.jsx`, indépendamment du temps écoulé.
+
+**Décision design**
+- `EN_RETARD` = **flag calculé** (pas un statut DB) — la tournée garde son statut métier (`PLANIFIEE`/`EN_COURS`/`TERMINEE`/`ANNULEE`) et un booléen `est_en_retard` est calculé côté SQL à chaque lecture.
+- Règle métier : `est_en_retard = TRUE` ssi `statut ∈ {PLANIFIEE, EN_COURS}` ET `(date_tournee + heure_debut_prevue) + duree_prevue_min < NOW()`.
+- Transition `PLANIFIEE → EN_COURS` : automatique au **premier enregistrement de collecte** (pas d'action manuelle requise).
+- `heure_debut_prevue` modifiable dans la modale de création (défaut **07:30**).
+
+#### Database
+
+- **Migration `021_add_heure_debut_prevue_tournee.sql`** : ajoute la colonne `heure_debut_prevue TIME NOT NULL DEFAULT '07:30:00'` sur `tournee`. Backfill des lignes existantes à `07:30:00`. Commentaire de schéma documenté.
+
+#### Backend - service-routes (port 3012)
+
+- `validators/tournee.validator.js` : nouveau pattern `HEURE_PATTERN = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/`. Champ `heure_debut_prevue` ajouté à `createTourneeSchema`, `updateTourneeSchema`, `optimizeSchema` (défaut `'07:30'`).
+- `repositories/tournee-repository.js` :
+  - Constante réutilisable `EST_EN_RETARD_SQL` : expression PostgreSQL `(t.statut IN ('PLANIFIEE','EN_COURS') AND ((t.date_tournee + t.heure_debut_prevue) + (COALESCE(t.duree_prevue_min, 0) || ' minutes')::interval) < NOW())`.
+  - `findById`, `findAll`, `findActive`, `findAgentTodayTournee` exposent désormais `est_en_retard`.
+  - `create()` insère le 9ᵉ paramètre `heure_debut_prevue`.
+  - `update()` autorise la modification de `heure_debut_prevue`.
+- `repositories/stats-repository.js` : la stat "tournées en retard" utilise la nouvelle règle (heure prévue + durée prévue dépassée), plus l'ancien `date_tournee < CURRENT_DATE` qui était trop large.
+- `services/tournee-service.js` :
+  - Helper `parseHeureToMinutes()` : `"HH:MM" → minutes depuis minuit` (fallback 450 = 07:30).
+  - `optimizeTournee()` propage `heure_debut_prevue` à `tourneeRepo.create` et utilise `parseHeureToMinutes` comme `baseMinutes` pour les `heure_estimee` des étapes.
+  - `previewOptimization()` accepte `heure_debut_prevue`, le retourne dans `optimisation.heure_debut_prevue`, et l'utilise pour le calcul des étapes prévisionnelles.
+- `services/collecte-service.js` :
+  - `recordCollecte()` : si `tournee.statut === 'PLANIFIEE'` → bascule auto vers `'EN_COURS'` avant d'enregistrer.
+  - Refus explicite des collectes sur `TERMINEE` / `ANNULEE`.
+
+#### Frontend - React 18 (Vite)
+
+- `pages/desktop/gestionnaire/tournee.jsx` :
+  - `INITIAL_FORM.heure_debut_prevue = "07:30"`.
+  - Nouveau champ `<input type="time" name="heure_debut_prevue">` dans la modale de création, avec helper `.tournee-modal-hint` ("Sera utilisée pour calculer le retard et l'heure estimée de chaque étape.").
+  - Le payload `previewOptimizeTournee` ET `optimizeTournee` envoie systématiquement `heure_debut_prevue`.
+- `components/desktop/gestionnaire/ToutesTourneesTable.jsx` :
+  - **Suppression de l'heuristique buggée `progression <= 20`**.
+  - `mapStatus()` reflète strictement le statut métier (`PLANIFIEE` / `EN_COURS` / `TERMINEE` / `ANNULEE`).
+  - Nouveau badge orange séparé `⚠ EN RETARD` affiché ssi `est_en_retard === true` ET statut ∉ {`TERMINEE`, `ANNULEE`}.
+- `components/desktop/gestionnaire/TourneesActivesPanel.jsx` :
+  - Même nettoyage : `est_en_retard` vient désormais du backend, plus de calcul frontend.
+  - Nouvelles propriétés normalisées : `statusText`, `statusColor`, `estEnRetard`.
+- `pages/desktop/gestionnaire/tournee.css` : nouvelles classes `.tournee-modal-hint` et `.tournee-retard-badge` (badge orange avec animation pulse douce).
+
+#### Tests
+
+| Suite | Tests ajoutés / modifiés | Total |
+|-------|--------------------------|-------|
+| `service-routes/__tests__/unit/services/tournee-service.test.js` | +4 (bloc "heure_debut_prevue (3.9.0)") : propagation à `repo.create`, défaut 07:30, `heure_estimee` partant de `heure_debut_prevue`, rejet Joi format invalide | ✅ |
+| `service-routes/__tests__/unit/services/collecte-service.test.js` | +3 modifiés : auto PLANIFIEE → EN_COURS, idempotence si déjà EN_COURS, refus sur TERMINEE/ANNULEE | ✅ |
+| `frontend/src/test/tourneeCreationService.test.js` | +1 : `optimizeTournee` envoie `heure_debut_prevue` dans le body | 7 / 7 ✅ |
+| `frontend/src/test/tourneeRetardBadge.test.jsx` (nouveau fichier) | +3 : badge `EN RETARD` rendu uniquement pour statut non clôturé, mapStatus strict, propagation est_en_retard dans le panel actif | 3 / 3 ✅ |
+| **Total Vitest frontend** | | **79 / 79 ✅** sur 11 fichiers |
+
+**Migration**
+```bash
+cd database && npm run migrate
+# Applique 021_add_heure_debut_prevue_tournee.sql
+```
+
+**Note historique**
+Les tournées créées avant cette version reçoivent `heure_debut_prevue = '07:30:00'` par défaut. Pour celles déjà clôturées (TERMINEE/ANNULEE), le flag `est_en_retard` est ignoré côté UI — pas de pollution rétroactive.
+
+**Seed de démonstration**
+- `database/seeds/022_tournees_3_9_0_demo.sql` (NEW) : 14 tournées de test idempotentes pour valider la 3.9.0 en navigateur :
+  - 7 tournées scénarisées : `T-DEMO-RETARD-PLAN`, `T-DEMO-RETARD-COURS`, `T-DEMO-OK-PLAN`, `T-DEMO-OK-COURS`, `T-DEMO-TERMINEE`, `T-DEMO-ANNULEE`, `T-DEMO-TRANSITION` (cf. matrice ci-dessous).
+  - 7 tournées de progression : `T-DEMO-PROG-000`/`012`/`025`/`050`/`075`/`087`/`095` — couvrent tout le spectre de la barre (0 % → 95 %) sans déclencher le badge "en retard" (heure de début 23:00).
+- Réexécutable sans casse (`WHERE NOT EXISTS` + `ON CONFLICT DO NOTHING`).
+
+| Tournée | Statut | Date | Heure début | Durée | Étapes collectées | Badge attendu |
+|---------|--------|------|-------------|-------|-------------------|---------------|
+| `T-DEMO-RETARD-PLAN` | PLANIFIEE | hier | 07:30 | 120 min | 0/3 | ⚠ EN RETARD |
+| `T-DEMO-RETARD-COURS` | EN_COURS | aujourd'hui | 05:00 | 60 min | 1/3 | ⚠ EN RETARD |
+| `T-DEMO-OK-PLAN` | PLANIFIEE | demain | 07:30 | 150 min | 0/3 | — |
+| `T-DEMO-OK-COURS` | EN_COURS | aujourd'hui | 23:00 | 60 min | 2/3 | — |
+| `T-DEMO-TERMINEE` | TERMINEE | hier | 07:30 | 180 min | 3/3 | — (statut clôturé) |
+| `T-DEMO-ANNULEE` | ANNULEE | hier | 07:30 | 90 min | 0/3 | — |
+| `T-DEMO-TRANSITION` | PLANIFIEE | aujourd'hui | 23:30 | 75 min | 0/3 | — — *Premier scan agent → bascule auto en EN_COURS* |
+| `T-DEMO-PROG-000` à `095` | EN_COURS | aujourd'hui | 23:00 | variable | 0%, 12%, 25%, 50%, 75%, 87%, 95% | — (visuel barre) |
+
+```bash
+# Lancement (après `npm run migrate`)
+cd database && npm run seed
+```
+
+---
+
+### [3.8.1] 2026-04-20 - Hotfix : ReferenceError sur /optimize/preview
+
+**Bug corrigé**
+- `POST /api/routes/optimize/preview` renvoyait `500 Internal Server Error` à chaque appel.
+- Cause : la méthode `previewOptimization()` de `tournee-service.js` utilisait la constante `FUEL_CONSUMPTION_PER_100KM` qui n'était ni définie localement ni importée → `ReferenceError`.
+- Côté frontend, cela remontait en `timeout of 10000ms exceeded` quand axios finissait par abandonner.
+
+**Correctifs**
+- `services/service-routes/src/services/optimization-service.js` : ajout et export de la constante `FUEL_CONSUMPTION_PER_100KM = 35` (consommation moyenne d'une benne à ordures, 30-40 L/100km).
+- `services/service-routes/src/services/tournee-service.js` : import de `FUEL_CONSUMPTION_PER_100KM` depuis `optimization-service`.
+- `frontend/src/services/tourneeService.js` : timeout axios augmenté à **30 s** sur `optimizeTournee()` et `previewOptimizeTournee()` (l'algo 2-opt sur une zone peuplée peut dépasser 10 s).
+
+**Tests ajoutés (trou de couverture corrigé)**
+- `services/service-routes/__tests__/unit/services/tournee-service.test.js` : +5 tests **service-niveau** qui exécutent la vraie logique (les tests contrôleur précédents mockaient le service et ne détectaient pas ce `ReferenceError`).
+  - Vérifie la présence des champs `carburant_prevu_l`, `carburant_original_l`, `carburant_economise_l`.
+  - Vérifie qu'aucun repository n'est appelé (non-persistance).
+  - Vérifie le warning sans throw quand aucun conteneur n'est éligible.
+  - Vérifie la validation Joi (`id_agent` manquant → rejet).
+  - Vérifie l'ordre séquentiel des étapes.
+- **Résultat** : `service-routes/__tests__/unit` → **256 / 256 ✅** (251 précédemment + 5 ajoutés).
+
+**Leçon**
+Les tests contrôleur avec service mocké n'exerçaient pas le corps de la méthode. Règle à appliquer : toute méthode service nouvelle doit avoir au moins un test **service-niveau** qui mocke uniquement le `repository` et le `db.query`, pas le service lui-même.
+
+---
+
+### [3.8.0] 2026-04-20 - Création de tournée optimisée (Gestionnaire)
+
+Ajout du parcours complet permettant au gestionnaire de créer une tournée **optimisée** (nearest_neighbor ou 2-opt) avec assignation d'un agent, prévisualisation en temps réel et feedback utilisateur explicite.
+
+#### Backend - service-routes (port 3012)
+
+- **Nouveau endpoint** `POST /api/routes/optimize/preview`
+  - Prévisualise distance / durée / gain / carburant / étapes d'une tournée optimisée **sans persister** en base.
+  - Permission : `tournee:read` (accessible gestionnaire).
+  - Body : `{ id_zone, date_tournee, id_agent, id_vehicule?, seuil_remplissage?, algorithme? }`.
+- `tournee-controller.js` : méthode `previewOptimization()` ajoutée et bindée.
+- `tournee.route.js` : route `POST /optimize/preview` + documentation Swagger.
+- Aucune modification du service `previewOptimization()` (déjà implémenté mais jamais exposé auparavant).
+
+#### Backend - service-users (port 3010)
+
+- **Nouveau endpoint** `GET /users/agents`
+  - Liste filtrée UNIQUEMENT sur `role = AGENT` et `est_active = true`.
+  - Permission : `tournee:create` (seul le gestionnaire la détient) — le rôle AGENT est forcé côté serveur, toute tentative de surcharge client (ex. `?role=ADMIN`) est ignorée.
+  - Route placée AVANT `/:id` pour éviter qu'Express matche "agents" comme paramètre `id`.
+  - Body : `{ page?, limit?, search? }`.
+- `userController.js` : contrôleur `listAgents()` ajouté.
+- `users.js` (routes) : route `GET /agents` ajoutée.
+
+#### Frontend - React 18 (Vite)
+
+- `tourneeService.js` :
+  - `fetchTourneeCreationOptions()` utilise désormais `/users/agents` (au lieu de `/users?role=AGENT` ambigu).
+  - `fetchAgentsForAssignment()` pour l'assignation après création.
+  - `previewOptimizeTournee()` et `optimizeTournee()` branchés sur les nouvelles routes.
+- `pages/desktop/gestionnaire/tournee.jsx` :
+  - Nouveau bouton toolbar **"Créer une tournée"** (classe `.createtournee-btn`).
+  - Modale complète avec champs : date, zone, agent, véhicule, seuil de remplissage, algorithme (`nearest_neighbor` / `2opt`).
+  - Prévisualisation **live debouncée 350 ms** : distance optimisée / manuelle, durée, carburant, gain %, 10 premières étapes.
+  - Garde-fou métier : bouton "Créer et optimiser" désactivé si aucun agent disponible.
+  - Feedback utilisateur :
+    - Erreurs transformées en toasts via `useAlert` (plus de `console.error` silencieux).
+    - Succès : toast `Tournée optimisée créée avec succès : N conteneurs, gain estimé X.X%`.
+  - Auto-refresh 60 s conservé.
+- `tournee.css` : ajout des styles modale + preview (`.tournee-modal-form`, `.tournee-modal-row`, `.tournee-preview-box`, `.tournee-preview-grid`, `.tournee-preview-gain`, `.tournee-preview-steps`, `.btn-primary`, `.btn-secondary`, responsive <700px et <480px).
+
+#### Tests
+
+| Suite | Tests ajoutés | Total passants |
+|-------|---------------|----------------|
+| `service-routes/__tests__/unit/controllers/tournee-controller.test.js` | +3 (`previewOptimization`) | 17 / 17 ✅ |
+| `service-users/__tests__/controllers/userController.test.js` | +3 (`listAgents`) | 12 / 12 ✅ |
+| `frontend/src/test/dashboardTourneeServices.test.js` | +5 (`fetchTourneeCreationOptions`, `fetchAgentsForAssignment`, `optimizeTournee`, `previewOptimizeTournee`) | 12 / 12 ✅ |
+| **service-routes** unit complet | — | **251 / 251 ✅** |
+| **service-users** controllers complet | — | **38 / 38 ✅** |
+
+Cas couverts par les nouveaux tests :
+- `previewOptimization` ne persiste pas (pas d'appel à `optimizeTournee`/`createTournee`) et propage les erreurs via `next()`.
+- `listAgents` force `role=AGENT` même si le client envoie `?role=ADMIN`, applique `est_active=true` et des valeurs par défaut `page=1/limit=100`.
+- Le service frontend agrège correctement zones/agents/véhicules, tolère un échec partiel, échoue uniquement si TOUT échoue.
+
+#### Plan de test navigateur (à exécuter par le gestionnaire avant release)
+
+1. Se connecter en GESTIONNAIRE → naviguer vers `/gestionnaire/tournees`.
+2. Vérifier la présence du bouton **"Créer une tournée"** dans la toolbar.
+3. Cliquer → modale s'ouvre, zones/agents/véhicules se chargent.
+4. Sélectionner une zone, un agent, un véhicule, une date, `seuil=70`, `algorithme=2opt`.
+5. Vérifier l'apparition de l'aperçu après ~350 ms (distance, durée, gain %, étapes).
+6. Changer l'algorithme → l'aperçu se recalcule automatiquement.
+7. Soumettre → toast de succès avec `N conteneurs, gain estimé X.X%`, modale fermée, liste rafraîchie.
+8. Cas d'erreur : sélectionner une zone sans conteneur éligible → avertissement visible (pas d'écran blanc).
+
+#### Motivation métier
+
+Avant ce patch, le gestionnaire ne pouvait pas créer de tournée optimisée depuis l'interface : le backend exposait `optimizeTournee()` mais sans `preview` utilisable en amont, et le frontend n'avait ni endpoint fiable pour lister les agents actifs, ni retour visible en cas d'erreur (toast manquant). Cette version rend le parcours complet, sécurisé (filtre agent forcé côté serveur) et ergonomique (prévisualisation live + feedback explicite).
+
+---
+
 ### [3.7.0] 2026-04-12 - Couverture de Tests Complète (Unit + Integration + E2E)
 
 Intégration complète de la pyramide de tests sur tous les services backend avec tests unitaires, d'intégration et end-to-end.

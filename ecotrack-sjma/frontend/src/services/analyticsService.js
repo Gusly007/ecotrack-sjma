@@ -162,6 +162,13 @@ export const analyticsService = {
     return response.data;
   },
 
+  getEnvironmentalMetricsByPeriod: async (period = 'week') => {
+    const response = await api.get('/api/analytics/performance/environmental', {
+      params: { period, t: Date.now() }
+    });
+    return response.data;
+  },
+
   // ============================================
   // AGGREGATIONS & TRENDS
   // ============================================

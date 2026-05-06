@@ -1,0 +1,16 @@
+# ============================================================================
+# Heroku Container Stack — API Gateway
+# ============================================================================
+# Build : Heroku exécute `docker build` sur le Dockerfile présent dans ce dossier.
+# Run   : on N'override PAS la commande ici — Heroku utilise le CMD exec form du
+#         Dockerfile (["node", "src/index.js"]), ce qui transmet correctement
+#         SIGTERM au processus Node pour un arrêt gracieux.
+#         Si on mettait `run: web: node src/index.js`, la commande serait wrappée
+#         dans /bin/sh -c "…" et SIGTERM ne serait pas forwarded.
+# Note  : ce fichier est chargé par Heroku UNIQUEMENT si l'app est sur le
+#         "container stack" (cf. `heroku stack:set container -a <app>`).
+# ============================================================================
+
+build:
+  docker:
+    web: Dockerfile
