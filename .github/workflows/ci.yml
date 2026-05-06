@@ -2011,6 +2011,274 @@ jobs:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   # =========================================================================
+  # JOB 3D: PERFORMANCE - LIGHTHOUSE CORE WEB VITALS
+  # =========================================================================
+  # Mesure les indicateurs de performance (Core Web Vitals) avec Lighthouse
+
+  performance-lighthouse:
+    name: 'Performance - Lighthouse'
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install Chrome for Lighthouse'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Build frontend for production'
+        run: npm run build
+        working-directory: ecotrack-sjma/frontend
+        env:
+          CI: true
+
+      - name: 'Start preview server'
+        run: |
+          npm run preview -- --port 4173 &
+          sleep 5
+
+      - name: 'Install Lighthouse CLI'
+        run: npm install -g lighthouse
+
+      - name: 'Run Lighthouse Performance'
+        run: |
+          mkdir -p reports/performance
+          lighthouse http://localhost:4173 \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --output json \
+            --output-file reports/performance/lighthouse.json \
+            --output html \
+            --output-file reports/performance/lighthouse.html \
+            --output png \
+            --output-file reports/performance/lighthouse-screenshots.png \
+            --quiet \
+            --only-categories=performance
+        continue-on-error: true
+
+      - name: 'Extract Core Web Vitals metrics'
+        if: always()
+        run: |
+          echo "=== CORE WEB VITALS REPORT ==="
+          if [ -f "reports/performance/lighthouse.json" ]; then
+            cat reports/performance/lighthouse.json | jq -r '
+              .runs[0].artifacts["lighthouseResult"].audits | 
+              to_entries[] | 
+              select(.key | 
+              test("first-contentfulpaint|first-meaningfulpaint|largest-contentfulpaint|speed-index|cumulative-layout-shift|total-blocking-time|server-response-time|main-thread-work|network-requests|longtasks")) | 
+              "\(.key): \(.value.numericValue | if . then . else "N/A" end) \(.value.unit // "")"
+            '
+          fi
+
+      - name: 'Upload performance reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-performance-lighthouse
+          path: reports/performance/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 3E: ACCESSIBILITE - WCAG 2.1 NIVEAU AA
+  # =========================================================================
+  # Vérifie la conformité WCAG (contrastes, navigation clavier, ARIA, lecteur écran)
+
+  accessibility-wcag:
+    name: 'Accessibilité - WCAG'
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install Chrome for Accessibility'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Build frontend for production'
+        run: npm run build
+        working-directory: ecotrack-sjma/frontend
+        env:
+          CI: true
+
+      - name: 'Start preview server'
+        run: |
+          npm run preview -- --port 4173 &
+          sleep 5
+
+      - name: 'Install Lighthouse CLI'
+        run: npm install -g lighthouse
+
+      - name: 'Run Lighthouse Accessibility'
+        run: |
+          mkdir -p reports/accessibility
+          lighthouse http://localhost:4173 \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --output json \
+            --output-file reports/accessibility/lighthouse-accessibility.json \
+            --output html \
+            --output-file reports/accessibility/lighthouse-accessibility.html \
+            --quiet \
+            --only-categories=accessibility
+        continue-on-error: true
+
+      - name: 'Extract WCAG audit results'
+        if: always()
+        run: |
+          echo "=== WCAG ACCESSIBILITY REPORT ==="
+          if [ -f "reports/accessibility/lighthouse-accessibility.json" ]; then
+            echo "Score accessibility:"
+            cat reports/accessibility/lighthouse-accessibility.json | jq -r '.runs[0].artifacts["lighthouseResult"].categories.accessibility.score * 100 | floor'
+            echo ""
+            echo "Audits détaillés:"
+            cat reports/accessibility/lighthouse-accessibility.json | jq -r '
+              .runs[0].artifacts["lighthouseResult"].audits | 
+              to_entries[] | 
+              select(.value.details?.items?) | 
+              "\(.key): \(.value.details.items | length) élément(s)"
+            '
+          fi
+
+      - name: 'Upload accessibility reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-accessibility-wcag
+          path: reports/accessibility/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 3F: SEO & BEST PRACTICES
+  # =========================================================================
+  # Vérifie le SEO et les bonnes pratiques
+
+  seo-best-practices:
+    name: 'SEO & Best Practices'
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Install Chrome'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: 'Install dependencies'
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: 'Build frontend'
+        run: npm run build
+        working-directory: ecotrack-sjma/frontend
+        env:
+          CI: true
+
+      - name: 'Start preview server'
+        run: |
+          npm run preview -- --port 4173 &
+          sleep 5
+
+      - name: 'Install Lighthouse'
+        run: npm install -g lighthouse
+
+      - name: 'Run Lighthouse SEO & Best Practices'
+        run: |
+          mkdir -p reports/seo
+          lighthouse http://localhost:4173 \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --output json \
+            --output-file reports/seo/lighthouse-seo.json \
+            --output html \
+            --output-file reports/seo/lighthouse-seo.html \
+            --quiet \
+            --only-categories=seo,best-practices
+        continue-on-error: true
+
+      - name: 'Upload SEO reports'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-seo-best-practices
+          path: reports/seo/
+          if-no-files-found: ignore
+
+  # =========================================================================
+  # JOB 3G: CONSOLIDATED PERFORMANCE & ACCESSIBILITY REPORT
+  # =========================================================================
+
+  performance-consolidated:
+    name: 'Performance & Access consolidated'
+    runs-on: ubuntu-latest
+    needs: [performance-lighthouse, accessibility-wcag, seo-best-practices]
+    if: always()
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Generate consolidated report'
+        run: |
+          mkdir -p reports/consolidated
+          echo '# Rapport Performance & Accessibilite - EcoTrack' > reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Metriques de Performance (Core Web Vitals)' >> reports/consolidated/performance-accessibility.md
+          echo '- LCP (Largest Contentful Paint): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- FID (First Input Delay): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- CLS (Cumulative Layout Shift): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- FCP (First Contentful Paint): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Accessibilite WCAG 2.1 Niveau AA' >> reports/consolidated/performance-accessibility.md
+          echo '- Contraste texte (4.5:1): A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Navigation clavier: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Attributs ARIA: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Labels formulaires: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Optimisations Implementes' >> reports/consolidated/performance-accessibility.md
+          echo '- Code splitting via Vite' >> reports/consolidated/performance-accessibility.md
+          echo '- Lazy loading des routes React' >> reports/consolidated/performance-accessibility.md
+          echo '- Compression Gzip/Brotli' >> reports/consolidated/performance-accessibility.md
+
+      - name: 'Upload consolidated report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-performance-accessibility-consolidated
+          path: reports/consolidated/
+          if-no-files-found: ignore
+
+  # =========================================================================
   # JOB 3D: COLLECT ALL TEST REPORTS & COVERAGE
   # =========================================================================
   # Agrège tous les rapports: Coverage, Test Reports, SAST/DAST

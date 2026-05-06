@@ -4,6 +4,82 @@
 
 ---
 
+### [4.0.1] 2026-05-06 - Performance & Accessibilité (CI/CD)
+
+Ajout des jobs CI/CD pour mesurer la performance et l'accessibilité automatiquement.
+
+#### Performance (Core Web Vitals)
+
+**CI jobs ajoutés:**
+- `performance-lighthouse` : Mesure les Core Web Vitals via Lighthouse
+  - LCP (Largest Contentful Paint) - < 2.5s cible
+  - FID (First Input Delay) - < 100ms cible
+  - CLS (Cumulative Layout Shift) - < 0.1 cible
+  - FCP (First Contentful Paint) - < 1.8s cible
+  - TTI (Time to Interactive) - < 3.8s cible
+  - Speed Index - < 3.4s cible
+
+**Artifacts générés:**
+- `report-performance-lighthouse` (JSON, HTML, screenshots PNG)
+
+#### Accessibilité WCAG 2.1 Niveau AA
+
+**CI jobs ajoutés:**
+- `accessibility-wcag` : Vérifie la conformité WCAG automatiquement
+  - Contraste texte (ratio 4.5:1 minimum)
+  - Navigation clavier
+  - Attributs ARIA
+  - Labels formulaires
+  - Images avec alt
+  - Titres de pages
+
+**Artifacts générés:**
+- `report-accessibility-wcag` (JSON, HTML)
+
+#### SEO & Best Practices
+
+**CI jobs ajoutés:**
+- `seo-best-practices` : Vérifie SEO et bonnes pratiques
+  - Meta tags
+  - Links exploitables
+  - Document title
+  - http2/http3
+
+**Artifacts générés:**
+- `report-seo-best-practices` (JSON, HTML)
+
+#### Rapport consolidé
+
+- `performance-consolidated` : Génère un rapport Markdown consolidé
+- `report-performance-accessibility-consolidated`
+
+#### Optimisations déjà implémentées
+
+| Optimisation | Status | Description |
+|-------------|--------|-------------|
+| Code splitting Vite | ✅ Done | Chunk automatique par route |
+| Lazy loading React | ✅ Done | Suspense + lazy routes |
+| Compression Gzip/Brotli | ✅ Done | Via Vite build |
+| Cache HTTP | ✅ Done | Service worker config |
+
+#### Optimisations à implémenter
+
+| Optimisation | Priorité | Description |
+|-------------|---------|-------------|
+| Images WebP/AVIF | Medium | Conversion automatique |
+| Font subsetting | Medium | Réduire taille polices |
+| Critical CSS inlining | Low | Inline CSS critique |
+| Prefetching intelligent | Low | Prefetch routes probables |
+
+#### Fichiers modifiés
+
+| Fichier | Description |
+|---------|-------------|
+| `.github/workflows/ci.yml` | +4 jobs performance/accessibility |
+| `.github/workflows/ci.yml` | +3 artifacts rapports |
+
+---
+
 ### [4.0.0] 2026-05-06 - Authentification à Deux Facteurs (MFA/TOTP)
 
 Activation de l'authentification multifactorielle via TOTP (Time-based One-Time Password) avec QR code pour la sécurité des comptes utilisateurs.
