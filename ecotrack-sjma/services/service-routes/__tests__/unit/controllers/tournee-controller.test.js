@@ -183,7 +183,7 @@ describe('TourneeController.optimize', () => {
 
     await controller.optimize(req, res, next);
 
-    expect(mockService.optimizeTournee).toHaveBeenCalledWith(req.body, mockDb);
+    expect(mockService.optimizeTournee).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 });
@@ -214,7 +214,7 @@ describe('TourneeController.previewOptimization', () => {
 
     await controller.previewOptimization(req, res, next);
 
-    expect(mockService.previewOptimization).toHaveBeenCalledWith(req.body, mockDb);
+    expect(mockService.previewOptimization).toHaveBeenCalledWith(req.body);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({

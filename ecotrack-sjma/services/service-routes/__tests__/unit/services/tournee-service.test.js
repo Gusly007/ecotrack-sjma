@@ -11,7 +11,11 @@ const mockTourneeRepo = {
   updateStatut: jest.fn(),
   delete: jest.fn(),
   exists: jest.fn(),
-  addEtapes: jest.fn()
+  addEtapes: jest.fn(),
+  getZoneName: jest.fn().mockResolvedValue('Zone A'),
+  findActiveContainersByZone: jest.fn().mockResolvedValue([
+    { id_conteneur: 1, uid: 'C-001', fill_level: 85 }
+  ])
 };
 
 const mockCollecteRepo = {
@@ -345,7 +349,18 @@ describe('TourneeService.previewOptimization', () => {
   };
 
   beforeEach(() => {
-    mockDb.query.mockClear();
+    jest.clearAllMocks();
+    mockTourneeRepo.getZoneName.mockResolvedValue('Zone A');
+    mockTourneeRepo.findActiveContainersByZone
+      .mockResolvedValueOnce([
+        { id_conteneur: 1, uid: 'C-001', fill_level: 85 },
+        { id_conteneur: 2, uid: 'C-002', fill_level: 75 },
+        { id_conteneur: 3, uid: 'C-003', fill_level: 90 }
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id_conteneur: 1, uid: 'C-001', fill_level: 85 }
+      ]);
   });
 
   it('devrait exécuter la vraie logique sans ReferenceError et retourner les champs carburant', async () => {
@@ -367,7 +382,8 @@ describe('TourneeService.previewOptimization', () => {
   });
 
   it('devrait renvoyer un warning (sans throw) quand aucun conteneur n\'est éligible', async () => {
-    mockDb.query.mockResolvedValueOnce({ rows: [] });
+    mockTourneeRepo.findActiveContainersByZone.mockReset();
+    mockTourneeRepo.findActiveContainersByZone.mockResolvedValue([]);
     const result = await service.previewOptimization(validPayload, mockDb);
 
     expect(result.optimisation).toBeNull();
