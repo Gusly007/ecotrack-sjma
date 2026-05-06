@@ -35,11 +35,63 @@ export const login = asyncHandler(async (req, res) => {
 
   const result = await authService.loginUser(email, password, req.ip);
 
+  // Si MFA requis
+  if (result.requiresMFA) {
+    try {
+      const userId = result.userId;
+      const user = await authService.getUserById(userId);
+      
+      // Si MFA déjà activé, pas de setup nécessaire (juste vérification)
+      if (user.mfa_enabled) {
+        console.log('[MFA] MFA déjà activé, vérification simple');
+        result.requiresSetup = false;
+      } else {
+        // MFA pas encore activé, générer le setup
+        console.log('[MFA] MFA non activé, génération setup');
+        let setup;
+        const setupSecret = user.mfa_setup_secret;
+        const setupCreatedAt = user.mfa_setup_secret_created_at;
+        const now = new Date();
+        const setupAge = setupCreatedAt ? (now - new Date(setupCreatedAt)) / 1000 : Infinity;
+        
+        if (setupSecret && setupAge < 600) {
+          // Secret existe et n'est pas expiré, réutiliser
+          console.log('[MFA] Reusing existing setup secret, age:', setupAge, 's');
+          const { generateQrCode } = await import('../services/mfaService.js');
+          const qrCodeUrl = await generateQrCode(setupSecret, user.email);
+          setup = { secret: setupSecret, qrCodeUrl };
+        } else {
+          // Générer un nouveau secret
+          const { generateMfaSetup } = await import('../services/mfaService.js');
+          setup = await generateMfaSetup(userId, user.email);
+          
+          // Stocker le secret en attente
+          await authService.storeMfaSetupSecret(userId, setup.secret);
+          console.log('[MFA] Generated new setup secret');
+        }
+        
+        result.mfaSetup = {
+          secret: setup.secret,
+          qrCodeUrl: setup.qrCodeUrl,
+          message: 'Veuillez scanner le QR code avec Google Authenticator'
+        };
+        result.requiresSetup = true;
+      }
+    } catch (mfaErr) {
+      console.error('MFA auto-setup failed:', mfaErr.message);
+    }
+  }
+
   res.json({
     message: 'Login successful',
     token: result.accessToken,
     refreshToken: result.refreshToken,
-    user: result.user
+    user: result.user,
+    userId: result.userId,
+    email: result.user?.email,
+    requiresMFA: result.requiresMFA || false,
+    requiresSetup: result.requiresSetup || false,
+    mfaSetup: result.mfaSetup || null
   });
 });
 

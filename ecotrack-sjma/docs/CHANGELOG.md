@@ -4,6 +4,106 @@
 
 ---
 
+### [4.0.0] 2026-05-06 - Authentification à Deux Facteurs (MFA/TOTP)
+
+Activation de l'authentification multifactorielle via TOTP (Time-based One-Time Password) avec QR code pour la sécurité des comptes utilisateurs.
+
+**Contexte**
+- Renforcement de la sécurité après mise en place du RBAC (version 3.6.0)
+- Les utilisateurs ADMIN et GESTIONNAIRE accèdent à des données sensibles
+- Conformité avec les meilleures pratiques d'authentification moderne
+
+#### Fonctionnalités implémentées
+
+##### Backend - service-users (port 3010)
+
+- **Setup MFA** : `POST /api/auth/mfa/setup`
+  - Génère un secret TOTP et QR code pour Google Authenticator (ou toute app compatible)
+  - Stocke temporairement le secret en attente de validation
+  - TTL du setup : 10 minutes
+
+- **Activation MFA** : `POST /api/auth/mfa/complete-setup`
+  - Valide le code TOTPinitial et active MFA définitivement
+  - Retourne token JWT + refreshToken + utilisateur
+
+- **Login avec MFA** : `POST /api/auth/mfa/login`
+  - Après login standard (email/password), si MFA activé → retourne `requiresMFA: true`
+  - Vérification du code TOTP sans exposition du mot de passe
+  - Retourne token JWT + refreshToken + utilisateur
+
+- **Désactivation MFA** : `POST /api/auth/mfa/disable`
+  - Désactive MFA pour un utilisateur (ADMIN peut désactiver pour altri)
+
+- **Champs base de données**
+  - `mfa_enabled` : BOOLEAN DEFAULT false
+  - `mfa_setup_secret` : VARCHAR (secret TOTP encodé)
+  - `mfa_backup_codes` : JSONB (codes de secours)
+
+##### Frontend - React 18 (Vite)
+
+- **Page MFA** : `/auth/mfa`
+  - Mode setup : scan QR code + saisie code initial
+  - Mode vérification : saisie code à 6 chiffres
+  - Stockage local : `mfa_user_id`, `mfa_setup` (avec timestamp)
+  - Redirect vers dashboard selon rôle
+
+- **Login enrichi**
+  - Détection `requiresMFA` → redirection automatique vers `/auth/mfa`
+  - Préservation du setup MFA (QR code, secret) pour re-authentification
+
+- **Intégration authService**
+  - `login()` : handle `requiresMFA`, stocke `userId` + `mfaSetup`
+  - `loginWithMfa()` : appelle `/auth/mfa/login`, stocke tokens
+  - `verifyMfaSetup()` : appelle `/auth/mfa/complete-setup`
+
+##### Flux utilisateur
+
+```
+1. Login classique (email + password)
+2. Si MFA enabled → { requiresMFA: true, userId: X }
+3. Redirection /auth/mfa?setup=true (premier setup)
+   OU /auth/mfa (vérification régulière)
+4. Scan QR code → saisie code Google Authenticator
+5. Validation → token JWT + redirect dashboard
+```
+
+#### Corrections
+
+- **`authService.loginWithMfa`** : retourne maintenant la réponse complète (token + user) au lieu de nur user, permettant à `MfaPage.finalizeLogin` de fonctionner correctement
+
+#### Fichiers modifiés
+
+| Service | Fichier | Description |
+|---------|--------|------------|
+| service-users | `src/controllers/mfaController.js` | Setup, verify, disable, loginWithMfa |
+| service-users | `src/routes/auth.js` | Routes MFA |
+| service-users | `src/services/mfaService.js` | Génération/validation TOTP |
+| service-users | `src/repositories/auth.repository.js` | Champs MFA |
+| frontend | `src/pages/auth/MfaPage.jsx` | Page setup/vérification |
+| frontend | `src/services/authService.js` | login, loginWithMfa, verifyMfaSetup |
+
+#### Tests
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| service-users mfaController | +5 | Pass |
+| service-users mfaService | +3 | Pass |
+| frontend MfaPage | +2 | Pass |
+
+#### Guide utilisateur
+
+**Premiers pas**
+1. Se connecter avec email/password
+2. Scanner le QR code avec Google Authenticator
+3. Saisir le code à 6 chiffres
+4. MFA activé - connection未来的只需 email/password + code
+
+**En cas de perte de téléphone**
+- Utiliser un code de secours (généré lors du setup)
+- Contacter ADMIN pour réinitialiser MFA
+
+---
+
 ### [3.9.0] 2026-04-26 - Gestion fine du retard de tournée (heure de début prévue)
 
 Refonte complète de la logique "tournée en retard" et du cycle de vie `PLANIFIEE → EN_COURS → TERMINEE`.

@@ -5,6 +5,7 @@ import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import MfaPage from './pages/auth/MfaPage';
 import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
@@ -49,6 +50,7 @@ function App() {
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/mfa" element={<MfaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           

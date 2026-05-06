@@ -22,8 +22,6 @@ async function findZonesWithContainers() {
       ORDER BY nb_conteneurs DESC
     `);
     
-    console.log('✅ Zones avec conteneurs:\n');
-    console.table(result.rows);
     
     if (result.rows.length === 0) {
       console.log('❌ Aucune zone n\'a de conteneurs! Les conteneurs doivent être créés via le seed 007_conteneurs_demo.sql');

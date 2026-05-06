@@ -8,13 +8,70 @@ const USER_KEY = 'user';
 export const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password });
-    const { token, refreshToken, user } = response.data;
     
+    // Si MFA requis, conserver toutes les infos de setup (QR code, secret, etc.)
+    if (response.data?.requiresMFA) {
+      const userId = response.data?.userId || response.data?.user?.id;
+      if (userId) {
+        localStorage.setItem('mfa_user_id', String(userId));
+      }
+
+      // Stocker le setup avec un timestamp pour vérifier l'expiration
+      if (response.data?.mfaSetup?.secret) {
+        localStorage.setItem('mfa_setup', JSON.stringify({
+          ...response.data.mfaSetup,
+          timestamp: Date.now()
+        }));
+      }
+
+      return {
+        requiresMFA: true,
+        requiresSetup: response.data?.requiresSetup || false,
+        userId,
+        email: response.data?.email,
+        mfaSetup: response.data?.mfaSetup || null,
+      };
+    }
+
+    const token = response.data?.token || response.data?.accessToken;
+    const refreshToken = response.data?.refreshToken;
+    const user = response.data?.user;
+
+    if (!token || !user) {
+      throw new Error('Réponse de connexion invalide: token ou utilisateur manquant');
+    }
+
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     
     return user;
+  },
+
+  async loginWithMfa(userId, code) {
+    const response = await api.post('/auth/login/mfa', { userId, code });
+    console.log('[authService] loginWithMfa response:', response.data);
+    const token = response.data?.token || response.data?.accessToken;
+    const refreshToken = response.data?.refreshToken;
+    const user = response.data?.user;
+
+    if (!token || !user) {
+      throw new Error('Réponse MFA invalide: token ou utilisateur manquant');
+    }
+
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    localStorage.removeItem('mfa_user_id');
+    
+    // Retourner la réponse complète pour MfaPage
+    return { ...response.data, user };
+  },
+
+  async verifyMfaSetup(userId, code, secret) {
+    // Setup initial: endpoint public qui active MFA et connecte l'utilisateur
+    const response = await api.post('/auth/mfa/complete-setup', { userId, code, secret });
+    return response.data;
   },
 
   async register(userData) {
