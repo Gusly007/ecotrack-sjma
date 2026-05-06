@@ -2076,10 +2076,9 @@ jobs:
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
-            --output-path reports/performance \
+            --output-path ./reports/performance \
             --quiet \
             --only-categories=performance 2>&1 || true
-          echo "Files generated:"
           ls -la reports/performance/
           cp reports/performance/*.report.json reports/performance/lighthouse.json 2>/dev/null || true
           cp reports/performance/*.report.html reports/performance/lighthouse.html 2>/dev/null || true
@@ -2111,7 +2110,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-performance-lighthouse
-          path: reports/performance/
+          path: |
+            reports/performance/lighthouse.json
+            reports/performance/lighthouse.html
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2208,7 +2209,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-accessibility-wcag
-          path: reports/accessibility/
+          path: |
+            reports/accessibility/lighthouse-accessibility.json
+            reports/accessibility/lighthouse-accessibility.html
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2271,17 +2274,15 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/seo
-          cd reports/seo
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
-            --output-path reports/seo \
+            --output-path ./reports/seo \
             --quiet \
             --only-categories=seo,best-practices 2>&1 || true
-          echo "Files generated:"
           ls -la reports/seo/
           cp reports/seo/*.report.json reports/seo/lighthouse-seo.json 2>/dev/null || true
           cp reports/seo/*.report.html reports/seo/lighthouse-seo.html 2>/dev/null || true
@@ -2291,7 +2292,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-seo-best-practices
-          path: reports/seo/
+          path: |
+            reports/seo/lighthouse-seo.json
+            reports/seo/lighthouse-seo.html
           if-no-files-found: ignore
 
   # =========================================================================
