@@ -2080,12 +2080,22 @@ jobs:
             --output html \
             --quiet \
             --only-categories=performance
-          echo "Files after lighthouse:"
+          echo "Files generated:"
           ls -la
-          if [ ! -f "lighthouse.html" ]; then
+          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
+          if [ -z "$JSON_FILE" ]; then
             echo "ERROR: No report generated!"
             exit 1
           fi
+          echo "SUCCESS! Report: $JSON_FILE"
+          cp "$JSON_FILE" lighthouse.json
+          cp *.report.html lighthouse.html
+
+      - name: 'Show lighthouse output'
+        if: always()
+        run: |
+          echo "=== Lighthouse output ==="
+          ls -la reports/performance/ || echo "No reports generated"
           echo "SUCCESS!"
 
       - name: 'Show lighthouse output'
@@ -2171,17 +2181,25 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/accessibility
+          cd reports/accessibility
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse via npx..."
+          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
-            --output-file reports/accessibility/lighthouse-accessibility.json \
             --output html \
-            --output-file reports/accessibility/lighthouse-accessibility.html \
             --quiet \
             --only-categories=accessibility
+          echo "Files generated:"
+          ls -la
+          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
+          if [ -z "$JSON_FILE" ]; then
+            echo "ERROR: No report generated!"
+            exit 1
+          fi
+          cp "$JSON_FILE" lighthouse-accessibility.json
+          cp *.report.html lighthouse-accessibility.html
           echo "Files generated:"
           ls -la reports/accessibility/
 
@@ -2268,19 +2286,25 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/seo
+          cd reports/seo
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse via npx..."
+          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
-            --output-file reports/seo/lighthouse-seo.json \
             --output html \
-            --output-file reports/seo/lighthouse-seo.html \
             --quiet \
             --only-categories=seo,best-practices
           echo "Files generated:"
-          ls -la reports/seo/
+          ls -la
+          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
+          if [ -z "$JSON_FILE" ]; then
+            echo "ERROR: No report generated!"
+            exit 1
+          fi
+          cp "$JSON_FILE" lighthouse-seo.json
+          cp *.report.html lighthouse-seo.html
 
       - name: 'Upload SEO reports'
         if: always()
