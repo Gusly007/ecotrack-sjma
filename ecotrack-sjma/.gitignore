@@ -8,6 +8,8 @@ docs/SECURITY_VULNERABILITIES_REPORT.md
 infra/kubernetes/
 infra/terraform/  
 reports/
+!reports/.gitkeep
+!reports/.gitkeep
 
 
 

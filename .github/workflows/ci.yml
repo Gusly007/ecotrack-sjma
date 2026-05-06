@@ -2104,7 +2104,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-performance-lighthouse
-          path: reports/performance/
+          path: ecotrack-sjma/frontend/reports/performance/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2203,7 +2203,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-accessibility-wcag
-          path: reports/accessibility/
+          path: ecotrack-sjma/frontend/reports/accessibility/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2285,7 +2285,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-seo-best-practices
-          path: reports/seo/
+          path: ecotrack-sjma/frontend/reports/seo/
           if-no-files-found: ignore
 
   # =========================================================================
@@ -2727,73 +2727,4 @@ jobs:
           POSTGRES_PASSWORD: test_pass
           POSTGRES_DB: ecotrack_test
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    
-    steps:
-      - name: 'Checkout code'
-        uses: actions/checkout@v4
-      
-      - name: 'Set up Docker Buildx'
-        uses: docker/setup-buildx-action@v3
-      
-      # Build localement l'image (sans push)
-      - name: 'Build Docker image'
-        uses: docker/build-push-action@v5
-        with:
-          context: ./ecotrack-sjma/services/${{ matrix.service }}
-          load: true
-          tags: ${{ matrix.image-name }}:test
-      
-      # Lance le conteneur et teste /health endpoint
-      - name: 'Start container and test health'
-        run: |
-          docker run -d \
-            --name test-container \
-            -p ${{ matrix.port }}:${{ matrix.port }} \
-            ${{ matrix.env-vars }} \
-            ${{ matrix.image-name }}:test
-          
-          # Attendre que le container démarre avec retry
-          echo "Waiting for container to start..."
-          for i in {1..30}; do
-            if curl -f http://localhost:${{ matrix.port }}/health 2>/dev/null; then
-              echo "Container is healthy!"
-              break
-            fi
-            echo "Attempt $i/30 failed, retrying in 2s..."
-            sleep 2
-          done
-          
-          # Vérifier une dernière fois
-          curl -f http://localhost:${{ matrix.port }}/health || {
-            echo "Health check failed. Container logs:"
-            docker logs test-container
-            exit 1
-          }
-          
-          echo "Health check passed!"
-          docker logs test-container
-          docker stop test-container
-
-# ============================================================================
-# RÉSUMÉ WORKFLOW
-# ============================================================================
-# 
-# Quand tu fais: git push
-#   → GitHub Actions détecte le push
-#   → Lance tous les jobs en parallèle (lint, test, security, build)
-#   → Si l'un échoue, l'image ne se build pas
-#   → Résultats visibles dans GitHub "Actions" tab
-#
-# En production:
-#   - CD: l'image "latest" se déploie auto sur K8s
-#   - Monitoring alerte si deployment échoue
-#
-# Coûts GitHub Actions:
-#   - 2000 min/mois gratuit pour repos public
-#   - Payant au-delà
+          --h

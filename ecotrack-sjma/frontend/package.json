@@ -12,7 +12,13 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage --passWithNoTests || true",
     "test:integration": "vitest run __tests__/integration --passWithNoTests || true",
-    "test:e2e": "vitest run __tests__/e2e --passWithNoTests || true"
+    "test:e2e": "vitest run __tests__/e2e --passWithNoTests || true",
+ci: fix lighthouse report generation and artifact upload paths
+
+- Updated .gitignore to allow reports directory structure
+- Aligned Lighthouse script port with CI preview server (4173)
+- Fixed artifact upload paths in CI workflow to match workspace structure
+- Ensured consistent directory creation in performance, accessibility, and SEO jobs    "lint:lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./reports/performance/report.html --chrome-flags='--headless --no-sandbox'"
   },
   "dependencies": {
     "axios": "^1.13.5",
