@@ -1345,7 +1345,7 @@ jobs:
   # 2 tests | Integration tests for user auth flows
 
   test-users-integration:
-    name: '🔗 Integration Tests - service-users'
+    name: ' Integration Tests - service-users'
     runs-on: ubuntu-latest
 
     needs: test
@@ -1773,7 +1773,7 @@ jobs:
   # Integration tests for frontend components
 
   test-frontend-integration:
-    name: '🔗 Integration Tests - frontend'
+    name: ' Integration Tests - frontend'
     runs-on: ubuntu-latest
 
     needs: test-frontend
@@ -2070,19 +2070,23 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
+          cd reports/performance
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse via npx..."
+          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
-            --output-file reports/performance/lighthouse.json \
             --output html \
-            --output-file reports/performance/lighthouse.html \
             --quiet \
             --only-categories=performance
-          echo "Files generated:"
-          ls -la reports/performance/
+          echo "Files after lighthouse:"
+          ls -la
+          if [ ! -f "lighthouse.html" ]; then
+            echo "ERROR: No report generated!"
+            exit 1
+          fi
+          echo "SUCCESS!"
 
       - name: 'Show lighthouse output'
         if: always()
@@ -2185,11 +2189,9 @@ jobs:
         if: always()
         run: |
           echo "=== WCAG ACCESSIBILITY REPORT ==="
-          if [ -f "reports/accessibility/lighthouse-accessibility.json" ]; then
             echo "Score accessibility:"
             cat reports/accessibility/lighthouse-accessibility.json | jq -r '.runs[0].artifacts["lighthouseResult"].categories.accessibility.score * 100 | floor'
-            echo ""
-            echo "Audits détaillés:"
+            echo ""            echo "Audits détaillés:"
             cat reports/accessibility/lighthouse-accessibility.json | jq -r '
               .runs[0].artifacts["lighthouseResult"].audits | 
               to_entries[] | 
