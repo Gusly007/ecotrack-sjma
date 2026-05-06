@@ -2070,7 +2070,6 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
-          cd reports/performance
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
           echo "Running Lighthouse..."
@@ -2078,18 +2077,17 @@ jobs:
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
+            --output-path reports/performance \
             --quiet \
             --only-categories=performance
           echo "Files generated:"
-          ls -la
-          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
+          ls -la reports/performance/
+          JSON_FILE=$(ls -t reports/performance/*.report.json 2>/dev/null | head -1)
           if [ -z "$JSON_FILE" ]; then
             echo "ERROR: No report generated!"
             exit 1
           fi
           echo "SUCCESS! Report: $JSON_FILE"
-          cp "$JSON_FILE" lighthouse.json
-          cp *.report.html lighthouse.html
 
       - name: 'Show lighthouse output'
         if: always()
@@ -2181,7 +2179,6 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/accessibility
-          cd reports/accessibility
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
           echo "Running Lighthouse..."
@@ -2189,19 +2186,17 @@ jobs:
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
+            --output-path reports/accessibility \
             --quiet \
             --only-categories=accessibility
           echo "Files generated:"
-          ls -la
-          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
+          ls -la reports/accessibility/
+          JSON_FILE=$(ls -t reports/accessibility/*.report.json 2>/dev/null | head -1)
           if [ -z "$JSON_FILE" ]; then
             echo "ERROR: No report generated!"
             exit 1
           fi
-          cp "$JSON_FILE" lighthouse-accessibility.json
-          cp *.report.html lighthouse-accessibility.html
-          echo "Files generated:"
-          ls -la reports/accessibility/
+          echo "SUCCESS!"
 
       - name: 'Extract WCAG audit results'
         if: always()
