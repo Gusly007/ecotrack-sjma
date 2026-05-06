@@ -2047,8 +2047,19 @@ jobs:
 
       - name: 'Start preview server'
         run: |
-          npm run preview -- --port 4173 &
-          sleep 5
+          nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+          echo "Waiting for preview server..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:4173 > /dev/null 2>&1; then
+              echo "Preview server is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: waiting..."
+            sleep 2
+          done
+          echo "Preview server failed to start"
+          cat preview.log
+          exit 1
 
       - name: 'Install Lighthouse CLI'
         run: npm install -g lighthouse
@@ -2062,16 +2073,15 @@ jobs:
             --output-file reports/performance/lighthouse.json \
             --output html \
             --output-file reports/performance/lighthouse.html \
-            --output png \
-            --output-file reports/performance/lighthouse-screenshots.png \
             --quiet \
             --only-categories=performance
         continue-on-error: true
 
-      - name: 'Extract Core Web Vitals metrics'
+      - name: 'Show lighthouse output'
         if: always()
         run: |
-          echo "=== CORE WEB VITALS REPORT ==="
+          echo "=== Lighthouse output ==="
+          ls -la reports/performance/ || echo "No reports generated"
           if [ -f "reports/performance/lighthouse.json" ]; then
             cat reports/performance/lighthouse.json | jq -r '
               .runs[0].artifacts["lighthouseResult"].audits | 
@@ -2127,8 +2137,19 @@ jobs:
 
       - name: 'Start preview server'
         run: |
-          npm run preview -- --port 4173 &
-          sleep 5
+          nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+          echo "Waiting for preview server..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:4173 > /dev/null 2>&1; then
+              echo "Preview server is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: waiting..."
+            sleep 2
+          done
+          echo "Preview server failed to start"
+          cat preview.log
+          exit 1
 
       - name: 'Install Lighthouse CLI'
         run: npm install -g lighthouse
@@ -2208,8 +2229,19 @@ jobs:
 
       - name: 'Start preview server'
         run: |
-          npm run preview -- --port 4173 &
-          sleep 5
+          nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+          echo "Waiting for preview server..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:4173 > /dev/null 2>&1; then
+              echo "Preview server is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: waiting..."
+            sleep 2
+          done
+          echo "Preview server failed to start"
+          cat preview.log
+          exit 1
 
       - name: 'Install Lighthouse'
         run: npm install -g lighthouse
