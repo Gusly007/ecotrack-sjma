@@ -2046,6 +2046,7 @@ jobs:
           CI: true
 
       - name: 'Start preview server'
+        working-directory: ecotrack-sjma/frontend
         run: |
           nohup npm run preview -- --port 4173 > preview.log 2>&1 &
           echo "Waiting for preview server..."
@@ -2062,9 +2063,11 @@ jobs:
           exit 1
 
       - name: 'Install Lighthouse CLI'
+        working-directory: ecotrack-sjma/frontend
         run: npm install -g lighthouse
 
       - name: 'Run Lighthouse Performance'
+        working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
           lighthouse http://localhost:4173 \
@@ -2136,6 +2139,7 @@ jobs:
           CI: true
 
       - name: 'Start preview server'
+        working-directory: ecotrack-sjma/frontend
         run: |
           nohup npm run preview -- --port 4173 > preview.log 2>&1 &
           echo "Waiting for preview server..."
@@ -2152,9 +2156,11 @@ jobs:
           exit 1
 
       - name: 'Install Lighthouse CLI'
+        working-directory: ecotrack-sjma/frontend
         run: npm install -g lighthouse
 
       - name: 'Run Lighthouse Accessibility'
+        working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/accessibility
           lighthouse http://localhost:4173 \
@@ -2228,6 +2234,7 @@ jobs:
           CI: true
 
       - name: 'Start preview server'
+        working-directory: ecotrack-sjma/frontend
         run: |
           nohup npm run preview -- --port 4173 > preview.log 2>&1 &
           echo "Waiting for preview server..."
@@ -2244,9 +2251,11 @@ jobs:
           exit 1
 
       - name: 'Install Lighthouse'
+        working-directory: ecotrack-sjma/frontend
         run: npm install -g lighthouse
 
       - name: 'Run Lighthouse SEO & Best Practices'
+        working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/seo
           lighthouse http://localhost:4173 \
