@@ -7,8 +7,8 @@ coverage/
 docs/SECURITY_VULNERABILITIES_REPORT.md
 infra/kubernetes/
 infra/terraform/  
+reports/**/*
 reports/
-!reports/.gitkeep
 !reports/.gitkeep
 
 
