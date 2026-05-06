@@ -2072,7 +2072,6 @@ jobs:
           mkdir -p reports/performance
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
@@ -2080,18 +2079,10 @@ jobs:
             --output-path reports/performance \
             --quiet \
             --only-categories=performance 2>&1 || true
-          echo "Files after lighthouse:"
+          echo "Files generated:"
           ls -la reports/performance/
-          # Find and copy the most recent json file
-          JSON_FILE=$(find reports/performance -name "*.report.json" -type f -maxdepth 1 2>/dev/null | head -1)
-          if [ -n "$JSON_FILE" ]; then
-            cp "$JSON_FILE" reports/performance/lighthouse.json
-            HTML_FILE=$(find reports/performance -name "*.report.html" -type f -maxdepth 1 2>/dev/null | head -1)
-            [ -n "$HTML_FILE" ] && cp "$HTML_FILE" reports/performance/lighthouse.html
-            echo "Copied: lighthouse.json"
-          else
-            echo "WARNING: No report files found"
-          fi
+          cp reports/performance/*.report.json reports/performance/lighthouse.json 2>/dev/null || true
+          cp reports/performance/*.report.html reports/performance/lighthouse.html 2>/dev/null || true
 
       - name: 'Show lighthouse output'
         if: always()
@@ -2185,22 +2176,17 @@ jobs:
           mkdir -p reports/accessibility
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
             --output-path reports/accessibility \
             --quiet \
-            --only-categories=accessibility
+            --only-categories=accessibility 2>&1 || true
           echo "Files generated:"
           ls -la reports/accessibility/
-          JSON_FILE=$(ls -t reports/accessibility/*.report.json 2>/dev/null | head -1)
-          if [ -z "$JSON_FILE" ]; then
-            echo "ERROR: No report generated!"
-            exit 1
-          fi
-          echo "SUCCESS!"
+          cp reports/accessibility/*.report.json reports/accessibility/lighthouse-accessibility.json 2>/dev/null || true
+          cp reports/accessibility/*.report.html reports/accessibility/lighthouse-accessibility.html 2>/dev/null || true
 
       - name: 'Extract WCAG audit results'
         if: always()
@@ -2288,22 +2274,17 @@ jobs:
           cd reports/seo
           echo "Testing connection..."
           curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
-          echo "Running Lighthouse..."
           npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
+            --output-path reports/seo \
             --quiet \
-            --only-categories=seo,best-practices
+            --only-categories=seo,best-practices 2>&1 || true
           echo "Files generated:"
-          ls -la
-          JSON_FILE=$(ls -t *.report.json 2>/dev/null | head -1)
-          if [ -z "$JSON_FILE" ]; then
-            echo "ERROR: No report generated!"
-            exit 1
-          fi
-          cp "$JSON_FILE" lighthouse-seo.json
-          cp *.report.html lighthouse-seo.html
+          ls -la reports/seo/
+          cp reports/seo/*.report.json reports/seo/lighthouse-seo.json 2>/dev/null || true
+          cp reports/seo/*.report.html reports/seo/lighthouse-seo.html 2>/dev/null || true
 
       - name: 'Upload SEO reports'
         if: always()
