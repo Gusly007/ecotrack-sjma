@@ -2064,24 +2064,24 @@ jobs:
 
       - name: 'Install Lighthouse CLI'
         working-directory: ecotrack-sjma/frontend
-        run: npm install -g lighthouse
+        run: npm install -D lighthouse
 
       - name: 'Run Lighthouse Performance'
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
-          echo "Testing connection to localhost:4173..."
-          curl -v http://localhost:4173 || echo "Connection failed"
-          echo "Running Lighthouse..."
-          lighthouse http://localhost:4173 \
+          echo "Testing connection..."
+          curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
+          echo "Running Lighthouse via npx..."
+          npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/performance/lighthouse.json \
             --output html \
             --output-file reports/performance/lighthouse.html \
             --quiet \
-            --only-categories=performance 2>&1 || echo "Lighthouse failed"
-          echo "Checking generated files..."
+            --only-categories=performance
+          echo "Files generated:"
           ls -la reports/performance/
 
       - name: 'Show lighthouse output'
@@ -2161,24 +2161,24 @@ jobs:
 
       - name: 'Install Lighthouse CLI'
         working-directory: ecotrack-sjma/frontend
-        run: npm install -g lighthouse
+        run: npm install -D lighthouse
 
       - name: 'Run Lighthouse Accessibility'
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/accessibility
-          echo "Testing connection to localhost:4173..."
-          curl -v http://localhost:4173 || echo "Connection failed"
-          echo "Running Lighthouse..."
-          lighthouse http://localhost:4173 \
+          echo "Testing connection..."
+          curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
+          echo "Running Lighthouse via npx..."
+          npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/accessibility/lighthouse-accessibility.json \
             --output html \
             --output-file reports/accessibility/lighthouse-accessibility.html \
             --quiet \
-            --only-categories=accessibility 2>&1 || echo "Lighthouse failed"
-          echo "Checking generated files..."
+            --only-categories=accessibility
+          echo "Files generated:"
           ls -la reports/accessibility/
 
       - name: 'Extract WCAG audit results'
@@ -2260,24 +2260,24 @@ jobs:
 
       - name: 'Install Lighthouse'
         working-directory: ecotrack-sjma/frontend
-        run: npm install -g lighthouse
+        run: npm install -D lighthouse
 
       - name: 'Run Lighthouse SEO & Best Practices'
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/seo
-          echo "Testing connection to localhost:4173..."
-          curl -v http://localhost:4173 || echo "Connection failed"
-          echo "Running Lighthouse..."
-          lighthouse http://localhost:4173 \
+          echo "Testing connection..."
+          curl -sf http://localhost:4173 || { echo "Server not responding"; exit 1; }
+          echo "Running Lighthouse via npx..."
+          npx lighthouse http://localhost:4173 \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/seo/lighthouse-seo.json \
             --output html \
             --output-file reports/seo/lighthouse-seo.html \
             --quiet \
-            --only-categories=seo,best-practices 2>&1 || echo "Lighthouse failed"
-          echo "Checking generated files..."
+            --only-categories=seo,best-practices
+          echo "Files generated:"
           ls -la reports/seo/
 
       - name: 'Upload SEO reports'
