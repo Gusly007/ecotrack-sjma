@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import TourneesEnCoursTable from "./TourneesEnCoursTable";
-import { Pagination } from "../../common";
 import { fetchActiveTournees } from "../../../services/tourneeService";
 
 function normalizeActiveTournee(tournee) {
@@ -80,15 +79,29 @@ export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 })
         <div className="empty-state">Aucune tournee active pour le moment.</div>
       )}
 
-      <Pagination
-        currentPage={pagination.page}
-        totalPages={pagination.pages || 1}
-        onPageChange={setPage}
-        showingFrom={(pagination.page - 1) * pageSize + 1}
-        showingTo={Math.min(pagination.page * pageSize, pagination.total || 0)}
-        totalItems={pagination.total || 0}
-        label="tournée active"
-      />
+      <div className="pagination-row">
+        <span className="pagination-meta">
+          Actives: page {pagination.page} / {pagination.pages || 1} • {pagination.total || 0} tournées
+        </span>
+        <div className="pagination-actions">
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={loading || pagination.page <= 1}
+          >
+            Précédent
+          </button>
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
+            disabled={loading || pagination.page >= (pagination.pages || 1)}
+          >
+            Suivant
+          </button>
+        </div>
+      </div>
     </>
   );
 }

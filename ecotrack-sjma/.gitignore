@@ -1,6 +1,8 @@
 .env
 *.env.local
-.claude/
+
+# Claude Code local settings (user-specific permissions, not shared)
+.claude/settings.local.json
 node_modules/
 coverage/
 **/coverage/
