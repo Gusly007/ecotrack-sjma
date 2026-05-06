@@ -2018,7 +2018,7 @@ jobs:
   performance-lighthouse:
     name: 'Performance - Lighthouse'
     runs-on: ubuntu-latest
-    needs: build
+    # needs: build  # Removed - run independently
     continue-on-error: true
 
     steps:
@@ -2115,7 +2115,7 @@ jobs:
   accessibility-wcag:
     name: 'Accessibilité - WCAG'
     runs-on: ubuntu-latest
-    needs: build
+    # needs: build  # Removed - run independently
     continue-on-error: true
 
     steps:
@@ -2214,7 +2214,7 @@ jobs:
   seo-best-practices:
     name: 'SEO & Best Practices'
     runs-on: ubuntu-latest
-    needs: build
+    # needs: build  # Removed - run independently
     continue-on-error: true
 
     steps:
