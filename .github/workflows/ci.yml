@@ -556,7 +556,7 @@ jobs:
   # Test gateway integration + sensor-measurement-service + cache flows
 
   test-iot-integration:
-    name: ' Integration Tests (20%) - service-iot'
+    name: ' Integration Tests  - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot
     
@@ -626,7 +626,7 @@ jobs:
   # Test complete alert workflows + notification flows + state transitions
 
   test-iot-e2e:
-    name: ' E2E Tests (10%) - service-iot'
+    name: ' E2E Tests - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot-integration
     
@@ -750,7 +750,7 @@ jobs:
   # Test les interactions entre modules (routes, services, repositories)
 
   test-analytics-integration:
-    name: ' Integration Tests (22%) - service-analytics'
+    name: ' Integration Tests - service-analytics'
     runs-on: ubuntu-latest
 
     needs: test-analytics
@@ -829,7 +829,7 @@ jobs:
   # Test les parcours complets (workflows, health checks, concurrent requests)
 
   test-analytics-e2e:
-    name: '🌐 E2E Tests (11%) - service-analytics'
+    name: ' E2E Tests - service-analytics'
     runs-on: ubuntu-latest
 
     needs: test-analytics-integration
@@ -1102,7 +1102,7 @@ jobs:
   # Plus nombreux et rapide - exécuté en premier
   
   test-routes-unit:
-    name: ' Unit Tests (94%) - service-routes'
+    name: ' Unit Tests - service-routes'
     runs-on: ubuntu-latest
     
     needs: lint
@@ -1171,7 +1171,7 @@ jobs:
   # Test les interactions entre modules
   
   test-routes-integration:
-    name: ' Integration Tests (2%) - service-routes'
+    name: ' Integration Tests - service-routes'
     runs-on: ubuntu-latest
     
     needs: test-routes-unit
@@ -1247,7 +1247,7 @@ jobs:
   # Test le parcours complet - Plus lent
   
   test-routes-e2e:
-    name: '🌐 E2E Tests (5%) - service-routes'
+    name: ' E2E Tests  - service-routes'
     runs-on: ubuntu-latest
     
     needs: test-routes-integration
@@ -1416,7 +1416,7 @@ jobs:
   # 1 test | User workflow E2E
 
   test-users-e2e:
-    name: '🌐 E2E Tests - service-users'
+    name: ' E2E Tests - service-users'
     runs-on: ubuntu-latest
 
     needs: test-users-integration
@@ -1514,7 +1514,7 @@ jobs:
   # =========================================================================
 
   test-api-gateway-integration:
-    name: '🔗 Integration Tests - api-gateway'
+    name: ' Integration Tests - api-gateway'
     runs-on: ubuntu-latest
 
     needs: test-api-gateway
@@ -1583,7 +1583,7 @@ jobs:
   # =========================================================================
 
   test-api-gateway-e2e:
-    name: '🌐 E2E Tests - api-gateway'
+    name: ' E2E Tests - api-gateway'
     runs-on: ubuntu-latest
 
     needs: test-api-gateway-integration
@@ -1713,7 +1713,7 @@ jobs:
   # 1 test | Gamification E2E workflow
 
   test-gamifications-e2e:
-    name: '🌐 E2E Tests - service-gamifications'
+    name: ' E2E Tests - service-gamifications'
     runs-on: ubuntu-latest
 
     needs: test-gamifications-integration
