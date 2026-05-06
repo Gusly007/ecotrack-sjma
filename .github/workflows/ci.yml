@@ -2070,15 +2070,19 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
+          echo "Testing connection to localhost:4173..."
+          curl -v http://localhost:4173 || echo "Connection failed"
+          echo "Running Lighthouse..."
           lighthouse http://localhost:4173 \
-            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/performance/lighthouse.json \
             --output html \
             --output-file reports/performance/lighthouse.html \
             --quiet \
-            --only-categories=performance
-        continue-on-error: true
+            --only-categories=performance 2>&1 || echo "Lighthouse failed"
+          echo "Checking generated files..."
+          ls -la reports/performance/
 
       - name: 'Show lighthouse output'
         if: always()
@@ -2163,15 +2167,19 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/accessibility
+          echo "Testing connection to localhost:4173..."
+          curl -v http://localhost:4173 || echo "Connection failed"
+          echo "Running Lighthouse..."
           lighthouse http://localhost:4173 \
-            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/accessibility/lighthouse-accessibility.json \
             --output html \
             --output-file reports/accessibility/lighthouse-accessibility.html \
             --quiet \
-            --only-categories=accessibility
-        continue-on-error: true
+            --only-categories=accessibility 2>&1 || echo "Lighthouse failed"
+          echo "Checking generated files..."
+          ls -la reports/accessibility/
 
       - name: 'Extract WCAG audit results'
         if: always()
@@ -2258,15 +2266,19 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/seo
+          echo "Testing connection to localhost:4173..."
+          curl -v http://localhost:4173 || echo "Connection failed"
+          echo "Running Lighthouse..."
           lighthouse http://localhost:4173 \
-            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output-file reports/seo/lighthouse-seo.json \
             --output html \
             --output-file reports/seo/lighthouse-seo.html \
             --quiet \
-            --only-categories=seo,best-practices
-        continue-on-error: true
+            --only-categories=seo,best-practices 2>&1 || echo "Lighthouse failed"
+          echo "Checking generated files..."
+          ls -la reports/seo/
 
       - name: 'Upload SEO reports'
         if: always()
