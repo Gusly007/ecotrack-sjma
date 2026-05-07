@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+router.post('/signalements', (req, res, next) => req.controllers.signalement.create(req, res, next));
 router.get('/signalements', (req, res, next) => req.controllers.signalement.getAll(req, res, next));
 router.get('/signalements/stats', (req, res, next) => req.controllers.signalement.getStats(req, res, next));
 router.get('/signalements/types', (req, res, next) => req.controllers.signalement.getTypes(req, res, next));

@@ -1,8 +1,30 @@
 const SignalementRepository = require('../repositories/signalement-repository');
+const kafkaProducer = require('../../kafkaProducer');
 
 class SignalementService {
   constructor(db) {
     this.repository = new SignalementRepository(db);
+  }
+
+  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
+    if (!description || !id_type || !id_conteneur || !id_citoyen) {
+      const ApiError = require('../utils/api-error');
+      throw ApiError.badRequest('Champs requis manquants : description, id_type, id_conteneur, id_citoyen');
+    }
+
+    const signalement = await this.repository.create({
+      description,
+      url_photo,
+      id_type,
+      id_conteneur,
+      id_citoyen
+    });
+
+    // Publier l'événement — le service-notification-gestionnaire notifiera automatiquement
+    // le gestionnaire et l'admin de la zone concernée
+    await kafkaProducer.sendSignalement(signalement);
+
+    return signalement;
   }
 
   async getAll(filters) {
