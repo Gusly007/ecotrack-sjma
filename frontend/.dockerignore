@@ -1,0 +1,46 @@
+# ============================================================================
+# .DOCKERIGNORE POUR FRONTEND (React + Vite)
+# ============================================================================
+#
+# Évite d'envoyer node_modules et autres fichiers inutiles dans le contexte
+# Docker — notamment les symlinks Linux qui échouent sur un hôte Windows.
+# ============================================================================
+
+# Dépendances (reconstruites dans le container)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build local / cache Vite
+dist/
+.vite/
+.cache/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# VCS
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Tests et couverture
+coverage/
+.nyc_output/
+
+# Fichiers système
+Thumbs.db
