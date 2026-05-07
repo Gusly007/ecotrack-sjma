@@ -18,7 +18,7 @@ export default function GestionnaireKpisPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKpis] = useState(null);
-const [environmental, setEnvironmental] = useState(null);
+  const [environmental, setEnvironmental] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const loadKpis = useCallback(async (isManualRefresh = false) => {

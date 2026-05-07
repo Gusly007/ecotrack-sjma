@@ -11,8 +11,7 @@ const mockService = {
   deleteTournee: jest.fn(),
   getTourneeEtapes: jest.fn(),
   getTourneeProgress: jest.fn(),
-  optimizeTournee: jest.fn(),
-  previewOptimization: jest.fn()
+  optimizeTournee: jest.fn()
 };
 
 const mockDb = {};

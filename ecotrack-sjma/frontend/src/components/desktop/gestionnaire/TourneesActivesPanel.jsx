@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TourneesEnCoursTable from "./TourneesEnCoursTable";
 import { Pagination } from "../../common";
 import { fetchActiveTournees } from "../../../services/tourneeService";
@@ -8,73 +8,63 @@ function normalizeActiveTournee(tournee) {
   const done = Number(tournee.etapes_collectees || 0);
   const progression = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  // Statut métier prioritaire : on reflète le vrai statut, pas une heuristique sur la progression.
-  // Le retard est désormais une info indépendante, alimentée par le flag backend est_en_retard.
   let statusText = "En cours";
   let statusColor = "green";
 
   if (progression >= 90) {
-    statusText = "Bientôt fini";
-  }
-
-  // est_en_retard prime visuellement quand la tournée n'est pas terminée
-  const estEnRetard = Boolean(tournee.est_en_retard)
-    && tournee.statut !== "TERMINEE"
-    && tournee.statut !== "ANNULEE";
-
-  if (estEnRetard) {
-    statusText = "En retard";
+    statusText = "Bientot fini";
+  } else if (progression <= 20) {
+    statusText = "Retard";
     statusColor = "orange";
   }
 
   return {
     id: `T-${tournee.id_tournee}`,
-    rawId: tournee.id_tournee,
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigne",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
     progression,
     statusText,
     statusColor,
-    estEnRetard,
-    statut: tournee.statut || "—",
-    totalEtapes: total,
-    etapesCollectees: done,
-    heureDebutPrevue: tournee.heure_debut_prevue || null,
   };
 }
 
-export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0, onActionSuccess }) {
+export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0 }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
-  const [editNonce, setEditNonce] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let mounted = true;
 
     async function load() {
       setLoading(true);
       try {
-        const result = await fetchActiveTournees({ page, limit: pageSize, signal: controller.signal });
+        const result = await fetchActiveTournees({ page, limit: pageSize });
+        if (!mounted) {
+          return;
+        }
+
         setRows((result.data || []).map(normalizeActiveTournee));
         setPagination(result.pagination || { page: 1, pages: 1, total: 0, limit: pageSize });
-      } catch (err) {
-        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") return;
+      } catch (_err) {
+        if (!mounted) {
+          return;
+        }
         setRows([]);
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
     load();
-    return () => controller.abort();
-  }, [page, pageSize, refreshNonce, editNonce]);
 
-  const handleActionSuccess = useCallback((msg) => {
-    setEditNonce((n) => n + 1);
-    onActionSuccess?.(msg);
-  }, [onActionSuccess]);
+    return () => {
+      mounted = false;
+    };
+  }, [page, pageSize, refreshNonce]);
 
   const hasRows = useMemo(() => rows.length > 0, [rows]);
 
@@ -85,7 +75,7 @@ export default function TourneesActivesPanel({ pageSize = 6, refreshNonce = 0, o
   return (
     <>
       {hasRows ? (
-        <TourneesEnCoursTable tourneesEnCours={rows} onActionSuccess={handleActionSuccess} />
+        <TourneesEnCoursTable tourneesEnCours={rows} />
       ) : (
         <div className="empty-state">Aucune tournee active pour le moment.</div>
       )}
