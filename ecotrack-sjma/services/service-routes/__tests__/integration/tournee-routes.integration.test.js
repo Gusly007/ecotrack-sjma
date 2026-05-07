@@ -26,7 +26,7 @@ describe('Tournee routes integration', () => {
       req.controllers = { tournee: controllers };
       next();
     });
-    app.use('/api/routes/tournees', tourneeRoutes);
+    app.use('/api/routes', tourneeRoutes);
   });
 
   it('routes GET / to getAll controller', async () => {
