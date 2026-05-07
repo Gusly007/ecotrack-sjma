@@ -146,8 +146,6 @@ app.get('/health', async (_req, res) => {
   const health = {
     status:    'OK',
     timestamp: new Date().toISOString(),
-    uptime:    process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
     services: { api: 'healthy', database: 'unknown' },
   };
 
@@ -163,8 +161,12 @@ app.get('/health', async (_req, res) => {
   res.status(health.status === 'OK' ? 200 : 503).json(health);
 });
 
-// ─── Metrics ──────────────────────────────────────────────────
-app.get('/metrics', async (_req, res) => {
+// ─── Metrics (interne uniquement) ────────────────────────────
+app.get('/metrics', async (req, res) => {
+  const token = req.headers['x-metrics-token'];
+  if (!process.env.METRICS_TOKEN || token !== process.env.METRICS_TOKEN) {
+    return res.status(403).json({ success: false, message: 'Forbidden' });
+  }
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
