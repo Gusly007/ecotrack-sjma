@@ -63,6 +63,18 @@ export const listUsers = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+export const listAgents = asyncHandler(async (req, res) => {
+  const { page, limit, search } = req.query;
+  const result = await userService.listUsers({
+    page: page || 1,
+    limit: limit || 100,
+    role: 'AGENT',
+    search,
+    est_active: true
+  });
+  res.json(result);
+});
+
 export const getUserProfile = asyncHandler(async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (Number.isNaN(targetId)) {

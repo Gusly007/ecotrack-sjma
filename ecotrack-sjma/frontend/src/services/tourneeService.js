@@ -128,3 +128,66 @@ export async function fetchTourneesPageData({
     activeTourneesPagination,
   };
 }
+
+export async function fetchTourneeById(id) {
+  const response = await api.get(`/api/routes/tournees/${id}`);
+  return unwrap(response.data);
+}
+
+export async function fetchTourneeCreationOptions() {
+  const [zonesRes, agentsRes, vehiclesRes] = await Promise.allSettled([
+    api.get("/api/containers/zones"),
+    api.get("/api/users/agents"),
+    api.get("/api/routes/vehicules"),
+  ]);
+
+  return {
+    zones: zonesRes.status === "fulfilled" ? asArray(zonesRes.value.data) : [],
+    agents: agentsRes.status === "fulfilled" ? asArray(agentsRes.value.data) : [],
+    vehicles: vehiclesRes.status === "fulfilled" ? asArray(vehiclesRes.value.data) : [],
+  };
+}
+
+export async function updateTournee(id, data) {
+  const response = await api.patch(`/api/routes/tournees/${id}`, data);
+  return unwrap(response.data);
+}
+
+export async function updateTourneeStatut(id, statut) {
+  const response = await api.patch(`/api/routes/tournees/${id}`, { statut });
+  return unwrap(response.data);
+}
+
+export async function fetchAgentsForAssignment({ page = 1, limit = 100 } = {}) {
+  const response = await api.get("/users/agents", {
+    params: { page, limit },
+  });
+  return extractList(response.data || {});
+}
+
+const OPTIMIZE_TIMEOUT_MS = 120000;
+
+export async function optimizeTournee(payload) {
+  const response = await api.post("/api/routes/optimize", payload, {
+    timeout: OPTIMIZE_TIMEOUT_MS,
+  });
+  return unwrap(response.data) || response.data;
+}
+
+export async function previewOptimizeTournee(payload) {
+  const response = await api.post("/api/routes/optimize/preview", payload, {
+    timeout: OPTIMIZE_TIMEOUT_MS,
+  });
+  return unwrap(response.data) || response.data;
+}
+
+function extractList(payload) {
+  const unwrapped = unwrap(payload);
+  if (Array.isArray(unwrapped)) {
+    return unwrapped;
+  }
+  if (Array.isArray(unwrapped?.data)) {
+    return unwrapped.data;
+  }
+  return [];
+}
