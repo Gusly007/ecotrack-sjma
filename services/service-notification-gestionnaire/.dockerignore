@@ -1,0 +1,34 @@
+# Dépendances (reconstruites dans le container)
+node_modules/
+npm-debug.log*
+
+# Variables d'environnement (secrets)
+.env
+.env.local
+.env.*.local
+
+# VCS
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Tests et couverture
+__tests__/
+coverage/
+.jest_cache/
+test-results/
+
+# Documentation
+docs/
+README.md
+IMPLEMENTATION_CACHE_SUMMARY.md
+
+# Logs
+logs/
+*.log
