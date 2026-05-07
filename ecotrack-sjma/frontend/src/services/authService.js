@@ -68,6 +68,12 @@ export const authService = {
     return { ...response.data, user };
   },
 
+  async generateMfaSetup(userId) {
+    // Génère un nouveau setup MFA (sans auth complète - juste avec userId)
+    const response = await api.post('/auth/mfa/regenerate', { userId: Number(userId) });
+    return response.data;
+  },
+  
   async verifyMfaSetup(userId, code, secret) {
     // Setup initial: endpoint public qui active MFA et connecte l'utilisateur
     const response = await api.post('/auth/mfa/complete-setup', { userId, code, secret });

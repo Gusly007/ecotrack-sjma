@@ -133,6 +133,18 @@ export const disableMfa = async (userId) => {
 };
 
 /**
+ * Sauvegarde le secret temporairement pour setup après regeneration
+ * @param {number} userId
+ * @param {string} secret
+ */
+export const saveSetupSecret = async (userId, secret) => {
+  await AuthRepository.updateMfaSettings(userId, {
+    mfa_setup_secret: secret,
+    mfa_setup_secret_created_at: new Date()
+  });
+};
+
+/**
  * Vérifie si un utilisateur a le MFA activé
  * @param {number} userId
  * @returns {Promise<boolean>}

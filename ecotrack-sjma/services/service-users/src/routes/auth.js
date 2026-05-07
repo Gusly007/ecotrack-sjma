@@ -1,5 +1,7 @@
 import express from 'express';
 import * as authController from '../controllers/authController.js';
+import * as authService from '../services/authService.js';
+import * as mfaService from '../services/mfaService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { publicLimiter, loginLimiter, passwordResetLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
@@ -661,6 +663,44 @@ router.post('/mfa/complete-setup', mfaController.completeSetupAndLogin);
  *         description: Non authentifié
  */
 router.post('/mfa/disable', authenticateToken, mfaController.disable);
+
+/**
+ * @swagger
+ * /auth/mfa/regenerate:
+ *   post:
+ *     summary: Régénérer le QR code MFA
+ *     description: Génère un nouveau secret MFA sans authentification (pour recover après perte device)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Nouveau QR code généré
+ *       400:
+ *         description: Paramètres invalides
+ */
+router.post('/mfa/regenerate', async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId requis' });
+    
+    const user = await authService.getUserById(userId);
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    
+    const newSetup = await mfaService.generateMfaSetup(userId, user.email);
+    await mfaService.saveSetupSecret(userId, newSetup.secret);
+    res.json({ secret: newSetup.secret, qrCodeUrl: newSetup.qrCodeUrl });
+  } catch (err) { next(err); }
+});
 
 /**
  * @swagger

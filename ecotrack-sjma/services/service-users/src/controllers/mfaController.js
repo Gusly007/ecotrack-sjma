@@ -69,8 +69,23 @@ export const loginWithMfa = async (req, res, next) => {
     if (!userId || !code) return res.status(400).json({ error: 'userId et code requis' });
     const user = await authService.getUserById(userId);
     if (!user || !user.mfa_enabled) return res.status(400).json({ error: 'MFA non activé' });
+
     const verification = await mfaService.verifyMfaCode(code, user);
-    if (!verification.valid) return res.status(401).json({ error: 'Code MFA invalide' });
+    
+    if (!verification.valid) {
+      // Si le code échoue, regenerate automatiquement le QR code (compte supprimé de l'app mobile)
+      const newSetup = await mfaService.generateMfaSetup(userId, user.email);
+      await mfaService.saveSetupSecret(userId, newSetup.secret);
+      return res.status(401).json({ 
+        error: 'Code MFA invalide - nouveau QR code généré',
+        requiresSetup: true,
+        newMfaSetup: {
+          secret: newSetup.secret,
+          qrCodeUrl: newSetup.qrCodeUrl
+        }
+      });
+    }
+    
     const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
     const refreshToken = generateRefreshToken(user.id_utilisateur);
     await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);

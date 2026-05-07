@@ -183,7 +183,7 @@ export default function MfaPage() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <button
               type="button"
               onClick={() => {
@@ -194,6 +194,33 @@ export default function MfaPage() {
             >
               Retour à la connexion
             </button>
+          {!isSetup && (
+              <div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!userId) {
+                      setError('Session expirée, veuillez vous reconnecter');
+                      return;
+                    }
+                    try {
+                      const res = await authService.generateMfaSetup(Number(userId));
+                      setSetupData({
+                        secret: res.secret,
+                        qrCodeUrl: res.qrCodeUrl
+                      });
+                      setIsSetup(true);
+                      setError('');
+                    } catch (e) {
+                      setError('Erreur: ' + (e.response?.data?.error || e.message));
+                    }
+                  }}
+                  className="text-sm font-medium text-orange-600 hover:text-orange-500 underline"
+                >
+                  J'ai perdu mon appareil - Générer un nouveau QR code
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>

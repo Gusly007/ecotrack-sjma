@@ -12,6 +12,7 @@ const publicRoutes = [
   { path: '/auth/login', methods: ['POST'] },
   { path: '/auth/login/mfa', methods: ['POST'] },
   { path: '/auth/mfa/complete-setup', methods: ['POST'] },
+  { path: '/auth/mfa/regenerate', methods: ['POST'] },
   { path: '/auth/refresh', methods: ['POST'] },
   { path: '/auth/forgot-password', methods: ['POST'] },
   { path: '/auth/reset-password', methods: ['POST'] },
