@@ -2223,7 +2223,7 @@ jobs:
   performance-consolidated:
     name: 'Performance & Access consolidated'
     runs-on: ubuntu-latest
-    needs: [performance-lighthouse, accessibility-wcag, seo-best-practices]
+    needs: [performance-lighthouse-web-vitals, accessibility-wcag, seo-best-practices]
     if: always()
 
     steps:
