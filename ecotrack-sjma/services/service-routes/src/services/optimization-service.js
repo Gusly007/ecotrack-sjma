@@ -92,7 +92,6 @@ function twoOptAlgorithm(route) {
   let bestRoute = [...route];
   let bestDistance = totalDistance(bestRoute);
   let iterations = 0;
-  const maxIterations = 1000;
 
   while (improved && iterations < maxIterations) {
     improved = false;

@@ -3,7 +3,6 @@ import { fetchAllTournees } from "../../../services/tourneeService";
 import { Pagination } from "../../common";
 import Modal from "../../common/Modal";
 import DetailView from "../../common/DetailView";
-import TourneeEditModal from "./TourneeEditModal";
 
 function getProgression(tournee) {
   const totalEtapes = Number(tournee.total_etapes || 0);
