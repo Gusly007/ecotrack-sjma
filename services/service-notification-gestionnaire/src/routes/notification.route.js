@@ -5,6 +5,7 @@ const controller = require('../controllers/notification.controller');
 const { authenticateToken } = require('../middleware/auth');
 const { requirePermission } = require('../middleware/rbac');
 const { validateCreateNotification, validateBulkNotifications } = require('../middleware/validation');
+const { bulkLimiter } = require('../middleware/rateLimit');
 
 router.use(authenticateToken);
 
@@ -115,6 +116,7 @@ router.post(
  */
 router.post(
   '/notifications/bulk',
+  bulkLimiter,
   requirePermission('notifications:bulk'),
   validateBulkNotifications,
   controller.createBulk

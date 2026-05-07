@@ -11,6 +11,7 @@ const logger        = require('./src/utils/logger');
 const corsMiddleware = require('./src/middleware/cors');
 const requestLogger = require('./src/middleware/request-logger');
 const errorHandler  = require('./src/middleware/error-handler');
+const { generalLimiter } = require('./src/middleware/rateLimit');
 const notificationRoutes = require('./src/routes/notification.route');
 
 // ─── Prometheus ───────────────────────────────────────────────
@@ -59,6 +60,9 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── Logger HTTP ──────────────────────────────────────────────
 app.use(requestLogger);
+
+// ─── Rate limiting ────────────────────────────────────────────
+app.use(generalLimiter);
 
 // ─── Métriques Prometheus (avant les routes) ──────────────────
 app.use((req, res, next) => {
