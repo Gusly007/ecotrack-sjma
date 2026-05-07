@@ -120,15 +120,6 @@ export const updateUserByAdmin = async (userId, data = {}) => {
 };
 
 /**
- * Assigner une zone à un gestionnaire ou admin
- */
-export const assignZone = async (id_utilisateur, id_zone) => {
-  const result = await UserRepository.assignZone(id_utilisateur, id_zone);
-  await cacheService.invalidatePattern(`user:${id_utilisateur}:*`);
-  return result;
-};
-
-/**
  * Suppression d'un utilisateur (invalidate cache)
  */
 export const deleteUser = async (userId) => {

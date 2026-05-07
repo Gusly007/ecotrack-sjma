@@ -1,4 +1,4 @@
-import { updateProfile, changePassword, getProfileWithStats, assignZone } from '../../src/services/userService.js';
+import { updateProfile, changePassword, getProfileWithStats } from '../../src/services/userService.js';
 import cacheService from '../../src/services/cacheService.js';
 import { UserRepository } from '../../src/repositories/user.repository.js';
 import { hashPassword, comparePassword } from '../../src/utils/crypto.js';
@@ -9,7 +9,6 @@ jest.mock('../../src/repositories/user.repository.js', () => ({
     getPasswordHash: jest.fn(),
     updatePassword: jest.fn(),
     getProfileWithStats: jest.fn(),
-    assignZone: jest.fn(),
   },
 }));
 
@@ -111,37 +110,6 @@ describe('User Service', () => {
         }));
 
         await expect(getProfileWithStats(1)).rejects.toThrow('User not found');
-    });
-  });
-
-  describe('assignZone', () => {
-    it('assigns zone and invalidates user cache', async () => {
-      const zoneData = { id_zone: 1, code: 'Z01', nom: 'Centre', id_gestionnaire: 7 };
-      UserRepository.assignZone.mockResolvedValue(zoneData);
-
-      const result = await assignZone(7, 1);
-
-      expect(UserRepository.assignZone).toHaveBeenCalledWith(7, 1);
-      expect(cacheService.invalidatePattern).toHaveBeenCalledWith('user:7:*');
-      expect(result).toEqual(zoneData);
-    });
-
-    it('assigns id_admin zone and invalidates cache', async () => {
-      const zoneData = { id_zone: 2, code: 'Z02', nom: 'Nord', id_admin: 5 };
-      UserRepository.assignZone.mockResolvedValue(zoneData);
-
-      const result = await assignZone(5, 2);
-
-      expect(UserRepository.assignZone).toHaveBeenCalledWith(5, 2);
-      expect(cacheService.invalidatePattern).toHaveBeenCalledWith('user:5:*');
-      expect(result).toEqual(zoneData);
-    });
-
-    it('propagates repository error without calling cache invalidation', async () => {
-      UserRepository.assignZone.mockRejectedValue(new Error('Zone not found'));
-
-      await expect(assignZone(7, 999)).rejects.toThrow('Zone not found');
-      expect(cacheService.invalidatePattern).not.toHaveBeenCalled();
     });
   });
 });

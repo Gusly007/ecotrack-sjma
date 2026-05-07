@@ -9,35 +9,14 @@ export const AuthRepository = {
     );
     return result.rows;
   },
-  async insertUser(email, nom, prenom, hashedPassword, role, id_zone = null) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      const result = await client.query(
-        `INSERT INTO UTILISATEUR (email, nom, prenom, password_hash, role_par_defaut, est_active)
-          VALUES ($1, $2, $3, $4, $5, true)
-          RETURNING id_utilisateur, email, nom, prenom, role_par_defaut, points`,
-        [email, nom, prenom, hashedPassword, role]
-      );
-      const newUser = result.rows[0];
-
-      if (id_zone && (role === 'GESTIONNAIRE' || role === 'ADMIN')) {
-        const column = role === 'GESTIONNAIRE' ? 'id_gestionnaire' : 'id_admin';
-        await client.query(
-          `UPDATE zone SET ${column} = $1 WHERE id_zone = $2`,
-          [newUser.id_utilisateur, id_zone]
-        );
-      }
-
-      await client.query('COMMIT');
-      return newUser;
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
+  async insertUser(email, nom, prenom, hashedPassword, role) {
+    const result = await pool.query(
+      `INSERT INTO UTILISATEUR (email, nom, prenom, password_hash, role_par_defaut, est_active)
+        VALUES ($1, $2, $3, $4, $5, true)
+        RETURNING id_utilisateur, email, nom, prenom, role_par_defaut, points`,
+      [email, nom, prenom, hashedPassword, role]
+    );
+    return result.rows[0];
   },
   async findUserByEmail(email) {
     try {

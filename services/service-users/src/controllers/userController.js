@@ -63,6 +63,23 @@ export const listUsers = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+/**
+ * Liste les utilisateurs ayant uniquement le rôle AGENT.
+ * Utilisé par le gestionnaire pour l'assignation lors de la création d'une tournée.
+ * Force le filtre role=AGENT et ignore toute tentative de surcharge depuis le client.
+ */
+export const listAgents = asyncHandler(async (req, res) => {
+  const { page, limit, search } = req.query;
+  const result = await userService.listUsers({
+    page: page || 1,
+    limit: limit || 100,
+    role: 'AGENT',
+    search,
+    est_active: true
+  });
+  res.json(result);
+});
+
 export const getUserProfile = asyncHandler(async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (Number.isNaN(targetId)) {
@@ -97,14 +114,4 @@ export const deleteUser = asyncHandler(async (req, res) => {
   }
   await userService.deleteUser(targetId);
   res.json({ message: 'User deleted successfully' });
-});
-
-export const assignZone = asyncHandler(async (req, res) => {
-  const targetId = Number.parseInt(req.params.id, 10);
-  if (Number.isNaN(targetId)) {
-    return res.status(400).json({ error: 'Invalid user id' });
-  }
-  const { id_zone } = req.body;
-  const result = await userService.assignZone(targetId, id_zone);
-  res.json({ message: 'Zone assignée avec succès', data: result });
 });

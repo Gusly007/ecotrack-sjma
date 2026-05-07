@@ -14,8 +14,7 @@ const registerSchema = {
 		nom: z.string().min(2).max(50),
 		prenom: z.string().min(2).max(50),
 		password: z.string().min(6),
-		role: z.enum(['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN']).optional(),
-		id_zone: z.number().int().positive().optional().nullable()
+		role: z.enum(['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN']).optional()
 	})
 };
 
@@ -86,11 +85,6 @@ const logoutSchema = {
  *           default: CITOYEN
  *           description: "Rôle de l'utilisateur"
  *           example: "CITOYEN"
- *         id_zone:
- *           type: integer
- *           nullable: true
- *           description: "ID de la zone à assigner (pour GESTIONNAIRE et ADMIN uniquement)"
- *           example: 3
  *
  *     LoginRequest:
  *       type: object

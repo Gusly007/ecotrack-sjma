@@ -11,7 +11,6 @@ jest.mock('../../src/controllers/userController.js', () => ({
   updateUserByAdmin: jest.fn(),
   deleteUser: jest.fn(),
   getUserStats: jest.fn(),
-  assignZone: jest.fn(),
 }));
 
 jest.mock('../../src/controllers/authController.js', () => ({
@@ -118,7 +117,6 @@ describe('Routes registration', () => {
     expect(hasRoute(usersRouter, 'put', '/:id')).toBe(true);
     expect(hasRoute(usersRouter, 'delete', '/:id')).toBe(true);
     expect(hasRoute(usersRouter, 'get', '/:id/stats')).toBe(true);
-    expect(hasRoute(usersRouter, 'patch', '/:id/assign-zone')).toBe(true);
   });
 
   it('registers expected auth routes', () => {
