@@ -11,7 +11,8 @@ const mockService = {
   deleteTournee: jest.fn(),
   getTourneeEtapes: jest.fn(),
   getTourneeProgress: jest.fn(),
-  optimizeTournee: jest.fn()
+  optimizeTournee: jest.fn(),
+  previewOptimization: jest.fn()
 };
 
 const mockDb = {};
@@ -184,5 +185,63 @@ describe('TourneeController.optimize', () => {
 
     expect(mockService.optimizeTournee).toHaveBeenCalledWith(req.body, mockDb);
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('TourneeController.previewOptimization', () => {
+  it('devrait retourner 200 avec la prévisualisation sans persistance', async () => {
+    const preview = {
+      optimisation: {
+        distance_prevue_km: 12.5,
+        duree_prevue_min: 90,
+        gain_pct: 18.4,
+        nb_conteneurs: 7,
+        carburant_prevu_l: 2.1
+      },
+      etapes_preview: [
+        { sequence: 1, id_conteneur: 1, uid: 'C-001', fill_level: 85 }
+      ]
+    };
+    mockService.previewOptimization.mockResolvedValue(preview);
+    req.body = {
+      id_zone: 1,
+      date_tournee: '2026-04-20',
+      id_agent: 5,
+      id_vehicule: 3,
+      seuil_remplissage: 70,
+      algorithme: '2opt'
+    };
+
+    await controller.previewOptimization(req, res, next);
+
+    expect(mockService.previewOptimization).toHaveBeenCalledWith(req.body, mockDb);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: preview,
+        message: 'Prévisualisation de la tournée optimisée'
+      })
+    );
+  });
+
+  it('ne devrait rien persister (pas d\'appel à optimizeTournee)', async () => {
+    mockService.previewOptimization.mockResolvedValue({ optimisation: {}, etapes_preview: [] });
+    req.body = { id_zone: 1, date_tournee: '2026-04-20', id_agent: 5 };
+
+    await controller.previewOptimization(req, res, next);
+
+    expect(mockService.optimizeTournee).not.toHaveBeenCalled();
+    expect(mockService.createTournee).not.toHaveBeenCalled();
+  });
+
+  it('devrait appeler next en cas d\'erreur', async () => {
+    const err = new Error('Aucun conteneur éligible');
+    mockService.previewOptimization.mockRejectedValue(err);
+    req.body = { id_zone: 1, date_tournee: '2026-04-20', id_agent: 5 };
+
+    await controller.previewOptimization(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(err);
   });
 });

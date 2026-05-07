@@ -48,13 +48,54 @@ describe('CollecteService.recordCollecte', () => {
     });
   });
 
-  it('devrait lever 400 si tournée pas EN_COURS', async () => {
+  it('devrait auto-basculer PLANIFIEE -> EN_COURS à la 1re collecte', async () => {
+    // Régression 3.9.0 : avant, on rejetait avec 400 dès qu'une tournée n'était
+    // pas déjà EN_COURS. Désormais, la 1re collecte déclenche la transition.
     mockTourneeRepo.findById.mockResolvedValue({ ...tourneeEnCours, statut: 'PLANIFIEE' });
+    mockCollecteRepo.recordCollecte.mockResolvedValue({ id_collecte: 1 });
+    mockCollecteRepo.getTourneeProgress.mockResolvedValue({
+      total_etapes: '5',
+      etapes_collectees: '1'
+    });
+
+    const result = await service.recordCollecte(1, validData, 10);
+    expect(mockTourneeRepo.updateStatut).toHaveBeenCalledWith(1, 'EN_COURS');
+    expect(mockCollecteRepo.recordCollecte).toHaveBeenCalled();
+    expect(result.collecte).toEqual({ id_collecte: 1 });
+  });
+
+  it('ne devrait PAS rebascule en EN_COURS si la tournée est déjà EN_COURS', async () => {
+    mockTourneeRepo.findById.mockResolvedValue(tourneeEnCours);
+    mockCollecteRepo.recordCollecte.mockResolvedValue({ id_collecte: 1 });
+    mockCollecteRepo.getTourneeProgress.mockResolvedValue({
+      total_etapes: '5',
+      etapes_collectees: '2'
+    });
+
+    await service.recordCollecte(1, validData, 10);
+    // updateStatut peut être appelé avec TERMINEE en fin de tournée — ici 2/5, donc rien
+    expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalledWith(1, 'EN_COURS');
+  });
+
+  it('devrait lever 400 si tournée TERMINEE', async () => {
+    mockTourneeRepo.findById.mockResolvedValue({ ...tourneeEnCours, statut: 'TERMINEE' });
 
     await expect(service.recordCollecte(1, validData, 10)).rejects.toMatchObject({
       statusCode: 400,
-      message: expect.stringContaining('EN_COURS')
+      message: expect.stringContaining('TERMINEE')
     });
+    expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalled();
+    expect(mockCollecteRepo.recordCollecte).not.toHaveBeenCalled();
+  });
+
+  it('devrait lever 400 si tournée ANNULEE', async () => {
+    mockTourneeRepo.findById.mockResolvedValue({ ...tourneeEnCours, statut: 'ANNULEE' });
+
+    await expect(service.recordCollecte(1, validData, 10)).rejects.toMatchObject({
+      statusCode: 400,
+      message: expect.stringContaining('ANNULEE')
+    });
+    expect(mockCollecteRepo.recordCollecte).not.toHaveBeenCalled();
   });
 
   it('devrait lever 400 si agent non assigné', async () => {
