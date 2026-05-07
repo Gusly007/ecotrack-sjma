@@ -16,6 +16,7 @@ class TourneeController {
     this.getEtapes = this.getEtapes.bind(this);
     this.getProgress = this.getProgress.bind(this);
     this.optimize = this.optimize.bind(this);
+    this.previewOptimization = this.previewOptimization.bind(this);
   }
 
   async create(req, res, next) {

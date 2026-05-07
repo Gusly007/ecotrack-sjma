@@ -139,7 +139,6 @@ function optimizeRoute(containers, algorithme = '2opt') {
   let algorithmeUtilise;
 
   if (algorithme === '2opt') {
-    // Améliorer avec 2-opt
     finalRoute = twoOptAlgorithm(nnRoute);
     finalDistance = totalDistance(finalRoute);
     // Compare distances to detect if 2-opt improved the route
@@ -178,11 +177,19 @@ function estimateDuration(distanceKm, nbConteneurs) {
   return Math.ceil(tempsTrajet + tempsCollecte);
 }
 
+/**
+ * Consommation moyenne d'un camion-benne de collecte (en litres pour 100 km).
+ * Valeur de référence métier utilisée pour estimer le carburant d'une tournée.
+ * Source : moyenne constatée sur flotte de bennes à ordures ménagères (30-40 L/100km).
+ */
+const FUEL_CONSUMPTION_PER_100KM = 35;
+
 module.exports = {
   optimizeRoute,
   nearestNeighborAlgorithm,
   twoOptAlgorithm,
   totalDistance,
   haversineDistance,
-  estimateDuration
+  estimateDuration,
+  FUEL_CONSUMPTION_PER_100KM
 };
