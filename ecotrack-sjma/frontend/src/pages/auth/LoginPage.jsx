@@ -48,19 +48,14 @@ const LoginPage = () => {
         localStorage.setItem('mfa_user_id', userId);
 
         console.log('MFA required for user:', userId, 'requiresSetup:', result?.requiresSetup);
-        // Si MFA setup requis (première fois), rediriger avec les données
+        // Si MFA setup requis (première fois), rediriger vers setup sans stocker le secret
         if (result?.requiresSetup && result?.mfaSetup?.secret) {
-        // Stocker les données MFA pour la page de setup
-        localStorage.setItem('mfa_setup', JSON.stringify({
-          userId: userId,
-          secret: result.mfaSetup.secret,
-          qrCodeUrl: result.mfaSetup.qrCodeUrl,
-            email: result.email || formData.email,
-            timestamp: new Date().toISOString()
-        }));
-        navigate('/auth/mfa?setup=true');
-        return;
-      }
+          // Stocker uniquement userId temporairement (pour récup après redirect)
+          // Note: les données sensibles sont récupérées via API sur la page MFA
+          sessionStorage.setItem('mfa_pending_setup', 'true');
+          navigate('/auth/mfa?setup=true');
+          return;
+        }
         // Important: nettoyer un ancien setup pour éviter un faux mode setup
         localStorage.removeItem('mfa_setup');
         // Si MFA déjà activé (pas de setup), rediriger vers la page MFA simple

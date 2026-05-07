@@ -1,5 +1,6 @@
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
+import crypto from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
 
 /**
@@ -105,9 +106,9 @@ export const verifyTotp = (token, secret) => {
  * @returns {Promise<{backupCodes: string[]}>}
  */
 export const enableMfa = async (userId, secret) => {
-  // Générer des codes de secours (10 codes à 8 caractères)
+  // Générer des codes de secours sécurisés (10 codes à 8 caractères)
   const backupCodes = Array.from({ length: 10 }, () => 
-    Math.random().toString(36).substring(2, 10).toUpperCase()
+    crypto.randomBytes(4).toString('hex').toUpperCase()
   );
 
   await AuthRepository.updateMfaSettings(userId, {
