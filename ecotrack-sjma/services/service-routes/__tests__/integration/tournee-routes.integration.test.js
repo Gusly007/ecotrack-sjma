@@ -2,6 +2,10 @@ const express = require('express');
 const request = require('supertest');
 const tourneeRoutes = require('../../src/routes/tournee.route');
 
+jest.mock('../../src/middleware/rbac', () => ({
+  requirePermission: () => (req, res, next) => next()
+}));
+
 describe('Tournee routes integration', () => {
   let app;
   let controllers;
