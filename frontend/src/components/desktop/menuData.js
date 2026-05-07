@@ -13,7 +13,7 @@ export const ADMIN_MENU = [
 ];
 
 export const GESTIONNAIRE_MENU = [
-  { path: '/gestionnaire', icon: 'fa-tachometer-alt', label: 'Tableau de bord' },
+  { path: '/gestionnaire', icon: 'fa-tachometer-alt', label: 'Tableau de bord', exact: true },
   { path: '/gestionnaire/tournees', icon: 'fa-route', label: 'Tournées' },
   { path: '/gestionnaire/suivi', icon: 'fa-satellite-dish', label: 'Suivi temps réel' },
   { path: '/gestionnaire/zones', icon: 'fa-map', label: 'Zones' },

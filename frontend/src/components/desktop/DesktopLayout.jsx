@@ -14,6 +14,18 @@ export default function DesktopLayout({ children }) {
   const isAdmin = role === 'ADMIN';
   const menuItems = isAdmin ? ADMIN_MENU : GESTIONNAIRE_MENU;
 
+  const gestionnaireTitleByPath = {
+    '/gestionnaire': 'Tableau de bord',
+    '/gestionnaire/tournees': 'Tournées',
+    '/gestionnaire/suivi': 'Suivi temps réel',
+    '/gestionnaire/zones': 'Zones',
+    '/gestionnaire/conteneurs': 'Conteneurs',
+    '/gestionnaire/kpis': 'KPIs',
+    '/gestionnaire/signalements': 'Signalements',
+    '/gestionnaire/maintenance': 'Maintenance',
+    '/gestionnaire/rapports': 'Rapports',
+  };
+
   const currentDate = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -21,7 +33,7 @@ export default function DesktopLayout({ children }) {
     year: 'numeric'
   });
 
-  const pageTitle = isAdmin ? 'Administration' : 'Tableau de bord';
+  const pageTitle = isAdmin ? 'Administration' : (gestionnaireTitleByPath[location.pathname] || 'Tableau de bord');
   const userName = user?.prenom || user?.name || (isAdmin ? 'Admin' : 'Gestionnaire');
   const userLabel = isAdmin ? 'Administrateur' : 'Gestionnaire';
   const notificationsCount = isAdmin ? 5 : 3;

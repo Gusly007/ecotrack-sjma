@@ -1,0 +1,145 @@
+.ftc-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ftc-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ftc-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.ftc-count {
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.ftc-retry-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  color: #3b82f6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ftc-retry-btn:hover {
+  background: #eff6ff;
+}
+
+.ftc-empty {
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.ftc-empty.ftc-error {
+  color: #ef4444;
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.ftc-avg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ftc-avg-label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.ftc-avg-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.ftc-avg-badge.ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ftc-avg-badge.warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.ftc-avg-badge.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ftc-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
+  gap: 6px;
+  align-items: end;
+  min-height: 200px;
+}
+
+.ftc-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: default;
+}
+
+.ftc-col:hover .ftc-bar {
+  filter: brightness(1.1);
+}
+
+.ftc-value {
+  font-size: 0.7rem;
+  color: #334155;
+  font-weight: 700;
+}
+
+.ftc-bar-wrap {
+  height: 150px;
+  width: 100%;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ftc-bar {
+  width: 100%;
+  border-radius: 999px;
+  transition: height 0.35s ease;
+}
+
+.ftc-label {
+  font-size: 0.66rem;
+  color: #64748b;
+  text-align: center;
+}
+
