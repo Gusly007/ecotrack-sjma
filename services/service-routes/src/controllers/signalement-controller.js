@@ -5,17 +5,6 @@ class SignalementController {
     this.service = service;
   }
 
-  create = async (req, res) => {
-    try {
-      const { description, url_photo, id_type, id_conteneur, id_citoyen } = req.body;
-      const signalement = await this.service.create({ description, url_photo, id_type, id_conteneur, id_citoyen });
-      return res.status(201).json(ApiResponse.success(signalement, 'Signalement créé'));
-    } catch (error) {
-      const status = error.status || error.statusCode || 500;
-      return res.status(status).json(ApiResponse.error(status, error.message));
-    }
-  };
-
   getAll = async (req, res) => {
     try {
       const filters = {

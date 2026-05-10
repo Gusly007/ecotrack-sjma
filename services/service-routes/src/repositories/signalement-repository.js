@@ -343,16 +343,6 @@ class SignalementRepository {
     return result.rows[0];
   }
 
-  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
-    const result = await this.db.query(
-      `INSERT INTO signalement (description, url_photo, id_type, id_conteneur, id_citoyen)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [description, url_photo || null, id_type, id_conteneur, id_citoyen]
-    );
-    return result.rows[0];
-  }
-
   async getTypes() {
     const result = await this.db.query(
       `SELECT id_type, libelle, priorite FROM type_signalement ORDER BY priorite DESC`
