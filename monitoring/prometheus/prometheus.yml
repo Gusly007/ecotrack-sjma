@@ -62,12 +62,6 @@ scrape_configs:
       - targets: ['service-analytics:3015']
     metrics_path: '/metrics'
 
-  # Service Notification Gestionnaire
-  - job_name: 'service-notification-gestionnaire'
-    static_configs:
-      - targets: ['service-notification-gestionnaire:3016']
-    metrics_path: '/metrics'
-
   # PostgreSQL (postgres-exporter)
   - job_name: 'postgres'
     static_configs:

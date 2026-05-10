@@ -132,12 +132,6 @@ services:
     networks:
       - ecotrack
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -193,8 +187,6 @@ services:
       IOT_SERVICE_URL: http://ecotrack-service-iot:3013
       GAMIFICATIONS_SERVICE_URL: http://ecotrack-service-gamifications:3014
       ANALYTICS_SERVICE_URL: http://ecotrack-service-analytics:3015
-      NOTIFICATION_SERVICE_URL: http://ecotrack-service-notification-gestionnaire:3016
-      NOTIFICATION_PORT: 3016
       GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
@@ -210,8 +202,6 @@ services:
       service-users:
         condition: service_healthy
       service-routes:
-        condition: service_healthy
-      service-notification-gestionnaire:
         condition: service_healthy
       redis:
         condition: service_started
@@ -511,54 +501,6 @@ services:
     restart: unless-stopped
 
   # =========================================================================
-  # SERVICE-NOTIFICATION-GESTIONNAIRE (port 3016)
-  # =========================================================================
-  service-notification-gestionnaire:
-    build:
-      context: ./services/service-notification-gestionnaire
-      dockerfile: Dockerfile
-    container_name: ecotrack-service-notification-gestionnaire
-    environment:
-      APP_PORT: 3016
-      PGHOST: postgres
-      PGPORT: 5432
-      PGUSER: ${DB_USER:-ecotrack_user}
-      PGPASSWORD: ${DB_PASSWORD:-ecotrack_password}
-      PGDATABASE: ${DB_NAME:-ecotrack}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      NODE_ENV: ${NODE_ENV:-production}
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
-      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
-      KAFKAJS_NO_PARTITIONER_WARNING: 1
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "3016:3016"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      migrations:
-        condition: service_completed_successfully
-      redis:
-        condition: service_started
-    networks:
-      - ecotrack
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "healthcheck.cjs"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # =========================================================================
   # PROMETHEUS (Monitoring & Métriques)
   # =========================================================================
   prometheus:
@@ -672,16 +614,15 @@ services:
   kafka-exporter:
     image: danielqsj/kafka-exporter:latest
     container_name: ecotrack-kafka-exporter
-    command:
-      - "--kafka.server=kafka:29092"
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
     ports:
       - "9308:9308"
     networks:
       - ecotrack
     restart: unless-stopped
     depends_on:
-      kafka:
-        condition: service_healthy
+      - kafka
 
 # ============================================================================
 # VOLUMES (Persistance des données)

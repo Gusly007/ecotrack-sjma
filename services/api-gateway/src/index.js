@@ -145,14 +145,6 @@ const services = {
     baseUrl: process.env.IOT_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [{ mountPath: '/api/iot' }]
-  },
-  notifications: {
-    displayName: 'Notification Manager Service',
-    status: 'ready',
-    port: parseInt(process.env.NOTIFICATION_PORT, 10) || 3016,
-    baseUrl: process.env.NOTIFICATION_SERVICE_URL,
-    swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/notifications' }]
   }
 };
 
