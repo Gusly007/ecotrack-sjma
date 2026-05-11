@@ -1,6 +1,5 @@
 .env
 *.env.local
-.claude/
 node_modules/
 coverage/
 **/coverage/
