@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatCard } from "../../../components/common";
-import { useAutoRefresh } from "../../../hooks";
 import AlertesUrgentesPanel from "../../../components/desktop/gestionnaire/AlertesUrgentesPanel";
 import CollectesAujourdhuiPanel from "../../../components/desktop/gestionnaire/CollectesAujourdhuiPanel";
 import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
@@ -10,6 +9,7 @@ import "./GestionnaireDashboard.css";
 export default function GestionnaireDashboard() {
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
+	const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 	const [refreshNonce, setRefreshNonce] = useState(0);
 	const [dashboardData, setDashboardData] = useState({
 		stats: null,
@@ -52,7 +52,19 @@ export default function GestionnaireDashboard() {
 		};
 	}, [loadDashboard]);
 
-	const [autoRefreshEnabled, toggleAutoRefresh] = useAutoRefresh(() => loadDashboard(true));
+	useEffect(() => {
+		if (!autoRefreshEnabled) {
+			return undefined;
+		}
+
+		const intervalId = setInterval(() => {
+			if (!loading && !refreshing) {
+				loadDashboard(true);
+			}
+		}, 60000);
+
+		return () => clearInterval(intervalId);
+	}, [autoRefreshEnabled, loadDashboard, loading, refreshing]);
 
 	const statCards = useMemo(() => {
 		const stats = dashboardData.stats || {};
@@ -142,7 +154,7 @@ export default function GestionnaireDashboard() {
 	}, [dashboardData.activeTournees]);
 
 	if (loading) {
-		return <div className="gestionnaire-dashboard"><i className="fas fa-spinner fa-spin"></i> Chargement du dashboard...</div>;
+		return <div className="gestionnaire-dashboard">Chargement du dashboard...</div>;
 	}
 
 	return (
@@ -151,7 +163,7 @@ export default function GestionnaireDashboard() {
 				<button
 					type="button"
 					className={`auto-refresh-btn ${autoRefreshEnabled ? "enabled" : ""}`}
-					onClick={toggleAutoRefresh}
+					onClick={() => setAutoRefreshEnabled((prev) => !prev)}
 				>
 					<i className={`fas ${autoRefreshEnabled ? "fa-toggle-on" : "fa-toggle-off"}`}></i>
 					Auto-refresh 60s
