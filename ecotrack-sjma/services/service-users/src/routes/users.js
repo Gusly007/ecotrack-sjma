@@ -368,6 +368,12 @@ router.get(
   userController.listUsers
 );
 
+router.get(
+  '/agents',
+  requirePermission('tournee:create'),
+  userController.listAgents
+);
+
 /**
  * @swagger
  * /users/{id}:

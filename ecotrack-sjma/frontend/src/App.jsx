@@ -25,6 +25,10 @@ import ConfigurationPage from './pages/desktop/admin/Configuration';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
+import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
+import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
+import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
+import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -153,6 +157,62 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <TourneePage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/suivi" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SuiviTempsReelPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/zones" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <ZonesPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/conteneurs" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <ConteneursPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/signalements" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SignalementsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/signalements/:id" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SignalementDetailPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/kpis" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <GestionnaireKpisPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/rapports" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <RapportsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/maintenance" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <MaintenancePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

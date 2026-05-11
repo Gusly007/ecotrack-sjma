@@ -36,9 +36,9 @@ export default function ZonesPage() {
   const [selectedZone, setSelectedZone] = useState(null);
 
   // Permissions selon le rôle
-  const role = user?.role || 'MANAGER';
-  const canCreate = role === 'ADMIN' || role === 'MANAGER';
-  const canEdit = role === 'ADMIN' || role === 'MANAGER';
+  const role = user?.role || user?.role_par_defaut || 'GESTIONNAIRE';
+  const canCreate = role === 'ADMIN' || role === 'GESTIONNAIRE';
+  const canEdit = role === 'ADMIN' || role === 'GESTIONNAIRE';
   const canDelete = role === 'ADMIN';
 
   // Charger les zones
