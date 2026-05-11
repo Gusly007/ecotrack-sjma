@@ -172,7 +172,6 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
           totalItems={searchTerm.trim() ? filteredRows.length : (pagination.total || 0)}
           label="tournée"
         />
-      </div>
     </div>
   );
 }
