@@ -115,19 +115,83 @@ export default function ZoneRepartitionTable({ pageSize = PAGE_SIZE }) {
           <table className="zrt-table">
             <thead>
               <tr>
-                <th className="zrt-th-zone" onClick={() => handleSort('label')}>
-                  Zone {sortIcon('label')}
+                <th className="zrt-th-zone" scope="col">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('label')}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    Zone {sortIcon('label')}
+                  </button>
                 </th>
-                <th onClick={() => handleSort('containers')}>
-                  Conteneurs {sortIcon('containers')}
+                <th scope="col">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('containers')}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    Conteneurs {sortIcon('containers')}
+                  </button>
                 </th>
-                <th onClick={() => handleSort('collectionsCount')}>
-                  Collectes {sortIcon('collectionsCount')}
+                <th scope="col">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('collectionsCount')}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    Collectes {sortIcon('collectionsCount')}
+                  </button>
                 </th>
-                <th onClick={() => handleSort('fillRate')}>
-                  Taux remplissage {sortIcon('fillRate')}
+                <th scope="col">
+                  <button
+                    type="button"
+                    onClick={() => handleSort('fillRate')}
+                    style={{
+                      background: 'none',
+                      border: 0,
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    Taux remplissage {sortIcon('fillRate')}
+                  </button>
                 </th>
-                <th className="zrt-th-bar">Niveau</th>
+                <th className="zrt-th-bar" scope="col">Niveau</th>
               </tr>
             </thead>
             <tbody>
