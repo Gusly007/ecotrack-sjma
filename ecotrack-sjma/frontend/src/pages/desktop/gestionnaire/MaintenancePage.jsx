@@ -18,7 +18,7 @@ function normalizeIntervention(item) {
 
   return {
     id: item.id_signalement,
-    titre: item.titre || "Intervention sans titre",
+    titre: item.type_signalement || item.titre || "Intervention sans titre",
     zone: item.zone_nom || item.zone_code || "Zone non definie",
     urgence: urgenceRaw,
     statut: statutRaw,
@@ -35,7 +35,7 @@ function statusClass(status) {
   return "pending";
 }
 
-const INITIAL_PLANNING = { technicien: "", datePrevue: "", commentaire: "" };
+const INITIAL_PLANNING = { id_agent: "", date_intervention: "", commentaire: "" };
 
 export default function MaintenancePage() {
   const { alert, showSuccess, showError, clearAlert } = useAlert();
@@ -49,29 +49,7 @@ export default function MaintenancePage() {
   const [selectedId, setSelectedId] = useState(null);
   const [planning, setPlanning] = useState(INITIAL_PLANNING);
   const [agents, setAgents] = useState([]);
-  const [agentsLoading, setAgentsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadAgents() {
-      try {
-        const data = await fetchAgentsForAssignment();
-        setAgents(data || []);
-      } catch (err) {
-        console.error('Erreur chargement agents:', err);
-      } finally {
-        setAgentsLoading(false);
-      }
-    }
-    loadAgents();
-  }, []);
-
-  const agentOptions = useMemo(() => {
-    if (agentsLoading) return [{ value: '', label: 'Chargement...' }];
-    return [
-      { value: '', label: '— Selectionner un agent —' },
-      ...agents.map(a => ({ value: String(a.id_utilisateur), label: `${a.prenom || ''} ${a.nom || ''}`.trim() || a.email }))
-    ];
-  }, [agents, agentsLoading]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,6 +77,23 @@ export default function MaintenancePage() {
 
     load();
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAgentsLoading(true);
+    fetchAgentsForAssignment({ limit: 100 })
+      .then((list) => {
+        if (cancelled) return;
+        setAgents(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setAgents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAgentsLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const filteredInterventions = useMemo(() => {
@@ -160,26 +155,32 @@ export default function MaintenancePage() {
 
     try {
       setSubmitting(true);
-      const technicianId = planning.technicien && planning.technicien !== '' 
-        ? Number(planning.technicien) 
+      const technicianId = planning.id_agent && planning.id_agent !== ''
+        ? Number(planning.id_agent)
         : null;
-      
+
       if (!technicianId) {
         showError('Veuillez sélectionner un agent/technicien');
         return;
       }
-      
+
       await signalementService.saveTreatment(selected.id, {
         id_agent: technicianId,
-        date_prevue: planning.datePrevue,
-        commentaire: planning.commentaire,
-        statut: "EN_COURS",
+        date_intervention: planning.date_intervention || null,
+        commentaire: planning.commentaire || null,
+        type_action: "INTERVENTION",
       });
 
-      // Reflect change locally without a full reload
+      const agentName = agents.find(
+        (a) => String(a.id_utilisateur) === String(planning.id_agent)
+      );
+      const displayName = agentName
+        ? `${agentName.prenom || ""} ${agentName.nom || ""}`.trim()
+        : selected.assigneA;
+
       setInterventions((prev) => prev.map((item) =>
         item.id === selected.id
-          ? { ...item, statut: "EN_COURS", assigneA: planning.technicien || item.assigneA }
+          ? { ...item, statut: "EN_COURS", assigneA: displayName }
           : item
       ));
       setPlanning(INITIAL_PLANNING);
@@ -336,28 +337,32 @@ export default function MaintenancePage() {
 
               <form className="maintenance-plan-form" onSubmit={handlePlanningSubmit}>
                 <h3>Planifier l'intervention</h3>
-                <label htmlFor="technicien">Technicien</label>
+                <label htmlFor="id_agent">Assigner un agent</label>
                 <select
-                  id="technicien"
-                  name="technicien"
-                  value={planning.technicien}
+                  id="id_agent"
+                  name="id_agent"
+                  value={planning.id_agent}
                   onChange={handlePlanningChange}
                   required
                   disabled={submitting || agentsLoading}
                 >
-                  {agentOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option value="">
+                    {agentsLoading ? "Chargement des agents..." : "-- Selectionner un agent --"}
+                  </option>
+                  {agents.map((agent) => (
+                    <option key={agent.id_utilisateur} value={agent.id_utilisateur}>
+                      {`${agent.prenom || ""} ${agent.nom || ""}`.trim() || agent.email}
+                    </option>
                   ))}
                 </select>
 
-                <label htmlFor="datePrevue">Date prevue</label>
+                <label htmlFor="date_intervention">Date d'intervention</label>
                 <input
-                  id="datePrevue"
-                  name="datePrevue"
+                  id="date_intervention"
+                  name="date_intervention"
                   type="date"
-                  value={planning.datePrevue}
+                  value={planning.date_intervention}
                   onChange={handlePlanningChange}
-                  required
                   disabled={submitting}
                 />
 
