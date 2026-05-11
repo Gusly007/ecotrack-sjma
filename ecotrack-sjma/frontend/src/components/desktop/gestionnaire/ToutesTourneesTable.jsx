@@ -188,11 +188,19 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
         )}
 
         <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.pages || 1}
+          currentPage={searchTerm.trim() ? 1 : pagination.page}
+          totalPages={searchTerm.trim() ? 1 : (pagination.pages || 1)}
           onPageChange={setPage}
-          showingFrom={(pagination.page - 1) * pageSize + 1}
-          showingTo={Math.min(pagination.page * pageSize, pagination.total || 0)}
+          showingFrom={
+            searchTerm.trim()
+              ? (filteredRows.length > 0 ? 1 : 0)
+              : (pagination.page - 1) * pageSize + 1
+          }
+          showingTo={
+            searchTerm.trim()
+              ? filteredRows.length
+              : Math.min(pagination.page * pageSize, pagination.total || 0)
+          }
           totalItems={searchTerm.trim() ? filteredRows.length : (pagination.total || 0)}
           label="tournée"
         />
