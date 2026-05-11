@@ -25,7 +25,7 @@ function normalizeZone(zone) {
   };
 }
 
-export default function ZoneRepartitionTable({ pageSize = PAGE_SIZE }) {
+export default function ZoneRepartitionTable({ pageSize = PAGE_SIZE, refreshKey = 0 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [zones, setZones] = useState([]);
@@ -47,7 +47,7 @@ export default function ZoneRepartitionTable({ pageSize = PAGE_SIZE }) {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const sorted = useMemo(() => {
     return [...zones].sort((a, b) => {
