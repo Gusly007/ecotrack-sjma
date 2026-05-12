@@ -23,3 +23,6 @@ Deployment_SETUP.md
 
 /maquette/
 docs/SECURITY_FIXES.md
+
+# Claude Code local config
+.claude/settings.local.json
