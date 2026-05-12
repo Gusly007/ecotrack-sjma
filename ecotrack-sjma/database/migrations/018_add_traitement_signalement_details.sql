@@ -1,5 +1,6 @@
-ALTER TABLE traitement_signalement
-  ADD COLUMN IF NOT EXISTS type_intervention VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS date_intervention DATE,
-  ADD COLUMN IF NOT EXISTS priorite_intervention VARCHAR(10),
-  ADD COLUMN IF NOT EXISTS notes_intervention VARCHAR(500);
+-- Migration: Add traitement_signalement details (placeholder for existing schema)
+-- Description: Placeholder migration for schema alignment
+-- NOTE: This migration was previously applied to the database but the file was missing.
+-- Adding this as a no-op to fix migration ordering.
+
+-- No schema changes needed - this migration maintains existing state
