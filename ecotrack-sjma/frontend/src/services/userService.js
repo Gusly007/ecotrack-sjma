@@ -40,4 +40,12 @@ export const userService = {
     const response = await api.get(`/users/${id}/stats`);
     return response.data;
   },
+
+  getAgents: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    const response = await api.get(`/users/agents?${query.toString()}`);
+    return response.data;
+  },
 };

@@ -327,6 +327,48 @@ class TourneeRepository {
   }
 
   /**
+   * Récupère le nom d'une zone par son ID
+   */
+  async getZoneName(id_zone) {
+    const result = await this.db.query(
+      `SELECT nom FROM zone WHERE id_zone = $1`,
+      [id_zone]
+    );
+    return result.rows[0]?.nom || `Zone ${id_zone}`;
+  }
+
+  /**
+   * Récupère les conteneurs actifs d'une zone avec leur niveau de remplissage
+   * pour l'optimisation des tournées
+   */
+  async findActiveContainersByZone(id_zone, seuil_remplissage = 70, limit = 100) {
+    const result = await this.db.query(
+      `SELECT
+        c.id_conteneur, c.uid, c.capacite_l,
+        ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude,
+        COALESCE(m.niveau_remplissage_pct, 0) AS fill_level
+       FROM conteneur c
+       LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
+       LEFT JOIN LATERAL (
+         SELECT niveau_remplissage_pct
+         FROM mesure
+         WHERE id_capteur = cap.id_capteur
+         ORDER BY date_heure_mesure DESC
+         LIMIT 1
+       ) m ON TRUE
+       WHERE c.id_zone = $1
+         AND c.statut = 'ACTIF'
+         AND c.position IS NOT NULL
+         AND COALESCE(m.niveau_remplissage_pct, 0) >= $2
+       ORDER BY fill_level DESC NULLS LAST
+       LIMIT $3`,
+      [id_zone, seuil_remplissage, limit]
+    );
+
+    return result.rows;
+  }
+
+  /**
    * Ajoute des étapes à une tournée
    */
   async addEtapes(tourneeId, etapes) {

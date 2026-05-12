@@ -1,10 +1,20 @@
 const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSchema, optimizeSchema } = require('../validators/tournee.validator');
-const { optimizeRoute, estimateDuration } = require('./optimization-service');
+const { optimizeRoute, estimateDuration, FUEL_CONSUMPTION_PER_100KM } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
 const cacheService = require('./cacheService');
 
 const TOURNEE_TTL = 60; // 1 minute
 const TOURNEES_LIST_TTL = 30; // 30 seconds
+
+/**
+ * Convertit une heure "HH:MM" (ou "HH:MM:SS") en nombre total de minutes depuis minuit.
+ */
+function parseHeureToMinutes(heure, defaultMinutes = 7 * 60 + 30) {
+  if (typeof heure !== 'string') return defaultMinutes;
+  const match = heure.match(/^([01]\d|2[0-3]):([0-5]\d)/);
+  if (!match) return defaultMinutes;
+  return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+}
 
 class TourneeService {
   constructor(tourneeRepository, collecteRepository) {
@@ -15,10 +25,9 @@ class TourneeService {
   async createTournee(data) {
     const validated = validateSchema(createTourneeSchema, data);
     const result = await this.tourneeRepo.create(validated);
-    
-    // Invalidate cache
+
     await cacheService.invalidatePattern('tournee:*');
-    
+
     return result;
   }
 
@@ -39,7 +48,7 @@ class TourneeService {
   async getAllTournees(options = {}) {
     const { page = 1, limit = 20, ...filters } = options;
     const cacheKey = `tournees:list:${page}:${limit}:${JSON.stringify(filters)}`;
-    
+
     const result = await cacheService.getOrSet(
       cacheKey,
       async () => {
@@ -62,7 +71,6 @@ class TourneeService {
   }
 
   async getAgentTodayTournee(agentId) {
-    // Don't cache agent-specific data as it's time-sensitive
     const tournee = await this.tourneeRepo.findAgentTodayTournee(agentId);
     if (!tournee) throw ApiError.notFound("Aucune tournée assignée aujourd'hui");
     const etapes = await this.tourneeRepo.findEtapes(tournee.id_tournee);
@@ -75,22 +83,20 @@ class TourneeService {
     const validated = validateSchema(updateTourneeSchema, data);
     const updated = await this.tourneeRepo.update(id, validated);
     if (!updated) throw ApiError.notFound(`Tournée ${id} introuvable`);
-    
-    // Invalidate cache
+
     await cacheService.del(`tournee:${id}`);
     await cacheService.invalidatePattern('tournee:*');
-    
+
     return updated;
   }
 
   async updateStatut(id, data) {
     const validated = validateSchema(updateStatutSchema, data);
     const result = await this.tourneeRepo.updateStatut(id, validated.statut);
-    
-    // Invalidate cache
+
     await cacheService.del(`tournee:${id}`);
     await cacheService.invalidatePattern('tournee:*');
-    
+
     return result;
   }
 
@@ -101,11 +107,10 @@ class TourneeService {
       throw ApiError.badRequest('Impossible de supprimer une tournée en cours');
     }
     const result = await this.tourneeRepo.delete(id);
-    
-    // Invalidate cache
+
     await cacheService.del(`tournee:${id}`);
     await cacheService.invalidatePattern('tournee:*');
-    
+
     return result;
   }
 
@@ -142,8 +147,9 @@ class TourneeService {
 
   /**
    * Génère une tournée optimisée pour une zone donnée
+   * Utilise l'algorithme 'nearest_neighbor' ou '2opt' (2-opt améliore NN)
    */
-  async optimizeTournee(data, db) {
+  async optimizeTournee(data) {
     const validated = validateSchema(optimizeSchema, data);
     const {
       id_zone,
@@ -151,46 +157,23 @@ class TourneeService {
       seuil_remplissage = 70,
       id_agent,
       id_vehicule,
+      heure_debut_prevue = '07:30',
       algorithme = '2opt'
     } = validated;
 
-    // Récupérer les conteneurs actifs de la zone avec position valide
-    const contenteursResult = await db.query(
-      `SELECT
-        c.id_conteneur, c.uid, c.capacite_l,
-        ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude,
-        COALESCE(m.niveau_remplissage_pct, 0) AS fill_level
-       FROM conteneur c
-       LEFT JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
-       LEFT JOIN LATERAL (
-         SELECT niveau_remplissage_pct
-         FROM mesure
-         WHERE id_capteur = cap.id_capteur
-         ORDER BY date_heure_mesure DESC
-         LIMIT 1
-       ) m ON TRUE
-       WHERE c.id_zone = $1
-         AND c.statut = 'ACTIF'
-         AND c.position IS NOT NULL
-       ORDER BY fill_level DESC NULLS LAST`,
-      [id_zone]
-    );
+    // Récupérer le nom de la zone via repository
+    const nomZone = await this.tourneeRepo.getZoneName(id_zone);
 
-    let conteneurs = contenteursResult.rows;
-
-    // Filtrer par seuil de remplissage (inclure ceux sans mesure si seuil = 0)
-    conteneurs = conteneurs.filter(c => {
-      const fl = parseFloat(c.fill_level) || 0;
-      return fl >= seuil_remplissage || (seuil_remplissage === 0);
-    });
+    // Récupérer les conteneurs actifs via repository (max 100 pour performance)
+    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage, 100);
 
     if (conteneurs.length === 0) {
       throw ApiError.badRequest(
-        `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${id_zone}`
+        `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${nomZone}`
       );
     }
 
-    // Optimiser la route
+    // Optimiser la route avec l'algorithme spécifié
     const result = optimizeRoute(conteneurs, algorithme);
 
     // Calculer durée estimée
@@ -202,6 +185,7 @@ class TourneeService {
       statut: 'PLANIFIEE',
       distance_prevue_km: result.distance_km,
       duree_prevue_min: dureePrevue,
+      heure_debut_prevue,
       id_vehicule: id_vehicule || null,
       id_zone,
       id_agent
@@ -209,7 +193,7 @@ class TourneeService {
 
     // Créer les étapes dans l'ordre optimisé
     const minutesParEtape = result.nb_conteneurs > 0 ? Math.ceil(dureePrevue / result.nb_conteneurs) : 15;
-    const baseMinutes = 7 * 60 + 30; // 07:30
+    const baseMinutes = parseHeureToMinutes(heure_debut_prevue);
     const etapes = result.route.map((conteneur, idx) => {
       const totalMinutes = baseMinutes + idx * minutesParEtape;
       const hh = String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0');
@@ -231,9 +215,73 @@ class TourneeService {
         distance_prevue_km: result.distance_km,
         distance_originale_km: result.distance_originale_km,
         gain_pct: result.gain_pct,
-        duree_prevue_min: dureePrevue
+        duree_prevue_min: dureePrevue,
+        heure_debut_prevue
       },
       etapes: await this.tourneeRepo.findEtapes(tournee.id_tournee)
+    };
+  }
+
+  /**
+   * Prévisualise une tournée optimisée sans persister en base
+   * Utilise l'algorithme 'nearest_neighbor' ou '2opt'
+   */
+  async previewOptimization(data) {
+    const validated = validateSchema(optimizeSchema, data);
+    const {
+      id_zone,
+      seuil_remplissage = 70,
+      heure_debut_prevue = '07:30',
+      algorithme = '2opt'
+    } = validated;
+
+    require('../utils/logger').info(`[previewOptimization] Algorithme reçu: "${algorithme}"`);
+
+    // Récupérer le nom de la zone via repository
+    const nomZone = await this.tourneeRepo.getZoneName(id_zone);
+
+    // Récupérer les conteneurs actifs via repository
+    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage);
+
+    if (conteneurs.length === 0) {
+      return {
+        optimisation: null,
+        etapes_preview: [],
+        warning: `Aucun conteneur actif avec un niveau ≥ ${seuil_remplissage}% dans la zone ${nomZone}`
+      };
+    }
+
+    const result = optimizeRoute(conteneurs, algorithme);
+    const dureeOptimisee = estimateDuration(result.distance_km, result.nb_conteneurs);
+    const dureeManuelle = estimateDuration(result.distance_originale_km, result.nb_conteneurs);
+
+    const carburantOptimise = parseFloat(((result.distance_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
+    const carburantManuel = parseFloat(((result.distance_originale_km * FUEL_CONSUMPTION_PER_100KM) / 100).toFixed(2));
+
+    return {
+      optimisation: {
+        algorithme_demande: algorithme,
+        algorithme_utilise: result.algorithme_utilise,
+        nb_conteneurs: conteneurs.length,
+        nb_conteneurs: result.nb_conteneurs,
+        distance_prevue_km: result.distance_km,
+        distance_originale_km: result.distance_originale_km,
+        gain_pct: result.gain_pct,
+        duree_prevue_min: dureeOptimisee,
+        duree_originale_min: dureeManuelle,
+        heure_debut_prevue,
+        carburant_prevu_l: carburantOptimise,
+        carburant_original_l: carburantManuel,
+        carburant_economise_l: parseFloat((carburantManuel - carburantOptimise).toFixed(2))
+      },
+      etapes_preview: result.route.map((conteneur, idx) => ({
+        sequence: idx + 1,
+        id_conteneur: conteneur.id_conteneur,
+        uid: conteneur.uid,
+        fill_level: parseFloat(conteneur.fill_level) || 0,
+        latitude: parseFloat(conteneur.latitude),
+        longitude: parseFloat(conteneur.longitude)
+      }))
     };
   }
 }

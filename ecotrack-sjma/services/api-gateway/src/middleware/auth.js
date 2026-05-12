@@ -10,6 +10,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer_en_prod
 // Routes publiques qui ne nécessitent pas d'authentification
 const publicRoutes = [
   { path: '/auth/login', methods: ['POST'] },
+  { path: '/auth/login/mfa', methods: ['POST'] },
+  { path: '/auth/mfa/complete-setup', methods: ['POST'] },
+  { path: '/auth/mfa/regenerate', methods: ['POST'] },
   { path: '/auth/refresh', methods: ['POST'] },
   { path: '/auth/forgot-password', methods: ['POST'] },
   { path: '/auth/reset-password', methods: ['POST'] },
@@ -31,10 +34,25 @@ const publicRoutes = [
 /**
  * Vérifie si une route est publique
  */
+const normalizePath = (path = '') => {
+  if (!path) return '/';
+  const normalized = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+  return normalized || '/';
+};
+
 const isPublicRoute = (reqPath, reqMethod) => {
+  const path = normalizePath(reqPath);
+  const method = String(reqMethod || '').toUpperCase();
+
+  // Safety net for MFA pre-auth flows.
+  if (method === 'POST' && (path === '/auth/mfa/complete-setup' || path === '/auth/login/mfa')) {
+    return true;
+  }
+
   return publicRoutes.some(route => {
-    const pathMatch = reqPath === route.path || reqPath.startsWith(route.path);
-    const methodMatch = route.methods.includes(reqMethod) || route.methods.includes('*');
+    const routePath = normalizePath(route.path);
+    const pathMatch = path === routePath || path.startsWith(`${routePath}/`);
+    const methodMatch = route.methods.includes(method) || route.methods.includes('*');
     return pathMatch && methodMatch;
   });
 };

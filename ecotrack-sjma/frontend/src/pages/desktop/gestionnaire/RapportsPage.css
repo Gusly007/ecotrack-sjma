@@ -1,0 +1,146 @@
+.rapports-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rapports-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.4rem;
+}
+
+.rapports-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  padding: 14px;
+}
+
+.rapports-generator h3,
+.rapports-recent h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.rapports-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.rapports-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.86rem;
+}
+
+.rapports-form-grid input,
+.rapports-form-grid select {
+  height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: #fff;
+}
+
+.rapports-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rapports-recent-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.btn-link {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.rapports-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+}
+
+.rapports-table-wrap {
+  overflow-x: auto;
+}
+
+.rapports-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rapports-table th,
+.rapports-table td {
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 10px 8px;
+}
+
+.rapports-table th {
+  color: #64748b;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rapports-table td {
+  color: #1f2937;
+  font-size: 0.87rem;
+}
+
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+@media (max-width: 1080px) {
+  .rapports-form-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .rapports-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rapports-actions {
+    justify-content: stretch;
+  }
+}

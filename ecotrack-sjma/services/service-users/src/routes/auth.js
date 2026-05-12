@@ -1,8 +1,11 @@
 import express from 'express';
 import * as authController from '../controllers/authController.js';
+import * as authService from '../services/authService.js';
+import * as mfaService from '../services/mfaService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { publicLimiter, loginLimiter, passwordResetLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
+import * as mfaController from '../controllers/mfaController.js';
 import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
 
@@ -22,6 +25,13 @@ const loginSchema = {
 	body: z.object({
 		email: z.string().email(),
 		password: z.string().min(1)
+	})
+};
+
+const mfaLoginSchema = {
+	body: z.object({
+		userId: z.union([z.number(), z.string()]),
+		code: z.string().length(6)
 	})
 };
 
@@ -528,4 +538,233 @@ router.post('/reset-password', passwordResetLimiter, authController.resetPasswor
 
 router.post('/activate', publicLimiter, authController.activateAccount);
 
+/**
+ * @swagger
+ * /auth/mfa/setup:
+ *   post:
+ *     summary: Générer la configuration MFA (QR code)
+ *     description: Génère un secret TOTP et le QR code pour l'utilisateur
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Configuration MFA générée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 secret:
+ *                   type: string
+ *                 qrCodeUrl:
+ *                   type: string
+ *       401:
+ *         description: Non authentifié
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/mfa/setup', authenticateToken, mfaController.setup);
+
+/**
+ * @swagger
+ * /auth/mfa/verify:
+ *   post:
+ *     summary: Vérifier et activer le MFA
+ *     description: Vérifie le premier code TOTP et active le MFA
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - secret
+ *               - token
+ *             properties:
+ *               secret:
+ *                 type: string
+ *                 description: Secret TOTP reçu de /mfa/setup
+ *               token:
+ *                 type: string
+ *                 description: Code à 6 chiffres de l'app d'authentification
+ *     responses:
+ *       200:
+ *         description: MFA activé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 backupCodes:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       400:
+ *         description: Code invalide
+ *       401:
+ *         description: Non authentifié
+ */
+router.post('/mfa/verify', authenticateToken, mfaController.verify);
+
+/**
+ * @swagger
+ * /auth/mfa/complete-setup:
+ *   post:
+ *     summary: Compléter le setup MFA et se connecter
+ *     description: Active le MFA et génère les tokens JWT
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - code
+ *               - secret
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 description: ID utilisateur
+ *               code:
+ *                 type: string
+ *                 description: Code TOTP
+ *               secret:
+ *                 type: string
+ *                 description: Secret TOTP
+ *     responses:
+ *       200:
+ *         description: MFA activé et connexion réussie
+ *       400:
+ *         description: Code invalide
+ */
+router.post('/mfa/complete-setup', mfaController.completeSetupAndLogin);
+
+/**
+ * @swagger
+ * /auth/mfa/disable:
+ *   post:
+ *     summary: Désactiver le MFA
+ *     description: Désactive le MFA pour l'utilisateur connecté
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: MFA désactivé
+ *       401:
+ *         description: Non authentifié
+ */
+router.post('/mfa/disable', authenticateToken, mfaController.disable);
+
+/**
+ * @swagger
+ * /auth/mfa/regenerate:
+ *   post:
+ *     summary: Régénérer le QR code MFA
+ *     description: Génère un nouveau secret MFA sans authentification (pour recover après perte device)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Nouveau QR code généré
+ *       400:
+ *         description: Paramètres invalides
+ */
+router.post('/mfa/regenerate', async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId requis' });
+    
+    const user = await authService.getUserById(userId);
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    
+    const newSetup = await mfaService.generateMfaSetup(userId, user.email);
+    await mfaService.saveSetupSecret(userId, newSetup.secret);
+    res.json({ secret: newSetup.secret, qrCodeUrl: newSetup.qrCodeUrl });
+  } catch (err) { next(err); }
+});
+
+/**
+ * @swagger
+ * /auth/login/mfa:
+ *   post:
+ *     summary: Connexion avec MFA
+ *     description: Valide le code MFA et génère les tokens JWT
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - code
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 description: ID utilisateur (reçu de /auth/login)
+ *               code:
+ *                 type: string
+ *                 description: Code TOTP ou code de secours
+ *     responses:
+ *       200:
+ *         description: Connexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Code invalide
+ *       401:
+ *         description: Non authentifié
+ */
+router.post('/login/mfa', loginLimiter, validate(mfaLoginSchema), mfaController.loginWithMfa);
+
+/**
+ * @swagger
+ * /auth/mfa/complete-setup:
+ *   post:
+ *     summary: Compléter le setup MFA et se connecter
+ *     description: Valide le premier code TOTP et active le MFA
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - code
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               code:
+ *                 type: string
+ *                 description: Code TOTP à 6 chiffres
+ *     responses:
+ *       200:
+ *         description: MFA activé et connexion réussie
+ *       401:
+ *         description: Code invalide
+ */
 export default router;
