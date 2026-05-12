@@ -19,12 +19,14 @@ export default function GestionnaireKpisPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKpis] = useState(null);
   const [environmental, setEnvironmental] = useState(null);
+  const [widgetsRefreshKey, setWidgetsRefreshKey] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const loadKpis = useCallback(async (isManualRefresh = false) => {
     try {
       if (isManualRefresh) {
         setRefreshing(true);
+        setWidgetsRefreshKey((prev) => prev + 1);
       } else {
         setLoading(true);
       }
@@ -56,7 +58,7 @@ export default function GestionnaireKpisPage() {
       }
 
       setLastUpdated(new Date());
-    } catch (error) {
+    } catch {
       showError('Erreur de chargement des KPIs.');
     } finally {
       if (isManualRefresh) {
@@ -65,7 +67,7 @@ export default function GestionnaireKpisPage() {
         setLoading(false);
       }
     }
-  }, [showError]);
+  }, [showError, showWarning]);
 
   useEffect(() => {
     loadKpis(false);
@@ -161,9 +163,9 @@ if (loading) {
       </StatsGrid>
 
       <div className="kpis-charts-grid">
-        <FillTrendChart days={30} />
+        <FillTrendChart days={30} refreshKey={widgetsRefreshKey} />
 
-        <ZoneRepartitionTable />
+        <ZoneRepartitionTable refreshKey={widgetsRefreshKey} />
       </div>
     </div>
   );

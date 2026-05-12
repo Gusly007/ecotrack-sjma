@@ -1,6 +1,5 @@
 .env
 *.env.local
-.claude/
 node_modules/
 coverage/
 **/coverage/
@@ -18,3 +17,6 @@ database/DB_OPTIMIZATION_PROPOSAL.md
 
 /maquette/
 docs/SECURITY_FIXES.md
+
+# Claude Code local config
+.claude/

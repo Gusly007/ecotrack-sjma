@@ -53,7 +53,7 @@ function App() {
           <Route path="/auth/mfa" element={<MfaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          
+
           {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
             <ProtectedRoute>
@@ -208,6 +208,13 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <SignalementsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/signalements/:id" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <SignalementDetailPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

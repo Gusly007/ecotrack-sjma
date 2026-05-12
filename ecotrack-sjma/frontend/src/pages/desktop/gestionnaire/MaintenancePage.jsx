@@ -18,7 +18,7 @@ function normalizeIntervention(item) {
 
   return {
     id: item.id_signalement,
-    titre: item.type_signalement || item.titre || "Intervention sans titre",
+    titre: item.type_signalement || "Signalement",
     zone: item.zone_nom || item.zone_code || "Zone non definie",
     urgence: urgenceRaw,
     statut: statutRaw,
@@ -35,7 +35,7 @@ function statusClass(status) {
   return "pending";
 }
 
-const INITIAL_PLANNING = { id_agent: "", date_intervention: "", commentaire: "" };
+const INITIAL_PLANNING = { id_agent: "", datePrevue: "", commentaire: "" };
 
 export default function MaintenancePage() {
   const { alert, showSuccess, showError, clearAlert } = useAlert();
@@ -80,20 +80,18 @@ export default function MaintenancePage() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    setAgentsLoading(true);
-    fetchAgentsForAssignment({ limit: 100 })
-      .then((list) => {
-        if (cancelled) return;
-        setAgents(Array.isArray(list) ? list : []);
-      })
-      .catch(() => {
-        if (!cancelled) setAgents([]);
-      })
-      .finally(() => {
-        if (!cancelled) setAgentsLoading(false);
-      });
-    return () => { cancelled = true; };
+    async function loadAgents() {
+      setAgentsLoading(true);
+      try {
+        const list = await fetchAgentsForAssignment({ page: 1, limit: 100 });
+        setAgents(list);
+      } catch {
+        setAgents([]);
+      } finally {
+        setAgentsLoading(false);
+      }
+    }
+    loadAgents();
   }, []);
 
   const filteredInterventions = useMemo(() => {
@@ -155,32 +153,21 @@ export default function MaintenancePage() {
 
     try {
       setSubmitting(true);
-      const technicianId = planning.id_agent && planning.id_agent !== ''
-        ? Number(planning.id_agent)
-        : null;
-
-      if (!technicianId) {
-        showError('Veuillez sélectionner un agent/technicien');
-        return;
-      }
-
       await signalementService.saveTreatment(selected.id, {
-        id_agent: technicianId,
-        date_intervention: planning.date_intervention || null,
-        commentaire: planning.commentaire || null,
-        type_action: "INTERVENTION",
+        id_agent: Number(planning.id_agent),
+        date_prevue: planning.datePrevue,
+        commentaire: planning.commentaire,
+        statut: "EN_COURS",
       });
 
-      const agentName = agents.find(
-        (a) => String(a.id_utilisateur) === String(planning.id_agent)
-      );
-      const displayName = agentName
-        ? `${agentName.prenom || ""} ${agentName.nom || ""}`.trim()
-        : selected.assigneA;
+      const agentInfo = agents.find((a) => String(a.id_utilisateur) === String(planning.id_agent));
+      const agentLabel = agentInfo
+        ? `${agentInfo.prenom} ${agentInfo.nom || ""}`.trim()
+        : "Agent assigne";
 
       setInterventions((prev) => prev.map((item) =>
         item.id === selected.id
-          ? { ...item, statut: "EN_COURS", assigneA: displayName }
+          ? { ...item, statut: "EN_COURS", assigneA: agentLabel }
           : item
       ));
       setPlanning(INITIAL_PLANNING);
@@ -337,32 +324,37 @@ export default function MaintenancePage() {
 
               <form className="maintenance-plan-form" onSubmit={handlePlanningSubmit}>
                 <h3>Planifier l'intervention</h3>
-                <label htmlFor="id_agent">Assigner un agent</label>
+                <label htmlFor="id_agent">Agent</label>
                 <select
                   id="id_agent"
                   name="id_agent"
                   value={planning.id_agent}
                   onChange={handlePlanningChange}
                   required
-                  disabled={submitting || agentsLoading}
+                  disabled={submitting || agentsLoading || !agents.length}
                 >
                   <option value="">
-                    {agentsLoading ? "Chargement des agents..." : "-- Selectionner un agent --"}
+                    {agentsLoading
+                      ? "Chargement des agents..."
+                      : agents.length
+                        ? "Sélectionner un agent"
+                        : "Aucun agent disponible"}
                   </option>
                   {agents.map((agent) => (
                     <option key={agent.id_utilisateur} value={agent.id_utilisateur}>
-                      {`${agent.prenom || ""} ${agent.nom || ""}`.trim() || agent.email}
+                      {agent.prenom} {agent.nom || ""} ({agent.email})
                     </option>
                   ))}
                 </select>
 
-                <label htmlFor="date_intervention">Date d'intervention</label>
+                <label htmlFor="datePrevue">Date prevue</label>
                 <input
-                  id="date_intervention"
-                  name="date_intervention"
+                  id="datePrevue"
+                  name="datePrevue"
                   type="date"
-                  value={planning.date_intervention}
+                  value={planning.datePrevue}
                   onChange={handlePlanningChange}
+                  required
                   disabled={submitting}
                 />
 
