@@ -5,12 +5,17 @@ import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import MfaPage from './pages/auth/MfaPage';
 import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
+import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
+import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
+import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
+import KpiPage from './pages/desktop/gestionnaire/KpiPage';
 import UsersPage from './pages/desktop/admin/Users';
 import CreateUserPage from './pages/desktop/admin/CreateUser';
 import UserDetailPage from './pages/desktop/admin/UserDetail';
@@ -25,10 +30,6 @@ import ConfigurationPage from './pages/desktop/admin/Configuration';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
-import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
-import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
-import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
-import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -49,9 +50,10 @@ function App() {
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/mfa" element={<MfaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          
+
           {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
             <ProtectedRoute>
@@ -160,10 +162,31 @@ function App() {
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
+          <Route path="/gestionnaire/maintenance" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <MaintenancePage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/rapports" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <RapportsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/gestionnaire/suivi" element={
             <ProtectedRoute>
               <RoleBasedLayout>
                 <SuiviTempsReelPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/kpis" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <KpiPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
@@ -192,27 +215,6 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <SignalementDetailPage />
-              </RoleBasedLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/gestionnaire/kpis" element={
-            <ProtectedRoute>
-              <RoleBasedLayout>
-                <GestionnaireKpisPage />
-              </RoleBasedLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/gestionnaire/rapports" element={
-            <ProtectedRoute>
-              <RoleBasedLayout>
-                <RapportsPage />
-              </RoleBasedLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/gestionnaire/maintenance" element={
-            <ProtectedRoute>
-              <RoleBasedLayout>
-                <MaintenancePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

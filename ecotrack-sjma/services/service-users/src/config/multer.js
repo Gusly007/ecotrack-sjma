@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import env from './env.js';
 
 const uploadDir = 'storage/avatars/original';
@@ -25,7 +26,7 @@ const storage = multer.diskStorage({
     }
     
     const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 10);
+    const randomSuffix = crypto.randomBytes(4).toString('hex');
     const safeExt = ext === '.jpeg' ? '.jpg' : ext;
     const name = `${req.user.id}-${timestamp}-${randomSuffix}${safeExt}`;
     

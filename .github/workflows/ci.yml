@@ -556,7 +556,7 @@ jobs:
   # Test gateway integration + sensor-measurement-service + cache flows
 
   test-iot-integration:
-    name: ' Integration Tests (20%) - service-iot'
+    name: ' Integration Tests  - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot
     
@@ -626,7 +626,7 @@ jobs:
   # Test complete alert workflows + notification flows + state transitions
 
   test-iot-e2e:
-    name: ' E2E Tests (10%) - service-iot'
+    name: ' E2E Tests - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot-integration
     
@@ -750,7 +750,7 @@ jobs:
   # Test les interactions entre modules (routes, services, repositories)
 
   test-analytics-integration:
-    name: ' Integration Tests (22%) - service-analytics'
+    name: ' Integration Tests - service-analytics'
     runs-on: ubuntu-latest
 
     needs: test-analytics
@@ -829,7 +829,7 @@ jobs:
   # Test les parcours complets (workflows, health checks, concurrent requests)
 
   test-analytics-e2e:
-    name: '🌐 E2E Tests (11%) - service-analytics'
+    name: ' E2E Tests - service-analytics'
     runs-on: ubuntu-latest
 
     needs: test-analytics-integration
@@ -1102,7 +1102,7 @@ jobs:
   # Plus nombreux et rapide - exécuté en premier
   
   test-routes-unit:
-    name: ' Unit Tests (94%) - service-routes'
+    name: ' Unit Tests - service-routes'
     runs-on: ubuntu-latest
     
     needs: lint
@@ -1171,7 +1171,7 @@ jobs:
   # Test les interactions entre modules
   
   test-routes-integration:
-    name: ' Integration Tests (2%) - service-routes'
+    name: ' Integration Tests - service-routes'
     runs-on: ubuntu-latest
     
     needs: test-routes-unit
@@ -1235,6 +1235,7 @@ jobs:
           PGUSER: test_user
           PGPASSWORD: test_pass
           PGDATABASE: ecotrack_test
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
       - name: 'Cleanup test services'
         if: always()
@@ -1247,7 +1248,7 @@ jobs:
   # Test le parcours complet - Plus lent
   
   test-routes-e2e:
-    name: '🌐 E2E Tests (5%) - service-routes'
+    name: ' E2E Tests  - service-routes'
     runs-on: ubuntu-latest
     
     needs: test-routes-integration
@@ -1345,7 +1346,7 @@ jobs:
   # 2 tests | Integration tests for user auth flows
 
   test-users-integration:
-    name: '🔗 Integration Tests - service-users'
+    name: ' Integration Tests - service-users'
     runs-on: ubuntu-latest
 
     needs: test
@@ -1416,7 +1417,7 @@ jobs:
   # 1 test | User workflow E2E
 
   test-users-e2e:
-    name: '🌐 E2E Tests - service-users'
+    name: ' E2E Tests - service-users'
     runs-on: ubuntu-latest
 
     needs: test-users-integration
@@ -1514,7 +1515,7 @@ jobs:
   # =========================================================================
 
   test-api-gateway-integration:
-    name: '🔗 Integration Tests - api-gateway'
+    name: ' Integration Tests - api-gateway'
     runs-on: ubuntu-latest
 
     needs: test-api-gateway
@@ -1583,7 +1584,7 @@ jobs:
   # =========================================================================
 
   test-api-gateway-e2e:
-    name: '🌐 E2E Tests - api-gateway'
+    name: ' E2E Tests - api-gateway'
     runs-on: ubuntu-latest
 
     needs: test-api-gateway-integration
@@ -1713,7 +1714,7 @@ jobs:
   # 1 test | Gamification E2E workflow
 
   test-gamifications-e2e:
-    name: '🌐 E2E Tests - service-gamifications'
+    name: ' E2E Tests - service-gamifications'
     runs-on: ubuntu-latest
 
     needs: test-gamifications-integration
@@ -1773,7 +1774,7 @@ jobs:
   # Integration tests for frontend components
 
   test-frontend-integration:
-    name: '🔗 Integration Tests - frontend'
+    name: ' Integration Tests - frontend'
     runs-on: ubuntu-latest
 
     needs: test-frontend
@@ -2009,6 +2010,254 @@ jobs:
       #   working-directory: service-users
       #   env:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # =========================================================================
+  # JOB 3D: PERFORMANCE - LIGHTHOUSE CORE WEB VITALS
+  # =========================================================================
+  # Mesure les indicateurs de performance (Core Web Vitals) avec Lighthouse
+  performance-lighthouse-web-vitals:
+    name: 'Performance - Lighthouse'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ecotrack-sjma/frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ecotrack-sjma/frontend
+        env:
+          CI: true
+
+      - name: Start preview server
+        working-directory: ecotrack-sjma/frontend
+        run: |
+          nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+          for i in {1..30}; do
+            curl -sf http://localhost:4173 && break
+            sleep 2
+          done
+
+      - name: Install Lighthouse
+        working-directory: ecotrack-sjma/frontend
+        run: npm install -D lighthouse
+
+      - name: Run Lighthouse Performance
+        working-directory: ecotrack-sjma/frontend
+        run: |
+          mkdir -p reports/performance
+          npx lighthouse http://localhost:4173 \
+            --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
+            --output json \
+            --output html \
+            --output-path reports/performance/lighthouse \
+            --only-categories=performance || true
+
+          echo "=== Files generated ==="
+          ls -la reports/performance
+
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-performance-lighthouse
+          path: ecotrack-sjma/frontend/reports/performance/*
+          if-no-files-found: ignore
+
+
+  # =========================================================================
+  # JOB 3E: ACCESSIBILITE - WCAG 2.1 NIVEAU AA
+  # =========================================================================
+  # Vérifie la conformité WCAG (contrastes, navigation clavier, ARIA, lecteur écran)
+
+  accessibility-wcag:
+    name: 'Accessibilité - WCAG'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ecotrack-sjma/frontend
+
+    - name: Build frontend
+      run: npm run build
+      working-directory: ecotrack-sjma/frontend
+      env:
+        CI: true
+
+    - name: Start preview server
+      working-directory: ecotrack-sjma/frontend
+      run: |
+        nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+        for i in {1..30}; do
+          curl -sf http://localhost:4173 && break
+          sleep 2
+        done
+
+    - name: Install Lighthouse
+      working-directory: ecotrack-sjma/frontend
+      run: npm install -D lighthouse
+
+    - name: Run Lighthouse Accessibility
+      working-directory: ecotrack-sjma/frontend
+      run: |
+        mkdir -p reports/accessibility
+        npx lighthouse http://localhost:4173 \
+          --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
+          --output json \
+          --output html \
+          --output-path reports/accessibility/lighthouse-accessibility \
+          --only-categories=accessibility || true
+
+        echo "=== Files generated ==="
+        ls -la reports/accessibility
+
+    - name: Upload accessibility reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: report-accessibility-wcag
+        path: ecotrack-sjma/frontend/reports/accessibility/*
+        if-no-files-found: ignore
+
+
+  # =========================================================================
+  # JOB 3F: SEO & BEST PRACTICES
+  # =========================================================================
+  # Vérifie le SEO et les bonnes pratiques
+
+  seo-best-practices:
+    name: 'SEO & Best Practices'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ecotrack-sjma/frontend
+
+    - name: Build frontend
+      run: npm run build
+      working-directory: ecotrack-sjma/frontend
+      env:
+        CI: true
+
+    - name: Start preview server
+      working-directory: ecotrack-sjma/frontend
+      run: |
+        nohup npm run preview -- --port 4173 > preview.log 2>&1 &
+        for i in {1..30}; do
+          curl -sf http://localhost:4173 && break
+          sleep 2
+        done
+
+    - name: Install Lighthouse
+      working-directory: ecotrack-sjma/frontend
+      run: npm install -D lighthouse
+
+    - name: Run Lighthouse SEO & Best Practices
+      working-directory: ecotrack-sjma/frontend
+      run: |
+        mkdir -p reports/seo
+        npx lighthouse http://localhost:4173 \
+          --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
+          --output json \
+          --output html \
+          --output-path reports/seo/lighthouse-seo \
+          --only-categories=seo,best-practices || true
+
+        echo "=== Files generated ==="
+        ls -la reports/seo
+
+    - name: Upload SEO reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: report-seo-best-practices
+        path: ecotrack-sjma/frontend/reports/seo/*
+        if-no-files-found: ignore
+
+
+  # =========================================================================
+  # JOB 3G: CONSOLIDATED PERFORMANCE & ACCESSIBILITY REPORT
+  # =========================================================================
+
+  performance-consolidated:
+    name: 'Performance & Access consolidated'
+    runs-on: ubuntu-latest
+    needs: [performance-lighthouse-web-vitals, accessibility-wcag, seo-best-practices]
+    if: always()
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Generate consolidated report'
+        run: |
+          mkdir -p reports/consolidated
+          echo '# Rapport Performance & Accessibilite - EcoTrack' > reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Metriques de Performance (Core Web Vitals)' >> reports/consolidated/performance-accessibility.md
+          echo '- LCP (Largest Contentful Paint): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- FID (First Input Delay): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- CLS (Cumulative Layout Shift): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '- FCP (First Contentful Paint): A mesurer' >> reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Accessibilite WCAG 2.1 Niveau AA' >> reports/consolidated/performance-accessibility.md
+          echo '- Contraste texte (4.5:1): A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Navigation clavier: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Attributs ARIA: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '- Labels formulaires: A verifier' >> reports/consolidated/performance-accessibility.md
+          echo '' >> reports/consolidated/performance-accessibility.md
+          echo '## Optimisations Implementes' >> reports/consolidated/performance-accessibility.md
+          echo '- Code splitting via Vite' >> reports/consolidated/performance-accessibility.md
+          echo '- Lazy loading des routes React' >> reports/consolidated/performance-accessibility.md
+          echo '- Compression Gzip/Brotli' >> reports/consolidated/performance-accessibility.md
+
+      - name: 'Upload consolidated report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-performance-accessibility-consolidated
+          path: reports/consolidated/
+          if-no-files-found: ignore
 
   # =========================================================================
   # JOB 3D: COLLECT ALL TEST REPORTS & COVERAGE

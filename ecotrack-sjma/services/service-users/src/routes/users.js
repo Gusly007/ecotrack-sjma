@@ -310,6 +310,19 @@ router.post('/change-password', validate(changePasswordSchema), userController.c
  */
 router.get('/profile-with-stats', userController.getProfileWithStats);
 
+/**
+ * @swagger
+ * /users/agents:
+ *   get:
+ *     summary: Lister les agents de collecte
+ *     description: Liste des agents actifs pour affectation aux tournees
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Liste des agents
+ */
+router.get('/agents', userController.listAgents);
+
 // ============================================
 // Routes d'administration (manager/admin)
 // ============================================

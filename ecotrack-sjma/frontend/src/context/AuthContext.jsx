@@ -23,11 +23,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const user = await authService.login(email, password);
+    const result = await authService.login(email, password);
+
+    // MFA flow: keep user unauthenticated until MFA verification succeeds.
+    if (result?.requiresMFA || result?.mfaSetup) {
+      setUser(null);
+      setIsAuthenticated(false);
+      return result;
+    }
+
     const currentUser = authService.getCurrentUser();
+    const authenticated = Boolean(currentUser && authService.isAuthenticated());
     setUser(currentUser);
-    setIsAuthenticated(true);
-    return currentUser;
+    setIsAuthenticated(authenticated);
+    return result;
   };
 
   // Inscription désactivée - only ADMIN can create users via API

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import LogoEcoTrack from '../../assets/LogoEcoTrack.svg';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -35,7 +36,38 @@ const LoginPage = () => {
     setError('');
 
     try {
+      console.log('Attempting login with:', formData.email);
+      // On utilise le service directement au lieu du context pour éviter de polluer le state global 
+      // avant que le MFA ne soit validé.
+      const response = await authService.login(formData.email, formData.password);
+      const result = response.data || response;
+      
+      // Si MFA requis
+      if (result?.requiresMFA) {
+        const userId = Number(result.userId);
+        localStorage.setItem('mfa_user_id', userId);
+
+        console.log('MFA required for user:', userId, 'requiresSetup:', result?.requiresSetup);
+        // Si MFA setup requis (première fois), rediriger vers setup sans stocker le secret
+        if (result?.requiresSetup && result?.mfaSetup?.secret) {
+          // Stocker uniquement userId temporairement (pour récup après redirect)
+          // Note: les données sensibles sont récupérées via API sur la page MFA
+          sessionStorage.setItem('mfa_pending_setup', 'true');
+          navigate('/auth/mfa?setup=true');
+          return;
+        }
+        // Important: nettoyer un ancien setup pour éviter un faux mode setup
+        localStorage.removeItem('mfa_setup');
+        // Si MFA déjà activé (pas de setup), rediriger vers la page MFA simple
+        navigate('/auth/mfa');
+        return;
+      }
+
+      console.log('Login successful, user:', result);
+
+      // Si pas de MFA, on peut appeler la fonction login du context pour finaliser
       const user = await login(formData.email, formData.password);
+      
       if (user?.role === 'ADMIN') {
         navigate('/admin');
       } else if (user?.role === 'GESTIONNAIRE') {
