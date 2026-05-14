@@ -3,9 +3,9 @@
     "allow": [
       "PowerShell(docker exec ecotrack-postgres env)",
       "Bash(node -e ' *)",
-      "Bash(curl -s -X POST http://localhost:3016/api/notifications -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcklkIjoxLCJlbWFpbCI6ImFkbWluQGVjb3RyYWNrLmxvY2FsIiwicm9sZSI6IkFETUlOIiwicm9sZV9wYXJfZGVmYXV0IjoiQURNSU4iLCJpYXQiOjE3NzgxNTA0MjYsImV4cCI6MTc3ODE1NDAyNn0.DCD59tRqX3SL3pbqjfhXu5ZlHacZx564Wi7SuXyn1uI' -H 'Content-Type: application/json' -d '{\"id_utilisateur\":2,\"type\":\"ALERTE\",\"titre\":\"Test alerte zone\",\"corps\":\"Conteneur 44 dépasse 90%\"}')",
+      "Bash(curl -s -X POST http://localhost:3016/api/notifications -H 'Authorization: Bearer $JWT_TOKEN' -H 'Content-Type: application/json' -d '{\"id_utilisateur\":2,\"type\":\"ALERTE\",\"titre\":\"Test alerte zone\",\"corps\":\"Conteneur 44 dépasse 90%\"}')",
       "Bash(python -m json.tool)",
-      "Bash(curl -s -X POST http://localhost:3016/api/notifications -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcklkIjoxLCJlbWFpbCI6ImFkbWluQGVjb3RyYWNrLmxvY2FsIiwicm9sZSI6IkFETUlOIiwicm9sZV9wYXJfZGVmYXV0IjoiQURNSU4iLCJpYXQiOjE3NzgxNTA0MjYsImV4cCI6MTc3ODE1NDAyNn0.DCD59tRqX3SL3pbqjfhXu5ZlHacZx564Wi7SuXyn1uI' -H 'Content-Type: application/json' -d '{\"id_utilisateur\":2,\"type\":\"MAUVAIS\",\"titre\":\"Test\",\"corps\":\"Test\"}')",
+      "Bash(curl -s -X POST http://localhost:3016/api/notifications -H 'Authorization: Bearer $JWT_TOKEN' -H 'Content-Type: application/json' -d '{\"id_utilisateur\":2,\"type\":\"MAUVAIS\",\"titre\":\"Test\",\"corps\":\"Test\"}')",
       "Bash(curl -s http://localhost:3000/health)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/api/notifications/list)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3016/api/notifications/list)",
