@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatCard } from "../../../components/common";
 import AlertesUrgentesPanel from "../../../components/desktop/gestionnaire/AlertesUrgentesPanel";
 import CollectesAujourdhuiPanel from "../../../components/desktop/gestionnaire/CollectesAujourdhuiPanel";
-import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
+import TourneesEnCoursTable from "../../../components/desktop/gestionnaire/TourneesEnCoursTable";
 import { fetchDashboardData } from "../../../services/dashboardService";
 import "./GestionnaireDashboard.css";
 
@@ -204,7 +204,7 @@ export default function GestionnaireDashboard() {
 				<CollectesAujourdhuiPanel collectesParZone={collectesParZone} />
 			</div>
 
-			<TourneesActivesPanel pageSize={6} refreshNonce={refreshNonce} />
+			<TourneesEnCoursTable pageSize={6} refreshNonce={refreshNonce} />
 		</div>
 	);
 }

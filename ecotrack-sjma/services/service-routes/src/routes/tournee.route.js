@@ -269,9 +269,12 @@ const { requirePermission } = require('../middleware/rbac');
  *         description: Données GeoJSON avec les points des conteneurs
  */
 
+router.get('/types-conteneurs', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getTypeConteneur(req, res, next));
+router.get('/tournees/active/map', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActiveMapData(req, res, next));
 router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getAll(req, res, next));
 router.get('/tournees/active', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActive(req, res, next));
 router.get('/my-tournee', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getMyTournee(req, res, next));
+router.post('/optimize/preview', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.previewOptimization(req, res, next));
 router.post('/optimize', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.optimize(req, res, next));
 router.post('/tournees', requirePermission('tournee:create'), (req, res, next) => req.controllers.tournee.create(req, res, next));
 router.get('/tournees/:id', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getById(req, res, next));

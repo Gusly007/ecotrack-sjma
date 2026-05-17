@@ -158,6 +158,74 @@ class TourneeRepository {
     return { rows: result.rows, total };
   }
 
+  async findActiveWithEtapes() {
+    const tourneesResult = await this.db.query(
+      `SELECT
+        t.id_tournee, t.code, t.statut, t.date_tournee,
+        t.heure_debut_prevue, t.duree_prevue_min,
+        u.prenom AS agent_prenom, u.nom AS agent_nom,
+        z.nom AS zone_nom, z.code AS zone_code,
+        COUNT(e.id_etape) AS total_etapes,
+        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees,
+        (
+          t.heure_debut_prevue IS NOT NULL
+          AND t.duree_prevue_min IS NOT NULL
+          AND (t.date_tournee + t.heure_debut_prevue + t.duree_prevue_min * INTERVAL '1 minute') < NOW()
+        ) AS est_en_retard,
+        last_pos.latitude  AS agent_latitude,
+        last_pos.longitude AS agent_longitude,
+        last_pos.sequence  AS agent_last_sequence
+       FROM tournee t
+       LEFT JOIN utilisateur u ON u.id_utilisateur = t.id_agent
+       LEFT JOIN zone z ON z.id_zone = t.id_zone
+       LEFT JOIN etape_tournee e ON e.id_tournee = t.id_tournee
+       LEFT JOIN LATERAL (
+         SELECT ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude, ep.sequence
+         FROM etape_tournee ep
+         JOIN conteneur c ON c.id_conteneur = ep.id_conteneur
+         WHERE ep.id_tournee = t.id_tournee
+           AND ep.collectee = TRUE
+           AND c.position IS NOT NULL
+         ORDER BY ep.sequence DESC
+         LIMIT 1
+       ) last_pos ON TRUE
+       WHERE t.statut = 'EN_COURS'
+       GROUP BY t.id_tournee, u.prenom, u.nom, z.nom, z.code,
+                last_pos.latitude, last_pos.longitude, last_pos.sequence
+       ORDER BY t.date_tournee DESC`
+    );
+
+    if (tourneesResult.rows.length === 0) return [];
+
+    const ids = tourneesResult.rows.map((t) => t.id_tournee);
+
+    const etapesResult = await this.db.query(
+      `SELECT
+        e.id_etape, e.id_tournee, e.sequence, e.collectee,
+        c.id_conteneur, c.uid,
+        ST_Y(c.position) AS latitude, ST_X(c.position) AS longitude,
+        tc.code AS type_code, tc.nom AS type_nom
+       FROM etape_tournee e
+       JOIN conteneur c ON c.id_conteneur = e.id_conteneur
+       LEFT JOIN type_conteneur tc ON tc.id_type = c.id_type
+       WHERE e.id_tournee = ANY($1)
+         AND c.position IS NOT NULL
+       ORDER BY e.id_tournee, e.sequence`,
+      [ids]
+    );
+
+    const etapesByTournee = {};
+    for (const etape of etapesResult.rows) {
+      if (!etapesByTournee[etape.id_tournee]) etapesByTournee[etape.id_tournee] = [];
+      etapesByTournee[etape.id_tournee].push(etape);
+    }
+
+    return tourneesResult.rows.map((t) => ({
+      ...t,
+      etapes: etapesByTournee[t.id_tournee] || [],
+    }));
+  }
+
   /**
    * Récupère les tournées actives (EN_COURS)
    */
@@ -355,11 +423,18 @@ class TourneeRepository {
     return result.rows[0]?.nom || `Zone ${id_zone}`;
   }
 
+  async findAllTypeConteneur() {
+    const result = await this.db.query(
+      `SELECT id_type, code, nom FROM type_conteneur ORDER BY nom`
+    );
+    return result.rows;
+  }
+
   /**
    * Récupère les conteneurs actifs d'une zone avec leur niveau de remplissage
-   * pour l'optimisation des tournées
+   * pour l'optimisation des tournées. Filtre optionnel par type (id_type).
    */
-  async findActiveContainersByZone(id_zone, seuil_remplissage = 70, limit = 100) {
+  async findActiveContainersByZone(id_zone, seuil_remplissage = 70, limit = 100, id_type = null) {
     const result = await this.db.query(
       `SELECT
         c.id_conteneur, c.uid, c.capacite_l,
@@ -378,9 +453,10 @@ class TourneeRepository {
          AND c.statut = 'ACTIF'
          AND c.position IS NOT NULL
          AND COALESCE(m.niveau_remplissage_pct, 0) >= $2
+         AND ($4::INT IS NULL OR c.id_type = $4)
        ORDER BY fill_level DESC NULLS LAST
        LIMIT $3`,
-      [id_zone, seuil_remplissage, limit]
+      [id_zone, seuil_remplissage, limit, id_type]
     );
 
     return result.rows;

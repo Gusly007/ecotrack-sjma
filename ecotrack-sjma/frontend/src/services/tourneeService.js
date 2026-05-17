@@ -68,6 +68,11 @@ export async function fetchAverageProgression() {
   return unwrap(response.data)?.progression_moyenne_pct ?? null;
 }
 
+export async function fetchActiveMapData({ signal } = {}) {
+  const response = await api.get("/api/routes/tournees/active/map", { signal });
+  return extractList(response.data || {});
+}
+
 export async function fetchActiveTournees({ page = 1, limit = 6, signal } = {}) {
   const response = await api.get("/api/routes/tournees", {
     params: { page, limit, statut: "EN_COURS" },
@@ -145,25 +150,11 @@ export async function fetchTourneesPageData({
 }
 
 export async function fetchTourneeCreationOptions() {
-  const [zonesResult, agentsResult, vehiclesResult] = await Promise.allSettled([
-    api.get("/api/zones", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
-    api.get("/users/agents", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
-    api.get("/api/routes/vehicules", {
-      params: {
-        page: 1,
-        limit: 100,
-      },
-    }),
+  const [zonesResult, agentsResult, vehiclesResult, typesResult] = await Promise.allSettled([
+    api.get("/api/zones", { params: { page: 1, limit: 100 } }),
+    api.get("/users/agents", { params: { page: 1, limit: 100 } }),
+    api.get("/api/routes/vehicules", { params: { page: 1, limit: 100 } }),
+    api.get("/api/routes/types-conteneurs"),
   ]);
 
   if (
@@ -186,11 +177,11 @@ export async function fetchTourneeCreationOptions() {
     ? extractList(vehiclesResult.value.data)
     : [];
 
-  return {
-    zones,
-    agents,
-    vehicles,
-  };
+  const types = typesResult.status === "fulfilled"
+    ? extractList(typesResult.value.data)
+    : [];
+
+  return { zones, agents, vehicles, types };
 }
 
 // L'optimisation 2-opt sur une zone avec beaucoup de conteneurs peut prendre
