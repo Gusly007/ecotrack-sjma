@@ -5,16 +5,15 @@ const { pool } = require('../db/connexion');
 class ZoneRepository {
   /**
    * Retourne le gestionnaire et l'admin responsables d'un conteneur.
-   * Requête : conteneur → zone → (id_gestionnaire, id_admin)
+   * Requête : conteneur → zone → (id_gestionnaire)
    *
    * @param {number} id_conteneur
-   * @returns {Promise<{ id_gestionnaire: number|null, id_admin: number|null, zone_nom: string, zone_code: string }|null>}
+   * @returns {Promise<{ id_gestionnaire: number|null, zone_nom: string, zone_code: string }|null>}
    */
   async findResponsablesByContainer(id_conteneur) {
     const sql = `
       SELECT
         z.id_gestionnaire,
-        z.id_admin,
         z.nom  AS zone_nom,
         z.code AS zone_code
       FROM zone z
@@ -30,14 +29,13 @@ class ZoneRepository {
    * Retourne les responsables d'une zone directement par id_zone.
    *
    * @param {number} id_zone
-   * @returns {Promise<{ id_gestionnaire: number|null, id_admin: number|null, zone_nom: string, zone_code: string }|null>}
+   * @returns {Promise<{ id_gestionnaire: number|null, zone_nom: string, zone_code: string }|null>}
    */
   async findResponsablesByZone(id_zone) {
     const sql = `
       SELECT
         id_gestionnaire,
-        id_admin,
-        nom  AS zone_nom,
+          nom  AS zone_nom,
         code AS zone_code
       FROM zone
       WHERE id_zone = $1

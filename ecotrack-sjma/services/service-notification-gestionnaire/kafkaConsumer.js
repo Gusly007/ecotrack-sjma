@@ -40,20 +40,14 @@ async function buildNotificationsForContainer(id_conteneur, type, titre, corps) 
     return [];
   }
 
-  const { id_gestionnaire, id_admin, zone_nom, zone_code } = zone;
-  const notifications = [];
+  const { id_gestionnaire, zone_nom, zone_code } = zone;
 
-  const titreZone  = `[${zone_code}] ${titre}`;
-  const corpsZone  = `Zone : ${zone_nom}\n${corps}`;
+  if (!id_gestionnaire) return [];
 
-  if (id_gestionnaire) {
-    notifications.push({ id_utilisateur: id_gestionnaire, type, titre: titreZone, corps: corpsZone });
-  }
-  if (id_admin) {
-    notifications.push({ id_utilisateur: id_admin, type, titre: titreZone, corps: corpsZone });
-  }
+  const titreZone = `[${zone_code}] ${titre}`;
+  const corpsZone = `Zone : ${zone_nom}\n${corps}`;
 
-  return notifications;
+  return [{ id_utilisateur: id_gestionnaire, type, titre: titreZone, corps: corpsZone }];
 }
 
 // ─── Handlers par topic ───────────────────────────────────────
