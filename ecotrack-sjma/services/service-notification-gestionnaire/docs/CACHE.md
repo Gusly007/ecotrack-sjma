@@ -1,4 +1,4 @@
-# 🚀 Cache Redis - Service Notification
+#  Cache Redis - Service Notification
 
 ## Vue d'ensemble
 
@@ -6,9 +6,9 @@ Le service notification utilise **Redis** pour mettre en cache les données fré
 
 ---
 
-## 📊 Stratégie de cache
+##  Stratégie de cache
 
-### Priorité 1 : Compteur notifications non lues ⭐ CRITIQUE
+### Priorité 1 : Compteur notifications non lues  CRITIQUE
 
 ```
 Clé Redis          : ecotrack:notifications:unread:{userId}
@@ -103,11 +103,11 @@ GET /notifications/list?page=1&limit=20
 }
 ```
 
-**⚠️ ATTENTION :** TTL court (10s) car invalidation sur CHAQUE nouvelle notification !
+** ATTENTION :** TTL court (10s) car invalidation sur CHAQUE nouvelle notification !
 
 ---
 
-## 🔄 Invalidation du cache
+##  Invalidation du cache
 
 Le cache est **AUTOMATIQUEMENT invalidé** lors de modifications :
 
@@ -121,7 +121,7 @@ Le cache est **AUTOMATIQUEMENT invalidé** lors de modifications :
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Variables d'environnement (.env)
 
@@ -150,7 +150,7 @@ redis:
 
 ---
 
-## 📈 Metrics & Monitoring
+##  Metrics & Monitoring
 
 ### Logs
 
@@ -203,14 +203,14 @@ FLUSHDB
 
 ---
 
-## 🚨 Cas d'erreur & Fallback
+##  Cas d'erreur & Fallback
 
 Si **Redis n'est pas disponible** :
 
 ```
 1. Service démarre normalement
 2. Log : "Redis cache initialization failed - running without cache"
-3. Les requêtes continuent à fonctionner ✅
+3. Les requêtes continuent à fonctionner 
 4. Pas de cache = performances dégradées mais OK
 ```
 
@@ -228,7 +228,7 @@ return await fetchFn();
 
 ---
 
-## 📊 Impact estimé
+##  Impact estimé
 
 | Métrique | Sans cache | Avec cache | Gain |
 |----------|-----------|-----------|------|
@@ -239,7 +239,7 @@ return await fetchFn();
 
 ---
 
-## 🧪 Tests
+##  Tests
 
 ### Test du cache manuellement
 
@@ -279,19 +279,7 @@ sleep 30
 
 ---
 
-## 🔐 Sécurité
-
-### Données sensibles NE PAS en cache
-
-❌ Emails, téléphones, mots de passe  
-❌ Tokens JWT  
-❌ Données personnelles  
-
-✅ En cache : Compteurs, listes publiques, configs
-
----
-
-## 📚 Fichiers impliqués
+## Fichiers impliqués
 
 | Fichier | Rôle |
 |---------|------|
@@ -304,20 +292,9 @@ sleep 30
 
 ---
 
-## ✅ Checklist
-
-- ✅ Redis connecté au démarrage
-- ✅ Compteur non lues en cache (30s)
-- ✅ Types valides en cache (1h)
-- ✅ Invalidation automatique
-- ✅ Fallback si Redis down
-- ✅ Logs structurés avec Pino
-- ✅ Endpoint GET `/notifications/unread/count`
-- ✅ Endpoint GET `/notifications/list`
-
 ---
 
-## 📞 Support
+##  Support
 
 Logs du cache :
 ```bash
