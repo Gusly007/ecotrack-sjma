@@ -113,7 +113,7 @@ kafkaConsumer.subscribe('ecotrack.alerts', async (message) => {
 });
 ```
 
-### Service-Notification-Gestionnaire (Producer + Consumer)
+### Service-Notification-Gestionnaire-Admin (Producer + Consumer)
 ```javascript
 // Producer : envoie des événements/notifications admin
 // Fichier: kafkaAdminProducer.js
@@ -144,7 +144,7 @@ kafkaConsumer.subscribe({ topics: ['ecotrack.alerts','ecotrack.signalements.nouv
 Notes opérationnelles:
 - Topic principal pour les événements admin: `ecotrack.admin.notifications` (ADMIN_TOPIC)
 - `clientId` producer: `service-notification-gestionnaire-admin`
-- `clientId` consumer: `service-notification-gestionnaire`
+- `clientId` consumer: `service-notification-gestionnaire-admin`
 - `groupId` consumer: `notification-gestionnaire-group`
 - `key` des messages: pour les notifications c'est `id_notification` (ou timestamp fallback), pour les events c'est `type`.
 - Retry: le client Kafka est configuré avec `retries: 8` et `initialRetryTime: 100`.

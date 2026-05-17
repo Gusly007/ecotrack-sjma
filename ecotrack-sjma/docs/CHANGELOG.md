@@ -4,6 +4,85 @@
 
 ---
 
+### [4.1.0] 2026-05-17 - Notifications Admin et Gestionnaire
+
+Implémentation complète du système de notifications avec support différencié pour les administrateurs et les gestionnaires de zones.
+
+#### Types de notifications par rôle
+
+**Notifications Admin** - Destinées aux administrateurs système:
+- `ADMIN_ALERTE`: Alertes critiques affectant les opérations système
+- `ADMIN_SERVICE`: État de santé et disponibilité des services
+- `ADMIN_SEUIL`: Violations de seuils de conteneurs et alertes de capacité
+- `ADMIN_ML`: Anomalies et prédictions du machine learning
+- `ADMIN_SECURITE`: Événements de sécurité et violations d'accès
+- `ADMIN_PERFORMANCE`: Dégradation des performances système
+- `ADMIN_IOT`: État des capteurs et appareils IoT
+
+**Notifications Gestionnaire** - Destinées aux gestionnaires de zones:
+- `ALERTE`: Alertes spécifiques à la zone et événements critiques
+- `TOURNEE`: Planification et mises à jour du statut des tournées
+- `SYSTEME`: Notifications à l'échelle du système (disponibles pour tous les rôles)
+
+#### Interface utilisateur
+
+**Notification Dropdown** - Dans la topbar:
+- Badge en temps réel affichant le nombre de notifications non lues
+- Liste déroulante affichant jusqu'à 100 notifications
+- Marquage individuel comme lu lors du clic
+- Bouton "Marquer tout comme lu"
+- Filtrage automatique pour afficher uniquement les non-lues
+
+#### Endpoints backend
+
+**Routes Admin** (`/api/admin/notifications`):
+- `GET /api/admin/notifications` - Lister les notifications avec pagination
+- `PATCH /api/admin/notifications/{id}/read` - Marquer une notification comme lue
+- `POST /api/admin/notifications/read-all` - Marquer toutes les notifications comme lues
+- `GET /api/admin/notifications/stats` - Obtenir les statistiques des notifications
+
+**Routes Gestionnaire**:
+- `GET /api/notifications/list` - Lister les notifications avec pagination
+- `PATCH /api/notifications/{id}/read` - Marquer une notification comme lue
+- `POST /api/notifications/read-all` - Marquer toutes les notifications comme lues
+- `GET /api/notifications/unread/count` - Obtenir le nombre de notifications non lues
+
+#### Intégration Kafka
+
+- Topic Kafka `ecotrack.admin.notifications` pour les événements admin déclenchés en temps réel
+- Consumer automatique qui traite et persiste les notifications en base de données
+- Support des notifications événementielles sans intervention manuelle
+
+#### Changements structurels
+
+- **Renommage du service**: `service-notification-gestionnaire` → `service-notification-gestionnaire-admin` pour refléter le support des deux types de notifications
+- Mise à jour de docker-compose.yml pour utiliser le nouveau nom de service
+- Mise à jour de la configuration Prometheus pour le nouveau service
+- Mise à jour de la documentation Kafka pour refléter les nouveaux topics et clientIds
+
+#### Tests
+
+- Tests unitaires pour les contrôleurs d'administration des notifications
+- Tests d'intégration pour les routes de notifications
+- Tests e2e pour le flux complet de création et consultation des notifications
+
+#### Fichiers modifiés
+
+| Service | Fichier | Description |
+|---------|---------|-------------|
+| api-gateway | `src/index.js` | Proxy des routes `/api/admin/notifications` |
+| service-notification-gestionnaire-admin | `src/controllers/adminNotification.controller.js` | Contrôleurs pour notifications admin |
+| service-notification-gestionnaire-admin | `src/routes/adminNotification.route.js` | Routes des notifications admin |
+| service-notification-gestionnaire-admin | `src/services/adminNotificationService.js` | Logique métier des notifications admin |
+| service-notification-gestionnaire-admin | `src/repositories/notification.repository.js` | Persistence des notifications |
+| frontend | `src/components/desktop/DesktopLayout.jsx` | Dropdown de notifications |
+| frontend | `src/components/desktop/DesktopLayout.css` | Styles du dropdown |
+| docker-compose.yml | — | Renommage du service |
+| monitoring/prometheus/prometheus.yml | — | Configuration pour le nouveau service |
+| docs/KAFKA.md | — | Documentation des topics Kafka admin |
+
+---
+
 ### [4.0.1] 2026-05-06 - Performance & Accessibilité (CI/CD)
 
 Ajout des jobs CI/CD pour mesurer la performance et l'accessibilité automatiquement.

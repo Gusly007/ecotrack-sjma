@@ -1,6 +1,6 @@
 'use strict';
 
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60_000;
 const MAX       = parseInt(process.env.RATE_LIMIT_MAX)        || 100;
@@ -8,7 +8,7 @@ const MAX       = parseInt(process.env.RATE_LIMIT_MAX)        || 100;
 const skipSystemEndpoints = (req) =>
   req.path === '/health' || req.path === '/metrics';
 
-const keyByUser = (req) => req.user?.id?.toString() || req.ip;
+const keyByUser = (req) => req.user?.id?.toString() || ipKeyGenerator(req.ip);
 
 const generalLimiter = rateLimit({
   windowMs: WINDOW_MS,

@@ -1,5 +1,5 @@
 {
-  "name": "service-notification-gestionnaire",
+  "name": "service-notification-gestionnaire-admin",
   "version": "1.0.0",
   "description": "Service de notifications pour les gestionnaires de zones EcoTrack",
   "main": "index.js",

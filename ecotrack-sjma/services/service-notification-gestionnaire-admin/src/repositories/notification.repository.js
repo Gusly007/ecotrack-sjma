@@ -57,7 +57,7 @@ class NotificationRepository {
           WHERE id_utilisateur = $1 AND role_par_defaut = 'ADMIN'
         )
         INSERT INTO notification (type, titre, corps, id_utilisateur, priorite, categorie)
-        SELECT $2, $3, $4, tu.id_utilisateur, $6, $7
+        SELECT $2, $3, $4, tu.id_utilisateur, $5, $6
         FROM target_user tu
         RETURNING *
       `
@@ -76,7 +76,7 @@ class NotificationRepository {
 
     const allowedRoles = TYPE_ROLE_MAP[type];
     const params = adminType
-      ? [id_utilisateur, type, titre, corps, null, priorite || 3, categorie || null]
+      ? [id_utilisateur, type, titre, corps, priorite || 3, categorie || null]
       : [id_utilisateur, type, titre, corps, allowedRoles];
     const result = await pool.query(sql, params);
 
@@ -140,7 +140,7 @@ class NotificationRepository {
               WHERE id_utilisateur = $1 AND role_par_defaut = 'ADMIN'
             )
             INSERT INTO notification (type, titre, corps, id_utilisateur, priorite, categorie)
-            SELECT $2, $3, $4, tu.id_utilisateur, $6, $7
+            SELECT $2, $3, $4, tu.id_utilisateur, $5, $6
             FROM target_user tu
             RETURNING *
           `
@@ -158,7 +158,7 @@ class NotificationRepository {
           `;
 
         const params = adminType
-          ? [id_utilisateur, type, titre, corps, null, priorite || 3, categorie || null]
+          ? [id_utilisateur, type, titre, corps, priorite || 3, categorie || null]
           : [id_utilisateur, type, titre, corps, allowedRoles];
         const result = await client.query(sql, params);
 

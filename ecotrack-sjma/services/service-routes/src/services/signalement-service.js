@@ -20,7 +20,7 @@ class SignalementService {
       id_citoyen
     });
 
-    // Publier l'événement — le service-notification-gestionnaire notifiera automatiquement
+    // Publier l'événement — le service-notification-gestionnaire-admin notifiera automatiquement
     // le gestionnaire et l'admin de la zone concernée
     await kafkaProducer.sendSignalement(signalement);
 

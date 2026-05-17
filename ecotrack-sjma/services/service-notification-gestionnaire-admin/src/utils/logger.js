@@ -15,7 +15,7 @@ if (isTest) {
     {
       level: process.env.LOG_LEVEL || 'info',
       base: {
-        service: 'service-notification-gestionnaire',
+        service: 'service-notification-gestionnaire-admin',
         environment: process.env.NODE_ENV || 'development'
       }
     },

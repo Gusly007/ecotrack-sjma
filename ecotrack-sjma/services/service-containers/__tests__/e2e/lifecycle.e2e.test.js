@@ -60,8 +60,12 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
 describe('E2E - Geo Proximity', () => {
   it('devrait trouver les conteneurs proches', async () => {
-    const res = await axios.get(`${BASE_URL}/api/conteneurs/proches?lat=48.85&lng=2.35&rayon=5`);
-    expect([200, 401]).toContain(res.status);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/conteneurs/proches?lat=48.85&lng=2.35&rayon=5`);
+      expect([200, 401]).toContain(res.status);
+    } catch (error) {
+      expect(error.response?.status).toBe(401);
+    }
   });
 
   it('devrait calculer la distance', async () => {

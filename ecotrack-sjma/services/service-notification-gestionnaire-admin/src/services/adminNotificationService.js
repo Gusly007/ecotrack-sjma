@@ -140,6 +140,17 @@ class AdminNotificationService {
   }
 
   /**
+   * Marque toutes les notifications admin comme lues
+   */
+  async markAllAsRead(id_utilisateur) {
+    const updated = await notificationRepository.markAllAsRead(id_utilisateur);
+
+    await this._invalidateUserCache(id_utilisateur);
+
+    return { updated };
+  }
+
+  /**
    * Marque comme lue avec vérification admin
    */
   async markAsRead(id_notification, id_utilisateur, role) {

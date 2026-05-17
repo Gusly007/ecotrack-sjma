@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * RBAC — service-notification-gestionnaire
+ * RBAC — service-notification-gestionnaire-admin
  *
  * Matrice des permissions :
  *   notifications:create  → ADMIN (envoie des notifs aux gestionnaires)

@@ -152,7 +152,10 @@ const services = {
     port: parseInt(process.env.NOTIFICATION_PORT, 10) || 3016,
     baseUrl: process.env.NOTIFICATION_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/notifications' }]
+    routes: [
+      { mountPath: '/api/notifications' },
+      { mountPath: '/api/admin/notifications' }
+    ]
   }
 };
 

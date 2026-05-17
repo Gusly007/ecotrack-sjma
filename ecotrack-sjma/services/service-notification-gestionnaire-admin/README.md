@@ -1,4 +1,4 @@
-# service-notification-gestionnaire
+# service-notification-gestionnaire-admin
 
 Microservice EcoTrack responsable de la **gestion des notifications** destinées aux gestionnaires de zones et aux administrateurs.
 
@@ -83,7 +83,7 @@ Les services Docker EcoTrack doivent être démarrés (`docker compose up`).
 ## Installation
 
 ```bash
-cd services/service-notification-gestionnaire
+cd services/service-notification-gestionnaire-admin
 cp .env.example .env
 npm install
 ```
@@ -334,7 +334,7 @@ id_utilisateur   INTEGER  FK → utilisateur
 ## Structure des fichiers
 
 ```
-service-notification-gestionnaire/
+service-notification-gestionnaire-admin/
 ├── index.js                        ← Point d'entrée Express + Kafka
 ├── kafkaConsumer.js                ← Consumer KafkaJS (alertes + signalements)
 ├── .env.example                    ← Template des variables d'environnement

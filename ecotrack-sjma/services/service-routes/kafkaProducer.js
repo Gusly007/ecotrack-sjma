@@ -41,7 +41,7 @@ const disconnect = async () => {
 
 /**
  * Publie un nouveau signalement sur le topic ecotrack.signalements.nouveau.
- * Utilisé par le service-notification-gestionnaire pour notifier automatiquement
+ * Utilisé par le service-notification-gestionnaire-admin pour notifier automatiquement
  * le gestionnaire de la zone concernée.
  *
  * @param {object} signalement - Ligne insérée en base

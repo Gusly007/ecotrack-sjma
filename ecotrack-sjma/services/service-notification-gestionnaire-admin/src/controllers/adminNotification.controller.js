@@ -8,6 +8,7 @@ class AdminNotificationController {
     this.create = this.create.bind(this);
     this.createBulk = this.createBulk.bind(this);
     this.markAsRead = this.markAsRead.bind(this);
+    this.markAllAsRead = this.markAllAsRead.bind(this);
     this.list = this.list.bind(this);
     this.stats = this.stats.bind(this);
     this.getPriorities = this.getPriorities.bind(this);
@@ -78,6 +79,17 @@ class AdminNotificationController {
       );
 
       return res.status(200).json(notification);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async markAllAsRead(req, res, next) {
+    try {
+      const id_utilisateur = req.user.id;
+      const result = await adminNotificationService.markAllAsRead(id_utilisateur);
+
+      return res.status(200).json(result);
     } catch (err) {
       next(err);
     }

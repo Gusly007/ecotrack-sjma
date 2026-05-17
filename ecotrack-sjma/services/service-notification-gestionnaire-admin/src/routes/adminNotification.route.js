@@ -181,6 +181,32 @@ router.patch(
 
 /**
  * @swagger
+ * /admin/notifications/read-all:
+ *   patch:
+ *     summary: Marque toutes les notifications admin comme lues
+ *     tags: [AdminNotifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notifications mises à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 updated:
+ *                   type: integer
+ *                   example: 12
+ */
+router.patch(
+  '/admin/notifications/read-all',
+  requirePermission('notifications:own'),
+  controller.markAllAsRead
+);
+
+/**
+ * @swagger
  * /admin/notifications:
  *   get:
  *     summary: Liste les notifications admin avec filtres et pagination
