@@ -127,7 +127,7 @@ class TourneeController {
 
   async optimize(req, res, next) {
     try {
-      const result = await this.service.optimizeTournee(req.body, this.db);
+      const result = await this.service.optimizeTournee(req.body);
       return res.status(201).json(ApiResponse.success(result, 'Tournée optimisée créée', 201));
     } catch (err) {
       next(err);
@@ -141,7 +141,7 @@ class TourneeController {
    */
   async previewOptimization(req, res, next) {
     try {
-      const result = await this.service.previewOptimization(req.body, this.db);
+      const result = await this.service.previewOptimization(req.body);
       return res.status(200).json(ApiResponse.success(result, 'Prévisualisation de la tournée optimisée'));
     } catch (err) {
       next(err);

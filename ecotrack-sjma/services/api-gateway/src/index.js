@@ -1030,25 +1030,45 @@ cacheService.connect().then(() => {
   logger.warn({ err: err.message }, 'Cache service connection failed, continuing without');
 });
 
-if (process.env.DISABLE_AUTO_START !== 'true') {
-  const server = app.listen(gatewayPort, () => {
-    logger.info({ port: gatewayPort }, 'API Gateway ready');
-    console.table(
-      Object.entries(services).map(([key, svc]) => ({
-        service: key,
-        status: svc.status,
-        target: svc.baseUrl || 'pending'
-      }))
-    );
-  });
-
-  process.on('SIGINT', () => {
-    logger.info('Shutting down gateway');
-    server.close(() => {
-      logger.info('Gateway closed');
-      process.exit(0);
+  // Grafana proxy with Auth header
+  app.use('/grafana', (req, res, next) => {
+    const userId = req.headers['x-user-id'];
+    const userEmail = req.headers['x-user-email'] || '';
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const proxy = createProxyMiddleware({
+      target: 'http://grafana:3000',
+      changeOrigin: true,
+      pathRewrite: (path) => path.replace(/^\/grafana/, '/'),
+      onProxyReq: (proxyReq, req) => {
+        proxyReq.setHeader('X-User-Id', userId);
+        proxyReq.setHeader('X-User-Email', userEmail);
+        proxyReq.setHeader('X-Grafana-User', userEmail || `user-${userId}`);
+      }
     });
+    return proxy(req, res, next);
   });
-}
 
-export default app;
+  if (process.env.DISABLE_AUTO_START !== 'true') {
+    const server = app.listen(gatewayPort, () => {
+      logger.info({ port: gatewayPort }, 'API Gateway ready');
+      console.table(
+        Object.entries(services).map(([key, svc]) => ({
+          service: key,
+          status: svc.status,
+          target: svc.baseUrl || 'pending'
+        }))
+      );
+    });
+
+    process.on('SIGINT', () => {
+      logger.info('Shutting down gateway');
+      server.close(() => {
+        logger.info('Gateway closed');
+        process.exit(0);
+      });
+    });
+  }
+
+  export default app;

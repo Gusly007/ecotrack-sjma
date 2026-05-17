@@ -1,0 +1,39 @@
+groups:
+  - name: ecotrack_recorded
+    interval: 30s
+    rules:
+      # Containers with critical fill level (>90%)
+      - record: ecotrack:containers:critical_count
+        expr: count(ecotrack_containers_critical > 0)
+
+      # Ratio of inactive IoT sensors (last 12h)
+      - record: ecotrack:iot:sensors_inactive_ratio
+        expr: |
+          ecotrack_iot_sensors_inactive_12h / clamp_min(ecotrack_iot_sensors_total, 1)
+
+      # Tournées completion rate (last 24h)
+      - record: ecotrack:tournees:completion_rate_24h
+        expr: |
+          sum(rate(ecotrack_tournee_statut_total{statut="TERMINEE"}[24h])) /
+          clamp_min(sum(rate(ecotrack_tournee_statut_total[24h])), 1) * 100
+
+      # Average collection time per tournée (minutes)
+      - record: ecotrack:tournees:avg_duration_min
+        expr: |
+          avg(ecotrack_tournee_duree_reelle_min) or vector(0)
+
+      # Total waste collected (kg) in last 24h
+      - record: ecotrack:collecte:total_kg_24h
+        expr: |
+          sum(increase(ecotrack_collecte_quantite_kg_sum[24h])) or vector(0)
+
+      # API gateway error rate (5xx responses)
+      - record: ecotrack:api:error_rate_5xx
+        expr: |
+          sum(rate(http_requests_total{job="api-gateway",status=~"5.."}[5m])) /
+          clamp_min(sum(rate(http_requests_total{job="api-gateway"}[5m])), 1) * 100
+
+      # Service health aggregated (1=healthy, 0=unhealthy)
+      - record: ecotrack:services:health_ratio
+        expr: |
+          avg(up{job=~"api-gateway|service-users|service-routes|service-containers|service-iot|service-gamifications|service-analytics"}) 

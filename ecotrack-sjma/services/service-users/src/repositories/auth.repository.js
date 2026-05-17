@@ -71,5 +71,41 @@ export const AuthRepository = {
   
   async deletePasswordResetToken(token) {
     await pool.query('DELETE FROM password_reset_tokens WHERE token = $1', [token]);
+  },
+
+  async updateUserMfaSetupSecret(userId, secret) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR 
+       SET mfa_setup_secret = $1, mfa_setup_secret_created_at = NOW()
+       WHERE id_utilisateur = $2
+       RETURNING id_utilisateur`,
+      [secret, userId]
+    );
+    return result.rows[0];
+  },
+
+  async findUserByIdWithMfa(userId) {
+    const result = await pool.query(
+      `SELECT id_utilisateur, email, prenom, role_par_defaut, points, 
+              mfa_setup_secret, mfa_setup_secret_created_at, totp_secret, mfa_enabled,
+              backup_codes
+       FROM UTILISATEUR 
+       WHERE id_utilisateur = $1`,
+      [userId]
+    );
+    return result.rows[0];
+  },
+
+  async updateMfaSettings(userId, settings) {
+    const { mfa_enabled, totp_secret, backup_codes } = settings;
+    
+    const result = await pool.query(
+      `UPDATE UTILISATEUR 
+       SET mfa_enabled = $1, totp_secret = $2, backup_codes = $3
+       WHERE id_utilisateur = $4
+       RETURNING id_utilisateur`,
+      [mfa_enabled, totp_secret, backup_codes, userId]
+    );
+    return result.rows[0];
   }
 };

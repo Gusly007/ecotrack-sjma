@@ -5,12 +5,17 @@ import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import MfaPage from './pages/auth/MfaPage';
 import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
+import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
+import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
+import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
+import KpiPage from './pages/desktop/gestionnaire/KpiPage';
 import UsersPage from './pages/desktop/admin/Users';
 import CreateUserPage from './pages/desktop/admin/CreateUser';
 import UserDetailPage from './pages/desktop/admin/UserDetail';
@@ -49,9 +54,10 @@ function App() {
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/mfa" element={<MfaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          
+
           {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
             <ProtectedRoute>

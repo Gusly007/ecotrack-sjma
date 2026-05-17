@@ -63,11 +63,6 @@ export const listUsers = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-/**
- * Liste les utilisateurs ayant uniquement le rôle AGENT.
- * Utilisé par le gestionnaire pour l'assignation lors de la création d'une tournée.
- * Force le filtre role=AGENT et ignore toute tentative de surcharge depuis le client.
- */
 export const listAgents = asyncHandler(async (req, res) => {
   const { page, limit, search } = req.query;
   const result = await userService.listUsers({

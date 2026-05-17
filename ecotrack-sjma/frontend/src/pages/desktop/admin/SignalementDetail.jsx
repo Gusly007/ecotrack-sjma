@@ -42,6 +42,7 @@ export default function SignalementDetailPage() {
   
   const [nouveauStatut, setNouveauStatut] = useState('');
   const [selectedAgent, setSelectedAgent] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [commentaire, setCommentaire] = useState('');
   const [historique, setHistorique] = useState([]);
   
@@ -89,6 +90,10 @@ export default function SignalementDetailPage() {
       const data = response?.data || response;
       setSignalement(data);
       setNouveauStatut(data.statut || '');
+      // Pré-remplir avec l'agent déjà assigné s'il existe
+      const agentId = data.id_agent_assigne || data.id_agent || '';
+      setSelectedAgent(agentId ? agentId.toString() : '');
+      setCurrentUserId(agentId ? agentId.toString() : '');
 
       await loadHistory(data);
     } catch (err) {
@@ -128,8 +133,8 @@ export default function SignalementDetailPage() {
   const loadAgents = async () => {
     try {
       setAgentsLoading(true);
-      const response = await userService.getAll({ role: 'AGENT', limit: 100 });
-      const users = response?.data?.data || response?.data || response || [];
+      const response = await userService.getAgents({ page: 1, limit: 100 });
+      const users = response?.data || response || [];
       setAgents(users);
     } catch (err) {
       console.error('Erreur chargement agents:', err);
@@ -311,8 +316,8 @@ export default function SignalementDetailPage() {
     [
       { value: '', label: '— Sélectionner un agent —' },
       ...agents.map(a => ({ 
-        value: a.id_utilisateur?.toString() || a.id?.toString(), 
-        label: `${a.prenom} ${a.nom} (${a.role || 'Agent'})` 
+        value: (a.id_utilisateur || a.id)?.toString(), 
+        label: `${a.prenom} ${a.nom || ''} (${a.email})` 
       }))
     ];
 

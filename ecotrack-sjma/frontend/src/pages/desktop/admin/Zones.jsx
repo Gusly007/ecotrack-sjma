@@ -37,10 +37,9 @@ export default function ZonesPage() {
 
   // Permissions selon le rôle
   const role = user?.role || user?.role_par_defaut || 'GESTIONNAIRE';
-  const normalizedRole = typeof role === 'string' ? role.toUpperCase() : '';
-  const canCreate = normalizedRole === 'ADMIN' || normalizedRole === 'GESTIONNAIRE';
-  const canEdit = normalizedRole === 'ADMIN' || normalizedRole === 'GESTIONNAIRE';
-  const canDelete = normalizedRole === 'ADMIN';
+  const canCreate = role === 'ADMIN' || role === 'GESTIONNAIRE';
+  const canEdit = role === 'ADMIN' || role === 'GESTIONNAIRE';
+  const canDelete = role === 'ADMIN';
 
   // Charger les zones
   const loadZones = useCallback(async () => {

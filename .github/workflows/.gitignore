@@ -1,0 +1,19 @@
+.env
+*.env.local
+.claude/
+node_modules/
+coverage/
+**/coverage/
+docs/SECURITY_VULNERABILITIES_REPORT.md
+infra/kubernetes/
+infra/terraform/
+reports/*
+!reports/.gitkeep
+
+
+
+# DB Optimization (local notes)
+database/DB_OPTIMIZATION_PROPOSAL.md
+
+/maquette/
+docs/SECURITY_FIXES.md

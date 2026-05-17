@@ -22,7 +22,7 @@ function barColor(level) {
   return 'linear-gradient(180deg, #22c55e 0%, #15803d 100%)';
 }
 
-export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE }) {
+export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refreshKey = 0 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [points, setPoints] = useState([]);
@@ -51,7 +51,7 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE }) {
     }
   }, [days]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const totalPages = Math.max(1, Math.ceil(points.length / pageSize));
   const paginated = useMemo(
