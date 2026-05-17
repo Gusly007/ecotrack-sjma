@@ -100,6 +100,14 @@ class TourneeService {
     return result;
   }
 
+  async autoStartDueTournees() {
+    const started = await this.tourneeRepo.autoStartDueTournees();
+    if (started.length > 0) {
+      await cacheService.invalidatePattern('tournee:*');
+    }
+    return started;
+  }
+
   async deleteTournee(id) {
     const tournee = await this.tourneeRepo.findById(id);
     if (!tournee) throw ApiError.notFound(`Tournée ${id} introuvable`);

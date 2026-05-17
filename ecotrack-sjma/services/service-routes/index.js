@@ -17,6 +17,10 @@ const { controllersMiddleware } = require('./src/di');
 const { testConnection } = require('./src/db/connexion');
 const { pool } = require('./src/db/connexion');
 const cacheService = require('./src/services/cacheService');
+const { startTourneeScheduler } = require('./src/jobs/tournee-scheduler');
+const TourneeRepository = require('./src/repositories/tournee-repository');
+const TourneeService = require('./src/services/tournee-service');
+const CollecteRepository = require('./src/repositories/collecte-repository');
 
 const client = require('prom-client');
 const register = new client.Registry();
@@ -204,13 +208,18 @@ app.listen(port, async () => {
   logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
   logger.info({ env: config.NODE_ENV }, 'Environment');
   await testConnection();
-  
-  // Initialize Redis cache
+
   await cacheService.connect().then(() => {
     logger.info('Redis cache initialized');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Redis connection failed, continuing without cache');
   });
+
+  const schedulerTourneeService = new TourneeService(
+    new TourneeRepository(pool),
+    new CollecteRepository(pool)
+  );
+  startTourneeScheduler(schedulerTourneeService);
 });
 
 module.exports = app;

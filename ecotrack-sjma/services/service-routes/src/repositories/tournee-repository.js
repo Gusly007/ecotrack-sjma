@@ -29,6 +29,7 @@ class TourneeRepository {
       statut = 'PLANIFIEE',
       distance_prevue_km,
       duree_prevue_min,
+      heure_debut_prevue = '07:30',
       id_vehicule,
       id_zone,
       id_agent
@@ -38,10 +39,10 @@ class TourneeRepository {
 
     const result = await this.db.query(
       `INSERT INTO tournee
-        (code, date_tournee, statut, distance_prevue_km, duree_prevue_min, id_vehicule, id_zone, id_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (code, date_tournee, statut, distance_prevue_km, duree_prevue_min, heure_debut_prevue, id_vehicule, id_zone, id_agent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [tourneeCode, date_tournee, statut, distance_prevue_km || null, duree_prevue_min, id_vehicule || null, id_zone, id_agent]
+      [tourneeCode, date_tournee, statut, distance_prevue_km || null, duree_prevue_min, heure_debut_prevue, id_vehicule || null, id_zone, id_agent]
     );
 
     return result.rows[0];
@@ -58,7 +59,13 @@ class TourneeRepository {
         u.nom AS agent_nom, u.prenom AS agent_prenom, u.email AS agent_email,
         v.numero_immatriculation, v.modele AS vehicule_modele, v.capacite_kg,
         COUNT(e.id_etape) AS total_etapes,
-        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees
+        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees,
+        (
+          t.statut IN ('PLANIFIEE', 'EN_COURS')
+          AND t.heure_debut_prevue IS NOT NULL
+          AND t.duree_prevue_min IS NOT NULL
+          AND (t.date_tournee + t.heure_debut_prevue + t.duree_prevue_min * INTERVAL '1 minute') < NOW()
+        ) AS est_en_retard
        FROM tournee t
        LEFT JOIN zone z ON z.id_zone = t.id_zone
        LEFT JOIN utilisateur u ON u.id_utilisateur = t.id_agent
@@ -128,7 +135,13 @@ class TourneeRepository {
         u.nom AS agent_nom, u.prenom AS agent_prenom,
         v.numero_immatriculation, v.modele AS vehicule_modele,
         COUNT(e.id_etape) AS total_etapes,
-        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees
+        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees,
+        (
+          t.statut IN ('PLANIFIEE', 'EN_COURS')
+          AND t.heure_debut_prevue IS NOT NULL
+          AND t.duree_prevue_min IS NOT NULL
+          AND (t.date_tournee + t.heure_debut_prevue + t.duree_prevue_min * INTERVAL '1 minute') < NOW()
+        ) AS est_en_retard
        FROM tournee t
        LEFT JOIN zone z ON z.id_zone = t.id_zone
        LEFT JOIN utilisateur u ON u.id_utilisateur = t.id_agent
@@ -156,7 +169,12 @@ class TourneeRepository {
         u.nom AS agent_nom, u.prenom AS agent_prenom, u.email AS agent_email,
         v.numero_immatriculation, v.modele AS vehicule_modele,
         COUNT(e.id_etape) AS total_etapes,
-        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees
+        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees,
+        (
+          t.heure_debut_prevue IS NOT NULL
+          AND t.duree_prevue_min IS NOT NULL
+          AND (t.date_tournee + t.heure_debut_prevue + t.duree_prevue_min * INTERVAL '1 minute') < NOW()
+        ) AS est_en_retard
        FROM tournee t
        LEFT JOIN zone z ON z.id_zone = t.id_zone
        LEFT JOIN utilisateur u ON u.id_utilisateur = t.id_agent
@@ -405,6 +423,22 @@ class TourneeRepository {
       [id]
     );
     return result.rowCount > 0;
+  }
+
+  /**
+   * Passe en EN_COURS toutes les tournées PLANIFIEE dont l'heure de début est dépassée.
+   * Retourne les tournées mises à jour.
+   */
+  async autoStartDueTournees() {
+    const result = await this.db.query(
+      `UPDATE tournee
+       SET statut = 'EN_COURS'
+       WHERE statut = 'PLANIFIEE'
+         AND heure_debut_prevue IS NOT NULL
+         AND (date_tournee + heure_debut_prevue) <= NOW()
+       RETURNING id_tournee, code`
+    );
+    return result.rows;
   }
 }
 
