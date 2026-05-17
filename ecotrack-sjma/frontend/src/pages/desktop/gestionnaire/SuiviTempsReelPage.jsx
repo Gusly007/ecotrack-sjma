@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatCard } from "../../../components/common";
 import { useAutoRefresh } from "../../../hooks";
 import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
-import { fetchTourneesStats } from "../../../services/tourneeService";
+import { fetchTourneesStats, fetchNearlyDoneTournees, fetchAverageProgression } from "../../../services/tourneeService";
 import "./SuiviTempsReelPage.css";
 
 export default function SuiviTempsReelPage() {
@@ -12,6 +12,8 @@ export default function SuiviTempsReelPage() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [statsData, setStatsData] = useState({});
+  const [nearlyDoneCount, setNearlyDoneCount] = useState(null);
+  const [avgProgression, setAvgProgression] = useState(null);
 
   const loadLiveData = useCallback(async (isRefresh = false) => {
     try {
@@ -20,8 +22,14 @@ export default function SuiviTempsReelPage() {
       } else {
         setLoading(true);
       }
-      const stats = await fetchTourneesStats();
-      setStatsData(stats || {});
+      const [stats, nearlyDone, avgProg] = await Promise.allSettled([
+        fetchTourneesStats(),
+        fetchNearlyDoneTournees(80),
+        fetchAverageProgression(),
+      ]);
+      if (stats.status === "fulfilled") setStatsData(stats.value || {});
+      if (nearlyDone.status === "fulfilled") setNearlyDoneCount(nearlyDone.value?.count ?? 0);
+      if (avgProg.status === "fulfilled") setAvgProgression(avgProg.value);
       setRefreshNonce((prev) => prev + 1);
       setLastUpdated(new Date());
     } catch {
@@ -64,6 +72,8 @@ export default function SuiviTempsReelPage() {
     const tourneesEnCours = Number(tournees.en_cours || 0);
     const conteneursCollectes = Number(collectes30j.conteneurs_collectes || 0);
     const totalCollectes = Number(collectes30j.total_collectes || 0);
+    const nearlyDoneValue = nearlyDoneCount === null ? "-" : String(nearlyDoneCount);
+    const avgProgressionValue = avgProgression === null ? "-" : `${avgProgression} %`;
 
     return [
       {
@@ -77,14 +87,14 @@ export default function SuiviTempsReelPage() {
         icon: "fa-tasks",
         iconColor: "green",
         label: "Progression moyenne",
-        value: "-",
-        change: "Mise a jour dynamique",
+        value: avgProgressionValue,
+        change: "Tournees EN_COURS",
       },
       {
         icon: "fa-flag-checkered",
         iconColor: "orange",
         label: "Tournees > 80%",
-        value: "-",
+        value: nearlyDoneValue,
         change: "Presque terminees",
       },
       {
@@ -95,7 +105,7 @@ export default function SuiviTempsReelPage() {
         change: `${totalCollectes} collectes (30j)`,
       },
     ];
-  }, [statsData]);
+  }, [statsData, nearlyDoneCount, avgProgression]);
 
   if (loading) {
     return <div className="suivi-page"><i className="fas fa-spinner fa-spin"></i> Chargement du suivi en temps reel...</div>;

@@ -64,13 +64,11 @@ function buildDetailItems(tournee) {
     { label: "Agent", value: tournee.agent },
     { label: "Zone", value: tournee.zone },
     { label: "Statut", value: tournee.statusText },
-    { label: "Statut système", value: tournee.statut },
+    { label: "Date de tournée", value: tournee.dateTournee ?? "-" },
+    { label: "Heure de début prévue", value: tournee.heureDebutPrevue ?? "-" },
+    { label: "Heure de fin prévue", value: tournee.heureFinPrevue ?? "-" },
     { label: "Étapes collectées", value: `${tournee.etapesCollectees} / ${tournee.totalEtapes}` },
     { label: "Progression", value: `${tournee.progression}%` },
-    ...(tournee.heureDebutPrevue
-      ? [{ label: "Heure de début prévue", value: tournee.heureDebutPrevue }]
-      : []),
-    { label: "En retard", value: tournee.estEnRetard ? "Oui" : "Non" },
   ];
 }
 

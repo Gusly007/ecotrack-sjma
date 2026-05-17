@@ -58,6 +58,16 @@ export async function fetchTourneesStats() {
   return unwrap(response.data) || {};
 }
 
+export async function fetchNearlyDoneTournees(seuil = 80) {
+  const response = await api.get("/api/routes/stats/nearly-done", { params: { seuil } });
+  return unwrap(response.data) || { count: 0, tournees: [] };
+}
+
+export async function fetchAverageProgression() {
+  const response = await api.get("/api/routes/stats/average-progression");
+  return unwrap(response.data)?.progression_moyenne_pct ?? null;
+}
+
 export async function fetchActiveTournees({ page = 1, limit = 6, signal } = {}) {
   const response = await api.get("/api/routes/tournees", {
     params: { page, limit, statut: "EN_COURS" },

@@ -3,28 +3,57 @@ import TourneesEnCoursTable from "./TourneesEnCoursTable";
 import { Pagination } from "../../common";
 import { fetchActiveTournees } from "../../../services/tourneeService";
 
+function computeHeureFin(heureDebut, dureePrevueMin) {
+  if (!heureDebut || !dureePrevueMin) return null;
+  const [h, m] = String(heureDebut).substring(0, 5).split(":").map(Number);
+  const totalMin = h * 60 + m + Number(dureePrevueMin);
+  const hFin = Math.floor(totalMin / 60) % 24;
+  const mFin = totalMin % 60;
+  return `${String(hFin).padStart(2, "0")}:${String(mFin).padStart(2, "0")}`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString("fr-FR");
+}
+
 function normalizeActiveTournee(tournee) {
   const total = Number(tournee.total_etapes || 0);
   const done = Number(tournee.etapes_collectees || 0);
   const progression = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  const estEnRetard = tournee.est_en_retard ?? false;
+
   let statusText = "En cours";
   let statusColor = "green";
 
-  if (progression >= 90) {
-    statusText = "Bientot fini";
-  } else if (progression <= 20) {
-    statusText = "Retard";
+  if (estEnRetard) {
+    statusText = "En retard";
     statusColor = "orange";
+  } else if (progression >= 90) {
+    statusText = "Bientot fini";
   }
 
+  const heureDebut = tournee.heure_debut_prevue
+    ? String(tournee.heure_debut_prevue).substring(0, 5)
+    : null;
+
   return {
-    id: `T-${tournee.id_tournee}`,
+    id: tournee.code || `T-${tournee.id_tournee}`,
+    rawId: tournee.id_tournee,
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigne",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
     progression,
     statusText,
     statusColor,
+    statut: tournee.statut || "EN_COURS",
+    totalEtapes: total,
+    etapesCollectees: done,
+    dateTournee: formatDate(tournee.date_tournee),
+    heureDebutPrevue: heureDebut,
+    heureFinPrevue: computeHeureFin(heureDebut, tournee.duree_prevue_min),
+    dureePrevueMin: tournee.duree_prevue_min || null,
+    estEnRetard,
   };
 }
 
