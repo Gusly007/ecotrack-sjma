@@ -237,7 +237,7 @@ export default function CreateUserPage() {
             </div>
 
             <FormGroup label="Zone(s) assignée(s)">
-              {formData.role === 'CITOYEN' || formData.role == 'ADMIN' || formData.role === 'AGENT' ? (
+              {formData.role === 'CITOYEN' || formData.role === 'ADMIN' || formData.role === 'AGENT' ? (
                 <p className="helper-text" style={{ color: '#999', fontSize: '0.85rem', marginTop: '5px' }}>
                   Non applicable pour ce rôle
                 </p>
