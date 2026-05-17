@@ -306,6 +306,204 @@ docker exec ecotrack-kafka kafka-consumer-groups.sh \
 
 ---
 
+## Architecture du Consumer (`kafkaConsumer.js`)
+
+### Vue globale
+
+Le fichier `kafkaConsumer.js` est le **point central** qui relie les événements Kafka aux notifications. Il est divisé en sections logiques :
+
+```
+┌─ Initiation Client Kafka
+├─ Helpers (buildNotificationsForContainer)
+├─ Handlers par topic (handleAlert, handleSignalement)
+├─ Dispatch principal
+└─ Connexion/Démarrage (connect, disconnect)
+```
+
+### 1. Initialisation
+
+```javascript
+const kafka = new Kafka({
+  clientId: 'service-notification-gestionnaire',
+  brokers: [process.env.KAFKA_BROKERS || 'localhost:9092'],
+  retry: { initialRetryTime: 100, retries: 8 }
+});
+
+const consumer = kafka.consumer({
+  groupId: 'notification-gestionnaire-group'
+});
+```
+
+Crée un client Kafka avec reconnexion automatique en cas d'indisponibilité.
+
+### 2. Helper : `buildNotificationsForContainer()`
+
+```javascript
+async function buildNotificationsForContainer(id_conteneur, type, titre, corps) {
+  const zone = await zoneRepository.findResponsablesByContainer(id_conteneur);
+  
+  if (!zone) {
+    logger.warn({ id_conteneur }, 'Conteneur sans zone — notification ignorée');
+    return [];  // ← Important : retourner [] et non lever une erreur
+  }
+  
+  // Construire les notifications avec contexte de zone
+  return [{ 
+    id_utilisateur: id_gestionnaire, 
+    type, 
+    titre: `[${zone_code}] ${titre}`,
+    corps: `Zone : ${zone_nom}\n${corps}`
+  }];
+}
+```
+
+**Responsabilités :**
+- Récupérer la zone et le gestionnaire responsable du conteneur
+- Enrichir titre/corps avec le code et nom de zone
+- Retourner un tableau prêt à être passé à `createBulkNotifications()`
+- Gérer les cas limites (zone manquante) sans crash
+
+### 3. Handlers par topic
+
+#### `handleAlert(payload)`
+```javascript
+async function handleAlert(payload) {
+  const alert = payload.alert || payload;
+  
+  if (!alert.id_conteneur) {
+    logger.warn({ payload }, 'Alert sans id_conteneur — ignorée');
+    return;
+  }
+
+  const titre = `Alerte : ${alert.type_alerte || 'Zone'}`;
+  const corps = alert.description || `Valeur détectée : ${alert.valeur_detectee} (seuil : ${alert.seuil})`;
+
+  const notifications = await buildNotificationsForContainer(
+    alert.id_conteneur,
+    'ALERTE',
+    titre,
+    corps
+  );
+
+  if (notifications.length === 0) return;
+
+  await notificationService.createBulkNotifications(notifications);
+
+  logger.info(
+    { id_conteneur: alert.id_conteneur, type_alerte: alert.type_alerte, count: notifications.length },
+    'Notifications ALERTE créées automatiquement'
+  );
+}
+```
+
+**Flux :**
+1. Parser le payload (flexibilité : `payload.alert` ou `payload` direct)
+2. Valider que `id_conteneur` existe
+3. Construire titre et corps à partir des données de l'alerte
+4. Utiliser le helper pour résoudre le gestionnaire
+5. Créer les notifications en masse
+6. Logger le succès
+
+#### `handleSignalement(payload)`
+Même structure, mais ciblé pour les signalements citoyens.
+
+### 4. Dispatch principal
+
+```javascript
+async function dispatch(topic, value) {
+  switch (topic) {
+    case TOPICS.ALERTS:
+      await handleAlert(value);
+      break;
+    case TOPICS.SIGNALEMENTS:
+      await handleSignalement(value);
+      break;
+    default:
+      logger.debug({ topic }, 'Topic non géré — ignoré');
+  }
+}
+```
+
+Oriente chaque message vers le bon handler selon le topic. Permet d'ajouter facilement de nouveaux topics sans modifier la boucle de consommation.
+
+### 5. Cycle de vie : `connect()` et `disconnect()`
+
+#### `connect()`
+```javascript
+const connect = async () => {
+  if (isRunning) return;  // ← Idempotent : éviter double connexion
+
+  try {
+    await consumer.connect();
+    isRunning = true;
+    
+    await consumer.subscribe({
+      topics: Object.values(TOPICS),
+      fromBeginning: false  // ← Ne replay pas l'historique
+    });
+
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        try {
+          const value = JSON.parse(message.value.toString());
+          logger.debug({ topic, partition, offset: message.offset }, 'Message Kafka reçu');
+          await dispatch(topic, value);
+        } catch (err) {
+          logger.error({ err: err.message, topic }, 'Erreur traitement message Kafka');
+          // ← Pas de re-throw : continuer le traitement des messages suivants
+        }
+      }
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Kafka Consumer — connexion échouée');
+    isRunning = false;
+  }
+};
+```
+
+**Points clés :**
+- **Idempotence** : vérifier `isRunning` pour éviter les double-connexions
+- **Gestion d'erreurs robuste** : chaque message en erreur ne crash pas le consumer
+- **fromBeginning: false** : mode production (ne rejoue pas l'historique)
+
+#### `disconnect()`
+```javascript
+const disconnect = async () => {
+  if (!isRunning) return;
+  try {
+    await consumer.disconnect();
+    isRunning = false;
+    logger.info('Kafka Consumer déconnecté');
+  } catch (err) {
+    logger.error({ err: err.message }, 'Kafka Consumer — déconnexion échouée');
+  }
+};
+```
+
+Permet un arrêt propre (important pour `SIGTERM`).
+
+### 6. Utilisation dans le serveur principal
+
+Fichier `src/index.js` (ou `app.js`) :
+
+```javascript
+const kafkaConsumer = require('./kafkaConsumer');
+
+// Au démarrage du serveur
+app.listen(PORT, async () => {
+  logger.info({ port: PORT }, 'Serveur démarré');
+  await kafkaConsumer.connect();  // ← Lancer le consumer
+});
+
+// À l'arrêt
+process.on('SIGTERM', async () => {
+  await kafkaConsumer.disconnect();
+  server.close(() => process.exit(0));
+});
+```
+
+---
+
 ## Ajouter un nouveau topic
 
 Pour étendre le consumer à un nouveau topic (ex: `ecotrack.tournees.planifiee`) :
