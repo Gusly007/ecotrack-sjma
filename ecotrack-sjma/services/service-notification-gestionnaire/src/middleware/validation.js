@@ -1,6 +1,9 @@
 'use strict';
 
-const VALID_TYPES = ['ALERTE', 'TOURNEE', 'BADGE', 'SYSTEME'];
+const VALID_TYPES = ['ALERTE', 'TOURNEE', 'BADGE', 'SYSTEME',
+  'ADMIN_ALERTE', 'ADMIN_SERVICE', 'ADMIN_SEUIL',
+  'ADMIN_ML', 'ADMIN_SECURITE', 'ADMIN_PERFORMANCE', 'ADMIN_IOT'
+];
 
 // ─── Helpers ─────────────────────────────────────────────────
 

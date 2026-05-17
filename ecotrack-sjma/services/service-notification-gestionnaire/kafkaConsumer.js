@@ -5,6 +5,7 @@ require('dotenv').config();
 const { Kafka } = require('kafkajs');
 const logger = require('./src/utils/logger');
 const notificationService = require('./src/services/notification.service');
+const adminNotificationService = require('./src/services/adminNotificationService');
 const zoneRepository = require('./src/repositories/zone.repository');
 
 // ─── Client Kafka ─────────────────────────────────────────────
@@ -22,8 +23,9 @@ let isRunning = false;
 
 // ─── Topics écoutés ───────────────────────────────────────────
 const TOPICS = {
-  ALERTS:       'ecotrack.alerts',
-  SIGNALEMENTS: 'ecotrack.signalements.nouveau'
+  ALERTS:             'ecotrack.alerts',
+  SIGNALEMENTS:       'ecotrack.signalements.nouveau',
+  ADMIN_NOTIFICATIONS: 'ecotrack.admin.notifications'
 };
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -116,6 +118,26 @@ async function handleSignalement(payload) {
   );
 }
 
+/**
+ * Traite un event ecotrack.admin.notifications
+ * Payload : { type, data, source, ... }
+ */
+async function handleAdminNotification(payload) {
+  const event = payload.event || payload;
+
+  if (!event.type) {
+    logger.warn({ payload }, 'Événement admin sans type — ignoré');
+    return;
+  }
+
+  await adminNotificationService.processKafkaEvent(event);
+
+  logger.info(
+    { type: event.type, source: event.source || 'kafka' },
+    'Notification admin traitée depuis Kafka'
+  );
+}
+
 // ─── Dispatch principal ───────────────────────────────────────
 
 async function dispatch(topic, value) {
@@ -125,6 +147,9 @@ async function dispatch(topic, value) {
       break;
     case TOPICS.SIGNALEMENTS:
       await handleSignalement(value);
+      break;
+    case TOPICS.ADMIN_NOTIFICATIONS:
+      await handleAdminNotification(value);
       break;
     default:
       logger.debug({ topic }, 'Topic non géré — ignoré');
@@ -139,7 +164,10 @@ const connect = async () => {
   try {
     await consumer.connect();
     isRunning = true;
-    logger.info({ brokers: process.env.KAFKA_BROKERS || 'localhost:9092' }, 'Kafka Consumer connecté');
+    logger.info({
+      brokers: process.env.KAFKA_BROKERS || 'localhost:9092',
+      topics: Object.values(TOPICS)
+    }, 'Kafka Consumer connecté');
 
     await consumer.subscribe({
       topics: Object.values(TOPICS),

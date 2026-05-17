@@ -13,6 +13,7 @@ const requestLogger = require('./src/middleware/request-logger');
 const errorHandler  = require('./src/middleware/error-handler');
 const { generalLimiter } = require('./src/middleware/rateLimit');
 const notificationRoutes = require('./src/routes/notification.route');
+const adminNotificationRoutes = require('./src/routes/adminNotification.route');
 
 // ─── Prometheus ───────────────────────────────────────────────
 const register = new client.Registry();
@@ -106,6 +107,23 @@ const swaggerSpec = swaggerJsdoc({
             date_creation: { type: 'string', format: 'date-time' },
           },
         },
+        AdminNotification: {
+          type: 'object',
+          properties: {
+            id_notification: { type: 'integer', example: 1001 },
+            id_utilisateur:  { type: 'integer', example: 7 },
+            type: {
+              type: 'string',
+              enum: ['ADMIN_ALERTE','ADMIN_SERVICE','ADMIN_SEUIL','ADMIN_ML','ADMIN_SECURITE','ADMIN_PERFORMANCE','ADMIN_IOT']
+            },
+            titre:   { type: 'string', example: 'Service hors ligne' },
+            corps:   { type: 'string', example: 'Le service API ne répond plus.' },
+            priorite: { type: 'integer', example: 1 },
+            categorie: { type: 'string', nullable: true },
+            est_lu:  { type: 'boolean', example: false },
+            date_creation: { type: 'string', format: 'date-time' },
+          },
+        },
         Error: {
           type: 'object',
           properties: {
@@ -135,11 +153,13 @@ app.get('/api', (_req, res) => {
       health:        '/health',
       metrics:       '/metrics',
       notifications: '/api/notifications',
+      adminNotifications: '/api/admin/notifications',
     },
   });
 });
 
 app.use('/api', notificationRoutes);
+app.use('/api', adminNotificationRoutes);
 
 // ─── Health check ─────────────────────────────────────────────
 app.get('/health', async (_req, res) => {
@@ -191,6 +211,11 @@ if (process.env.NODE_ENV !== 'test') {
   const { testConnection } = require('./src/db/connexion');
   const { createRedisClient } = require('./src/db/redis-client');
   const kafkaConsumer = require('./kafkaConsumer');
+  const kafkaAdminProducer = require('./kafkaAdminProducer');
+  const { createWebSocketAdminService } = require('./src/services/websocketAdminService');
+  const healthMonitorService = require('./src/services/healthMonitorService');
+
+  let wsAdminService = null;
 
   server.listen(PORT, async () => {
     logger.info({ port: PORT }, 'Service notification-gestionnaire démarré');
@@ -209,17 +234,42 @@ if (process.env.NODE_ENV !== 'test') {
     }
 
     try {
+      wsAdminService = createWebSocketAdminService(server);
+      logger.info('WebSocket Admin Service démarré sur /ws/admin');
+    } catch (err) {
+      logger.warn({ error: err.message }, 'WebSocket Admin non disponible');
+    }
+
+    try {
       await kafkaConsumer.connect();
-      logger.info({ topics: ['ecotrack.alerts', 'ecotrack.signalements.nouveau'] }, 'Kafka Consumer démarré');
+      logger.info({ topics: Object.values(kafkaConsumer.TOPICS) }, 'Kafka Consumer démarré');
     } catch (err) {
       logger.warn({ error: err.message }, 'Kafka indisponible — notifications automatiques désactivées');
+    }
+
+    try {
+      await kafkaAdminProducer.connect();
+      logger.info('Kafka Admin Producer connecté');
+    } catch (err) {
+      logger.warn({ error: err.message }, 'Kafka Admin Producer indisponible');
+    }
+
+    try {
+      healthMonitorService.start();
+    } catch (err) {
+      logger.warn({ error: err.message }, 'Health Monitor non disponible');
     }
   });
 
   // Arrêt propre
   const shutdown = async (signal) => {
     logger.info({ signal }, 'Arrêt du service...');
+    healthMonitorService.stop();
+    await kafkaAdminProducer.disconnect();
     await kafkaConsumer.disconnect();
+    if (wsAdminService) {
+      wsAdminService.io.close();
+    }
     server.close(() => process.exit(0));
   };
 

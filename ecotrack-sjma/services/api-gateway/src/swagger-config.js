@@ -76,6 +76,20 @@ Obtenez un token via \`POST /auth/login\`
   },
   servers: [
     {
+        AdminNotification: {
+          type: 'object',
+          properties: {
+            id_notification: { type: 'integer', example: 1001 },
+            id_utilisateur: { type: 'integer', example: 7 },
+            type: { type: 'string', example: 'ADMIN_ALERTE' },
+            titre: { type: 'string', example: 'Service hors ligne' },
+            corps: { type: 'string', example: 'Le service API ne répond plus.' },
+            priorite: { type: 'integer', example: 1 },
+            categorie: { type: 'string', nullable: true },
+            est_lu: { type: 'boolean', example: false },
+            date_creation: { type: 'string', format: 'date-time' }
+          }
+        },
       url: 'http://localhost:3000',
       description: 'API Gateway (Point d\'entree unifie)'
     },
@@ -102,6 +116,12 @@ Obtenez un token via \`POST /auth/login\`
     {
       url: 'http://localhost:3015',
       description: 'Service Analytics (Direct)'
+    }
+  ],
+  servers: [
+    {
+      url: 'http://localhost:3016',
+      description: 'Service Notifications Gestionnaire (Direct)'
     }
   ],
   tags: [
@@ -208,6 +228,16 @@ Obtenez un token via \`POST /auth/login\`
         description: 'Documentation détaillée',
         url: 'http://localhost:3014/api-docs'
       }
+    },
+    {
+      name: 'Notifications',
+      description: 'Service Notifications Gestionnaire - endpoints utilisateurs',
+      externalDocs: { description: 'Service notifications', url: 'http://localhost:3016/api-docs' }
+    },
+    {
+      name: 'AdminNotifications',
+      description: 'Endpoints administratifs de notifications (gestionnaire)',
+      externalDocs: { description: 'Docs gestionnaire', url: 'http://localhost:3016/api-docs' }
     },
     {
       name: 'Stats Gamification',
@@ -1645,6 +1675,67 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
+
+    // ─────────────────────────────────────────────────────────────
+    // Service Notifications Gestionnaire (port 3016) — endpoints
+    // ─────────────────────────────────────────────────────────────
+    '/api/admin/notifications/types': {
+      get: {
+        tags: ['AdminNotifications'],
+        summary: 'Récupère les types de notifications admin disponibles',
+        servers: [{ url: 'http://localhost:3016' }],
+        responses: { 200: { description: 'Liste des types' } }
+      }
+    },
+    '/api/admin/notifications/priorities': {
+      get: {
+        tags: ['AdminNotifications'],
+        summary: 'Récupère la table des priorités disponibles',
+        servers: [{ url: 'http://localhost:3016' }],
+        responses: { 200: { description: 'Objet map des priorités' } }
+      }
+    },
+    '/api/admin/notifications': {
+      post: {
+        tags: ['AdminNotifications'],
+        summary: 'Crée une notification admin pour un gestionnaire',
+        servers: [{ url: 'http://localhost:3016' }],
+        requestBody: { required: true },
+        responses: { 201: { description: 'Notification admin créée' } }
+      },
+      get: {
+        tags: ['AdminNotifications'],
+        summary: 'Liste les notifications admin avec filtres et pagination',
+        servers: [{ url: 'http://localhost:3016' }],
+        responses: { 200: { description: 'Liste paginée de notifications admin' } }
+      }
+    },
+    '/api/admin/notifications/bulk': {
+      post: {
+        tags: ['AdminNotifications'],
+        summary: 'Crée plusieurs notifications admin en masse',
+        servers: [{ url: 'http://localhost:3016' }],
+        requestBody: { required: true },
+        responses: { 201: { description: 'Notifications insérées' } }
+      }
+    },
+    '/api/admin/notifications/{id}/read': {
+      patch: {
+        tags: ['AdminNotifications'],
+        summary: 'Marque une notification admin comme lue',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: { 200: { description: 'Notification mise à jour' } }
+      }
+    },
+    '/api/admin/notifications/stats': {
+      get: {
+        tags: ['AdminNotifications'],
+        summary: 'Récupère des statistiques basiques sur les notifications admin',
+        servers: [{ url: 'http://localhost:3016' }],
+        responses: { 200: { description: 'Statistiques' } }
+      }
+    },
 
   },
 
