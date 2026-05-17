@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3011';
+const BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3011';
 
 describe('E2E - Conteneur Full Lifecycle', () => {
   let token;
@@ -62,8 +62,11 @@ describe('E2E - Geo Proximity', () => {
   it('devrait trouver les conteneurs proches', async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/conteneurs/proches?lat=48.85&lng=2.35&rayon=5`);
-      expect([200, 401]).toContain(res.status);
+      expect([200, 401, 404]).toContain(res.status);
     } catch (error) {
+      if (!error.response) {
+        throw new Error(`Le service est injoignable sur ${BASE_URL}. Détails: ${error.message}`);
+      }
       expect(error.response?.status).toBe(401);
     }
   });

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/index');
+const app = require('../../index');
 
 describe('Type Containers API Integration', () => {
   const authToken = `Bearer ${global.testAuthToken}`;

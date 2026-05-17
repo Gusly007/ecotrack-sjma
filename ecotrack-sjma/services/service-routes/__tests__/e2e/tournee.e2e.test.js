@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.API_BASE_URL || process.env.API_URL || 'http://127.0.0.1:3012';
 
 describe('E2E - Tournee Lifecycle', () => {
   let token;

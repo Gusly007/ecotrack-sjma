@@ -22,7 +22,7 @@ class CentralLogClient {
         traceId,
         ipAddress,
         userAgent
-      }, { timeout: 1000 });
+      }, { timeout: 3000 });
     } catch (err) {
       console.error('Failed to send log to central:', err.message);
     }
