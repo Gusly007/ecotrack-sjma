@@ -1,3 +1,7 @@
+jest.mock('../../../kafkaProducer', () => ({
+  sendSignalement: jest.fn().mockResolvedValue(undefined)
+}));
+
 jest.mock('../../../src/repositories/signalement-repository', () => {
   return jest.fn().mockImplementation(() => ({
     findAll: jest.fn(),

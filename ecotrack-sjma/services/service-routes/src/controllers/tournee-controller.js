@@ -1,4 +1,5 @@
 const ApiResponse = require('../utils/api-response');
+const ApiError = require('../utils/api-error');
 
 class TourneeController {
   constructor(tourneeService, db) {
@@ -17,6 +18,8 @@ class TourneeController {
     this.getProgress = this.getProgress.bind(this);
     this.optimize = this.optimize.bind(this);
     this.previewOptimization = this.previewOptimization.bind(this);
+    this.getTypeConteneur = this.getTypeConteneur.bind(this);
+    this.getActiveMapData = this.getActiveMapData.bind(this);
   }
 
   async create(req, res, next) {
@@ -88,6 +91,13 @@ class TourneeController {
   async updateStatut(req, res, next) {
     try {
       const { id } = req.params;
+      const { statut } = req.body;
+      const role = String(req.user?.role || '').toUpperCase();
+
+      if (role === 'GESTIONNAIRE' && statut !== 'ANNULEE') {
+        throw ApiError.forbidden('Un gestionnaire ne peut qu\'annuler une tournée');
+      }
+
       const result = await this.service.updateStatut(id, req.body);
       return res.status(200).json(ApiResponse.success(result, 'Statut mis à jour'));
     } catch (err) {
@@ -129,6 +139,24 @@ class TourneeController {
     try {
       const result = await this.service.optimizeTournee(req.body);
       return res.status(201).json(ApiResponse.success(result, 'Tournée optimisée créée', 201));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getTypeConteneur(req, res, next) {
+    try {
+      const types = await this.service.getTypeConteneur();
+      return res.status(200).json(ApiResponse.success(types));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getActiveMapData(req, res, next) {
+    try {
+      const data = await this.service.getActiveMapData();
+      return res.status(200).json(ApiResponse.success(data));
     } catch (err) {
       next(err);
     }

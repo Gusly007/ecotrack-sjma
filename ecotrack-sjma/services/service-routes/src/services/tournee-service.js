@@ -96,8 +96,18 @@ class TourneeService {
 
     await cacheService.del(`tournee:${id}`);
     await cacheService.invalidatePattern('tournee:*');
+    await cacheService.invalidatePattern('tournees:*');
 
     return result;
+  }
+
+  async autoStartDueTournees() {
+    const started = await this.tourneeRepo.autoStartDueTournees();
+    if (started.length > 0) {
+      await cacheService.invalidatePattern('tournee:*');
+      await cacheService.invalidatePattern('tournees:*');
+    }
+    return started;
   }
 
   async deleteTournee(id) {
@@ -149,6 +159,14 @@ class TourneeService {
    * Génère une tournée optimisée pour une zone donnée
    * Utilise l'algorithme 'nearest_neighbor' ou '2opt' (2-opt améliore NN)
    */
+  async getTypeConteneur() {
+    return this.tourneeRepo.findAllTypeConteneur();
+  }
+
+  async getActiveMapData() {
+    return this.tourneeRepo.findActiveWithEtapes();
+  }
+
   async optimizeTournee(data) {
     const validated = validateSchema(optimizeSchema, data);
     const {
@@ -158,14 +176,15 @@ class TourneeService {
       id_agent,
       id_vehicule,
       heure_debut_prevue = '07:30',
-      algorithme = '2opt'
+      algorithme = '2opt',
+      id_type = null
     } = validated;
 
     // Récupérer le nom de la zone via repository
     const nomZone = await this.tourneeRepo.getZoneName(id_zone);
 
     // Récupérer les conteneurs actifs via repository (max 100 pour performance)
-    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage, 100);
+    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage, 100, id_type);
 
     if (conteneurs.length === 0) {
       throw ApiError.badRequest(
@@ -233,7 +252,8 @@ class TourneeService {
       id_zone,
       seuil_remplissage = 70,
       heure_debut_prevue = '07:30',
-      algorithme = '2opt'
+      algorithme = '2opt',
+      id_type = null
     } = validated;
 
     require('../utils/logger').info(`[previewOptimization] Algorithme reçu: "${algorithme}"`);
@@ -242,7 +262,7 @@ class TourneeService {
     const nomZone = await this.tourneeRepo.getZoneName(id_zone);
 
     // Récupérer les conteneurs actifs via repository
-    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage);
+    const conteneurs = await this.tourneeRepo.findActiveContainersByZone(id_zone, seuil_remplissage, 100, id_type);
 
     if (conteneurs.length === 0) {
       return {
@@ -263,7 +283,6 @@ class TourneeService {
       optimisation: {
         algorithme_demande: algorithme,
         algorithme_utilise: result.algorithme_utilise,
-        nb_conteneurs: conteneurs.length,
         nb_conteneurs: result.nb_conteneurs,
         distance_prevue_km: result.distance_km,
         distance_originale_km: result.distance_originale_km,

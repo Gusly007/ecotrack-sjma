@@ -30,6 +30,7 @@ const INITIAL_FORM = {
 	id_zone: "",
 	id_agent: "",
 	id_vehicule: "",
+	id_type: "",
 	seuil_remplissage: "70",
 	algorithme: "2opt",
 };
@@ -56,6 +57,7 @@ export default function TourneePage() {
 		zones: [],
 		agents: [],
 		vehicles: [],
+		types: [],
 	});
 	const [createForm, setCreateForm] = useState(INITIAL_FORM);
 
@@ -205,6 +207,7 @@ export default function TourneePage() {
 					id_zone: Number(createForm.id_zone),
 					id_agent: Number(createForm.id_agent),
 					id_vehicule: Number(createForm.id_vehicule) || null,
+					id_type: createForm.id_type ? Number(createForm.id_type) : null,
 					seuil_remplissage: Number(createForm.seuil_remplissage),
 					algorithme: createForm.algorithme,
 				};
@@ -246,6 +249,7 @@ export default function TourneePage() {
 				id_zone: Number(createForm.id_zone),
 				id_agent: Number(createForm.id_agent),
 				id_vehicule: Number(createForm.id_vehicule) || null,
+				id_type: createForm.id_type ? Number(createForm.id_type) : null,
 				seuil_remplissage: Number(createForm.seuil_remplissage),
 				algorithme: createForm.algorithme,
 			};
@@ -371,6 +375,26 @@ export default function TourneePage() {
 							{creationOptions.vehicles.map((vehicle) => (
 								<option key={vehicle.id_vehicule} value={vehicle.id_vehicule}>
 									{vehicle.numero_immatriculation} ({vehicle.modele || "N/A"})
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
+
+				<div className="tournee-modal-row">
+					<div className="tournee-modal-field">
+						<label htmlFor="id_type">Type de déchets</label>
+						<select
+							id="id_type"
+							name="id_type"
+							value={createForm.id_type}
+							onChange={handleFieldChange}
+							disabled={creationLoading || creationSubmitting}
+						>
+							<option value="">Tous types</option>
+							{creationOptions.types.map((t) => (
+								<option key={t.id_type} value={t.id_type}>
+									{t.nom} ({t.code})
 								</option>
 							))}
 						</select>

@@ -61,7 +61,8 @@ const optimizeSchema = Joi.object({
   heure_debut_prevue: Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/).default('07:30').messages({
     'string.pattern.base': 'heure_debut_prevue doit être au format HH:MM'
   }),
-  algorithme: Joi.string().valid('nearest_neighbor', '2opt').default('2opt')
+  algorithme: Joi.string().valid('nearest_neighbor', '2opt').default('2opt'),
+  id_type: Joi.number().integer().positive().optional().allow(null)
 });
 
 const anomalieSchema = Joi.object({

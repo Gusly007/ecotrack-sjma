@@ -1,4 +1,5 @@
 const { nearestNeighborAlgorithm, twoOptAlgorithm, totalDistance } = require('./optimization-service');
+const cacheService = require('./cacheService');
 
 class StatsService {
   constructor(statsRepository) {
@@ -15,6 +16,26 @@ class StatsService {
 
   async getCollecteStats(options = {}) {
     return this.statsRepo.getCollecteStats(options);
+  }
+
+  async getAverageProgression() {
+    const cacheKey = 'stats:average-progression';
+    const { data } = await cacheService.getOrSet(
+      cacheKey,
+      () => this.statsRepo.getAverageProgression(),
+      30
+    );
+    return data;
+  }
+
+  async getNearlyDone(seuil = 80) {
+    const cacheKey = `stats:nearly-done:${seuil}`;
+    const { data } = await cacheService.getOrSet(
+      cacheKey,
+      () => this.statsRepo.getTourneesNearlyDone(seuil),
+      30  // TTL 30s : données temps réel, changent à chaque collecte enregistrée
+    );
+    return data;
   }
 
   /**
