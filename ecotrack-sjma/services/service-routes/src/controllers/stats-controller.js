@@ -67,7 +67,8 @@ class StatsController {
 
   async getNearlyDone(req, res, next) {
     try {
-      const seuil = Math.min(100, Math.max(0, parseFloat(req.query.seuil) || 80));
+      const parsedSeuil = parseFloat(req.query.seuil);
+      const seuil = Math.min(100, Math.max(0, Number.isNaN(parsedSeuil) ? 80 : parsedSeuil));
       const data = await this.service.getNearlyDone(seuil);
       return res.status(200).json(
         ApiResponse.success(
