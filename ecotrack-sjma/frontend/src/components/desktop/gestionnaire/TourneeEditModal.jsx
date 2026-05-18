@@ -50,7 +50,7 @@ function buildInitialForm(raw) {
 
 export default function TourneeEditModal({ tourneeId, isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
-  const isGestionnaire = user?.role === "gestionnaire";
+  const isGestionnaire = user?.role?.toUpperCase() === "GESTIONNAIRE";
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statutSubmitting, setStatutSubmitting] = useState(false);
