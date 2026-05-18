@@ -105,6 +105,7 @@ class TourneeService {
     const started = await this.tourneeRepo.autoStartDueTournees();
     if (started.length > 0) {
       await cacheService.invalidatePattern('tournee:*');
+      await cacheService.invalidatePattern('tournees:*');
     }
     return started;
   }
