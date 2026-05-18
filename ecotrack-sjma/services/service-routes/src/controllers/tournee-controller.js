@@ -92,9 +92,9 @@ class TourneeController {
     try {
       const { id } = req.params;
       const { statut } = req.body;
-      const role = req.user?.role;
+      const role = String(req.user?.role || '').toUpperCase();
 
-      if (role === 'gestionnaire' && statut !== 'ANNULEE') {
+      if (role === 'GESTIONNAIRE' && statut !== 'ANNULEE') {
         throw ApiError.forbidden('Un gestionnaire ne peut qu\'annuler une tournée');
       }
 
