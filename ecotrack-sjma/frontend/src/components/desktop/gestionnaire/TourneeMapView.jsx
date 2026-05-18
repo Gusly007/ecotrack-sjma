@@ -28,18 +28,17 @@ function buildPopup(etape, tourneeCode) {
   `;
 }
 
-export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
+export default function TourneeMapView({ tournees = [], focusedTourneeId, onClearFocus }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  const layersRef = useRef([]);
+  // Map<tourneeId, Array<{ layer, activeStyle, dimmedStyle }>>
+  const layersRef = useRef(new Map());
 
-  // Init map once — center + zoom sont obligatoires au démarrage Leaflet,
-  // fitBounds les écrasera dès que les données arrivent.
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
 
     const map = L.map(containerRef.current, {
-      center: [46.5, 2.5], // centre France — écrasé par fitBounds à la 1ère donnée
+      center: [46.5, 2.5],
       zoom: 6,
     });
 
@@ -52,25 +51,32 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
     return () => {
       map.remove();
       mapRef.current = null;
-      layersRef.current = [];
+      layersRef.current = new Map();
     };
   }, []);
 
-  // Redraw layers when data changes
+  // Redraw all layers when tournees data changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map._loaded) return;
 
-    layersRef.current.forEach((l) => l.remove());
-    layersRef.current = [];
+    layersRef.current.forEach((layers) => layers.forEach(({ layer }) => layer.remove()));
+    layersRef.current = new Map();
 
     if (!tournees.length) return;
 
     const allLatLngs = [];
 
     tournees.forEach((tournee, idx) => {
+      const tourneeId = tournee.id_tournee;
+      const tourneeLayers = [];
       const lineColor = LINE_COLORS[idx % LINE_COLORS.length];
       const etapes = tournee.etapes || [];
+
+      const pushLayer = (layer, activeStyle, dimmedStyle) => {
+        tourneeLayers.push({ layer, activeStyle, dimmedStyle });
+        layer.addTo(map);
+      };
 
       const coords = etapes
         .filter((e) => e.latitude != null && e.longitude != null)
@@ -82,8 +88,12 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
           weight: 3,
           opacity: 0.65,
           dashArray: "8 4",
-        }).addTo(map);
-        layersRef.current.push(line);
+        });
+        pushLayer(
+          line,
+          { color: lineColor, weight: 3, opacity: 0.65 },
+          { color: lineColor, weight: 1.5, opacity: 0.12 }
+        );
       }
 
       etapes.forEach((etape) => {
@@ -103,12 +113,14 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
         });
 
         marker.bindPopup(buildPopup(etape, tournee.code));
-        marker.addTo(map);
-        layersRef.current.push(marker);
+        pushLayer(
+          marker,
+          { opacity: collected ? 0.45 : 1, fillOpacity: collected ? 0.3 : 0.9 },
+          { opacity: 0.1, fillOpacity: 0.05 }
+        );
         allLatLngs.push([lat, lng]);
       });
 
-      // Agent position marker (last collected container)
       if (tournee.agent_latitude != null && tournee.agent_longitude != null) {
         const agentLat = parseFloat(tournee.agent_latitude);
         const agentLng = parseFloat(tournee.agent_longitude);
@@ -139,9 +151,11 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
             Dernière étape collectée : <strong>${tournee.agent_last_sequence}</strong>
           </div>
         `);
-        agentMarker.addTo(map);
-        layersRef.current.push(agentMarker);
+        // markers use setOpacity, not setStyle
+        pushLayer(agentMarker, null, null);
       }
+
+      layersRef.current.set(tourneeId, tourneeLayers);
     });
 
     if (allLatLngs.length > 0) {
@@ -149,37 +163,60 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId }) {
     }
   }, [tournees]);
 
-  // Zoom to focused tournée
+  // Zoom + dim/highlight when focus changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map._loaded || !focusedTourneeId) return;
-    const tournee = tournees.find((t) => t.id_tournee === focusedTourneeId);
-    if (!tournee?.etapes?.length) return;
+    if (!map || !map._loaded) return;
 
-    const coords = tournee.etapes
-      .filter((e) => e.latitude != null && e.longitude != null)
-      .map((e) => [parseFloat(e.latitude), parseFloat(e.longitude)]);
-
-    if (coords.length > 0) {
-      map.fitBounds(coords, { padding: [40, 40], maxZoom: 16 });
+    if (focusedTourneeId) {
+      const tournee = tournees.find((t) => t.id_tournee === focusedTourneeId);
+      if (tournee?.etapes?.length) {
+        const coords = tournee.etapes
+          .filter((e) => e.latitude != null && e.longitude != null)
+          .map((e) => [parseFloat(e.latitude), parseFloat(e.longitude)]);
+        if (coords.length > 0) {
+          map.fitBounds(coords, { padding: [40, 40], maxZoom: 16 });
+        }
+      }
     }
+
+    layersRef.current.forEach((tourneeLayers, tourneeId) => {
+      const active = !focusedTourneeId || tourneeId === focusedTourneeId;
+      tourneeLayers.forEach(({ layer, activeStyle, dimmedStyle }) => {
+        if (layer instanceof L.CircleMarker) {
+          layer.setStyle(active ? activeStyle : dimmedStyle);
+        } else if (layer instanceof L.Polyline) {
+          layer.setStyle(active ? activeStyle : dimmedStyle);
+        } else if (layer.setOpacity) {
+          layer.setOpacity(active ? 1 : 0.2);
+        }
+      });
+    });
   }, [focusedTourneeId, tournees]);
 
   return (
     <div className="chart-container">
       <div className="map-header">
         <h3>Carte des tournées en cours</h3>
-        <div className="map-legend">
-          {Object.entries(TYPE_CONFIG).map(([code, cfg]) => (
-            <span key={code} className="legend-item">
-              <span className="legend-dot" style={{ background: cfg.color }} />
-              {cfg.label}
+        <div className="map-header-right">
+          {focusedTourneeId && (
+            <button type="button" className="btn-clear-focus" onClick={onClearFocus}>
+              <i className="fas fa-expand-arrows-alt" />
+              Voir tout
+            </button>
+          )}
+          <div className="map-legend">
+            {Object.entries(TYPE_CONFIG).map(([code, cfg]) => (
+              <span key={code} className="legend-item">
+                <span className="legend-dot" style={{ background: cfg.color }} />
+                {cfg.label}
+              </span>
+            ))}
+            <span className="legend-item legend-collected">
+              <span className="legend-dot legend-dot--faded" />
+              Collecté
             </span>
-          ))}
-          <span className="legend-item legend-collected">
-            <span className="legend-dot legend-dot--faded" />
-            Collecté
-          </span>
+          </div>
         </div>
       </div>
 

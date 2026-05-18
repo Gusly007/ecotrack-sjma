@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatCard } from "../../../components/common";
 import { useAutoRefresh } from "../../../hooks";
 import TourneeMapView from "../../../components/desktop/gestionnaire/TourneeMapView";
@@ -21,6 +21,14 @@ export default function SuiviTempsReelPage() {
   const [avgProgression, setAvgProgression] = useState(null);
   const [activeTournees, setActiveTournees] = useState([]);
   const [focusedTourneeId, setFocusedTourneeId] = useState(null);
+  const mapSectionRef = useRef(null);
+
+  const handleFocusTournee = useCallback((id) => {
+    setFocusedTourneeId(id);
+    if (id && mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
 
   const loadLiveData = useCallback(async (isRefresh = false) => {
     try {
@@ -164,14 +172,18 @@ export default function SuiviTempsReelPage() {
         ))}
       </div>
 
-      <TourneeMapView
-        tournees={activeTournees}
-        focusedTourneeId={focusedTourneeId}
-      />
+      <div ref={mapSectionRef}>
+        <TourneeMapView
+          tournees={activeTournees}
+          focusedTourneeId={focusedTourneeId}
+          onClearFocus={() => setFocusedTourneeId(null)}
+        />
+      </div>
 
       <AgentsActifsPanel
         tournees={activeTournees}
-        onFocusTournee={setFocusedTourneeId}
+        onFocusTournee={handleFocusTournee}
+        focusedTourneeId={focusedTourneeId}
         pageSize={6}
       />
     </div>

@@ -19,7 +19,7 @@ function normalizeAgent(tournee) {
   };
 }
 
-export default function AgentsActifsPanel({ tournees = [], onFocusTournee, pageSize = 6 }) {
+export default function AgentsActifsPanel({ tournees = [], onFocusTournee, focusedTourneeId, pageSize = 6 }) {
   const [page, setPage] = useState(1);
 
   const agents = useMemo(() => tournees.map(normalizeAgent), [tournees]);
@@ -47,8 +47,16 @@ export default function AgentsActifsPanel({ tournees = [], onFocusTournee, pageS
               </tr>
             </thead>
             <tbody>
-              {sliced.map((agent) => (
-                <tr key={agent.id_tournee}>
+              {sliced.map((agent) => {
+                const isFocused = agent.id_tournee === focusedTourneeId;
+                const toggleFocus = () => onFocusTournee?.(isFocused ? null : agent.id_tournee);
+                return (
+                <tr
+                  key={agent.id_tournee}
+                  className={isFocused ? "tr--focused" : undefined}
+                  onClick={toggleFocus}
+                  style={{ cursor: "pointer" }}
+                >
                   <td>{agent.agent}</td>
                   <td>{agent.code}</td>
                   <td>{agent.zone}</td>
@@ -84,15 +92,16 @@ export default function AgentsActifsPanel({ tournees = [], onFocusTournee, pageS
                   <td>
                     <button
                       type="button"
-                      className="btn-map-focus"
-                      title="Voir sur la carte"
-                      onClick={() => onFocusTournee?.(agent.id_tournee)}
+                      className={`btn-map-focus${isFocused ? " btn-map-focus--active" : ""}`}
+                      title={isFocused ? "Désélectionner" : "Voir sur la carte"}
+                      onClick={(e) => { e.stopPropagation(); toggleFocus(); }}
                     >
-                      <i className="fas fa-map-marker-alt" />
+                      <i className={`fas ${isFocused ? "fa-times" : "fa-map-marker-alt"}`} />
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
 

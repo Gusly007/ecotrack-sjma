@@ -227,11 +227,67 @@
   padding: 5px 9px;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .btn-map-focus:hover {
   background: #dbeafe;
+}
+
+.btn-map-focus--active {
+  background: #3b82f6;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.btn-map-focus--active:hover {
+  background: #2563eb;
+}
+
+/* ── Focused table row ──────────────────────────────── */
+.bo-table tbody tr {
+  transition: background 0.12s;
+}
+
+.bo-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.bo-table tbody tr.tr--focused {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.bo-table tbody tr.tr--focused td:first-child {
+  padding-left: 9px;
+}
+
+/* ── Map header right side ──────────────────────────── */
+.map-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-clear-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-clear-focus:hover {
+  background: #e2e8f0;
 }
 
 /* ── Status pills (shared) ──────────────────────────── */
