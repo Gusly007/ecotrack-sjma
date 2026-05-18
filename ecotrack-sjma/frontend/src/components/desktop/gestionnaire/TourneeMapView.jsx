@@ -220,11 +220,10 @@ export default function TourneeMapView({ tournees = [], focusedTourneeId, onClea
         </div>
       </div>
 
-      {tournees.length === 0 ? (
+      {tournees.length === 0 && (
         <div className="empty-state">Aucune tournée active à afficher sur la carte.</div>
-      ) : (
-        <div ref={containerRef} className="tournee-map" />
       )}
+      <div ref={containerRef} className="tournee-map" />
     </div>
   );
 }
