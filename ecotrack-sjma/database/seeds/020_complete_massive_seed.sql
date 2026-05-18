@@ -51,8 +51,8 @@ SELECT
     CASE WHEN i <= 1950 THEN 'ACTIF' WHEN i <= 1980 THEN 'EN_MAINTENANCE' ELSE 'INACTIF' END,
     CURRENT_DATE - (random() * 730)::int,
     ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.6, 48.86 + (random()-0.5)*0.6), 4326),
-    (SELECT id_zone FROM ZONE ORDER BY random() LIMIT 1),
-    (SELECT id_type FROM TYPE_CONTENEUR ORDER BY random() LIMIT 1)
+    ((i - 1) % 10) + 1,
+    ((i - 1) / 500) + 1
 FROM generate_series(1, 2000) AS i;
 
 INSERT INTO CAPTEUR (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
