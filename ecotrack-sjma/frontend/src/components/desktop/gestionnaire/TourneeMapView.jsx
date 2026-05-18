@@ -17,15 +17,35 @@ const LINE_COLORS = [
 
 function buildPopup(etape, tourneeCode) {
   const status = etape.collectee ? "✓ Collecté" : "En attente";
-  return `
-    <div style="font-size:13px;min-width:140px">
-      <strong>${etape.uid || `Conteneur #${etape.id_conteneur}`}</strong><br>
-      <span style="color:#6b7280">${etape.type_nom || "Type inconnu"}</span><br>
-      Tournée : ${tourneeCode}<br>
-      Étape ${etape.sequence}<br>
-      <span style="color:${etape.collectee ? "#22c55e" : "#f97316"}">${status}</span>
-    </div>
-  `;
+  const container = document.createElement("div");
+  container.style.fontSize = "13px";
+  container.style.minWidth = "140px";
+
+  const title = document.createElement("strong");
+  title.textContent = etape.uid || `Conteneur #${etape.id_conteneur}`;
+  container.appendChild(title);
+  container.appendChild(document.createElement("br"));
+
+  const type = document.createElement("span");
+  type.style.color = "#6b7280";
+  type.textContent = etape.type_nom || "Type inconnu";
+  container.appendChild(type);
+  container.appendChild(document.createElement("br"));
+
+  const tournee = document.createTextNode(`Tournée : ${tourneeCode}`);
+  container.appendChild(tournee);
+  container.appendChild(document.createElement("br"));
+
+  const sequence = document.createTextNode(`Étape ${etape.sequence}`);
+  container.appendChild(sequence);
+  container.appendChild(document.createElement("br"));
+
+  const statusEl = document.createElement("span");
+  statusEl.style.color = etape.collectee ? "#22c55e" : "#f97316";
+  statusEl.textContent = status;
+  container.appendChild(statusEl);
+
+  return container;
 }
 
 export default function TourneeMapView({ tournees = [], focusedTourneeId, onClearFocus }) {
