@@ -113,6 +113,52 @@ kafkaConsumer.subscribe('ecotrack.alerts', async (message) => {
 });
 ```
 
+### Service-Notification-Gestionnaire-Admin (Producer + Consumer)
+```javascript
+// Producer : envoie des événements/notifications admin
+// Fichier: kafkaAdminProducer.js
+kafkaAdminProducer.sendAdminNotification({
+  id_notification: 1001,
+  id_utilisateur: 7,
+  type: 'ADMIN_ALERTE',
+  titre: 'Service hors ligne',
+  corps: 'Le service API ne répond plus.',
+  priorite: 1,
+  metadata: { service: 'api', duration: 120 }
+});
+
+// Producer : envoyer un événement admin structuré
+kafkaAdminProducer.sendAdminEvent({
+  type: 'SERVICE_DOWN',
+  source: 'health-monitor',
+  data: { service: 'api', url: 'http://api:4000', error: 'ECONNREFUSED' }
+});
+
+// Consumer : le service écoute plusieurs topics et dispatch vers des handlers
+// Fichier: kafkaConsumer.js
+// Topics écoutés: 'ecotrack.alerts', 'ecotrack.signalements.nouveau', 'ecotrack.admin.notifications'
+kafkaConsumer.subscribe({ topics: ['ecotrack.alerts','ecotrack.signalements.nouveau','ecotrack.admin.notifications'] });
+// Exemple de dispatch: ecotrack.admin.notifications -> adminNotificationService.processKafkaEvent(event)
+```
+
+Notes opérationnelles:
+- Topic principal pour les événements admin: `ecotrack.admin.notifications` (ADMIN_TOPIC)
+- `clientId` producer: `service-notification-gestionnaire-admin`
+- `clientId` consumer: `service-notification-gestionnaire-admin`
+- `groupId` consumer: `notification-gestionnaire-group`
+- `key` des messages: pour les notifications c'est `id_notification` (ou timestamp fallback), pour les events c'est `type`.
+- Retry: le client Kafka est configuré avec `retries: 8` et `initialRetryTime: 100`.
+- En cas d'indisponibilité de Kafka au démarrage, le service logge un warning (`Kafka indisponible — notifications automatiques désactivées`) et continue de fonctionner en mode dégradé (HTTP OK mais pas de consommation/production Kafka).
+
+Commandes utiles pour inspecter le topic admin:
+```bash
+# Voir les messages du topic admin
+docker compose exec kafka kafka-console-consumer --topic ecotrack.admin.notifications --from-beginning --bootstrap-server localhost:9092
+
+# Décrire le topic
+docker compose exec kafka kafka-topics --describe --topic ecotrack.admin.notifications --bootstrap-server localhost:9092
+```
+
 ---
 
 ## Installation Docker

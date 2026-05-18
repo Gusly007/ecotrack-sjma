@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/index');
+const app = require('../../index');
 
 describe('E2E - Analytics Service Workflows', () => {
   const authToken = `Bearer ${global.testAuthToken}`;
