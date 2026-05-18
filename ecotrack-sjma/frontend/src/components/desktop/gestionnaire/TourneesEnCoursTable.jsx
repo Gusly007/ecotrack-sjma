@@ -70,13 +70,11 @@ function buildDetailItems(tournee) {
   ];
 }
 
-export default function TourneesEnCoursTable({ pageSize = 6, refreshNonce = 0, onActionSuccess }) {
+export default function TourneesEnCoursTable({ pageSize = 6, refreshNonce = 0 }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: pageSize });
-  const [selectedTournee, setSelectedTournee] = useState(null);
-  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
