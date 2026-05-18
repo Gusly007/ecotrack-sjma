@@ -55,7 +55,12 @@ SELECT
     t.id_type
 FROM generate_series(1, 2000) AS i
 JOIN ZONE z ON z.code = 'Z' || LPAD((((i - 1) % 10) + 1)::text, 2, '0')
-JOIN TYPE_CONTENEUR t ON t.code = (ARRAY['ORD', 'REC', 'VER', 'COM'])[(((i - 1) / 500) + 1)];
+JOIN TYPE_CONTENEUR t ON t.code = CASE
+    WHEN i <= 500 THEN 'ORD'
+    WHEN i <= 1000 THEN 'REC'
+    WHEN i <= 1500 THEN 'VER'
+    ELSE 'COM'
+END;
 
 INSERT INTO CAPTEUR (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
 SELECT 
