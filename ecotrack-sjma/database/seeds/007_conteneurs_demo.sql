@@ -22,7 +22,8 @@ SELECT
 FROM zone z
 CROSS JOIN type_conteneur tc
 CROSS JOIN generate_series(1, 5) AS s
-WHERE z.nom != 'Zone Industrielle';
+WHERE z.nom != 'Zone Industrielle'
+ON CONFLICT (uid) DO NOTHING;
 
 -- Capteurs pour les conteneurs
 INSERT INTO capteur (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
