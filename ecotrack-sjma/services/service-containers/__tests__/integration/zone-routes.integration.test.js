@@ -7,14 +7,14 @@ describe('Zones API Integration', () => {
   describe('GET /zones', () => {
     it('should return list of zones', async () => {
       const res = await request(app)
-        .get('/zones')
+        .get('/api/zones')
         .set('Authorization', authToken);
       expect([200, 500, 401]).toContain(res.status);
     });
 
     it('should support pagination', async () => {
       const res = await request(app)
-        .get('/zones?page=1&limit=10')
+        .get('/api/zones?page=1&limit=10')
         .set('Authorization', authToken);
       expect([200, 500, 401]).toContain(res.status);
     });
@@ -23,7 +23,7 @@ describe('Zones API Integration', () => {
   describe('GET /zones/count', () => {
     it('should return zone count', async () => {
       const res = await request(app)
-        .get('/zones/count')
+        .get('/api/zones/count')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -32,7 +32,7 @@ describe('Zones API Integration', () => {
   describe('GET /zones/code/:code', () => {
     it('should return zone by code', async () => {
       const res = await request(app)
-        .get('/zones/code/ZONE001')
+        .get('/api/zones/code/ZONE001')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -41,7 +41,7 @@ describe('Zones API Integration', () => {
   describe('GET /zones/:id', () => {
     it('should return zone by id', async () => {
       const res = await request(app)
-        .get('/zones/1')
+        .get('/api/zones/1')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -50,14 +50,14 @@ describe('Zones API Integration', () => {
   describe('GET /zones/search', () => {
     it('should search zones by name', async () => {
       const res = await request(app)
-        .get('/zones/search?nom=Paris')
+        .get('/api/zones/search?nom=Paris')
         .set('Authorization', authToken);
       expect([200, 400, 500]).toContain(res.status);
     });
 
     it('should reject without search parameter', async () => {
       const res = await request(app)
-        .get('/zones/search')
+        .get('/api/zones/search')
         .set('Authorization', authToken);
       expect([400, 500]).toContain(res.status);
     });
@@ -66,7 +66,7 @@ describe('Zones API Integration', () => {
   describe('GET /zones/radius', () => {
     it('should find zones in radius', async () => {
       const res = await request(app)
-        .get('/zones/radius?latitude=48.8566&longitude=2.3522&rayon=10')
+        .get('/api/zones/radius?latitude=48.8566&longitude=2.3522&rayon=10')
         .set('Authorization', authToken);
       expect([200, 400, 500]).toContain(res.status);
     });
@@ -75,7 +75,7 @@ describe('Zones API Integration', () => {
   describe('GET /zones/stats/global', () => {
     it('should return global statistics', async () => {
       const res = await request(app)
-        .get('/zones/stats/global')
+        .get('/api/zones/stats/global')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -84,7 +84,7 @@ describe('Zones API Integration', () => {
   describe('POST /zones', () => {
     it('should create new zone', async () => {
       const res = await request(app)
-        .post('/zones')
+        .post('/api/zones')
         .set('Authorization', authToken)
         .send({
           code: 'TEST001',
@@ -99,7 +99,7 @@ describe('Zones API Integration', () => {
 
     it('should reject zone without required fields', async () => {
       const res = await request(app)
-        .post('/zones')
+        .post('/api/zones')
         .set('Authorization', authToken)
         .send({ code: 'TEST001' });
       expect([400, 500]).toContain(res.status);
@@ -109,7 +109,7 @@ describe('Zones API Integration', () => {
   describe('PATCH /zones/:id', () => {
     it('should update zone', async () => {
       const res = await request(app)
-        .patch('/zones/1')
+        .patch('/api/zones/1')
         .set('Authorization', authToken)
         .send({ population: 20000 });
       expect([200, 404, 500]).toContain(res.status);
@@ -119,7 +119,7 @@ describe('Zones API Integration', () => {
   describe('DELETE /zones/:id', () => {
     it('should delete zone', async () => {
       const res = await request(app)
-        .delete('/zones/999')
+        .delete('/api/zones/999')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
