@@ -44,7 +44,6 @@ class TourneeRepository {
       distance_prevue_km,
       duree_prevue_min,
       heure_debut_prevue = '07:30',
-      heure_debut_prevue = '07:30',
       id_vehicule,
       id_zone,
       id_agent
