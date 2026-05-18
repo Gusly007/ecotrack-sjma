@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/index');
+const app = require('../../index');
 
 describe('Type Containers API Integration', () => {
   const authToken = `Bearer ${global.testAuthToken}`;
@@ -7,7 +7,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers', () => {
     it('should return list of type containers', async () => {
       const res = await request(app)
-        .get('/typecontainers')
+        .get('/api/typecontainers')
         .set('Authorization', authToken);
       expect([200, 500, 401]).toContain(res.status);
     });
@@ -16,7 +16,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers/stats/all', () => {
     it('should return type containers with statistics', async () => {
       const res = await request(app)
-        .get('/typecontainers/stats/all')
+        .get('/api/typecontainers/stats/all')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -25,7 +25,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers/code/:code', () => {
     it('should return type container by code', async () => {
       const res = await request(app)
-        .get('/typecontainers/code/ORDURE')
+        .get('/api/typecontainers/code/ORDURE')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -34,7 +34,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers/nom/:nom', () => {
     it('should return type container by nom', async () => {
       const res = await request(app)
-        .get('/typecontainers/nom/RECYCLAGE')
+        .get('/api/typecontainers/nom/RECYCLAGE')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -43,7 +43,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers/:id', () => {
     it('should return type container by id', async () => {
       const res = await request(app)
-        .get('/typecontainers/1')
+        .get('/api/typecontainers/1')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -52,7 +52,7 @@ describe('Type Containers API Integration', () => {
   describe('GET /typecontainers/:id/stats', () => {
     it('should return type container with stats', async () => {
       const res = await request(app)
-        .get('/typecontainers/1/stats')
+        .get('/api/typecontainers/1/stats')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -61,7 +61,7 @@ describe('Type Containers API Integration', () => {
   describe('POST /typecontainers', () => {
     it('should create new type container', async () => {
       const res = await request(app)
-        .post('/typecontainers')
+        .post('/api/typecontainers')
         .set('Authorization', authToken)
         .send({ code: 'TEST', nom: 'TEST' });
       expect([201, 400, 500]).toContain(res.status);
@@ -71,7 +71,7 @@ describe('Type Containers API Integration', () => {
   describe('PUT /typecontainers/:id', () => {
     it('should update type container', async () => {
       const res = await request(app)
-        .put('/typecontainers/1')
+        .put('/api/typecontainers/1')
         .set('Authorization', authToken)
         .send({ nom: 'UPDATED' });
       expect([200, 404, 500]).toContain(res.status);
@@ -81,7 +81,7 @@ describe('Type Containers API Integration', () => {
   describe('DELETE /typecontainers/:id', () => {
     it('should delete type container', async () => {
       const res = await request(app)
-        .delete('/typecontainers/999')
+        .delete('/api/typecontainers/999')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });

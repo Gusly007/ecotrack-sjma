@@ -4,6 +4,7 @@ import {
   changePassword,
   getProfileWithStats,
   listUsers,
+  listAgents,
   getUserProfile,
   getUserStats,
   updateUserByAdmin,
@@ -127,5 +128,68 @@ describe('User Controller', () => {
 
     expect(userService.getProfileWithStats).toHaveBeenCalledWith(3);
     expect(res.json).toHaveBeenCalledWith({ data: { id_utilisateur: 3, badge_count: 2 } });
+  });
+
+  describe('listAgents', () => {
+    it('force le filtre role=AGENT même si un autre rôle est fourni en query', async () => {
+      const req = {
+        query: { page: '1', limit: '100', role: 'ADMIN', search: 'dupont' }
+      };
+      const res = mockResponse();
+      userService.listUsers.mockResolvedValue({
+        data: [{ id_utilisateur: 5, role: 'AGENT', prenom: 'Jean' }],
+        pagination: { total: 1 }
+      });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(userService.listUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'AGENT',
+          est_active: true,
+          search: 'dupont'
+        })
+      );
+      // Vérifie que le rôle ADMIN du client n'a PAS été conservé
+      expect(userService.listUsers).not.toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'ADMIN' })
+      );
+    });
+
+    it('applique des valeurs par défaut quand page/limit sont absents', async () => {
+      const req = { query: {} };
+      const res = mockResponse();
+      userService.listUsers.mockResolvedValue({ data: [], pagination: {} });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(userService.listUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          limit: 100,
+          role: 'AGENT',
+          est_active: true
+        })
+      );
+    });
+
+    it('retourne la liste des agents actifs uniquement', async () => {
+      const req = { query: {} };
+      const res = mockResponse();
+      const agents = [
+        { id_utilisateur: 5, role: 'AGENT', prenom: 'Jean', est_active: true },
+        { id_utilisateur: 9, role: 'AGENT', prenom: 'Marc', est_active: true }
+      ];
+      userService.listUsers.mockResolvedValue({
+        data: agents,
+        pagination: { total: 2 }
+      });
+
+      await listAgents(req, res, jest.fn());
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ data: agents })
+      );
+    });
   });
 });

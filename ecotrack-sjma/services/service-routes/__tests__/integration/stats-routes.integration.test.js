@@ -2,6 +2,10 @@ const express = require('express');
 const request = require('supertest');
 const statsRoutes = require('../../src/routes/stats.route');
 
+jest.mock('../../src/middleware/rbac', () => ({
+  requirePermission: () => (req, res, next) => next()
+}));
+
 describe('Stats routes integration', () => {
   let app;
   let controllers;

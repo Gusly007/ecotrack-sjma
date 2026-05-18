@@ -15,7 +15,12 @@ class StatsRepository {
           COUNT(CASE WHEN statut = 'EN_COURS' THEN 1 END) AS en_cours,
           COUNT(CASE WHEN statut = 'TERMINEE' THEN 1 END) AS terminees,
           COUNT(CASE WHEN statut = 'ANNULEE' THEN 1 END) AS annulees,
-          COUNT(CASE WHEN date_tournee = CURRENT_DATE THEN 1 END) AS aujourd_hui
+          COUNT(CASE WHEN date_tournee = CURRENT_DATE THEN 1 END) AS aujourd_hui,
+          COUNT(CASE WHEN statut IN ('PLANIFIEE', 'EN_COURS')
+            AND heure_debut_prevue IS NOT NULL
+            AND duree_prevue_min IS NOT NULL
+            AND (date_tournee + heure_debut_prevue + duree_prevue_min * INTERVAL '1 minute') < NOW()
+            THEN 1 END) AS en_retard
         FROM tournee
       `),
       this.db.query(`
@@ -143,6 +148,73 @@ class StatsRepository {
     `);
     return result.rows[0];
   }
+
+  /**
+   * Progression moyenne (%) de toutes les tournées EN_COURS
+   */
+  async getAverageProgression() {
+    const result = await this.db.query(`
+      WITH progression AS (
+        SELECT
+          ROUND(
+            COUNT(CASE WHEN et.collectee THEN 1 END)::numeric
+            / NULLIF(COUNT(et.id_etape), 0) * 100, 1
+          ) AS progression_pct
+        FROM tournee t
+        JOIN etape_tournee et ON et.id_tournee = t.id_tournee
+        WHERE t.statut = 'EN_COURS'
+        GROUP BY t.id_tournee
+      )
+      SELECT ROUND(AVG(progression_pct), 1) AS progression_moyenne_pct
+      FROM progression
+    `);
+    return parseFloat(result.rows[0]?.progression_moyenne_pct) || 0;
+  }
+
+  /**
+   * Tournées EN_COURS dont la progression dépasse un seuil (défaut 80 %)
+   * @param {number} seuil  Pourcentage minimum (0-100)
+   */
+  async getTourneesNearlyDone(seuil = 80) {
+    const result = await this.db.query(
+      `WITH progression AS (
+        SELECT
+          t.id_tournee,
+          t.code,
+          t.date_tournee,
+          t.id_zone,
+          t.id_agent,
+          COUNT(et.id_etape)                                    AS total_etapes,
+          COUNT(CASE WHEN et.collectee THEN 1 END)              AS etapes_collectees,
+          ROUND(
+            COUNT(CASE WHEN et.collectee THEN 1 END)::numeric
+            / NULLIF(COUNT(et.id_etape), 0) * 100, 1
+          )                                                     AS progression_pct
+        FROM tournee t
+        JOIN etape_tournee et ON et.id_tournee = t.id_tournee
+        WHERE t.statut = 'EN_COURS'
+        GROUP BY t.id_tournee, t.code, t.date_tournee, t.id_zone, t.id_agent
+      )
+      SELECT
+        p.id_tournee,
+        p.code,
+        p.date_tournee,
+        p.total_etapes,
+        p.etapes_collectees,
+        p.progression_pct,
+        z.nom                             AS zone_nom,
+        u.nom || ' ' || u.prenom          AS agent_nom
+      FROM progression p
+      LEFT JOIN zone z         ON z.id_zone          = p.id_zone
+      LEFT JOIN utilisateur u  ON u.id_utilisateur   = p.id_agent
+      WHERE p.progression_pct > $1
+      ORDER BY p.progression_pct DESC`,
+      [seuil]
+    );
+    return result.rows;
+  }
+
+
 }
 
 module.exports = StatsRepository;

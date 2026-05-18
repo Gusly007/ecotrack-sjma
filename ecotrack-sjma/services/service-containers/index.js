@@ -33,6 +33,7 @@ const SocketService = require('./src/socket/socket-service');
 // Utilitaires
 const errorHandler = require('./src/middleware/error-handler');
 const requestLogger = require('./src/middleware/request-logger');
+const { generalLimiter, writeLimiter } = require('./src/middleware/rateLimit');
 const config = require('./src/config/config');
 
 const app = express();
@@ -68,6 +69,15 @@ app.use(cors());
 // Socket.IO middleware (injecter le socketService pour toutes les routes)
 const socketMiddleware = require('./src/middleware/socket-middleware');
 app.use(socketMiddleware);
+
+// Rate limiting — general + stricter limit for write operations
+app.use(generalLimiter);
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return writeLimiter(req, res, next);
+  }
+  next();
+});
 
 // ========== DOCUMENTATION API ==========
 const swaggerOptions = {
@@ -226,4 +236,4 @@ if (config.NODE_ENV !== 'test') {
   });
 }
 
-module.exports = { app, server };
+module.exports = app;

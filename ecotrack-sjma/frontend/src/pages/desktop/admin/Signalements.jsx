@@ -11,8 +11,9 @@ export default function SignalementsPage() {
   const { user } = useAuth();
   const { alert, showSuccess, showError } = useAlert();
 
-  const role = user?.role || user?.role_par_defaut || 'MANAGER';
-  const canUpdate = role === 'ADMIN' || role === 'GESTIONNAIRE';
+  const role = user?.role || user?.role_par_defaut || 'GESTIONNAIRE';
+  const normalizedRole = typeof role === 'string' ? role.toUpperCase() : '';
+  const canUpdate = normalizedRole === 'ADMIN' || normalizedRole === 'GESTIONNAIRE';
 
   const [signalements, setSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +179,7 @@ export default function SignalementsPage() {
           onView={handleView}
           onUpdate={handleUpdate}
           canUpdate={canUpdate}
-          role={role}
+          role={normalizedRole}
         />
 
         <Pagination 
@@ -197,7 +198,7 @@ export default function SignalementsPage() {
         onClose={() => setShowDetailModal(false)}
         onSuccess={handleSuccess}
         signalement={selectedSignalement}
-        role={role}
+        role={normalizedRole}
         canUpdate={canUpdate}
       />
     </div>

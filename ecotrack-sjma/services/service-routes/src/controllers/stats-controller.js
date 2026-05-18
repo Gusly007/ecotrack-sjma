@@ -9,6 +9,8 @@ class StatsController {
     this.getKpis = this.getKpis.bind(this);
     this.getCollecteStats = this.getCollecteStats.bind(this);
     this.getAlgorithmComparison = this.getAlgorithmComparison.bind(this);
+    this.getAverageProgression = this.getAverageProgression.bind(this);
+    this.getNearlyDone = this.getNearlyDone.bind(this);
   }
 
   async getDashboard(req, res, next) {
@@ -44,6 +46,36 @@ class StatsController {
     try {
       const data = await this.service.getAlgorithmComparison(this.db);
       return res.status(200).json(ApiResponse.success(data, 'Comparaison des algorithmes'));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getAverageProgression(req, res, next) {
+    try {
+      const data = await this.service.getAverageProgression();
+      return res.status(200).json(
+        ApiResponse.success(
+          { progression_moyenne_pct: data },
+          'Progression moyenne des tournées EN_COURS'
+        )
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getNearlyDone(req, res, next) {
+    try {
+      const parsedSeuil = parseFloat(req.query.seuil);
+      const seuil = Math.min(100, Math.max(0, Number.isNaN(parsedSeuil) ? 80 : parsedSeuil));
+      const data = await this.service.getNearlyDone(seuil);
+      return res.status(200).json(
+        ApiResponse.success(
+          { count: data.length, seuil, tournees: data },
+          `Tournées EN_COURS avec progression > ${seuil}%`
+        )
+      );
     } catch (err) {
       next(err);
     }

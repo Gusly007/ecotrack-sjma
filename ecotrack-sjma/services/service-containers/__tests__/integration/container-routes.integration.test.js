@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/index');
+const app = require('../../index');
 
 describe('Containers API Integration', () => {
   const authToken = `Bearer ${global.testAuthToken}`;
@@ -7,14 +7,14 @@ describe('Containers API Integration', () => {
   describe('GET /containers', () => {
     it('should return list of containers', async () => {
       const res = await request(app)
-        .get('/containers')
+        .get('/api/containers')
         .set('Authorization', authToken);
       expect([200, 500, 401]).toContain(res.status);
     });
 
     it('should support pagination', async () => {
       const res = await request(app)
-        .get('/containers?page=1&limit=10')
+        .get('/api/containers?page=1&limit=10')
         .set('Authorization', authToken);
       expect([200, 500, 401]).toContain(res.status);
     });
@@ -23,14 +23,14 @@ describe('Containers API Integration', () => {
   describe('GET /containers/id/:id', () => {
     it('should return container by id', async () => {
       const res = await request(app)
-        .get('/containers/id/1')
+        .get('/api/containers/id/1')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
 
     it('should return 404 for non-existent container', async () => {
       const res = await request(app)
-        .get('/containers/id/999999')
+        .get('/api/containers/id/999999')
         .set('Authorization', authToken);
       expect([404, 500]).toContain(res.status);
     });
@@ -39,7 +39,7 @@ describe('Containers API Integration', () => {
   describe('GET /containers/uid/:uid', () => {
     it('should return container by uid', async () => {
       const res = await request(app)
-        .get('/containers/uid/CNT-00001')
+        .get('/api/containers/uid/CNT-00001')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -48,21 +48,21 @@ describe('Containers API Integration', () => {
   describe('GET /containers/status/:statut', () => {
     it('should return containers by status ACTIF', async () => {
       const res = await request(app)
-        .get('/containers/status/ACTIF')
+        .get('/api/containers/status/ACTIF')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
 
     it('should return containers by status INACTIF', async () => {
       const res = await request(app)
-        .get('/containers/status/INACTIF')
+        .get('/api/containers/status/INACTIF')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
 
     it('should return containers by status EN_MAINTENANCE', async () => {
       const res = await request(app)
-        .get('/containers/status/EN_MAINTENANCE')
+        .get('/api/containers/status/EN_MAINTENANCE')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -71,7 +71,7 @@ describe('Containers API Integration', () => {
   describe('GET /containers/zone/:id_zone', () => {
     it('should return containers by zone', async () => {
       const res = await request(app)
-        .get('/containers/zone/1')
+        .get('/api/containers/zone/1')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });
@@ -80,21 +80,21 @@ describe('Containers API Integration', () => {
   describe('GET /containers/fill-levels', () => {
     it('should return containers with fill levels', async () => {
       const res = await request(app)
-        .get('/containers/fill-levels')
+        .get('/api/containers/fill-levels')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
 
     it('should filter by min_level', async () => {
       const res = await request(app)
-        .get('/containers/fill-levels?min_level=50')
+        .get('/api/containers/fill-levels?min_level=50')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
 
     it('should filter by max_level', async () => {
       const res = await request(app)
-        .get('/containers/fill-levels?max_level=80')
+        .get('/api/containers/fill-levels?max_level=80')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -103,7 +103,7 @@ describe('Containers API Integration', () => {
   describe('GET /containers/:id/status/history', () => {
     it('should return status history', async () => {
       const res = await request(app)
-        .get('/containers/1/status/history')
+        .get('/api/containers/1/status/history')
         .set('Authorization', authToken);
       expect([200, 500]).toContain(res.status);
     });
@@ -112,7 +112,7 @@ describe('Containers API Integration', () => {
   describe('POST /containers', () => {
     it('should create new container', async () => {
       const res = await request(app)
-        .post('/containers')
+        .post('/api/containers')
         .set('Authorization', authToken)
         .send({
           capacite_l: 1000,
@@ -125,7 +125,7 @@ describe('Containers API Integration', () => {
 
     it('should reject container without required fields', async () => {
       const res = await request(app)
-        .post('/containers')
+        .post('/api/containers')
         .set('Authorization', authToken)
         .send({ capacite_l: 1000 });
       expect([400, 500]).toContain(res.status);
@@ -135,7 +135,7 @@ describe('Containers API Integration', () => {
   describe('PATCH /containers/:id', () => {
     it('should update container', async () => {
       const res = await request(app)
-        .patch('/containers/1')
+        .patch('/api/containers/1')
         .set('Authorization', authToken)
         .send({ capacite_l: 1500 });
       expect([200, 404, 500]).toContain(res.status);
@@ -145,7 +145,7 @@ describe('Containers API Integration', () => {
   describe('PATCH /containers/:id/status', () => {
     it('should update container status', async () => {
       const res = await request(app)
-        .patch('/containers/1/status')
+        .patch('/api/containers/1/status')
         .set('Authorization', authToken)
         .send({ statut: 'EN_MAINTENANCE' });
       expect([200, 404, 500]).toContain(res.status);
@@ -153,7 +153,7 @@ describe('Containers API Integration', () => {
 
     it('should reject invalid status', async () => {
       const res = await request(app)
-        .patch('/containers/1/status')
+        .patch('/api/containers/1/status')
         .set('Authorization', authToken)
         .send({ statut: 'INVALID' });
       expect([400, 500]).toContain(res.status);
@@ -163,7 +163,7 @@ describe('Containers API Integration', () => {
   describe('DELETE /containers/:id', () => {
     it('should delete container', async () => {
       const res = await request(app)
-        .delete('/containers/999')
+        .delete('/api/containers/999')
         .set('Authorization', authToken);
       expect([200, 404, 500]).toContain(res.status);
     });

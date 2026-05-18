@@ -58,6 +58,12 @@
   margin-left: auto;
 }
 
+.notifications-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .topbar-date {
   font-size: 0.85rem;
   color: #888;
@@ -89,6 +95,130 @@
   border-radius: 10px;
   min-width: 16px;
   text-align: center;
+}
+
+.notifications-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 120;
+}
+
+.notifications-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(180deg, #f8fbf8 0%, #ffffff 100%);
+}
+
+.notifications-header strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #1f1f1f;
+}
+
+.notifications-header span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.notifications-see-all {
+  border: none;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.notifications-see-all:hover {
+  background: #dff1e1;
+}
+
+.notifications-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notifications-empty {
+  padding: 18px 16px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.notification-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #f4f4f4;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.notification-item:hover {
+  background: #fafafa;
+}
+
+.notification-item.read {
+  opacity: 0.72;
+}
+
+.notification-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.notification-dot.unread {
+  background: #f44336;
+}
+
+.notification-dot.read {
+  background: #cfd8dc;
+}
+
+.notification-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.notification-item-content strong {
+  color: #1f1f1f;
+  font-size: 0.92rem;
+}
+
+.notification-item-content span {
+  color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.notification-item-content small {
+  color: #8a8f98;
+  font-size: 0.74rem;
 }
 
 .user-info {
