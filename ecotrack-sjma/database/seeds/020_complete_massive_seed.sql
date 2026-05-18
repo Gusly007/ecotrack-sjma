@@ -44,23 +44,35 @@ TRUNCATE TABLE ALERTE_CAPTEUR CASCADE;
 
 TRUNCATE TABLE CONTENEUR CASCADE;
 
+WITH conteneur_source AS (
+    SELECT
+        i,
+        'CNT-' || LPAD(i::text, 5, '0') AS uid,
+        CASE (i % 4) WHEN 0 THEN 120 WHEN 1 THEN 240 WHEN 2 THEN 360 ELSE 1000 END AS capacite_l,
+        CASE WHEN i <= 1950 THEN 'ACTIF' WHEN i <= 1980 THEN 'EN_MAINTENANCE' ELSE 'INACTIF' END AS statut,
+        CURRENT_DATE - (random() * 730)::int AS date_installation,
+        ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.6, 48.86 + (random()-0.5)*0.6), 4326) AS position,
+        'Z' || LPAD((((i - 1) % 10) + 1)::text, 2, '0') AS zone_code,
+        CASE
+            WHEN i <= 500 THEN 'ORD'
+            WHEN i <= 1000 THEN 'REC'
+            WHEN i <= 1500 THEN 'VER'
+            ELSE 'COM'
+        END AS type_code
+    FROM generate_series(1, 2000) AS i
+)
 INSERT INTO CONTENEUR (uid, capacite_l, statut, date_installation, position, id_zone, id_type)
-SELECT 
-    'CNT-' || LPAD(i::text, 5, '0'),
-    CASE (i % 4) WHEN 0 THEN 120 WHEN 1 THEN 240 WHEN 2 THEN 360 ELSE 1000 END,
-    CASE WHEN i <= 1950 THEN 'ACTIF' WHEN i <= 1980 THEN 'EN_MAINTENANCE' ELSE 'INACTIF' END,
-    CURRENT_DATE - (random() * 730)::int,
-    ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.6, 48.86 + (random()-0.5)*0.6), 4326),
+SELECT
+    cs.uid,
+    cs.capacite_l,
+    cs.statut,
+    cs.date_installation,
+    cs.position,
     z.id_zone,
     t.id_type
-FROM generate_series(1, 2000) AS i
-JOIN ZONE z ON z.code = 'Z' || LPAD((((i - 1) % 10) + 1)::text, 2, '0')
-JOIN TYPE_CONTENEUR t ON t.code = CASE
-    WHEN i <= 500 THEN 'ORD'
-    WHEN i <= 1000 THEN 'REC'
-    WHEN i <= 1500 THEN 'VER'
-    ELSE 'COM'
-END;
+FROM conteneur_source cs
+JOIN ZONE z ON z.code = cs.zone_code
+JOIN TYPE_CONTENEUR t ON t.code = cs.type_code;
 
 INSERT INTO CAPTEUR (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
 SELECT 
