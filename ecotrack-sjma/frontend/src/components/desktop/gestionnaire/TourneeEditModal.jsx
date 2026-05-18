@@ -104,7 +104,6 @@ export default function TourneeEditModal({ tourneeId, isOpen, onClose, onSuccess
 
     const payload = {};
     if (canEdit("date_tournee")      && form.date_tournee)          payload.date_tournee = form.date_tournee;
-    if (canEdit("heure_debut_prevue") && form.heure_debut_prevue)    payload.heure_debut_prevue = form.heure_debut_prevue;
     if (canEdit("duree_prevue_min")  && form.duree_prevue_min !== "") payload.duree_prevue_min = Number(form.duree_prevue_min);
     if (canEdit("distance_prevue_km") && form.distance_prevue_km !== "") payload.distance_prevue_km = Number(form.distance_prevue_km);
     if (canEdit("id_agent")          && form.id_agent !== "")        payload.id_agent = Number(form.id_agent);
