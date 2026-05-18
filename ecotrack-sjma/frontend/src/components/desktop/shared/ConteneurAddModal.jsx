@@ -318,6 +318,19 @@ export default function ConteneurAddModal({
     { value: '1200', label: '1200L' }
   ];
 
+  const footer = (
+    <>
+      <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
+        {loading ? (
+          <><i className="fas fa-spinner fa-spin"></i> Création...</>
+        ) : (
+          <><i className="fas fa-save"></i> Créer</>
+        )}
+      </button>
+      <button className="btn-secondary" onClick={onClose}>Fermer</button>
+    </>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
@@ -326,6 +339,7 @@ export default function ConteneurAddModal({
       headerIcon="fa-plus-circle"
       headerColor="#4CAF50"
       size="md"
+      footer={footer}
     >
       <div className="conteneur-form">
         {error && (
@@ -417,15 +431,6 @@ export default function ConteneurAddModal({
           />
         </div>
 
-        <div className="modal-actions">
-          <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
-            {loading ? (
-              <><i className="fas fa-spinner fa-spin"></i> Création...</>
-            ) : (
-              <><i className="fas fa-save"></i> Créer</>
-            )}
-          </button>
-        </div>
       </div>
     </Modal>
   );

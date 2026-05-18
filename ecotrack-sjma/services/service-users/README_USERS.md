@@ -67,6 +67,10 @@ Swagger est disponible sur `http://localhost:3010/api-docs` et l'endpoint de san
 - \`PUT /users/profile\` - Mettre à jour profil
 - \`POST /users/change-password\` - Changer mot de passe
 
+### Utilisateurs (gestionnaire / admin)
+- \`GET /users/agents\` - Liste des utilisateurs actifs ayant le rôle **AGENT** (filtre forcé côté serveur). Utilisée par le gestionnaire lors de la création/optimisation d'une tournée. Permission : \`tournee:create\`.
+- \`GET /users\` - Liste paginée des utilisateurs (admin). Supporte filtres \`role\`, \`search\`, \`est_active\`.
+
 ### Notifications (protégés)
 - \`GET /notifications\` - Mes notifications
 - \`GET /notifications/unread-count\` - Non-lues

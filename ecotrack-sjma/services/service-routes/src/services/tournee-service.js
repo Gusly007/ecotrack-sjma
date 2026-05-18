@@ -209,7 +209,8 @@ class TourneeService {
       id_agent
     });
 
-    // Créer les étapes dans l'ordre optimisé
+    // Créer les étapes dans l'ordre optimisé.
+    // L'heure de la 1re étape = heure_debut_prevue (au lieu d'être codée en dur à 07:30).
     const minutesParEtape = result.nb_conteneurs > 0 ? Math.ceil(dureePrevue / result.nb_conteneurs) : 15;
     const baseMinutes = parseHeureToMinutes(heure_debut_prevue);
     const etapes = result.route.map((conteneur, idx) => {

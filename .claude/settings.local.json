@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "PowerShell(Get-Process -Id 26672, 26084)",
+      "PowerShell(Get-Process -Id 26672 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 26084 -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

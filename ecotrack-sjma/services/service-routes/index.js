@@ -201,6 +201,8 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ========== START ==========
+const kafkaProducer = require('./kafkaProducer');
+
 const port = config.PORT;
 app.listen(port, async () => {
   logger.info({ port }, 'EcoTrack Routes API ready');
@@ -209,6 +211,7 @@ app.listen(port, async () => {
   logger.info({ env: config.NODE_ENV }, 'Environment');
   await testConnection();
 
+  // Initialize Redis cache
   await cacheService.connect().then(() => {
     logger.info('Redis cache initialized');
   }).catch(err => {
@@ -220,6 +223,17 @@ app.listen(port, async () => {
     new CollecteRepository(pool)
   );
   startTourneeScheduler(schedulerTourneeService);
+
+  // Kafka producer
+  try {
+    await kafkaProducer.connect();
+    logger.info('Kafka Producer connecté');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Kafka indisponible — événements signalement désactivés');
+  }
 });
+
+process.on('SIGTERM', async () => { await kafkaProducer.disconnect(); process.exit(0); });
+process.on('SIGINT',  async () => { await kafkaProducer.disconnect(); process.exit(0); });
 
 module.exports = app;

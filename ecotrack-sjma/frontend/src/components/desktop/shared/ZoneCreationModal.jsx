@@ -85,13 +85,13 @@ export default function ZoneCreationModal({
   const handleZoneCreated = (zoneData) => {
     setDrawnZone(zoneData);
     const estimates = estimateZoneData(zoneData);
-    
+
     setFormData(prev => ({
       ...prev,
       ...estimates,
       couleur: prev.couleur // Garder la couleur sélectionnée
     }));
-    
+
     setIsDrawing(false);
     // Ne pas passer à l'étape 2 automatiquement : l'utilisateur doit cliquer "Continuer"
   };

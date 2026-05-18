@@ -3,7 +3,7 @@
  */
 
 const request = require('supertest');
-const { app } = require('../../index.js');
+const app = require('../../index.js');
 
 describe('Containers E2E', () => {
   let token = '';
