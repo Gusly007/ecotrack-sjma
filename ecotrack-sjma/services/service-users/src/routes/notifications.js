@@ -1,8 +1,11 @@
 import express from 'express';
 import * as notificationController from '../controllers/notificationController.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
+
+router.use(publicLimiter);
 
 /**
  * @swagger
@@ -57,6 +60,24 @@ const router = express.Router();
  *           type: integer
  *           example: 2
  */
+
+/**
+ * POST /notifications
+ * Créer une notification (interne - vérifié par x-internal-key)
+ */
+router.post('/', async (req, res) => {
+  const { id_utilisateur, type, titre, corps } = req.body;
+  if (!id_utilisateur || !titre || !corps) {
+    return res.status(400).json({ error: 'Missing required fields: id_utilisateur, titre, corps' });
+  }
+  try {
+    const { createNotification } = await import('../services/notificationService.js');
+    const notification = await createNotification(id_utilisateur, titre, corps, type || 'SYSTEME');
+    res.status(201).json({ data: notification });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.use(authenticateToken);
 

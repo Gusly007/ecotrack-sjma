@@ -1,6 +1,7 @@
 import express from 'express';
 import * as roleController from '../controllers/roleController.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 
@@ -51,6 +52,7 @@ const router = express.Router();
  */
 
 
+router.use(publicLimiter);
 router.use(authenticateToken);
 
 router.use(authorizeRole(['ADMIN']));
