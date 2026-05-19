@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Footer from '../../components/layout/Footer';
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -125,6 +126,7 @@ const ForgotPasswordPage = () => {
             </button>
           </form>
         </div>
+        <Footer />
       </div>
     </div>
   );
