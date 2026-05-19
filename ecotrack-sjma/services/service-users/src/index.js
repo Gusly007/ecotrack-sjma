@@ -12,6 +12,7 @@ import avatarRoutes from './routes/avatars.js';
 import adminConfigRoutes from './routes/admin-config.js';
 import adminEnvironmentalConstantsRoutes from './routes/admin-environmental-constants.js';
 import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
+import gdprRoutes from './routes/gdpr.route.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { publicLimiter } from './config/rateLimit.js';
 import pool, { ensureAuthTables } from './config/database.js';
@@ -23,6 +24,7 @@ import logger from './utils/logger.js';
 import client from 'prom-client';
 import cacheService from './services/cacheService.js';
 import kafkaNotificationConsumer from './services/kafkaNotificationConsumer.js';
+import './config/cron-gdpr.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -135,8 +137,9 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/auth', publicLimiter, authRoutes);
-app.use('/users', publicLimiter, userRoutes);
 app.use('/users/avatar', avatarRoutes);
+app.use('/users', publicLimiter, userRoutes);
+app.use('/users', gdprRoutes);
 app.use('/admin/roles', roleRoutes);
 app.use('/admin/config', adminConfigRoutes);
 app.use('/admin/environmental-constants', adminEnvironmentalConstantsRoutes);
