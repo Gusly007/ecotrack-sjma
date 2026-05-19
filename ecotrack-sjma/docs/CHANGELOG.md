@@ -4,6 +4,226 @@
 
 ---
 
+### [4.3.0] 2026-05-19 - Corrections critiques, Profil utilisateur complet, Notifications réelles
+
+Corrections de bugs bloquants, refonte du profil utilisateur, alignement du système de notifications sur les types réels du backend, et stabilisation du proxy API Gateway.
+
+#### Corrections critiques
+
+**API Gateway — Proxy 504 Gateway Timeout**
+- Cause racine : `http-proxy-middleware` v3 a déplacé les handlers d'événements de `onProxyReq` vers `on.proxyReq`. L'option `onProxyReq` était silencieusement ignorée → le body JSON n'était jamais réécrit sur les requêtes proxifiées → `service-users` attendait indéfiniment le body → timeout 30s → 504.
+- Fix : migration vers l'API v3 `on: { proxyReq: forwardParsedBody, error: handler }` + appel `proxyReq.end()` après `write()`.
+
+**API Gateway — 500 `/api/alerts/unified`**
+- Cause : `new Date(undefined).toISOString()` pour les alertes Prometheus sans `startsAt`.
+- Fix : fallback `alert.startsAt ? new Date(alert.startsAt).toISOString() : new Date().toISOString()` + comparateur de tri safe.
+
+**API Gateway — 500 `/api/iot/sensors/status`**
+- Cause : handler direct passait de faux headers `x-user-id: '1'` → service-iot retournait 401 → 500.
+- Fix : suppression du handler direct → la route proxy `/api/iot` gère désormais cet endpoint avec le vrai JWT utilisateur.
+
+**Notifications "service hors ligne" spam**
+- Cause : `healthMonitorService` utilisait les URLs `http://localhost:3000/health` etc. — depuis le container Docker, `localhost` = le container lui-même, pas les autres services → tous les services détectés comme "down" → notifications toutes les 30 secondes.
+- Fix : variables d'environnement Docker dans `docker-compose.override.yml` avec les noms internes Docker (`ecotrack-api-gateway:3000`, etc.) + intervalle porté à 60s.
+
+#### Profil utilisateur — corrections et améliorations
+
+**Avatar non affiché**
+- Cause : le champ DB retourné par l'API est `avatar_url`, mais `ProfilePage.jsx` utilisait `user.photo_url`.
+- Fix : remplacement de `photo_url` par `avatar_url` dans toutes les références du composant.
+
+**PUT /users/profile 400 Bad Request — champ `nom` rejeté**
+- Cause : le schéma Zod `updateProfileSchema` était en mode `.strict()` et n'acceptait que `prenom` et `email`. L'envoi de `nom` provoquait `"Unrecognized key: nom"`.
+- Fix backend : ajout de `nom` dans le schéma Zod (`services/service-users/src/routes/users.js`) et dans la requête SQL COALESCE (`repositories/user.repository.js`).
+- Fix frontend : champ `nom` réactivé en mode édition.
+
+**Footer /profile mal positionné**
+- Cause : `<Footer />` était en dehors de `<div className="auth-wrapper">` dans `ProfilePage.jsx`. `auth-container` (flex row) le plaçait côte à côte avec le contenu.
+- Fix : suppression du wrapper `auth-container`/`auth-wrapper` (inadapté à une page dans le layout desktop) → remplacement par `.profile-page-inner` avec `padding: 20px`.
+
+**Scroll parasite sur l'onglet "Supprimer"**
+- Cause : `.profile-tabs` avait `overflow-x: auto` + `auth-container` avec `min-height: 100vh` à l'intérieur du layout desktop → scrollbar verticale inutile.
+- Fix : `overflow-x: hidden` + `flex-wrap: wrap` sur les onglets ; suppression du wrapper `auth-container`.
+
+#### Système de notifications — alignement avec le backend réel
+
+**Types de notifications fictifs → types réels**
+- Avant : types génériques (`zones`, `tournees`, `news`, `logs`...) non liés aux notifications créées par le backend.
+- Après : types alignés sur les valeurs DB réelles issues de `kafkaConsumer.js` et `adminNotificationService.js`.
+- GESTIONNAIRE : `ALERTE` (alertes IoT + signalements via Kafka)
+- ADMIN : `ADMIN_SERVICE`, `ADMIN_ALERTE`, `ADMIN_SECURITE`, `ADMIN_IOT`, `ADMIN_PERFORMANCE`, `ADMIN_SEUIL`, `ADMIN_ML`
+
+**Onglet Notifications gestionnaire — page blanche**
+- Cause : `NOTIFICATION_TYPES.GESTIONNAIRE` contenait `'signalements'` mais `NOTIFICATION_LABELS` n'avait que `'signalement'` (sans s) → `undefined.toLowerCase()` → crash React → écran blanc.
+- Fix : refonte complète des types avec les valeurs correctes.
+
+**Préférences de notifications désormais effectives**
+- Avant : les toggles sauvegardaient en localStorage mais ne filtraient rien dans l'interface.
+- Fix : `DesktopLayout.jsx` filtre `visibleNotifications` par `localStorage.getItem('notif_${notification.type}') === 'false'`. Le badge et le compteur reflètent le nombre filtré.
+
+#### Cookie Banner — simplification
+
+**Suppression du bouton "Gérer les préférences"**
+- Le panneau de détail (checkboxes analytics/marketing) a été supprimé.
+- Seuls restent : **Refuser tout** et **Accepter tout**.
+
+#### Pages légales — layout Footer corrigé
+
+**Mentions légales / Politique / CGU — footer décalé à droite**
+- Cause : `<Footer />` était enfant direct de `auth-container` (flex row) → placé à droite du contenu.
+- Fix : `<Footer />` déplacé à l'intérieur de `<div className="auth-wrapper">` dans `LegalPage.jsx`. `TermsPage.jsx` était déjà correct. `PrivacyPage.jsx` idem.
+- `auth-wrapper` élargi à `maxWidth: 860px` dans les trois pages pour le contenu légal.
+
+#### Fichiers modifiés
+
+| Composant | Fichier | Type | Description |
+|-----------|---------|------|-------------|
+| Frontend | `ProfilePage.jsx` | MOD | Wrapper auth-container → profile-page-inner, avatar_url, nom éditable, Footer positionné |
+| Frontend | `ProfilePage.css` | MOD | .profile-page-inner, overflow-x: hidden sur tabs, flex-wrap |
+| Frontend | `DesktopLayout.jsx` | MOD | Filtrage notifications par type (localStorage), badge filtré |
+| Frontend | `CookieBanner.jsx` | MOD | Suppression "Gérer les préférences" et état showDetails |
+| Frontend | `LegalPage.jsx` | MOD | Footer à l'intérieur de auth-wrapper, maxWidth 860px |
+| Frontend | `PrivacyPage.jsx` | MOD | maxWidth 860px sur auth-wrapper |
+| Frontend | `TermsPage.jsx` | MOD | maxWidth 860px sur auth-wrapper |
+| Frontend | `Footer.css` | MOD | flex-direction: row, flex-wrap, liens côte à côte |
+| Service-Users | `routes/users.js` | MOD | `nom` ajouté dans updateProfileSchema (Zod) |
+| Service-Users | `repositories/user.repository.js` | MOD | `nom` ajouté dans SQL COALESCE UPDATE |
+| API-Gateway | `src/index.js` | MOD | on.proxyReq v3, fix date alerts, suppression handler IoT direct |
+| docker-compose.override.yml | — | MOD | URLs Docker internes pour healthMonitor + intervalle 60s |
+
+---
+
+### [4.2.0] 2026-05-18 - Conformité RGPD Complète 
+
+Implémentation complète de la conformité RGPD avec 12 articles respectés, gestion des données personnelles, droits de l'utilisateur, et automatisation CRON pour la protection des données.
+
+#### Articles RGPD implémentés
+
+-  **Article 5** - Principes (licéité, minimisation, limitation, exactitude, intégrité, responsabilité)
+-  **Article 7** - Consentement avec preuve (IP, user-agent, timestamp)
+-  **Article 12-14** - Information et transparence
+-  **Article 15** - Droit d'accès (export JSON complet)
+-  **Article 17** - Droit à l'oubli (soft-delete 30j + anonymisation)
+-  **Article 18** - Droit de rectification (édition profil)
+-  **Article 20** - Portabilité (format JSON standard)
+-  **Article 21** - Opposition (préférences notifications)
+-  **Article 25** - Protection dès la conception (CRON auto)
+-  **Article 32** - Sécurité (chiffrage, TLS, JWT, rate-limiting)
+-  **Articles 33-34** - Violation (monitoring, alertes)
+
+#### Interface utilisateur
+
+**ProfilePage.jsx** - Gestion complète du compte utilisateur:
+- **Onglet Profil** - Modification des données (prénom, nom, email)
+- **Onglet Mot de passe** - Changement sécurisé avec confirmation
+- **Onglet Avatar** - Upload/suppression avec preview
+- **Onglet Notifications** - Toggles par type (GESTIONNAIRE/ADMIN uniquement)
+- **Onglet Données** - Téléchargement des données personnelles (Art. 15)
+- **Onglet Supprimer** - Demande de suppression avec délai de 30 jours (Art. 17)
+
+Restrictions de rôle:
+- **GESTIONNAIRE**: zones, tournées, conteneurs, signalements, analytics, news
+- **ADMIN**: utilisateurs, système, sécurité, maintenance, logs, news
+- **CITOYEN/AGENT**: Sans accès (rôles non supportés)
+
+#### Endpoints backend
+
+**API Gateway** (`/api/consent`):
+- `POST /api/consent` - Enregistrement consentement avec preuve (IP, user-agent)
+- `GET /api/consent/:userId` - Historique des consentements
+
+**Service-Users** (`/users`):
+- `GET /users/me/export` - Téléchargement données complètes (Art. 15)
+- `POST /users/me/delete` - Demande suppression avec délai grace (Art. 17)
+- `POST /users/me/cancel-deletion` - Annulation demande suppression
+- `GET /users/me/consents` - Audit trail consentements (Art. 32)
+
+#### CRON jobs automatisés (Art. 25 - Protection dès la conception)
+
+**Service-Users** (anonymisation):
+- `02:00 UTC` - `anonymizeInactiveUsers()` - Anonymisation après 3 ans inactivité
+- `02:15 UTC` - `anonymizeExpiredDeletions()` - Suppression après 30 jours grace
+
+**API-Gateway** (archivage logs):
+- `03:00 UTC` - `archiveOldLogs()` - Archivage logs > 7 jours
+- `03:15 UTC` - `cleanupArchivedLogs()` - Suppression archives > 12 mois
+- `03:30 UTC` - `cleanupExpiredConsents()` - Suppression consentements > 13 mois
+
+#### Modèle de données
+
+**Modifications utilisateur** (soft-delete):
+- `deleted_at` TIMESTAMPTZ - Timestamp suppression logique
+- `deletion_requested_at` TIMESTAMPTZ - Début délai de grâce (30 jours)
+- `anonymized` BOOLEAN - Flag anonymisation
+
+**Tables archive**:
+- `ecotrack_archive.consent_logs` - Preuve consentement (Art. 7, 13 mois max)
+- `ecotrack_archive.archived_logs` - Audit trail (Art. 32, 12 mois max)
+
+#### Changements structurels
+
+**Frontend**:
+- Nouveau composant: `ProfilePage.jsx` (~800 lignes, 6 onglets)
+- Nouveau stylesheet: `ProfilePage.css` (~600 lignes, responsive)
+- Footer mis à jour avec liens RGPD et contact DPO
+
+**Backend - Service-Users**:
+- Nouveau repository: `gdprRepository.js` (couche données GDPR)
+- Service refactorisé: `gdprService.js` (logique métier GDPR)
+- Nouvelles routes: `gdpr.route.js` (endpoints export/delete/consents)
+- CRON config: `cron-gdpr.js` (anonymisation auto)
+
+**Backend - API-Gateway**:
+- Nouvelles routes: `gdpr.route.js` (endpoints consentement)
+- Repository modifié: `consentRepository.js` (+ logging)
+- CRON config: `cron-gdpr.js` (archivage logs)
+
+**Database**:
+- Migration 026: `add_gdpr_fields_to_utilisateur.sql`
+- Migration 027: `create_consent_and_archive_tables.sql`
+
+**Documentation**:
+- Nouveau fichier: `docs/RGPD_COMPLIANCE.md` (documentation complète, 600+ lignes)
+
+#### Tests
+
+- Tests unitaires ProfilePage (validation formulaires, toggles)
+- Tests API endpoints GDPR (export, delete, consents)
+- Tests CRON jobs (anonymisation, archivage)
+- Tests d'intégrité données (soft-delete, anonymisation)
+
+#### Fichiers modifiés
+
+| Composant | Fichier | Type | Description |
+|-----------|---------|------|-------------|
+| Frontend | `src/pages/auth/ProfilePage.jsx` | NEW | Gestion compte utilisateur GDPR |
+| Frontend | `src/pages/auth/ProfilePage.css` | NEW | Styles ProfilePage (responsive) |
+| Frontend | `src/components/layout/Footer.jsx` | MOD | Liens RGPD, contact DPO |
+| Service-Users | `gdprRepository.js` | NEW | Data layer GDPR (séparation des responsabilités) |
+| Service-Users | `gdprService.js` | MOD | Logique métier GDPR refactorisée |
+| Service-Users | `gdpr.route.js` | NEW | Routes export/delete/consents |
+| Service-Users | `cron-gdpr.js` | NEW | CRON anonymisation inactifs |
+| API-Gateway | `gdpr.route.js` | NEW | Routes consentement (Art. 7) |
+| API-Gateway | `consentRepository.js` | MOD | Logging structuré, nettoyage |
+| API-Gateway | `cron-gdpr.js` | NEW | CRON archivage/cleanup logs |
+| Database | `026_add_gdpr_fields_to_utilisateur.sql` | NEW | Soft-delete, anonymisation |
+| Database | `027_create_consent_and_archive_tables.sql` | NEW | Tables audit trail |
+| Documentation | `docs/RGPD_COMPLIANCE.md` | NEW | Documentation complète RGPD |
+
+#### Notes de déploiement
+
+**Point critique**: Exécuter les migrations avant le déploiement:
+```bash
+cd ecotrack-sjma
+npm run migrate
+docker compose down
+docker compose up -d --build --pull always
+```
+
+CRON jobs s'initient automatiquement à chaque démarrage service.
+
+---
+
 ### [4.1.0] 2026-05-17 - Notifications Admin et Gestionnaire
 
 Implémentation complète du système de notifications avec support différencié pour les administrateurs et les gestionnaires de zones.
