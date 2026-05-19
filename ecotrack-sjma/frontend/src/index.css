@@ -404,6 +404,69 @@ body {
   }
 }
 
+/* Auth Footer (liens en bas des pages auth) */
+.auth-footer-links {
+  margin-top: 32px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.auth-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.auth-footer-inner a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+
+.auth-footer-inner a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.auth-footer-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.75rem;
+}
+
+/* Tableau rétention */
+.retention-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.retention-table th,
+.retention-table td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.retention-table th {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.retention-table td {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.retention-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 /* Legal Pages */
 .legal-content {
   color: rgba(255, 255, 255, 0.8);
