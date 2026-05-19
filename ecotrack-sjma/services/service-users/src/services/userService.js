@@ -138,3 +138,33 @@ export const deleteUser = async (userId) => {
   
   return result;
 };
+
+/**
+ * Exporter toutes les données personnelles d'un utilisateur (RGPD Art. 20)
+ */
+export const exportUserData = async (userId) => {
+  const data = await UserRepository.exportUserData(userId);
+  return {
+    exportedAt: new Date().toISOString(),
+    ...data
+  };
+};
+
+/**
+ * Demander la suppression d'un compte utilisateur
+ */
+export const requestAccountDeletion = async (userId, password) => {
+  const hash = await UserRepository.getPasswordHash(userId);
+  if (!hash) throw new Error('User not found');
+
+  const validPassword = await comparePassword(password, hash);
+  if (!validPassword) {
+    throw new Error('Current password is incorrect');
+  }
+
+  await UserRepository.markAccountForDeletion(userId);
+  await cacheService.invalidatePattern(`user:${userId}:*`);
+
+  return { message: 'Account deletion requested successfully' };
+};
+

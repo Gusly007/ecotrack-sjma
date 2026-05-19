@@ -6,9 +6,9 @@ export const AvatarRepository = {
     const result = await pool.query(
       `UPDATE UTILISATEUR 
        SET avatar_url = $1, avatar_thumbnail = $2, avatar_mini = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE id_utilisateur = $1
+       WHERE id_utilisateur = $4
        RETURNING id_utilisateur, avatar_url, avatar_thumbnail, avatar_mini`,
-      [userId, urls.original, urls.thumbnail, urls.mini]
+      [urls.original, urls.thumbnail, urls.mini, userId]
     );
     return result.rows[0];
   },
