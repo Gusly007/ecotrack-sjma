@@ -161,7 +161,13 @@ export default function DesktopLayout({ children }) {
     navigate(notificationConfig.fallbackRoute);
   };
 
-  const visibleNotifications = notifications.filter((notification) => !notification.est_lu);
+  const visibleNotifications = notifications.filter((notification) => {
+    if (notification.est_lu) return false;
+    if (notification.type && localStorage.getItem(`notif_${notification.type}`) === 'false') return false;
+    return true;
+  });
+
+  const filteredCount = visibleNotifications.length;
 
   const handleLogout = async () => {
     await logout();
@@ -219,8 +225,8 @@ export default function DesktopLayout({ children }) {
                 aria-label={notificationConfig.itemLabel}
               >
                 <i className="fas fa-bell"></i>
-                {notificationsCount > 0 && (
-                  <span className="badge-notif">{notificationsCount}</span>
+                {filteredCount > 0 && (
+                  <span className="badge-notif">{filteredCount}</span>
                 )}
               </button>
 
@@ -229,7 +235,7 @@ export default function DesktopLayout({ children }) {
                   <div className="notifications-header">
                     <div>
                       <strong>{notificationConfig.itemLabel}</strong>
-                      <span>{notificationsCount} non lue{notificationsCount > 1 ? 's' : ''}</span>
+                      <span>{filteredCount} non lue{filteredCount > 1 ? 's' : ''}</span>
                     </div>
                     <button type="button" className="notifications-see-all" onClick={handleMarkAllAsRead}>
                       Voir tout
@@ -264,7 +270,7 @@ export default function DesktopLayout({ children }) {
                 </div>
               )}
             </div>
-            <div className="user-info">
+            <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
               <i className={`fas ${isAdmin ? 'fa-user-shield' : 'fa-user-circle'}`}></i>
               <span>{userName} ({userLabel})</span>
             </div>

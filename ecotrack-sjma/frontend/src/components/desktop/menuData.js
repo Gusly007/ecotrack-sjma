@@ -10,6 +10,8 @@ export const ADMIN_MENU = [
   { path: '/admin/config', icon: 'fa-cog', label: 'Configuration' },
   { path: '/admin/monitoring', icon: 'fa-heartbeat', label: 'Monitoring' },
   { path: '/admin/alerts', icon: 'fa-bell', label: 'Alertes' },
+  { section: 'Compte' },
+  { path: '/profile', icon: 'fa-user-circle', label: 'Mon compte' },
 ];
 
 export const GESTIONNAIRE_MENU = [
@@ -23,4 +25,6 @@ export const GESTIONNAIRE_MENU = [
   { path: '/gestionnaire/signalements', icon: 'fa-flag', label: 'Signalements' },
   { path: '/gestionnaire/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
   { path: '/gestionnaire/rapports', icon: 'fa-file-alt', label: 'Rapports' },
+  { section: 'Compte' },
+  { path: '/profile', icon: 'fa-user-circle', label: 'Mon compte' },
 ];
