@@ -22,7 +22,6 @@ class CentralizedLoggingService {
   }
 
   async queryLogs(filters = {}) {
-    // Filter out 'all' values - they mean no filter should be applied
     const cleanedFilters = {};
     if (filters.service && filters.service !== 'all') cleanedFilters.service = filters.service;
     if (filters.level && filters.level !== 'all') cleanedFilters.level = filters.level;
@@ -33,8 +32,13 @@ class CentralizedLoggingService {
     if (filters.offset) cleanedFilters.offset = filters.offset;
     if (filters.search) cleanedFilters.search = filters.search;
     if (filters.userId) cleanedFilters.userId = filters.userId;
-    
-    return logRepository.getLogs(cleanedFilters);
+
+    const [logs, total] = await Promise.all([
+      logRepository.getLogs(cleanedFilters),
+      logRepository.getLogsCount(cleanedFilters)
+    ]);
+
+    return { logs, total };
   }
 
   async getLogs(filters = {}) {
@@ -81,6 +85,18 @@ class CentralizedLoggingService {
 
   async exportLogs(filters = {}) {
     return logRepository.getLogs(filters);
+  }
+
+  async moveArchivedLogs(olderThanDays = 7) {
+    return logRepository.archiveOldLogs(olderThanDays);
+  }
+
+  async archiveOldLogs(olderThanDays = 7) {
+    return logRepository.archiveOldLogs(olderThanDays);
+  }
+
+  async deleteArchivedLogs() {
+    return logRepository.deleteArchivedLogs();
   }
 
   async cleanup(olderThanDays = 30) {
