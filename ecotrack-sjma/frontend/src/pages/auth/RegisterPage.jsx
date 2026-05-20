@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { consentService } from '../../services/consentService';
+
+const SESSION_ID_KEY = 'ecotrack_session_id';
+function getSessionId() {
+  return localStorage.getItem(SESSION_ID_KEY) || '';
+}
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -83,6 +89,7 @@ const RegisterPage = () => {
         password: formData.password,
         role: 'CITOYEN'
       });
+      consentService.recordConsent('cgu', 'accepted', 'Acceptation des CGU et de la Politique de Confidentialité', getSessionId());
       setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de l\'inscription');

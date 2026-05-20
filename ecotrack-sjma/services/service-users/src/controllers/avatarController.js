@@ -3,6 +3,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import fs from 'fs/promises';
 import sharp from 'sharp';
 import pool from '../config/database.js';
+import cacheService from '../services/cacheService.js';
 
 
 /**
@@ -34,6 +35,9 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
 
   // Sauvegarder en base de données
   const user = await avatarService.saveAvatarUrls(userId, urls);
+
+  // Invalider le cache du profil
+  await cacheService.invalidatePattern(`user:${userId}:*`);
 
   res.status(201).json({
     message: 'Avatar uploaded successfully',
@@ -73,6 +77,9 @@ export const deleteAvatar = asyncHandler(async (req, res) => {
     'UPDATE UTILISATEUR SET avatar_url = NULL, avatar_thumbnail = NULL, avatar_mini = NULL WHERE id_utilisateur = $1',
     [userId]
   );
+
+  // Invalider le cache du profil
+  await cacheService.invalidatePattern(`user:${userId}:*`);
 
   res.json({ message: 'Avatar deleted successfully' });
 });

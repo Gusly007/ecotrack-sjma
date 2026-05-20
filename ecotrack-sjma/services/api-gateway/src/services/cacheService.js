@@ -79,8 +79,10 @@ class CacheService {
 
   async invalidatePattern(pattern) {
     if (!this.isConnected || !this.client) return false;
+    const safePattern = String(pattern).replace(/[^a-zA-Z0-9:*\-_./]/g, '');
+    if (!safePattern) return false;
     try {
-      const keys = await this.client.keys(pattern);
+      const keys = await this.client.keys(safePattern);
       if (keys.length > 0) {
         await this.client.del(keys);
         logger.info({ pattern, count: keys.length }, 'Redis cache invalidated');

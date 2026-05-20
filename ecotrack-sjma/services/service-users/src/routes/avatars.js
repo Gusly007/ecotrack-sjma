@@ -2,6 +2,7 @@ import express from 'express';
 import * as avatarController from '../controllers/avatarController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import upload from '../config/multer.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 
@@ -64,6 +65,7 @@ const router = express.Router();
  */
 router.post(
   '/upload',
+  publicLimiter,
   authenticateToken,
   upload.single('file'),
   avatarController.uploadAvatar
@@ -92,7 +94,7 @@ router.post(
  *                 data:
  *                   type: object
  */
-router.get('/:userId', avatarController.getUserAvatar);
+router.get('/:userId', publicLimiter, avatarController.getUserAvatar);
 
 /**
  * @swagger
@@ -108,6 +110,7 @@ router.get('/:userId', avatarController.getUserAvatar);
  */
 router.delete(
   '/',
+  publicLimiter,
   authenticateToken,
   avatarController.deleteAvatar
 );

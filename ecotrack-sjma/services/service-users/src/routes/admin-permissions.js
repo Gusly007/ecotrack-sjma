@@ -2,10 +2,12 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRole } from '../middleware/auth.js';
 import { permissionsService } from '../services/permissionsService.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 
 router.get('/',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {
@@ -19,6 +21,7 @@ router.get('/',
 );
 
 router.get('/:role',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {
@@ -33,6 +36,7 @@ router.get('/:role',
 );
 
 router.put('/:role',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {
@@ -53,6 +57,7 @@ router.put('/:role',
 );
 
 router.post('/:role',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {
@@ -73,6 +78,7 @@ router.post('/:role',
 );
 
 router.delete('/:role/:permission',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {

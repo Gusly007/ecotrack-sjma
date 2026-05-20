@@ -23,7 +23,9 @@
   font-weight: 500;
 }
 
+.urgence-urgente { background: #880e4f; color: #ffffff; }
 .urgence-haute { background: #ffebee; color: #c62828; }
+.urgence-normale { background: #fff3e0; color: #ef6c00; }
 .urgence-moyenne { background: #fff3e0; color: #ef6c00; }
 .urgence-basse { background: #e8f5e9; color: #2e7d32; }
 

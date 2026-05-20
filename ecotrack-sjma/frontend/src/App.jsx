@@ -2,14 +2,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
+import CookieBanner from './components/common/CookieBanner';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import MfaPage from './pages/auth/MfaPage';
 import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
+import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
-
+import ProfilePage from './pages/auth/ProfilePage';
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
 import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
@@ -26,6 +28,7 @@ import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
+import NotificationsPage from './pages/desktop/NotificationsPage';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
@@ -44,6 +47,7 @@ function RootRedirect() {
 function App() {
   return (
     <AuthProvider>
+      <CookieBanner />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -53,7 +57,7 @@ function App() {
           <Route path="/auth/mfa" element={<MfaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-
+          <Route path="/legal" element={<LegalPage />} />
           {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
             <ProtectedRoute>
@@ -222,6 +226,30 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <GestionnaireDashboard />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/notifications" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <NotificationsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/notifications" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <NotificationsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Route Profil accessible à tous les utilisateurs connectés */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <ProfilePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

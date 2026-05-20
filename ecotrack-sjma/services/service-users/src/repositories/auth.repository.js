@@ -4,7 +4,7 @@ import pool from '../config/database.js';
 export const AuthRepository = {
   async findUserByEmailOrPrenom(email, prenom) {
     const result = await pool.query(
-      'SELECT id_utilisateur FROM UTILISATEUR WHERE email = $1',
+      'SELECT id_utilisateur FROM UTILISATEUR WHERE email = $1 AND deleted_at IS NULL',
       [email]
     );
     return result.rows;
@@ -21,7 +21,7 @@ export const AuthRepository = {
   async findUserByEmail(email) {
     try {
       const result = await pool.query(
-        'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points, est_active FROM UTILISATEUR WHERE email = $1',
+        'SELECT id_utilisateur, email, prenom, password_hash, role_par_defaut, points, est_active, deleted_at FROM UTILISATEUR WHERE email = $1',
         [email]
       );
       return result.rows[0];
@@ -32,7 +32,7 @@ export const AuthRepository = {
   },
   async findUserById(userId) {
     const result = await pool.query(
-      'SELECT id_utilisateur, email, prenom, role_par_defaut, points FROM UTILISATEUR WHERE id_utilisateur = $1',
+      'SELECT id_utilisateur, email, prenom, role_par_defaut, points, deleted_at FROM UTILISATEUR WHERE id_utilisateur = $1 AND deleted_at IS NULL',
       [userId]
     );
     return result.rows[0];
@@ -88,9 +88,9 @@ export const AuthRepository = {
     const result = await pool.query(
       `SELECT id_utilisateur, email, prenom, role_par_defaut, points, 
               mfa_setup_secret, mfa_setup_secret_created_at, totp_secret, mfa_enabled,
-              backup_codes
+              backup_codes, deleted_at
        FROM UTILISATEUR 
-       WHERE id_utilisateur = $1`,
+       WHERE id_utilisateur = $1 AND deleted_at IS NULL`,
       [userId]
     );
     return result.rows[0];

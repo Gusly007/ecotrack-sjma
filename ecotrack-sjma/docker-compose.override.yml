@@ -99,6 +99,20 @@ services:
       retries: 10
       start_period: 30s
 
+  # =========================================================================
+  # SERVICE-NOTIFICATION - Fix health check URLs (Docker internal names)
+  # =========================================================================
+  service-notification-gestionnaire-admin:
+    environment:
+      SERVICE_API_GATEWAY_URL: http://ecotrack-api-gateway:3000/health
+      SERVICE_USERS_URL: http://ecotrack-service-users:3010/health
+      SERVICE_CONTAINERS_URL: http://ecotrack-service-containers:3011/health
+      SERVICE_ROUTES_URL: http://ecotrack-service-routes:3012/health
+      SERVICE_IOT_URL: http://ecotrack-service-iot:3013/health
+      SERVICE_GAMIFICATIONS_URL: http://ecotrack-service-gamifications:3014/health
+      SERVICE_ANALYTICS_URL: http://ecotrack-service-analytics:3015/health
+      HEALTH_CHECK_INTERVAL_MS: "60000"
+
 # ============================================================================
 # VOLUMES pour persister les données en dev
 # ============================================================================

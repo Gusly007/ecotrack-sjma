@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Filters, SearchBox, SelectFilter } from '../../../components/common';
+import Pagination from '../../../components/common/Pagination';
 import { logsService } from '../../../services/logsService';
 import './Logs.css';
+
+const PAGE_SIZE = 50;
 
 const levelColors = {
   critical: 'critical',
@@ -20,17 +23,16 @@ export default function LogsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filters, setFilters] = useState({ services: [], actions: [], levels: [] });
-  const [pagination, setPagination] = useState({ limit: 50, offset: 0, total: 0 });
+  const [page, setPage] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const totalPages = Math.max(1, Math.ceil(totalLogs / PAGE_SIZE));
 
   useEffect(() => {
     loadFilters();
   }, []);
-
-  useEffect(() => {
-    loadLogs();
-  }, [filterLevel, filterAction, filterService, startDate, endDate]);
 
   const loadFilters = async () => {
     try {
@@ -41,14 +43,14 @@ export default function LogsPage() {
     }
   };
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
-        limit: pagination.limit,
-        offset: pagination.offset
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE
       };
-      
+
       if (filterLevel !== 'all') params.level = filterLevel;
       if (filterAction !== 'all') params.action = filterAction;
       if (filterService !== 'all') params.service = filterService;
@@ -58,16 +60,34 @@ export default function LogsPage() {
 
       const response = await logsService.getLogs(params);
       setLogs(response.logs || []);
+      setTotalLogs(response.total || 0);
     } catch (err) {
       console.error('Failed to load logs:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filterLevel, filterAction, filterService, searchTerm, startDate, endDate]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const handleSearch = () => {
-    setPagination({ ...pagination, offset: 0 });
-    loadLogs();
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const resetFilters = () => {
+    setFilterLevel('all');
+    setFilterAction('all');
+    setFilterService('all');
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
+    setPage(1);
   };
 
   const handleExport = async (format = 'json') => {
@@ -145,7 +165,7 @@ export default function LogsPage() {
       <Filters>
         <SelectFilter
           value={filterService}
-          onChange={(value) => { setFilterService(value); setPagination({ ...pagination, offset: 0 }); }}
+          onChange={(value) => { setFilterService(value); setPage(1); }}
           options={[
             { value: 'all', label: 'Tous services' },
             ...(filters.services || []).map(s => ({ value: s, label: s }))
@@ -153,7 +173,7 @@ export default function LogsPage() {
         />
         <SelectFilter
           value={filterLevel}
-          onChange={(value) => { setFilterLevel(value); setPagination({ ...pagination, offset: 0 }); }}
+          onChange={(value) => { setFilterLevel(value); setPage(1); }}
           options={[
             { value: 'all', label: 'Tous niveaux' },
             ...(filters.levels || []).map(l => ({ value: l, label: l.toUpperCase() }))
@@ -161,7 +181,7 @@ export default function LogsPage() {
         />
         <SelectFilter
           value={filterAction}
-          onChange={(value) => { setFilterAction(value); setPagination({ ...pagination, offset: 0 }); }}
+          onChange={(value) => { setFilterAction(value); setPage(1); }}
           options={[
             { value: 'all', label: 'Toutes actions' },
             ...(filters.actions || []).map(a => ({ value: a, label: a.toUpperCase() }))
@@ -170,24 +190,24 @@ export default function LogsPage() {
       </Filters>
 
       <div className="logs-date-filters">
-        <div className="date-input-group">
-          <label>Du:</label>
-          <input 
-            type="date" 
-            value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setPagination({ ...pagination, offset: 0 }); }}
-            className="date-input"
-          />
-        </div>
-        <div className="date-input-group">
-          <label>Au:</label>
-          <input 
-            type="date" 
-            value={endDate}
-            onChange={(e) => { setEndDate(e.target.value); setPagination({ ...pagination, offset: 0 }); }}
-            className="date-input"
-          />
-        </div>
+          <div className="date-input-group">
+            <label>Du:</label>
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+              className="date-input"
+            />
+          </div>
+          <div className="date-input-group">
+            <label>Au:</label>
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+              className="date-input"
+            />
+          </div>
         <SearchBox
           value={searchTerm}
           onChange={setSearchTerm}
@@ -223,10 +243,23 @@ export default function LogsPage() {
                 <span className="log-service">{log.service}</span>
                 <span className="log-action">{log.action?.toUpperCase()}</span>
                 <span className="log-msg">{log.message}</span>
+                {log.archived && <span className="log-archived-badge">Archivé</span>}
               </div>
             ))
           )}
         </div>
+      )}
+
+      {!loading && totalLogs > 0 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          showingFrom={(page - 1) * PAGE_SIZE + 1}
+          showingTo={Math.min(page * PAGE_SIZE, totalLogs)}
+          totalItems={totalLogs}
+          label="logs"
+        />
       )}
 
       {showDeleteModal && (
@@ -236,7 +269,9 @@ export default function LogsPage() {
             <p style={{ margin: '20px 0', color: '#666' }}>
               Voulez-vous vraiment supprimer les logs selon les filtres sélectionnés ?
               <br /><br />
-              <strong>Cette action est irréversible.</strong>
+              <strong>Seuls les logs archivés (antérieurs à 7 jours) seront supprimés.</strong>
+              <br />
+              Les logs récents non archivés sont conservés automatiquement.
             </p>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setShowDeleteModal(false)}>Annuler</button>

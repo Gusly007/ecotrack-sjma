@@ -185,6 +185,17 @@
   text-align: center;
 }
 
+.log-archived-badge {
+  padding: 2px 8px;
+  background: #fff3e0;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #e65100;
+  font-weight: 600;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .loading-state,
 .empty-state {
   text-align: center;

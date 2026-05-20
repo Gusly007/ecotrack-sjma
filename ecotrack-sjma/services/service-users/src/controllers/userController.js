@@ -110,3 +110,25 @@ export const deleteUser = asyncHandler(async (req, res) => {
   await userService.deleteUser(targetId);
   res.json({ message: 'User deleted successfully' });
 });
+
+export const exportMyData = asyncHandler(async (req, res) => {
+  const userId = extractUserId(req);
+  if (userId === null) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const data = await userService.exportUserData(userId);
+  res.json({ data });
+});
+
+export const requestAccountDeletion = asyncHandler(async (req, res) => {
+  const userId = extractUserId(req);
+  if (userId === null) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const { password } = req.body || {};
+  if (!password) {
+    return res.status(400).json({ error: 'Password is required' });
+  }
+  await userService.requestAccountDeletion(userId, password);
+  res.json({ message: 'Account deletion requested successfully' });
+});

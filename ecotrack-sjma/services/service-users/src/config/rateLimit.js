@@ -25,8 +25,8 @@ const shouldSkipRateLimit = (req) => {
  * Rate limiter pour les endpoints publics (100 req/min)
  */
 export const publicLimiter = rateLimit({
-  windowMs: env.rateLimit.windowMs,
-  max: env.rateLimit.maxRequests,
+  windowMs: env.rateLimit?.windowMs ?? 60 * 1000,
+  max: env.rateLimit?.maxRequests ?? 100,
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -37,8 +37,8 @@ export const publicLimiter = rateLimit({
  * Rate limiter strict pour login (5 tentatives/15 min)
  */
 export const loginLimiter = rateLimit({
-  windowMs: env.rateLimit.loginWindowMs,
-  max: env.rateLimit.loginMaxAttempts,
+  windowMs: env.rateLimit?.loginWindowMs ?? 15 * 60 * 1000,
+  max: env.rateLimit?.loginMaxAttempts ?? 5,
   message: 'Too many login attempts, please try again later',
   skipSuccessfulRequests: true,
   skip: shouldSkipRateLimit
@@ -48,8 +48,8 @@ export const loginLimiter = rateLimit({
  * Rate limiter pour password reset (3 tentatives/heure)
  */
 export const passwordResetLimiter = rateLimit({
-  windowMs: env.rateLimit.passwordResetWindowMs,
-  max: env.rateLimit.passwordResetMaxAttempts,
+  windowMs: env.rateLimit?.passwordResetWindowMs ?? 60 * 60 * 1000,
+  max: env.rateLimit?.passwordResetMaxAttempts ?? 3,
   message: 'Too many password reset attempts',
   standardHeaders: true,
   legacyHeaders: false,

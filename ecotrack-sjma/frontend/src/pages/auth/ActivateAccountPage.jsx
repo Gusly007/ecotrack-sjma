@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import Footer from '../../components/layout/Footer';
 
 export default function ActivateAccountPage() {
   const [searchParams] = useSearchParams();
@@ -159,6 +160,7 @@ export default function ActivateAccountPage() {
             </a>
           </div>
         </div>
+        <Footer />
       </div>
     </div>
   );

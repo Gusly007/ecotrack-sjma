@@ -9,6 +9,7 @@ class AdminNotificationController {
     this.createBulk = this.createBulk.bind(this);
     this.markAsRead = this.markAsRead.bind(this);
     this.markAllAsRead = this.markAllAsRead.bind(this);
+    this.delete = this.delete.bind(this);
     this.list = this.list.bind(this);
     this.stats = this.stats.bind(this);
     this.getPriorities = this.getPriorities.bind(this);
@@ -121,6 +122,19 @@ class AdminNotificationController {
       const id_utilisateur = req.user.id;
       const stats = await adminNotificationService.getAdminNotificationStats(id_utilisateur);
       return res.status(200).json(stats);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async delete(req, res, next) {
+    try {
+      const id_notification = parseInt(req.params.id, 10);
+      if (isNaN(id_notification)) {
+        return res.status(400).json({ message: 'Paramètre :id invalide' });
+      }
+      await adminNotificationService.deleteNotification(id_notification, req.user.id);
+      return res.status(204).send();
     } catch (err) {
       next(err);
     }

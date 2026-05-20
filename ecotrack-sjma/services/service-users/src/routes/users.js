@@ -10,6 +10,7 @@ const router = express.Router();
 const updateProfileSchema = {
   body: z.object({
     prenom: z.string().min(2).max(50).optional(),
+    nom: z.string().min(2).max(50).optional(),
     email: z.string().email().optional()
   }).strict().refine((v) => Object.keys(v).length > 0, {
     message: 'At least one field must be provided'
@@ -323,6 +324,57 @@ router.get('/profile-with-stats', userController.getProfileWithStats);
  */
 router.get('/agents', userController.listAgents);
 
+/**
+ * @swagger
+ * /users/me:
+ *   delete:
+ *     summary: Request account deletion (GDPR Art. 17)
+ *     description: |
+ *       Request the deletion of the user's account.
+ *       Accessible only by the user themselves.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Account deletion requested successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Account deletion requested successfully"
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid request"
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Permission denied
+ */
+router.get('/me/export', userController.exportMyData);
+router.delete('/me', userController.requestAccountDeletion);
+
 // ============================================
 // Routes d'administration (manager/admin)
 // ============================================
@@ -566,4 +618,52 @@ router.get(
   userController.getUserStats
 );
 
+/**
+ * @swagger
+ * /users/me:
+ *   delete:
+ *     summary: Request account deletion (GDPR Art. 17)
+ *     description: |
+ *       Request the deletion of the user's account.
+ *       Accessible only by the user themselves.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Account deletion requested successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Account deletion requested successfully"
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid request"
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Permission denied
+ */
 export default router;

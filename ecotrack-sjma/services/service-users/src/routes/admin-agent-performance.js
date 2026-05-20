@@ -2,10 +2,12 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRole } from '../middleware/auth.js';
 import { AgentPerformanceConstantsRepository } from '../repositories/agentPerformanceConstants.repository.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 
 router.get('/',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN', 'GESTIONNAIRE']),
     async (req, res) => {
@@ -30,6 +32,7 @@ router.get('/',
 );
 
 router.get('/:key',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN', 'GESTIONNAIRE']),
     async (req, res) => {
@@ -54,6 +57,7 @@ router.get('/:key',
 );
 
 router.put('/:key',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {

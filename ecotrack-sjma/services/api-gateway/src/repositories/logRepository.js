@@ -3,7 +3,7 @@ import logger from '../middleware/logger.js';
 
 class LogRepository extends BaseRepository {
   async createTable() {
-    const query = `
+    const createTableQuery = `
       CREATE TABLE IF NOT EXISTS centralized_logs (
         id SERIAL PRIMARY KEY,
         timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -18,17 +18,27 @@ class LogRepository extends BaseRepository {
         user_agent TEXT,
         duration_ms INTEGER,
         status_code INTEGER,
-        error_details JSONB
+        error_details JSONB,
+        archived BOOLEAN NOT NULL DEFAULT FALSE
       );
-      
+    `;
+
+    const migrationQuery = `
+      ALTER TABLE centralized_logs ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE
+    `;
+
+    const indexesQuery = `
       CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON centralized_logs(timestamp DESC);
       CREATE INDEX IF NOT EXISTS idx_logs_service ON centralized_logs(service);
       CREATE INDEX IF NOT EXISTS idx_logs_level ON centralized_logs(level);
       CREATE INDEX IF NOT EXISTS idx_logs_action ON centralized_logs(action);
+      CREATE INDEX IF NOT EXISTS idx_logs_archived ON centralized_logs(archived);
     `;
     
     try {
-      await this.query(query);
+      await this.query(createTableQuery);
+      await this.query(migrationQuery);
+      await this.query(indexesQuery);
       logger.info('Centralized logs table created/verified');
     } catch (err) {
       logger.error({ err: err.message }, 'Failed to create logs table');
@@ -235,10 +245,81 @@ class LogRepository extends BaseRepository {
     }
   }
 
+  async getOldLogs(olderThanDays = 7, limit = 10000) {
+    const query = `
+      SELECT * FROM centralized_logs
+      WHERE timestamp < NOW() - ($1 || ' days')::interval
+        AND archived = false
+      ORDER BY timestamp ASC
+      LIMIT $2
+    `;
+    try {
+      const result = await this.query(query, [olderThanDays, limit]);
+      return result.rows;
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to get old logs');
+      throw err;
+    }
+  }
+
+  async deleteByIds(ids) {
+    if (ids.length === 0) return 0;
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+    const query = `DELETE FROM centralized_logs WHERE id IN (${placeholders})`;
+    try {
+      const result = await this.query(query, ids);
+      return result.rowCount;
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to delete logs by ids');
+      throw err;
+    }
+  }
+
+  async archiveOldLogs(olderThanDays = 7) {
+    const query = `
+      UPDATE centralized_logs
+      SET archived = true
+      WHERE timestamp < NOW() - ($1 || ' days')::interval
+        AND archived = false
+      RETURNING id
+    `;
+
+    try {
+      const result = await this.query(query, [olderThanDays]);
+      const count = result.rowCount;
+      if (count > 0) {
+        logger.info(`Archived ${count} logs older than ${olderThanDays} days`);
+      }
+      return count;
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to archive old logs');
+      throw err;
+    }
+  }
+
+  async deleteArchivedLogs() {
+    const query = `
+      DELETE FROM centralized_logs
+      WHERE archived = true
+      RETURNING 1
+    `;
+
+    try {
+      const result = await this.query(query);
+      const count = result.rowCount;
+      logger.info(`Deleted ${count} archived logs`);
+      return count;
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to delete archived logs');
+      throw err;
+    }
+  }
+
   async deleteOldLogs(olderThanDays = 30) {
     const query = `
       DELETE FROM centralized_logs 
       WHERE timestamp < NOW() - ($1 || ' days')::interval
+        AND archived = true
       RETURNING 1
     `;
 
