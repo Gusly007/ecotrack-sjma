@@ -1,43 +1,63 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatCard } from "../../../components/common";
 import { useAutoRefresh } from "../../../hooks";
-import TourneesActivesPanel from "../../../components/desktop/gestionnaire/TourneesActivesPanel";
-import { fetchTourneesStats } from "../../../services/tourneeService";
+import TourneeMapView from "../../../components/desktop/gestionnaire/TourneeMapView";
+import AgentsActifsPanel from "../../../components/desktop/gestionnaire/AgentsActifsPanel";
+import {
+  fetchTourneesStats,
+  fetchNearlyDoneTournees,
+  fetchAverageProgression,
+  fetchActiveMapData,
+} from "../../../services/tourneeService";
 import "./SuiviTempsReelPage.css";
 
 export default function SuiviTempsReelPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshNonce, setRefreshNonce] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [statsData, setStatsData] = useState({});
+  const [nearlyDoneCount, setNearlyDoneCount] = useState(null);
+  const [avgProgression, setAvgProgression] = useState(null);
+  const [activeTournees, setActiveTournees] = useState([]);
+  const [focusedTourneeId, setFocusedTourneeId] = useState(null);
+  const mapSectionRef = useRef(null);
+
+  const handleFocusTournee = useCallback((id) => {
+    setFocusedTourneeId(id);
+    if (id && mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
 
   const loadLiveData = useCallback(async (isRefresh = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      const stats = await fetchTourneesStats();
-      setStatsData(stats || {});
-      setRefreshNonce((prev) => prev + 1);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
+      const [stats, nearlyDone, avgProg, mapData] = await Promise.allSettled([
+        fetchTourneesStats(),
+        fetchNearlyDoneTournees(80),
+        fetchAverageProgression(),
+        fetchActiveMapData(),
+      ]);
+
+      if (stats.status === "fulfilled") setStatsData(stats.value || {});
+      if (nearlyDone.status === "fulfilled") setNearlyDoneCount(nearlyDone.value?.count ?? 0);
+      if (avgProg.status === "fulfilled") setAvgProgression(avgProg.value);
+      if (mapData.status === "fulfilled") setActiveTournees(mapData.value || []);
+
       setLastUpdated(new Date());
     } catch {
-      // Keep previous state visible if refresh fails.
+      // keep previous state on failure
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
     }
   }, []);
 
   const [autoRefreshEnabled, toggleAutoRefresh] = useAutoRefresh(() => loadLiveData(true));
 
-  // Throttle manual refresh: max 1 call per 5 seconds
   const handleManualRefresh = useCallback(() => {
     const now = Date.now();
     if (now - lastRefreshTime >= 5000) {
@@ -50,18 +70,18 @@ export default function SuiviTempsReelPage() {
     loadLiveData(false);
   }, [loadLiveData]);
 
-  function formatDateTime(value) {
+  function formatTime(value) {
     if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   }
 
   const statCards = useMemo(() => {
     const tournees = statsData.tournees || {};
     const collectes30j = statsData.collectes_30j || {};
-    const totalTournees = Number(tournees.total || 0);
     const tourneesEnCours = Number(tournees.en_cours || 0);
+    const totalTournees = Number(tournees.total || 0);
     const conteneursCollectes = Number(collectes30j.conteneurs_collectes || 0);
     const totalCollectes = Number(collectes30j.total_collectes || 0);
 
@@ -77,14 +97,14 @@ export default function SuiviTempsReelPage() {
         icon: "fa-tasks",
         iconColor: "green",
         label: "Progression moyenne",
-        value: "-",
-        change: "Mise a jour dynamique",
+        value: avgProgression === null ? "-" : `${avgProgression} %`,
+        change: "Tournees EN_COURS",
       },
       {
         icon: "fa-flag-checkered",
         iconColor: "orange",
         label: "Tournees > 80%",
-        value: "-",
+        value: nearlyDoneCount === null ? "-" : String(nearlyDoneCount),
         change: "Presque terminees",
       },
       {
@@ -95,10 +115,14 @@ export default function SuiviTempsReelPage() {
         change: `${totalCollectes} collectes (30j)`,
       },
     ];
-  }, [statsData]);
+  }, [statsData, nearlyDoneCount, avgProgression]);
 
   if (loading) {
-    return <div className="suivi-page"><i className="fas fa-spinner fa-spin"></i> Chargement du suivi en temps reel...</div>;
+    return (
+      <div className="suivi-page">
+        <i className="fas fa-spinner fa-spin" /> Chargement du suivi en temps reel...
+      </div>
+    );
   }
 
   return (
@@ -115,7 +139,7 @@ export default function SuiviTempsReelPage() {
             className={`auto-refresh-btn ${autoRefreshEnabled ? "enabled" : ""}`}
             onClick={toggleAutoRefresh}
           >
-            <i className={`fas ${autoRefreshEnabled ? "fa-toggle-on" : "fa-toggle-off"}`}></i>
+            <i className={`fas ${autoRefreshEnabled ? "fa-toggle-on" : "fa-toggle-off"}`} />
             Auto-refresh 60s
           </button>
 
@@ -125,12 +149,12 @@ export default function SuiviTempsReelPage() {
             onClick={handleManualRefresh}
             disabled={refreshing || loading}
           >
-            <i className={`fas fa-sync-alt ${refreshing ? "fa-spin" : ""}`}></i>
+            <i className={`fas fa-sync-alt ${refreshing ? "fa-spin" : ""}`} />
             {refreshing ? "Actualisation..." : "Rafraichir"}
           </button>
 
           {lastUpdated && (
-            <span className="last-updated">Maj: {formatDateTime(lastUpdated)}</span>
+            <span className="last-updated">Maj: {formatTime(lastUpdated)}</span>
           )}
         </div>
       </div>
@@ -148,7 +172,20 @@ export default function SuiviTempsReelPage() {
         ))}
       </div>
 
-      <TourneesActivesPanel pageSize={6} refreshNonce={refreshNonce} />
+      <div ref={mapSectionRef}>
+        <TourneeMapView
+          tournees={activeTournees}
+          focusedTourneeId={focusedTourneeId}
+          onClearFocus={() => setFocusedTourneeId(null)}
+        />
+      </div>
+
+      <AgentsActifsPanel
+        tournees={activeTournees}
+        onFocusTournee={handleFocusTournee}
+        focusedTourneeId={focusedTourneeId}
+        pageSize={6}
+      />
     </div>
   );
 }

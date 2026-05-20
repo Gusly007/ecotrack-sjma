@@ -4,14 +4,14 @@
 -- Conteneurs dans différentes zones
 INSERT INTO conteneur (uid, capacite_l, statut, date_installation, position, id_type, id_zone)
 SELECT
-  'CNT-' || LPAD((ROW_NUMBER() OVER())::text, 4, '0'),
-  CASE ((ROW_NUMBER() OVER()) % 4)
+  'CNT-' || LPAD((ROW_NUMBER() OVER(ORDER BY z.id_zone, tc.id_type, s))::text, 5, '0'),
+  CASE ((ROW_NUMBER() OVER(ORDER BY z.id_zone, tc.id_type, s) - 1) % 4)
     WHEN 0 THEN 1000
     WHEN 1 THEN 1500
     WHEN 2 THEN 2000
     ELSE 2500
   END,
-  CASE ((ROW_NUMBER() OVER()) % 10)
+  CASE ((ROW_NUMBER() OVER(ORDER BY z.id_zone, tc.id_type, s) - 1) % 10)
     WHEN 0 THEN 'EN_MAINTENANCE'
     ELSE 'ACTIF'
   END,
@@ -21,7 +21,7 @@ SELECT
   z.id_zone
 FROM zone z
 CROSS JOIN type_conteneur tc
-CROSS JOIN generate_series(1, 2) AS s
+CROSS JOIN generate_series(1, 5) AS s
 WHERE z.nom != 'Zone Industrielle'
 ON CONFLICT (uid) DO NOTHING;
 

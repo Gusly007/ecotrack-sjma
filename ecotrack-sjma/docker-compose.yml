@@ -511,7 +511,7 @@ services:
     restart: unless-stopped
 
   # =========================================================================
-  # SERVICE-NOTIFICATION-GESTIONNAIRE-ADMIN (port 3016)
+  # SERVICE-NOTIFICATION-GESTIONNAIRE-ADMIN (port 3017)
   # =========================================================================
   service-notification-gestionnaire-admin:
     build:
@@ -533,7 +533,7 @@ services:
       KAFKAJS_NO_PARTITIONER_WARNING: 1
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
-      - "3016:3016"
+      - "3017:3016"
     depends_on:
       postgres:
         condition: service_healthy

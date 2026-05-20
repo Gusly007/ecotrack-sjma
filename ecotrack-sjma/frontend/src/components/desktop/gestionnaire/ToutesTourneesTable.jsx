@@ -5,6 +5,15 @@ import Modal from "../../common/Modal";
 import DetailView from "../../common/DetailView";
 import TourneeEditModal from "./TourneeEditModal";
 
+function computeHeureFin(heureDebut, dureePrevueMin) {
+  if (!heureDebut || !dureePrevueMin) return null;
+  const [h, m] = String(heureDebut).substring(0, 5).split(":").map(Number);
+  const totalMin = h * 60 + m + Number(dureePrevueMin);
+  const hFin = Math.floor(totalMin / 60) % 24;
+  const mFin = totalMin % 60;
+  return `${String(hFin).padStart(2, "0")}:${String(mFin).padStart(2, "0")}`;
+}
+
 function getProgression(tournee) {
   const totalEtapes = Number(tournee.total_etapes || 0);
   const etapesCollectees = Number(tournee.etapes_collectees || 0);
@@ -30,22 +39,29 @@ function mapStatus(statut) {
 }
 
 function normalizeTournee(tournee) {
+  const totalEtapes = Number(tournee.total_etapes || 0);
+  const etapesCollectees = Number(tournee.etapes_collectees || 0);
   const progression = getProgression(tournee);
   const status = mapStatus(tournee.statut);
-  // Le flag est renvoyé par le backend. On ne le calcule plus côté front
-  // pour rester cohérent (un seul lieu de vérité = la requête SQL).
-  // Ne pas afficher "en retard" sur une tournée déjà clôturée.
   const estEnRetard = Boolean(tournee.est_en_retard)
     && tournee.statut !== "TERMINEE"
     && tournee.statut !== "ANNULEE";
 
+  const heureDebut = tournee.heure_debut_prevue
+    ? String(tournee.heure_debut_prevue).substring(0, 5)
+    : null;
+
   return {
     id: tournee.id_tournee,
     code: `T-${tournee.id_tournee}`,
-    dateDebut: tournee.date_tournee ? new Date(tournee.date_tournee).toLocaleDateString("fr-FR") : "-",
-    agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigne",
+    dateTournee: tournee.date_tournee ? new Date(tournee.date_tournee).toLocaleDateString("fr-FR") : "-",
+    agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigné",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
     vehicule: tournee.numero_immatriculation || "-",
+    heureDebutPrevue: heureDebut,
+    heureFinPrevue: computeHeureFin(heureDebut, tournee.duree_prevue_min),
+    totalEtapes,
+    etapesCollectees,
     progression,
     statusLabel: status.label,
     statusColor: status.color,
@@ -56,11 +72,14 @@ function normalizeTournee(tournee) {
 function buildDetailItems(tournee) {
   return [
     { label: "Identifiant", value: tournee.code },
-    { label: "Date", value: tournee.dateDebut },
     { label: "Agent", value: tournee.agent },
     { label: "Zone", value: tournee.zone },
     { label: "Véhicule", value: tournee.vehicule },
     { label: "Statut", value: tournee.statusLabel },
+    { label: "Date de tournée", value: tournee.dateTournee },
+    { label: "Heure de début prévue", value: tournee.heureDebutPrevue ?? "-" },
+    { label: "Heure de fin prévue", value: tournee.heureFinPrevue ?? "-" },
+    { label: "Étapes collectées", value: `${tournee.etapesCollectees} / ${tournee.totalEtapes}` },
     { label: "Progression", value: `${tournee.progression}%` },
     { label: "En retard", value: tournee.estEnRetard ? "Oui" : "Non" },
   ];
@@ -144,7 +163,7 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
               {filteredRows.map((tournee) => (
                 <tr key={`all-${tournee.id}`}>
                   <td>{tournee.code}</td>
-                  <td>{tournee.dateDebut}</td>
+                  <td>{tournee.dateTournee}</td>
                   <td>{tournee.agent}</td>
                   <td>{tournee.zone}</td>
                   <td>{tournee.vehicule}</td>
