@@ -474,7 +474,19 @@ export default function ProfilePage() {
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <div className="tab-content">
-                <h2>Préférences de notifications</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '4px' }}>
+                  <h2 style={{ margin: 0 }}>Préférences de notifications</h2>
+                  <button
+                    onClick={() => navigate(role === 'ADMIN' ? '/admin/notifications' : '/gestionnaire/notifications')}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      padding: '7px 14px', background: '#e3f2fd', border: '1px solid #2196F3',
+                      color: '#1565c0', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500
+                    }}
+                  >
+                    <i className="fas fa-list"></i> Voir toutes mes notifications
+                  </button>
+                </div>
                 <p className="section-description">Gérez les types de notifications que vous souhaitez recevoir</p>
                 <div className="notifications-list">
                   {availableNotifications.map(type => (

@@ -28,6 +28,7 @@ import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
+import NotificationsPage from './pages/desktop/NotificationsPage';
 
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import TourneePage from './pages/desktop/gestionnaire/tournee';
@@ -225,6 +226,21 @@ function App() {
             <ProtectedRoute>
               <RoleBasedLayout>
                 <GestionnaireDashboard />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/notifications" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <NotificationsPage />
+              </RoleBasedLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/gestionnaire/notifications" element={
+            <ProtectedRoute>
+              <RoleBasedLayout>
+                <NotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />

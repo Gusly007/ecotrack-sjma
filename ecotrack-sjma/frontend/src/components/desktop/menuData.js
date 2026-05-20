@@ -11,6 +11,7 @@ export const ADMIN_MENU = [
   { path: '/admin/monitoring', icon: 'fa-heartbeat', label: 'Monitoring' },
   { path: '/admin/alerts', icon: 'fa-bell', label: 'Alertes' },
   { section: 'Compte' },
+  { path: '/admin/notifications', icon: 'fa-inbox', label: 'Notifications' },
   { path: '/profile', icon: 'fa-user-circle', label: 'Mon compte' },
 ];
 
@@ -26,5 +27,6 @@ export const GESTIONNAIRE_MENU = [
   { path: '/gestionnaire/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
   { path: '/gestionnaire/rapports', icon: 'fa-file-alt', label: 'Rapports' },
   { section: 'Compte' },
+  { path: '/gestionnaire/notifications', icon: 'fa-inbox', label: 'Notifications' },
   { path: '/profile', icon: 'fa-user-circle', label: 'Mon compte' },
 ];

@@ -29,6 +29,8 @@ export default function DesktopLayout({ children }) {
     '/gestionnaire/signalements': 'Signalements',
     '/gestionnaire/maintenance': 'Maintenance',
     '/gestionnaire/rapports': 'Rapports',
+    '/gestionnaire/notifications': 'Notifications',
+    '/admin/notifications': 'Notifications',
   };
 
   const currentDate = new Date().toLocaleDateString('fr-FR', {
@@ -96,11 +98,14 @@ export default function DesktopLayout({ children }) {
     }
 
     const signal = { active: true };
-
     loadNotifications(signal);
+
+    const onRefresh = () => loadNotifications({ active: true });
+    window.addEventListener('notifications-refresh', onRefresh);
 
     return () => {
       signal.active = false;
+      window.removeEventListener('notifications-refresh', onRefresh);
     };
   }, [user, isAdmin, notificationConfig.countPath, notificationConfig.listPath]);
 
@@ -156,9 +161,11 @@ export default function DesktopLayout({ children }) {
     }
   };
 
+  const notificationsPagePath = isAdmin ? '/admin/notifications' : '/gestionnaire/notifications';
+
   const navigateToNotifications = () => {
     setNotificationsOpen(false);
-    navigate(notificationConfig.fallbackRoute);
+    navigate(notificationsPagePath);
   };
 
   const visibleNotifications = notifications.filter((notification) => {
@@ -237,7 +244,7 @@ export default function DesktopLayout({ children }) {
                       <strong>{notificationConfig.itemLabel}</strong>
                       <span>{filteredCount} non lue{filteredCount > 1 ? 's' : ''}</span>
                     </div>
-                    <button type="button" className="notifications-see-all" onClick={handleMarkAllAsRead}>
+                    <button type="button" className="notifications-see-all" onClick={navigateToNotifications}>
                       Voir tout
                     </button>
                   </div>
@@ -266,6 +273,12 @@ export default function DesktopLayout({ children }) {
                         </button>
                       ))
                     )}
+                  </div>
+
+                  <div className="notifications-footer">
+                    <button type="button" className="notifications-view-all" onClick={navigateToNotifications}>
+                      <i className="fas fa-list"></i> Voir toutes les notifications
+                    </button>
                   </div>
                 </div>
               )}

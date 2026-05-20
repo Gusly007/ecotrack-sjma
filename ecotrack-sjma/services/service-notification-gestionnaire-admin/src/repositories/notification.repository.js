@@ -495,6 +495,29 @@ class NotificationRepository {
 
     return result.rows[0];
   }
+
+  /**
+   * Supprime une notification admin (owned by id_utilisateur, any type).
+   */
+  async deleteAdminNotification(id_notification, id_utilisateur) {
+    const result = await pool.query(
+      `DELETE FROM notification
+       WHERE id_notification = $1 AND id_utilisateur = $2
+       RETURNING id_notification`,
+      [id_notification, id_utilisateur]
+    );
+
+    if (result.rowCount === 0) {
+      const exists = await pool.query(
+        'SELECT id_notification FROM notification WHERE id_notification = $1',
+        [id_notification]
+      );
+      if (exists.rowCount === 0) {
+        throw new ApiError(404, `Notification ${id_notification} introuvable`);
+      }
+      throw new ApiError(403, 'Vous n\'êtes pas propriétaire de cette notification');
+    }
+  }
 }
 
 module.exports = new NotificationRepository();

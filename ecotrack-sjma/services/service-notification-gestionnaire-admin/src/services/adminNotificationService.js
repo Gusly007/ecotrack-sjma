@@ -157,6 +157,11 @@ class AdminNotificationService {
     return notificationRepository.markAsReadAdmin(id_notification, id_utilisateur, role);
   }
 
+  async deleteNotification(id_notification, id_utilisateur) {
+    await notificationRepository.deleteAdminNotification(id_notification, id_utilisateur);
+    await this._invalidateUserCache(id_utilisateur);
+  }
+
   async _invalidateUserCache(id_utilisateur) {
     const patterns = [
       `ecotrack:notifications:unread:${id_utilisateur}`,
