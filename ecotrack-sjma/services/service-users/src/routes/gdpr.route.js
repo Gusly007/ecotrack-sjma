@@ -1,6 +1,7 @@
 import express from 'express';
 import * as gdprService from '../services/gdprService.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { publicLimiter } from '../config/rateLimit.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -38,7 +39,7 @@ const router = express.Router();
  *       500:
  *         description: Export failed
  */
-router.get('/me/export', authenticateToken, async (req, res) => {
+router.get('/me/export', publicLimiter, authenticateToken, async (req, res) => {
   try {
     const idUtilisateur = req.user.id_utilisateur;
     const data = await gdprService.exportUserData(idUtilisateur);
@@ -85,7 +86,7 @@ router.get('/me/export', authenticateToken, async (req, res) => {
  *       500:
  *         description: Request failed
  */
-router.post('/me/delete', authenticateToken, async (req, res) => {
+router.post('/me/delete', publicLimiter, authenticateToken, async (req, res) => {
   try {
     const { password } = req.body;
     
@@ -127,7 +128,7 @@ router.post('/me/delete', authenticateToken, async (req, res) => {
  *       500:
  *         description: Cancellation failed
  */
-router.post('/me/cancel-deletion', authenticateToken, async (req, res) => {
+router.post('/me/cancel-deletion', publicLimiter, authenticateToken, async (req, res) => {
   try {
     const idUtilisateur = req.user.id_utilisateur;
     const result = await gdprService.cancelAccountDeletion(idUtilisateur);
@@ -166,7 +167,7 @@ router.post('/me/cancel-deletion', authenticateToken, async (req, res) => {
  *       500:
  *         description: Fetch failed
  */
-router.get('/me/consents', authenticateToken, async (req, res) => {
+router.get('/me/consents', publicLimiter, authenticateToken, async (req, res) => {
   try {
     const idUtilisateur = req.user.id_utilisateur;
     const consents = await gdprService.getUserConsentHistory(idUtilisateur);
