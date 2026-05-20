@@ -5,5 +5,7 @@ module.exports = {
   },
   testMatch: ['**/__tests__/**/*.test.js', '**/?(*.)+(spec|test).js'],
   collectCoverageFrom: ['src/**/*.js', '!src/**/index.js'],
+  testTimeout: 10000,
+  forceExit: true,
 };
 

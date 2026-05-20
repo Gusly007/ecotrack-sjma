@@ -57,20 +57,27 @@ beforeAll(async () => {
     default: mockCacheService
   }));
 
+  const passthroughMiddleware = (req, res, next) => next();
   await jest.unstable_mockModule('../../src/middleware/auth.js', () => ({
-    jwtValidationMiddleware: (req, res, next) => next()
+    default: passthroughMiddleware,
+    jwtValidationMiddleware: passthroughMiddleware,
+    requireRole: (..._roles) => passthroughMiddleware
   }));
 
+  const mockLogger = {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  };
+
   await jest.unstable_mockModule('../../src/middleware/logger.js', () => ({
+    default: mockLogger,
+    logger: mockLogger,
     requestLogger: (req, res, next) => next(),
     detailedRequestLogger: (req, res, next) => next(),
     errorLogger: (err, req, res, next) => next(err),
-    logger: {
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn()
-    }
+    securityLogger: jest.fn()
   }));
 
   await jest.unstable_mockModule('../../src/swagger-config.js', () => ({
