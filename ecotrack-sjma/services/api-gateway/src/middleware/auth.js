@@ -17,7 +17,17 @@ const publicRoutes = [
   { path: '/auth/forgot-password', methods: ['POST'] },
   { path: '/auth/reset-password', methods: ['POST'] },
   { path: '/auth/activate', methods: ['POST'] },
-  // Register désactivé - inscription uniquement par ADMIN
+  // Self-registration citoyen (doc.md §4.1) — backend force le rôle.
+  { path: '/auth/register', methods: ['POST'] },
+  // Flow code-email isolé du scope mobile citoyen (register/activate/resend).
+  { path: '/auth/citoyen/register', methods: ['POST'] },
+  { path: '/auth/citoyen/verify-activation', methods: ['POST'] },
+  { path: '/auth/citoyen/resend-activation', methods: ['POST'] },
+  // Avatars servis statiquement par service-users. Les <img src> du
+  // navigateur ne peuvent pas porter d'Authorization header donc les URLs
+  // /avatars/* doivent rester publiques (les noms incluent l'id, ce qui
+  // limite l'énumération).
+  { path: '/avatars/', methods: ['GET', 'HEAD'] },
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
   { path: '/api-docs', methods: ['GET'] },

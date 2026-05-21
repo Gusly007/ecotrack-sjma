@@ -24,6 +24,12 @@ class SignalementRepository {
       whereClauses.push(`s.id_type = $${params.length}`);
     }
 
+    // Scope CITOYEN appliqué par le controller (BOLA protection).
+    if (filters.id_citoyen) {
+      params.push(filters.id_citoyen);
+      whereClauses.push(`s.id_citoyen = $${params.length}`);
+    }
+
     if (filters.urgence) {
       params.push(filters.urgence);
       whereClauses.push(`ts.priorite = $${params.length}`);
@@ -65,7 +71,7 @@ class SignalementRepository {
           ORDER BY hs.date_changement DESC
           LIMIT 1
         ) AS date_resolution,
-        ts.priorite AS urgence,
+        COALESCE(s.urgence, ts.priorite) AS urgence,
         ts.id_type AS id_type_signalement,
         ts.libelle AS type_signalement,
         ts.priorite,
@@ -137,7 +143,7 @@ class SignalementRepository {
         s.id_type,
         s.id_conteneur,
         s.id_citoyen,
-        ts.priorite AS urgence,
+        COALESCE(s.urgence, ts.priorite) AS urgence,
         ts.libelle AS type_signalement,
         ts.priorite,
         t.commentaire AS traitement_commentaire,
@@ -343,12 +349,35 @@ class SignalementRepository {
     return result.rows[0];
   }
 
-  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
+  async findConteneurByUidOrId(identifier) {
+    // Accepte un id numérique ou un UID texte (ex. CNT-00012).
+    const asInt = parseInt(identifier, 10);
+    if (!isNaN(asInt) && String(asInt) === String(identifier)) {
+      const r = await this.db.query(
+        'SELECT id_conteneur FROM conteneur WHERE id_conteneur = $1 LIMIT 1',
+        [asInt]
+      );
+      return r.rows[0] || null;
+    }
+    const r = await this.db.query(
+      'SELECT id_conteneur FROM conteneur WHERE uid = $1 LIMIT 1',
+      [identifier]
+    );
+    return r.rows[0] || null;
+  }
+
+  async create({ description, url_photo, id_type, id_conteneur, id_citoyen, urgence = null }) {
+    // Whitelist DB (CHECK constraint sur signalement.urgence).
+    const validUrgences = new Set(['BASSE', 'MOYENNE', 'HAUTE', 'URGENTE']);
+    const normalisedUrgence = urgence && validUrgences.has(String(urgence).toUpperCase())
+      ? String(urgence).toUpperCase()
+      : null;
+
     const result = await this.db.query(
-      `INSERT INTO signalement (description, url_photo, id_type, id_conteneur, id_citoyen)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO signalement (description, url_photo, id_type, id_conteneur, id_citoyen, urgence)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [description, url_photo || null, id_type, id_conteneur, id_citoyen]
+      [description, url_photo || null, id_type, id_conteneur, id_citoyen, normalisedUrgence]
     );
     return result.rows[0];
   }

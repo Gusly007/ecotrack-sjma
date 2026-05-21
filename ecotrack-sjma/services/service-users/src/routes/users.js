@@ -10,6 +10,7 @@ const router = express.Router();
 const updateProfileSchema = {
   body: z.object({
     prenom: z.string().min(2).max(50).optional(),
+    nom: z.string().min(2).max(50).optional(),
     email: z.string().email().optional()
   }).strict().refine((v) => Object.keys(v).length > 0, {
     message: 'At least one field must be provided'

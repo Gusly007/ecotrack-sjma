@@ -76,6 +76,56 @@ const escapeHtml = (text) => {
   return String(text).replace(/[&<>"']/g, (char) => map[char]);
 };
 
+// Template d'activation 6 chiffres pour le flow self-registration citoyen.
+// Isolé de getAdminCreatedUserHtml (qui sert l'onboarding ADMIN-créé avec
+// mot de passe temporaire — destiné à AGENT/GESTIONNAIRE/ADMIN).
+export const getCitoyenActivationCodeHtml = (prenom, code, appUrl) => {
+  const escapedCode = escapeHtml(code);
+  const escapedPrenom = escapeHtml(prenom || 'utilisateur');
+  const escapedAppUrl = escapeHtml(appUrl || '');
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f4f4f4;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px;">
+        <tr><td align="center">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+            <tr><td style="background:linear-gradient(135deg,#4CAF50 0%,#2E7D32 100%);padding:30px;text-align:center;border-radius:10px 10px 0 0;">
+              <h1 style="color:#fff;margin:0;font-size:28px;">EcoTrack</h1>
+              <p style="color:rgba(255,255,255,0.85);margin:10px 0 0 0;">Bienvenue&nbsp;!</p>
+            </td></tr>
+            <tr><td style="padding:40px 30px;">
+              <h2 style="color:#333;margin:0 0 20px 0;font-size:22px;">Bonjour ${escapedPrenom},</h2>
+              <p style="color:#666;font-size:16px;line-height:1.6;margin:0 0 20px 0;">
+                Merci de rejoindre EcoTrack&nbsp;! Pour finaliser la création de votre compte,
+                veuillez confirmer votre adresse email avec le code suivant&nbsp;:
+              </p>
+              <div style="background:#f5f5f5;padding:25px;border-radius:10px;margin:20px 0;text-align:center;border:2px dashed #4CAF50;">
+                <p style="margin:0 0 10px 0;color:#666;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Code d'activation</p>
+                <p style="margin:0;color:#2E7D32;font-size:38px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:8px;">${escapedCode}</p>
+              </div>
+              <p style="color:#666;font-size:15px;line-height:1.6;margin:20px 0 0 0;">
+                Saisissez ce code dans l'application pour activer votre compte.
+                Le code expire dans <strong>30&nbsp;minutes</strong>.
+              </p>
+              <p style="color:#999;font-size:13px;margin:20px 0 0 0;">
+                Vous n'êtes pas à l'origine de cette inscription&nbsp;? Ignorez cet email,
+                aucune action ne sera prise.
+              </p>
+            </td></tr>
+            <tr><td style="background:#f8f8f8;padding:20px 30px;border-radius:0 0 10px 10px;text-align:center;">
+              <p style="color:#999;font-size:12px;margin:0;">© 2026 EcoTrack. Tous droits réservés.</p>
+              ${escapedAppUrl ? `<p style="color:#999;font-size:12px;margin:8px 0 0 0;"><a href="${escapedAppUrl}/citoyen/login" style="color:#4CAF50;text-decoration:none;">Ouvrir EcoTrack</a></p>` : ''}
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
 export const getWelcomeHtml = (prenom, appUrl) => {
   const escapedPrenom = escapeHtml(prenom);
   const escapedAppUrl = escapeHtml(appUrl);

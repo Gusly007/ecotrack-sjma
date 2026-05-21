@@ -58,6 +58,20 @@ app.use(
 
 app.use(cors());
 app.use(express.json());
+
+// Populate req.user from gateway-forwarded headers (x-user-id / x-user-role).
+// Sans cette ligne, requirePermission renvoie 401 sur toute requête —
+// y compris l'appel interne service-routes → service-gamifications
+// (gamificationClient) après création d'un signalement, et les calls
+// /api/gamification/* depuis le mobile citoyen.
+app.use((req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  const userRole = req.headers['x-user-role'];
+  if (userId && userRole) {
+    req.user = { id: parseInt(userId, 10), role: userRole };
+  }
+  next();
+});
 app.use(morgan('combined', {
   stream: {
     write: (message) => {

@@ -83,10 +83,30 @@ app.use(helmet({
 
 app.use(cors());
 
+// Rate-limit global sur /auth et /users. Bypass dev / localhost et override
+// par env (SERVICE_USERS_API_LIMIT_MAX / _WINDOW_MS) pour ne pas étouffer
+// le mobile citoyen — la home fait plusieurs appels /api/users/* par mount.
+const apiLimiterLocalhost = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const apiLimiterHasLocalhost = (req) => {
+  const host = (req.headers?.host || '').toLowerCase();
+  const fwd = (req.headers?.['x-forwarded-host'] || '').toLowerCase();
+  return host.includes('localhost') || host.includes('127.0.0.1') || fwd.includes('localhost') || fwd.includes('127.0.0.1');
+};
+const apiLimiterShouldBypass = () => {
+  if (process.env.RATE_LIMIT_BYPASS_LOCAL === 'true') return true;
+  if (process.env.RATE_LIMIT_BYPASS_LOCAL === 'false') return false;
+  return (process.env.NODE_ENV || 'development') === 'development';
+};
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Trop de requêtes, veuillez réessayer plus tard'
+  windowMs: parseInt(process.env.SERVICE_USERS_API_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.SERVICE_USERS_API_LIMIT_MAX, 10) || 1000,
+  message: 'Trop de requêtes, veuillez réessayer plus tard',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    if (!apiLimiterShouldBypass()) return false;
+    return apiLimiterLocalhost.has(req.ip) || apiLimiterHasLocalhost(req);
+  }
 });
 app.use('/auth/', apiLimiter);
 app.use('/users/', apiLimiter);
@@ -143,8 +163,21 @@ app.use('/admin/environmental-constants', adminEnvironmentalConstantsRoutes);
 app.use('/admin/agent-performance', adminAgentPerformanceRoutes);
 app.use('/notifications', notificationRoutes);
 
-// Servir les avatars en tant que fichiers statiques
-app.use('/avatars', express.static(path.join(process.cwd(), 'storage/avatars')));
+// Servir les avatars en tant que fichiers statiques.
+//
+// On force `Cross-Origin-Resource-Policy: cross-origin` sur ce chemin pour
+// que le frontend citoyen (servi sur un port différent de l'API) puisse
+// charger les images via <img src>. Helmet met `same-origin` par défaut
+// et chaque avatar tomberait alors en alt-text. CORP=cross-origin est
+// sans risque ici parce que les URLs portent un nom de fichier basé sur
+// l'id utilisateur (non énumérable en pratique) et que tout le monde
+// ayant l'URL peut déjà voir l'image via la whitelist /avatars de la
+// gateway.
+app.use('/avatars', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(process.cwd(), 'storage/avatars')));
 
 // Route for Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

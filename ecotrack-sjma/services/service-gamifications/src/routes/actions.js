@@ -1,7 +1,7 @@
 // Rôle du fichier : routes HTTP pour les actions utilisateur.
 import { Router } from 'express';
 import { enregistrerAction } from '../controllers/actionsController.js';
-import { requirePermission } from '../middleware/rbac.js';
+import { requirePermissions } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -31,6 +31,9 @@ const router = Router();
  *       201:
  *         description: Action enregistrée
  */
-router.post('/', requirePermission('gamification:create'), enregistrerAction);
+// `self_action` suffit pour un citoyen qui agit sur lui-même ; le controller
+// vérifie que req.user.id === id_utilisateur dans ce cas. Les rôles privilégiés
+// (GESTIONNAIRE, ADMIN) gardent `gamification:create` pour agir sur autrui.
+router.post('/', requirePermissions(['gamification:self_action', 'gamification:create']), enregistrerAction);
 
 export default router;

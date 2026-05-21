@@ -536,6 +536,30 @@ class TourneeRepository {
     );
     return result.rows;
   }
+
+  // Feed minimal pour l'app citoyen — 3 prochaines tournées planifiées
+  // ou en cours, projection publique (pas d'info agent/véhicule).
+  async findUpcomingPublic({ limit = 5 } = {}) {
+    const safeLimit = Math.min(20, Math.max(1, parseInt(limit, 10) || 5));
+    const result = await this.db.query(
+      `SELECT
+         t.id_tournee,
+         t.date_tournee,
+         t.duree_prevue_min,
+         t.statut,
+         z.id_zone,
+         z.code AS zone_code,
+         z.nom  AS zone_nom
+       FROM tournee t
+       LEFT JOIN zone z ON z.id_zone = t.id_zone
+       WHERE t.date_tournee >= CURRENT_DATE
+         AND t.statut IN ('PLANIFIEE', 'EN_COURS')
+       ORDER BY t.date_tournee ASC, t.id_tournee ASC
+       LIMIT $1`,
+      [safeLimit]
+    );
+    return result.rows;
+  }
 }
 
 module.exports = TourneeRepository;

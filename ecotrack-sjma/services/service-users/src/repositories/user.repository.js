@@ -1,7 +1,7 @@
 // Repository: accès aux données utilisateur
 import pool from '../config/database.js';
 
-const userProfileColumns = `id_utilisateur, email, prenom, nom, role_par_defaut, points, est_active, date_creation`;
+const userProfileColumns = `id_utilisateur, email, prenom, nom, role_par_defaut, points, est_active, date_creation, avatar_url, avatar_thumbnail, avatar_mini`;
 
 const resolveUserRow = (result) => {
   if (result.rows.length === 0) {
@@ -18,14 +18,16 @@ export const UserRepository = {
     );
     return resolveUserRow(result);
   },
-  async updateProfile(userId, { prenom, email }) {
+  async updateProfile(userId, { prenom, nom, email }) {
     const result = await pool.query(
-      `UPDATE UTILISATEUR 
+      `UPDATE UTILISATEUR
        SET prenom = COALESCE($1, prenom),
-           email = COALESCE($2, email)
-       WHERE id_utilisateur = $3 
+           nom    = COALESCE($2, nom),
+           email  = COALESCE($3, email),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id_utilisateur = $4
        RETURNING ${userProfileColumns}`,
-      [prenom, email, userId]
+      [prenom, nom, email, userId]
     );
     return resolveUserRow(result);
   },
@@ -45,7 +47,7 @@ export const UserRepository = {
   },
   async getProfileWithStats(userId) {
     const result = await pool.query(
-      `SELECT 
+      `SELECT
           u.id_utilisateur,
           u.email,
           u.prenom,
@@ -54,6 +56,9 @@ export const UserRepository = {
           u.points,
           u.date_creation,
           u.est_active,
+          u.avatar_url,
+          u.avatar_thumbnail,
+          u.avatar_mini,
           COUNT(DISTINCT ub.id_badge) as badge_count
         FROM UTILISATEUR u
         LEFT JOIN user_badge ub ON u.id_utilisateur = ub.id_utilisateur

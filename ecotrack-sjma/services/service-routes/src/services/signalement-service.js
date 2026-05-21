@@ -6,22 +6,43 @@ class SignalementService {
     this.repository = new SignalementRepository(db);
   }
 
-  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
-    if (!description || !id_type || !id_conteneur || !id_citoyen) {
-      const ApiError = require('../utils/api-error');
-      throw ApiError.badRequest('Champs requis manquants : description, id_type, id_conteneur, id_citoyen');
+  async create(data) {
+    const ApiError = require('../utils/api-error');
+    if (!data.description || !String(data.description).trim()) {
+      throw ApiError.badRequest('Le champ "description" est requis');
+    }
+    if (!data.id_type) {
+      throw ApiError.badRequest('Le champ "id_type" est requis');
+    }
+    if (!data.id_citoyen) {
+      throw ApiError.badRequest('Le champ "id_citoyen" est requis');
+    }
+
+    // Le mobile citoyen peut envoyer conteneur_uid (scan QR / saisie
+    // manuelle) à la place de id_conteneur. On résout l'UID en id.
+    let id_conteneur = data.id_conteneur;
+    if (!id_conteneur && data.conteneur_uid) {
+      const row = await this.repository.findConteneurByUidOrId(data.conteneur_uid);
+      if (!row) {
+        throw ApiError.badRequest(`Conteneur introuvable pour "${data.conteneur_uid}"`);
+      }
+      id_conteneur = row.id_conteneur;
+    }
+    if (!id_conteneur) {
+      throw ApiError.badRequest('Le champ "id_conteneur" ou "conteneur_uid" est requis');
     }
 
     const signalement = await this.repository.create({
-      description,
-      url_photo,
-      id_type,
+      description: data.description,
+      id_type: data.id_type,
       id_conteneur,
-      id_citoyen
+      id_citoyen: data.id_citoyen,
+      url_photo: data.url_photo || null,
+      urgence: data.urgence || null,
     });
 
-    // Publier l'événement — le service-notification-gestionnaire-admin notifiera automatiquement
-    // le gestionnaire et l'admin de la zone concernée
+    // Publier l'événement — service-notification-gestionnaire-admin
+    // notifie gestionnaire/admin de la zone concernée.
     await kafkaProducer.sendSignalement(signalement);
 
     return signalement;

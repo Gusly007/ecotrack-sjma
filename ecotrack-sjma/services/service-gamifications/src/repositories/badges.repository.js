@@ -1,10 +1,19 @@
 // Rôle du fichier : accès aux données pour les badges (repository pattern)
 import pool from '../config/database.js';
 
+// Seuils de points pour les badges auto-attribués par paliers.
+// Les codes en anglais (ECO_STARTER/WARRIOR/HERO/LEGEND) sont ceux que
+// l'UI mobile (CitizenDefis.jsx) affiche. Les anciens codes français
+// (DEBUTANT/ECO_GUERRIER/SUPER_HEROS) sont conservés pour rétro-compat
+// des comptes déjà enrichis lors de tests précédents.
 export const BADGE_SEUILS = {
-  DEBUTANT: 100,
+  ECO_STARTER:  100,
+  ECO_WARRIOR:  500,
+  ECO_HERO:     1000,
+  ECO_LEGEND:   5000,
+  DEBUTANT:     100,
   ECO_GUERRIER: 500,
-  SUPER_HEROS: 1000
+  SUPER_HEROS:  1000
 };
 
 export const BadgeRepository = {

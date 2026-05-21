@@ -300,6 +300,9 @@ const { requirePermission } = require('../middleware/rbac');
  *         description: Données GeoJSON avec les points des conteneurs
  */
 
+// Feed citoyen "Prochaine collecte" — placée AVANT toute route /:id parameter
+// pour éviter qu'Express ne matche "prochaines-collectes" comme un id.
+router.get('/prochaines-collectes', requirePermission('collecte:read'), (req, res, next) => req.controllers.tournee.getUpcomingPublic(req, res, next));
 router.get('/types-conteneurs', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getTypeConteneur(req, res, next));
 router.get('/tournees/active/map', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActiveMapData(req, res, next));
 router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getAll(req, res, next));

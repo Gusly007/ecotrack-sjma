@@ -1,6 +1,6 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
-import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml } from './emailTemplates.js';
+import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
 const logger = {
@@ -103,8 +103,13 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 
-export const sendPasswordResetEmail = async (email, resetToken) => {
-  const resetUrl = `${env.appUrl}/reset-password?token=${resetToken}`;
+// `from` ('citoyen' | undefined) — quand la requête vient du flow mobile
+// citoyen, on pointe le lien email vers /citoyen/reset-password (page isolée
+// qui redirige vers /citoyen/login après succès). Sinon on garde le chemin
+// /reset-password partagé (admin / gestionnaire / agent).
+export const sendPasswordResetEmail = async (email, resetToken, { from } = {}) => {
+  const path = from === 'citoyen' ? '/citoyen/reset-password' : '/reset-password';
+  const resetUrl = `${env.appUrl}${path}?token=${resetToken}`;
   const resetHtml = getPasswordResetHtml(resetUrl, env.appUrl);
   return sendEmail(email, 'Réinitialisation de votre mot de passe - EcoTrack', resetHtml);
 };
@@ -112,6 +117,14 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
 export const sendWelcomeEmail = async (email, prenom) => {
   const welcomeHtml = getWelcomeHtml(prenom, env.appUrl);
   return sendEmail(email, 'Bienvenue sur EcoTrack !', welcomeHtml);
+};
+
+// Envoie le code d'activation 6 chiffres pour le self-registration citoyen.
+// Distinct de sendAdminCreatedUserEmail (qui envoie un mot de passe temporaire
+// pour les comptes créés par un admin — destiné aux rôles AGENT/GESTIONNAIRE/ADMIN).
+export const sendCitoyenActivationEmail = async (email, prenom, code) => {
+  const html = getCitoyenActivationCodeHtml(prenom, code, env.appUrl);
+  return sendEmail(email, "Activez votre compte EcoTrack", html);
 };
 
 export const sendAdminCreatedUserEmail = async (email, prenom, nom, role, password) => {

@@ -304,6 +304,13 @@ class TourneeService {
       }))
     };
   }
+
+  // Feed prochaines tournées pour l'app citoyen (3 prochaines par défaut).
+  // Pas de cache : la home citoyen fait peu d'appels et le countdown doit
+  // refléter l'état réel (passage à EN_COURS, etc.).
+  async getUpcomingPublic({ limit = 5 } = {}) {
+    return this.tourneeRepo.findUpcomingPublic({ limit });
+  }
 }
 
 module.exports = TourneeService;
