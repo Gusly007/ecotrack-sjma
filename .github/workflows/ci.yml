@@ -913,6 +913,20 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/frontend
 
+      # Lint ciblé sur le périmètre Citoyen Mobile (pages, composants,
+      # services, utils) : garde notre scope propre sans dépendre du lint
+      # global du frontend (qui peut être bloqué par des règles upstream).
+      - name: 'Lint Citoyen Mobile scope'
+        run: |
+          npx eslint --max-warnings 0 \
+            src/pages/mobile/citoyen/ \
+            src/components/mobile/citoyen/ \
+            src/services/citoyenService.js \
+            src/utils/security.js \
+            src/utils/impactEstimation.js \
+            src/utils/avatar.js
+        working-directory: ecotrack-sjma/frontend
+
       - name: 'Run Vitest coverage'
         run: npm run test:coverage
         working-directory: ecotrack-sjma/frontend
