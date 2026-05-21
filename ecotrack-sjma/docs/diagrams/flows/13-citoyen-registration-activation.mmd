@@ -1,0 +1,94 @@
+sequenceDiagram
+    participant C as Citoyen
+    participant F as Frontend<br/>(CitoyenRegister)
+    participant Ctx as CitoyenAuthContext
+    participant G as API Gateway
+    participant U as service-users<br/>(authController.citoyen*)
+    participant Email as emailService<br/>(SMTP)
+    participant PG as PostgreSQL
+
+    Note over C,F: Étape 1 — Saisie du formulaire
+
+    C->>F: prenom, nom, email, password
+    F->>F: Validation client<br/>(isValidEmail + normalizeText)
+    F->>Ctx: registerCitoyen({prenom, nom, email, password})
+    Ctx->>G: POST /auth/citoyen/register
+    G->>U: Forward (publicRoute /auth/citoyen/register)
+    U->>PG: SELECT WHERE email=$1 (unicité)
+
+    alt Email déjà utilisé
+        U-->>G: 409 Conflict
+        G-->>Ctx: 409
+        Ctx-->>F: throw err
+        F->>C: Erreur "Un compte existe déjà"
+    else Email libre
+        U->>U: bcrypt.hash(password)
+        U->>PG: INSERT utilisateur<br/>(est_active=FALSE, role=CITOYEN)
+        U->>U: generateNumericCode(6) via crypto.randomInt
+        U->>PG: INSERT account_activation_codes<br/>(email, code, expires_at = NOW + 30min)<br/>ON CONFLICT (email) DO UPDATE
+        U->>Email: sendCitoyenActivationEmail(email, prenom, code)
+        Email-->>U: previewUrl (dev) ou messageId (prod)
+        U-->>G: 201 {requiresActivation:true, email, user}
+        G-->>Ctx: 201
+        Ctx-->>F: {requiresActivation:true, email}
+        F->>F: setStep('activation') + setPendingEmail(email)
+        F->>C: Affichage écran "Activez votre compte"<br/>+ input 6 chiffres
+    end
+
+    Note over C,F: Étape 2 — Saisie du code reçu par email
+
+    C->>C: Consultation boîte mail<br/>(template "Activez votre compte EcoTrack")
+    C->>F: Saisie code 6 chiffres
+    F->>Ctx: verifyActivation(email, code)
+    Ctx->>G: POST /auth/citoyen/verify-activation {email, code}
+    G->>U: Forward (publicRoute)
+    U->>PG: SELECT FROM account_activation_codes<br/>WHERE email=$1 AND code=$2 AND expires_at > NOW
+
+    alt Code invalide ou expiré
+        U-->>G: 400 "Code invalide ou expiré"
+        G-->>Ctx: 400
+        Ctx-->>F: throw err
+        F->>C: Erreur + bouton "Renvoyer un code"
+    else Code valide
+        U->>PG: UPDATE utilisateur SET est_active=TRUE
+        U->>PG: DELETE FROM account_activation_codes<br/>(single-use)
+        U->>U: generateToken + generateRefreshToken (JWT)
+        U->>PG: storeRefreshToken
+        U-->>G: 200 {token, refreshToken, user}
+        G-->>Ctx: 200
+        Ctx->>Ctx: localStorage.set(token, refreshToken, user)<br/>+ setUser + setIsAuthenticated
+        Ctx-->>F: user normalisé
+        F->>C: navigate('/citoyen') — connecté automatiquement
+    end
+
+    Note over C,F: Étape 2bis — Renvoyer un code (optionnel)
+
+    C->>F: Clic "Renvoyer un code"
+    F->>Ctx: resendActivation(email)
+    Ctx->>G: POST /auth/citoyen/resend-activation {email}
+    G->>U: Forward (publicRoute)
+    U->>PG: SELECT utilisateur
+    alt Compte déjà actif
+        U-->>G: 200 {alreadyActive:true, message:"Connectez-vous"}
+    else Compte toujours inactif
+        U->>U: generateNumericCode(6)
+        U->>PG: UPSERT account_activation_codes
+        U->>Email: sendCitoyenActivationEmail
+        U-->>G: 200 {message:"Nouveau code envoyé"}
+    end
+    G-->>Ctx: 200
+    Ctx-->>F: notice
+    F->>C: "Un nouveau code a été envoyé"
+
+    %% Endpoints citoyens (isolés du flow admin upstream)
+    %% - POST /auth/citoyen/register
+    %% - POST /auth/citoyen/verify-activation
+    %% - POST /auth/citoyen/resend-activation
+    %%
+    %% Le flow admin (POST /auth/register) est INCHANGÉ et continue
+    %% d'envoyer l'email "compte créé par l'administrateur" avec mot
+    %% de passe temporaire pour les rôles AGENT/GESTIONNAIRE/ADMIN.
+    %%
+    %% Table : account_activation_codes (migration 028)
+    %%   UNIQUE(email) — un seul code actif par email à la fois
+    %%   TTL : 30 minutes

@@ -1,0 +1,92 @@
+flowchart TB
+    subgraph CitoyenClient["Client Mobile Citoyen"]
+        Landing[CitoyenLanding<br/>/]
+        AuthPages[CitoyenLogin<br/>CitoyenRegister<br/>CitoyenForgotPassword<br/>CitoyenResetPassword]
+        Home[CitoyenHome<br/>/citoyen]
+        Map[CitoyenMap<br/>/citoyen/carte]
+        Report[CitoyenSignaler<br/>+ CitoyenScanner]
+        Reports[CitoyenMesSignalements<br/>+ Detail]
+        Defis[CitoyenDefis]
+        Profil[CitoyenProfil<br/>+ EditProfil]
+        Notif[CitoyenNotifications]
+    end
+
+    subgraph CitoyenIsolation["Isolation Layer (scope citoyen)"]
+        Ctx[CitoyenAuthContext<br/>state React + avatarVersion]
+        ApiC[citoyenApi<br/>axios + retry + refresh dedup]
+        Guard[CitoyenProtectedRoute]
+        Svc[citoyenService<br/>~25 wrappers API]
+        Utils[utils/security<br/>utils/impactEstimation<br/>utils/avatar]
+    end
+
+    subgraph Gateway["API Gateway :3000"]
+        PublicRoutes["publicRoutes<br/>/auth/citoyen/*<br/>/avatars/*"]
+        JWT[JWT Validator]
+        Proxy[Reverse Proxy]
+    end
+
+    subgraph Services["Microservices partagés"]
+        direction LR
+        Users[service-users<br/>:3010]
+        Routes[service-routes<br/>:3012]
+        Gamif[service-gamifications<br/>:3014]
+        Conts[service-containers<br/>:3011]
+    end
+
+    subgraph Data["Data Layer"]
+        PG[(PostgreSQL<br/>+ PostGIS)]
+        Storage[(storage/avatars<br/>Sharp 1000/200/64)]
+    end
+
+    Landing --> AuthPages
+    AuthPages --> Ctx
+    Home --> Guard
+    Map --> Guard
+    Report --> Guard
+    Reports --> Guard
+    Defis --> Guard
+    Profil --> Guard
+    Notif --> Guard
+
+    Guard --> Ctx
+    Home --> Svc
+    Map --> Svc
+    Report --> Svc
+    Reports --> Svc
+    Defis --> Svc
+    Profil --> Svc
+    Notif --> Svc
+
+    Ctx --> ApiC
+    Svc --> ApiC
+    ApiC --> Gateway
+
+    Gateway --> PublicRoutes
+    Gateway --> JWT --> Proxy
+    Proxy --> Users
+    Proxy --> Routes
+    Proxy --> Gamif
+    Proxy --> Conts
+
+    Users --> PG
+    Users --> Storage
+    Routes --> PG
+    Gamif --> PG
+    Conts --> PG
+
+    Home --> Utils
+    Reports --> Utils
+    Profil --> Utils
+
+    style CitoyenIsolation fill:#1f3f25,color:#a5d6a7
+
+    %% Module Citoyen Mobile — isolation
+    %% - Pages : frontend/src/pages/mobile/citoyen/
+    %% - Composants : frontend/src/components/mobile/citoyen/
+    %% - Auth + API isolés : auth/CitoyenAuthContext + auth/citoyenApi
+    %% - Service wrapper : services/citoyenService.js
+    %% - Utils partagés : utils/{security,impactEstimation,avatar}.js
+    %%
+    %% Aucune dépendance sur le AuthContext / api.js upstream :
+    %% les rôles ADMIN / GESTIONNAIRE / AGENT continuent d'utiliser
+    %% leur propre pile auth sans intersection.

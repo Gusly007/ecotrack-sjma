@@ -1,0 +1,93 @@
+sequenceDiagram
+    participant C as Citoyen
+    participant F as Frontend<br/>(CitoyenSignaler)
+    participant Api as citoyenApi
+    participant G as API Gateway
+    participant R as service-routes<br/>(signalement-controller)
+    participant Gc as gamificationClient<br/>(interne)
+    participant Gm as service-gamifications<br/>(actionsController)
+    participant PG as PostgreSQL
+
+    Note over C,F: Création d'un signalement
+
+    C->>F: Choix conteneur (Scan QR / Carte / UID)<br/>+ type + urgence + description + photo
+    F->>F: Compression photo<br/>(800px JPEG 75%)
+    F->>F: normalizeText description (max 500)<br/>+ normalizeText UID (max 64)
+    F->>Api: POST /api/routes/signalements
+    Api->>G: Forward (JWT)
+    G->>R: Inject x-user-id + x-user-role depuis JWT
+    R->>R: BOLA : id_citoyen = req.headers['x-user-id']
+
+    alt UID conteneur fourni (scan/saisie)
+        R->>PG: SELECT conteneur WHERE uid=$1
+        PG-->>R: id_conteneur résolu
+    else id_conteneur direct
+        R->>R: Utilise id_conteneur du payload
+    end
+
+    R->>PG: INSERT signalement<br/>(description, id_type, id_conteneur,<br/>id_citoyen, url_photo, urgence,<br/>statut='OUVERT')
+    PG-->>R: signalement créé (id, date_creation)
+
+    Note over R,Gm: Side-effect gamification (fire-and-await, never-throws)
+
+    R->>Gc: registerAction(idUtilisateur, 'signalement')
+    Gc->>Gm: POST /actions<br/>headers: x-user-id, x-user-role
+    Gm->>Gm: req.user = {id, role} depuis headers
+    Gm->>Gm: requirePermissions(['gamification:self_action', 'gamification:create'])
+    Gm->>Gm: Vérif self-scope (callerId === id_utilisateur)
+
+    Gm->>PG: BEGIN
+    Gm->>PG: UPDATE utilisateur SET points = points + 10
+    Gm->>PG: INSERT historique_points<br/>(delta_points=10, raison='signalement')
+
+    Note over Gm,PG: Badges événementiels (FIRST_REPORT, REPORTER_*, URGENT_HERO,<br/>PHOTO_REPORTER, NIGHT_OWL, CLEAN_CITY)
+
+    Gm->>PG: SELECT COUNT(*) FROM historique_points<br/>WHERE raison='signalement' AND id_utilisateur=$1
+    Gm->>Gm: Match tiers (1, 5, 25, 100, 250...)
+    alt Nouveau badge débloqué
+        Gm->>PG: INSERT user_badge
+        Gm->>PG: INSERT notification (type='BADGE')
+    end
+
+    Note over Gm,PG: Progression des défis actifs
+
+    Gm->>PG: SELECT * FROM gamification_defi<br/>WHERE date_debut <= NOW <= date_fin<br/>AND type_action='signalement'
+    loop pour chaque défi
+        Gm->>PG: UPSERT gamification_participation_defi<br/>(progression += 1)
+        alt Objectif atteint
+            Gm->>PG: UPDATE statut='TERMINE'
+            Gm->>PG: UPDATE points += recompense
+            Gm->>PG: INSERT historique_points (raison='defi_reussi')
+            Gm->>PG: INSERT notification (type='DEFI')
+        end
+    end
+
+    Gm->>PG: COMMIT
+    Gm-->>Gc: 201 {pointsAjoutes, totalPoints, nouveauxBadges, defisTermines}
+    Gc-->>R: gamifResult
+
+    R-->>G: 201 {...signalement, gamification:{...}}
+    G-->>Api: 201
+    Api-->>F: response
+    F->>F: navigate('/citoyen/signaler/success')<br/>avec state {typeCode, urgence}
+
+    Note over C,F: Écran succès — impact estimé ADEME
+
+    F->>F: estimateKgTries(typeCode, urgence)<br/>estimateKgCO2(typeCode, urgence)
+    F->>C: Affichage carte verte "Impact estimé si traité"<br/>≈ X kg triés / ≈ Y kgCO₂e
+
+    %% Architecture du side-effect gamification
+    %% 1. service-routes.signalement-controller.create() :
+    %%    - persiste le signalement (SOURCE OF TRUTH)
+    %%    - appelle gamificationClient.registerAction() en fire-and-await
+    %%    - never-throws : un échec gamification ne bloque pas la création
+    %%
+    %% 2. gamificationClient (fetch interne Docker network) :
+    %%    - forward x-user-id + x-user-role vers service-gamifications
+    %%    - timeout 2.5s
+    %%    - swallow errors + console.warn
+    %%
+    %% 3. service-gamifications.actionsController.enregistrerAction() :
+    %%    - garde self-scope (un CITOYEN ne peut agir que sur lui-même)
+    %%    - orchestre points + badges événementiels + progression défis
+    %%      dans une seule transaction PostgreSQL

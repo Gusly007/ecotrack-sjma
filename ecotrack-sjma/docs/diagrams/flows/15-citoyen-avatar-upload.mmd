@@ -1,0 +1,91 @@
+sequenceDiagram
+    participant C as Citoyen
+    participant F as Frontend<br/>(CitoyenEditProfil)
+    participant Crop as AvatarCropModal<br/>(react-easy-crop)
+    participant Ctx as CitoyenAuthContext
+    participant Api as citoyenApi
+    participant G as API Gateway
+    participant U as service-users<br/>(avatarController)
+    participant Sharp as Sharp pipeline
+    participant FS as storage/avatars
+    participant PG as PostgreSQL
+
+    Note over C,F: Sélection + validation côté client
+
+    C->>F: Clic "Changer la photo"
+    F->>C: Ouverture file picker (JPG/PNG/WebP, 5 Mo max)
+    C->>F: Sélection fichier
+    F->>F: Vérif MIME image/(jpeg|png|webp)<br/>+ taille ≤ 5 Mo
+    F->>F: FileReader → data URL
+    F->>Crop: Ouverture modale de recadrage
+    C->>Crop: Recadrage carré + zoom
+    Crop-->>F: croppedFile (Blob JPEG)
+
+    Note over F,U: Upload multipart
+
+    F->>Api: POST /users/avatar/upload (FormData)
+    Api->>G: Forward (JWT)
+    G->>U: Forward (route protégée /users/avatar)
+    U->>U: multer.diskStorage<br/>écriture temporaire dans storage/temp
+    U->>Sharp: getImageDimensions
+    Sharp-->>U: {width, height}
+
+    alt Image < 100x100
+        U->>FS: fs.unlink fichier temp
+        U-->>G: 400 "Image must be at least 100x100"
+        G-->>Api: 400
+        Api-->>F: throw err
+        F->>C: Affichage erreur
+    else Image valide
+        U->>FS: deleteOldAvatars(userId)<br/>(supprime original/, thumbnails/, mini/)
+        U->>Sharp: processAvatar(userId, file)
+        Sharp->>Sharp: resize 1000x1000 → original/<userId>.jpg
+        Sharp->>Sharp: resize 200x200  → thumbnails/<userId>.jpg
+        Sharp->>Sharp: resize 64x64    → mini/<userId>.jpg
+        Sharp-->>FS: 3 fichiers écrits
+        Sharp-->>U: urls = {original, thumbnail, mini}
+        U->>PG: UPDATE utilisateur SET<br/>avatar_url=$1, avatar_thumbnail=$2,<br/>avatar_mini=$3 WHERE id_utilisateur=$4
+        U-->>G: 201 {avatar_url, avatar_thumbnail, avatar_mini}
+        G-->>Api: 201
+        Api-->>F: response
+    end
+
+    Note over F,Ctx: Synchronisation cross-pages instantanée
+
+    F->>Ctx: bumpAvatarVersion() — immédiat
+    F->>Ctx: refreshUser() — re-fetch profile-with-stats
+    Ctx->>Api: GET /api/users/profile-with-stats
+    Api->>G: Forward
+    G->>U: Forward
+    U->>PG: SELECT userProfileColumns<br/>(inclut avatar_url/thumbnail/mini)
+    PG-->>U: profil enrichi
+    U-->>G: {data: profile}
+    G-->>Api: 200
+    Api-->>Ctx: payload
+    Ctx->>Ctx: maybeBumpAvatarVersion(prev, next)<br/>(détecte changement chemin avatar)
+    Ctx->>Ctx: setUser(merged) + localStorage.set
+    Ctx-->>F: state mis à jour
+
+    Note over F,C: Affichage avec cache-bust
+
+    F->>C: <img src=buildAvatarUrl(path, {bust: avatarVersion})>
+    Note over C: Le ?t=<timestamp> force le navigateur<br/>à refetch (le filename est stable :<br/>/avatars/thumbnails/<userId>.jpg)
+
+    Note over G,C: Servir l'avatar (public, cross-origin)
+
+    C->>G: GET /avatars/thumbnails/<userId>.jpg?t=...
+    G->>U: Forward (publicRoute /avatars/, méthodes GET+HEAD)
+    U->>U: middleware override headers<br/>Cross-Origin-Resource-Policy: cross-origin<br/>Access-Control-Allow-Origin: *
+    U->>FS: express.static(storage/avatars)
+    FS-->>U: bytes
+    U-->>G: 200 image/jpeg
+    G-->>C: image affichée
+
+    %% Pipeline avatar (architecture isolée du flow admin)
+    %% - Filename stable : /avatars/<size>/<userId>.<ext>
+    %%   → URL inchangée entre uploads → besoin du cache-bust côté client
+    %% - avatarVersion (CitoyenAuthContext) : timestamp partagé bumpé
+    %%   à chaque changement de chemin avatar OU appel manuel après upload
+    %% - Tous les <img src> citoyens (Home, Profil, EditProfil) passent
+    %%   avatarVersion via buildAvatarUrl(path, {bust: avatarVersion})
+    %% - CORP=cross-origin sur /avatars pour permettre l'affichage depuis :5173
