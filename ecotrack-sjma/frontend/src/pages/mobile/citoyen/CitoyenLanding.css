@@ -1,0 +1,130 @@
+.citoyen-landing {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f1922 0%, #14282d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  color: #e6edf3;
+}
+
+.citoyen-landing-inner {
+  width: 100%;
+  max-width: 480px;
+}
+
+.citoyen-landing-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.citoyen-landing-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: rgba(76, 175, 80, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #4caf50;
+  margin-bottom: 16px;
+}
+
+.citoyen-landing-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #fff;
+}
+
+.citoyen-landing-header p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(230, 237, 243, 0.7);
+}
+
+.citoyen-landing-cards {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.citoyen-landing-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.citoyen-landing-card:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.citoyen-landing-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.citoyen-landing-card-primary .citoyen-landing-card-icon {
+  background: rgba(76, 175, 80, 0.22);
+  color: #6fce72;
+}
+
+.citoyen-landing-card-secondary .citoyen-landing-card-icon {
+  background: rgba(33, 150, 243, 0.22);
+  color: #6bb6f0;
+}
+
+.citoyen-landing-card h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #fff;
+}
+
+.citoyen-landing-card p {
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  color: rgba(230, 237, 243, 0.7);
+}
+
+.citoyen-landing-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.citoyen-landing-card-primary .citoyen-landing-card-cta {
+  color: #6fce72;
+}
+
+.citoyen-landing-card-secondary .citoyen-landing-card-cta {
+  color: #6bb6f0;
+}
+
+.citoyen-landing-footnote {
+  text-align: center;
+  font-size: 13px;
+  margin: 0;
+  color: rgba(230, 237, 243, 0.65);
+}
+
+.citoyen-landing-footnote a {
+  color: #6fce72;
+  font-weight: 600;
+}

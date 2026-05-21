@@ -1,0 +1,33 @@
+.edit-profil-page { background: #f8f9fa; min-height: 100vh; }
+.edit-profil-body { padding: 16px; }
+
+.edit-avatar-section {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px;
+}
+.edit-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; color: #fff;
+}
+.change-photo-btn { border: none; background: #e8f5e9; color: #4CAF50; padding: 8px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+
+.edit-profil-form { background: #fff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.edit-section-title { font-size: 0.78rem; font-weight: 700; color: #4CAF50; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+.edit-form-group { display: flex; flex-direction: column; gap: 6px; }
+.edit-form-group label { font-size: 0.82rem; font-weight: 600; color: #555; }
+.edit-input { padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 0.9rem; outline: none; transition: border 0.2s; }
+.edit-input:focus { border-color: #4CAF50; }
+
+.edit-success-banner {
+  background: #e8f5e9; color: #2E7D32; border-radius: 10px;
+  padding: 10px 14px; font-size: 0.85rem; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.edit-save-btn {
+  padding: 14px; background: #4CAF50; color: #fff;
+  border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; margin-top: 4px;
+}
+.edit-save-btn:disabled { opacity: 0.6; }

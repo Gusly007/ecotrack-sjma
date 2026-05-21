@@ -1,0 +1,46 @@
+.profil-page { background: #f8f9fa; min-height: 100vh; }
+.profil-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+.profil-hero {
+  background: #fff; border-radius: 16px; padding: 24px 16px;
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.profil-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; color: #fff; margin-bottom: 8px;
+}
+.profil-hero h2 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.profil-hero > p { font-size: 0.82rem; color: #888; margin: 0; }
+
+.profil-stats-row {
+  display: flex; align-items: center; gap: 16px; margin-top: 12px;
+}
+.profil-stat { text-align: center; }
+.profil-stat strong { display: block; font-size: 1.1rem; font-weight: 800; color: #1a1a2e; }
+.profil-stat span { font-size: 0.72rem; color: #888; }
+.profil-stat-divider { width: 1px; height: 30px; background: #eee; }
+
+.profil-menu {
+  background: #fff; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.profil-menu-item {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border: none; background: none; cursor: pointer;
+  border-bottom: 1px solid #f5f5f5; text-align: left;
+  transition: background 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.profil-menu-item:last-child { border-bottom: none; }
+.profil-menu-item:active { background: #f8f9fa; }
+
+.menu-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: #e8f5e9; color: #4CAF50;
+  display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;
+}
+.menu-icon.danger { background: #ffebee; color: #f44336; }
+.menu-label { flex: 1; font-size: 0.88rem; color: #333; }
+.menu-arrow { color: #ccc; font-size: 0.75rem; }
+.profil-menu-item.danger .menu-label { color: #f44336; }

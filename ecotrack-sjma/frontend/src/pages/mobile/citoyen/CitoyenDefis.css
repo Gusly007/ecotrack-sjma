@@ -1,0 +1,36 @@
+.defis-page { background: #f8f9fa; min-height: 100vh; }
+.defis-boutique-btn { border: none; background: #f8f9fa; color: #555; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+
+.defis-tabs { display: flex; background: #fff; border-bottom: 1px solid #eee; }
+.defis-tab { flex: 1; padding: 12px; border: none; background: none; font-size: 0.85rem; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.defis-tab.active { color: #4CAF50; border-bottom-color: #4CAF50; font-weight: 600; }
+
+.defis-body { padding: 16px; }
+.defis-list { display: flex; flex-direction: column; gap: 12px; }
+
+.defi-card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.defi-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.defi-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+.defi-reward { font-size: 0.78rem; font-weight: 600; color: #FF9800; }
+.defi-reward i { margin-right: 3px; }
+.defi-card h4 { font-size: 0.95rem; font-weight: 700; margin: 0 0 4px; }
+.defi-card p { font-size: 0.8rem; color: #888; margin: 0 0 12px; }
+.defi-progress-row { display: flex; align-items: center; gap: 10px; }
+.defi-progress-bar { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+.defi-progress-fill { height: 100%; background: #4CAF50; border-radius: 3px; }
+.defi-progress-label { font-size: 0.75rem; color: #888; white-space: nowrap; }
+
+.badges-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.badge-item {
+  background: #fff; border-radius: 14px; padding: 16px;
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.badge-item.locked { opacity: 0.5; }
+.badge-icon-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+}
+.badge-name { font-size: 0.82rem; font-weight: 600; color: #333; }
+.badge-pts { font-size: 0.72rem; color: #888; }
+.badge-locked { position: absolute; top: 10px; right: 10px; color: #bbb; font-size: 0.8rem; }

@@ -1,0 +1,43 @@
+/* ==================== QUICK ACTIONS ==================== */
+
+.mobile-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mobile-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: #f8f9fa;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-action-card:active {
+  transform: scale(0.95);
+}
+
+.mobile-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.mobile-action-card span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #555;
+}

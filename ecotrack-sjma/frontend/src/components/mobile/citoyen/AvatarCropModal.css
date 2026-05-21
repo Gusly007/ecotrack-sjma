@@ -1,0 +1,129 @@
+.avatar-crop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+  animation: avc-fade-in 0.18s ease-out;
+}
+
+.avatar-crop-modal {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: avc-slide-up 0.22s ease-out;
+}
+
+.avatar-crop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a1a2e;
+}
+.avatar-crop-header i {
+  color: #4CAF50;
+  margin-right: 6px;
+}
+.avatar-crop-close {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+}
+.avatar-crop-close:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* react-easy-crop a besoin d'un parent positionné avec une hauteur fixe.
+   320×320 sur mobile : assez confortable pour cadrer sans dominer l'écran. */
+.avatar-crop-stage {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.avatar-crop-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+}
+.avatar-crop-zoom-row i {
+  color: #888;
+  font-size: 0.85rem;
+}
+.avatar-crop-zoom-row input[type="range"] {
+  flex: 1;
+  accent-color: #4CAF50;
+  cursor: pointer;
+}
+
+.avatar-crop-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #888;
+  text-align: center;
+}
+
+.avatar-crop-error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+.avatar-crop-error i { margin-right: 6px; }
+
+.avatar-crop-actions {
+  display: flex;
+  gap: 10px;
+}
+.avatar-crop-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.15s ease;
+}
+.avatar-crop-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.avatar-crop-btn-secondary {
+  background: #f5f5f5;
+  color: #555;
+}
+.avatar-crop-btn-primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+@keyframes avc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes avc-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

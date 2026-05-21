@@ -1,0 +1,27 @@
+/* CitoyenRegister — réutilise les classes auth-*, form-input, btn-primary
+   de index.css. Ce fichier ne contient que les ajustements propres à
+   l'écran d'inscription. */
+
+.citoyen-register-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 6px;
+}
+
+.citoyen-register-legal {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  margin: 18px 0 0;
+  line-height: 1.5;
+}
+
+.citoyen-register-legal a {
+  color: var(--primary-light);
+  text-decoration: none;
+}
+
+.citoyen-register-legal a:hover {
+  text-decoration: underline;
+}

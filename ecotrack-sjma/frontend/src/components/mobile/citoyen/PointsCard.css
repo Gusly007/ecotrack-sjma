@@ -1,0 +1,50 @@
+/* ==================== POINTS CARD ==================== */
+
+.mobile-points-card {
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  border-radius: 16px;
+  padding: 20px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.points-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.points-label {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.points-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.points-niveau {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.points-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.points-next {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  white-space: nowrap;
+}

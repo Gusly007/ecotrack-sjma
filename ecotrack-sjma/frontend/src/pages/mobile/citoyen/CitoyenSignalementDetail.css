@@ -1,0 +1,114 @@
+.sig-detail-page { background: #f8f9fa; min-height: 100vh; }
+.sig-detail-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.sig-detail-section { background: #fff; border-radius: 14px; padding: 16px; }
+.sig-detail-section h4 { font-size: 0.85rem; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; }
+
+.sig-full-timeline { display: flex; flex-direction: column; }
+.sig-tl-item { display: flex; gap: 12px; }
+.sig-tl-left { display: flex; flex-direction: column; align-items: center; }
+.sig-tl-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #e0e0e0; border: 2px solid #e0e0e0; flex-shrink: 0;
+}
+.sig-tl-item.done .sig-tl-dot { background: #4CAF50; border-color: #4CAF50; }
+.sig-tl-line { width: 2px; flex: 1; background: #e0e0e0; min-height: 20px; margin: 4px auto; }
+.sig-tl-content { padding-bottom: 16px; }
+.sig-tl-content strong { display: block; font-size: 0.88rem; }
+.sig-tl-content span { font-size: 0.75rem; color: #888; }
+
+.sig-info-grid { display: flex; flex-direction: column; }
+.sig-info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem;
+}
+.sig-info-row:last-child { border-bottom: none; }
+.sig-info-row span { color: #888; }
+.sig-info-row strong { color: #333; }
+
+.sig-description { font-size: 0.85rem; color: #555; line-height: 1.6; }
+
+.sig-photo-placeholder {
+  height: 120px; background: #f8f9fa; border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; color: #aaa;
+}
+.sig-photo-placeholder i { font-size: 2rem; }
+.sig-photo-placeholder span { font-size: 0.8rem; }
+
+.sig-agent-note-card {
+  background: #e3f2fd; border-radius: 10px; padding: 12px;
+}
+.agent-note-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px; color: #2196F3;
+}
+.agent-note-header strong { font-size: 0.85rem; color: #1a1a2e; }
+.sig-agent-note-card p { font-size: 0.82rem; color: #555; margin: 0; }
+
+.mes-sig-badge { font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 10px; }
+.badge-new { background: #e3f2fd; color: #2196F3; }
+.badge-progress { background: #fff8e1; color: #f57f17; }
+
+/* --- Section impact ADEME --- */
+.sig-impact-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.sig-impact-band i { font-size: 1rem; }
+.sig-impact-band-blue   { background: #e3f2fd; color: #1565C0; }
+.sig-impact-band-yellow { background: #fff8e1; color: #f57f17; }
+.sig-impact-band-green  { background: #e8f5e9; color: #2E7D32; }
+
+.sig-impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.sig-impact-grid:has(.sig-impact-item:only-child) {
+  grid-template-columns: 1fr;
+}
+.sig-impact-item {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sig-impact-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.sig-impact-label {
+  font-size: 0.7rem;
+  color: #777;
+}
+.sig-impact-note {
+  font-size: 0.7rem;
+  color: #999;
+  line-height: 1.35;
+  margin: 8px 0 0 0;
+}
+.sig-impact-note-small {
+  font-size: 0.78rem;
+  color: #666;
+  font-style: italic;
+  margin: 0 0 8px 0;
+}
+.badge-resolved { background: #e8f5e9; color: #4CAF50; }
+.badge-rejected { background: #ffebee; color: #f44336; }
+
+.sig-relancer-btn {
+  width: 100%; padding: 14px; background: #fff; color: #2196F3;
+  border: 2px solid #2196F3; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}

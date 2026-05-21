@@ -1,0 +1,92 @@
+.signaler-success {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 24px; text-align: center; min-height: 100vh; background: #fff;
+}
+.success-icon-wrap { margin-bottom: 24px; }
+.success-circle {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: #e8f5e9; display: flex; align-items: center; justify-content: center;
+  animation: pulse 2s infinite;
+}
+.success-circle i { font-size: 2.5rem; color: #4CAF50; }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(76,175,80,.4); }
+  50% { box-shadow: 0 0 0 12px rgba(76,175,80,0); }
+}
+.signaler-success h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.signaler-success > p { font-size: 0.9rem; color: #666; margin-bottom: 20px; }
+.success-points-badge {
+  background: #e8f5e9; color: #2E7D32; padding: 10px 20px;
+  border-radius: 20px; font-weight: 600; font-size: 0.9rem; margin-bottom: 20px;
+}
+.success-points-badge i { color: #FF9800; }
+.success-ticket {
+  background: #f8f9fa; border-radius: 12px; padding: 16px 24px;
+  margin-bottom: 12px; width: 100%; max-width: 280px;
+}
+.success-ticket span { display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+.success-ticket strong { font-size: 1.05rem; color: #333; }
+.success-delay { font-size: 0.82rem; color: #888; margin-bottom: 24px; }
+
+/* --- Carte impact ADEME prévisionnel --- */
+.success-impact-card {
+  width: 100%;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.08);
+}
+.success-impact-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #2E7D32;
+}
+.success-impact-header i { font-size: 1.1rem; }
+.success-impact-header strong { font-size: 0.95rem; }
+.success-impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.success-impact-grid:has(.success-impact-item:only-child) {
+  grid-template-columns: 1fr;
+}
+.success-impact-item {
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.success-impact-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1b5e20;
+}
+.success-impact-label {
+  font-size: 0.72rem;
+  color: #4a4a4a;
+}
+.success-impact-note {
+  font-size: 0.7rem;
+  color: #2E7D32;
+  margin: 0;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+
+.success-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.sig-btn-primary {
+  padding: 14px; background: #4CAF50; color: #fff;
+  border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+}
+.sig-btn-outline {
+  padding: 14px; background: transparent; color: #555;
+  border: 2px solid #ddd; border-radius: 12px; font-size: 0.95rem; cursor: pointer;
+}

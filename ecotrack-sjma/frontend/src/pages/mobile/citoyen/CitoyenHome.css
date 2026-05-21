@@ -1,0 +1,134 @@
+/* ==================== ACCUEIL CITOYEN ==================== */
+
+.citoyen-home {
+  padding: 16px;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.citoyen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.citoyen-greeting h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.citoyen-greeting p {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 2px 0 0;
+}
+
+.citoyen-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f8f9fa;
+  color: #555;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header-icon-btn:active {
+  background: #eee;
+}
+
+/* Bouton profil — plus grand que les autres icônes du header pour mettre
+   en valeur l'avatar du citoyen. Quand un avatar est chargé, on supprime
+   le padding interne et le fond pour que l'image occupe tout le cercle.
+   Un liseré vert et une ombre douce donnent un effet "badge" reconnaissable. */
+.header-profile-btn {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #4CAF50;
+  background: #e8f5e9;
+  color: #2E7D32;
+  font-size: 1.6rem;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.18);
+}
+
+.header-profile-btn:active {
+  background: #c8e6c9;
+}
+
+.header-profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f44336;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Sections */
+.citoyen-section {
+  margin-bottom: 20px;
+}
+
+.section-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px;
+}
+
+/* Note explicative sous les stats d'impact environnemental.
+ * Donne la règle de calcul en clair pour éviter l'effet boîte noire. */
+.citoyen-impact-note {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 10px 4px 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.citoyen-empty {
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 12px 8px;
+  margin: 0;
+}

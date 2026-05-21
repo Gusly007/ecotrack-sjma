@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
@@ -31,10 +31,45 @@ import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDash
 import TourneePage from './pages/desktop/gestionnaire/tournee';
 import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
 
+// Mobile Citoyen App — module feature isolé sous pages/mobile/citoyen/
+import MobileLayout from './pages/mobile/citoyen/MobileLayout';
+import CitoyenHome from './pages/mobile/citoyen/CitoyenHome';
+import CitoyenMap from './pages/mobile/citoyen/CitoyenMap';
+import CitoyenSignaler from './pages/mobile/citoyen/CitoyenSignaler';
+import CitoyenSignalerSuccess from './pages/mobile/citoyen/CitoyenSignalerSuccess';
+import CitoyenScanner from './pages/mobile/citoyen/CitoyenScanner';
+import CitoyenMesSignalements from './pages/mobile/citoyen/CitoyenMesSignalements';
+import CitoyenSignalementDetail from './pages/mobile/citoyen/CitoyenSignalementDetail';
+import CitoyenDefis from './pages/mobile/citoyen/CitoyenDefis';
+import CitoyenProfil from './pages/mobile/citoyen/CitoyenProfil';
+import CitoyenEditProfil from './pages/mobile/citoyen/CitoyenEditProfil';
+import CitoyenNotifications from './pages/mobile/citoyen/CitoyenNotifications';
+import CitoyenTri from './pages/mobile/citoyen/CitoyenTri';
+import CitoyenPointsHistorique from './pages/mobile/citoyen/CitoyenPointsHistorique';
+import CitoyenLogin from './pages/mobile/citoyen/CitoyenLogin';
+import CitoyenRegister from './pages/mobile/citoyen/CitoyenRegister';
+import CitoyenLanding from './pages/mobile/citoyen/CitoyenLanding';
+import CitoyenForgotPassword from './pages/mobile/citoyen/CitoyenForgotPassword';
+import CitoyenResetPassword from './pages/mobile/citoyen/CitoyenResetPassword';
+import { CitoyenAuthProvider } from './pages/mobile/citoyen/auth/CitoyenAuthContext';
+import { CitoyenProtectedRoute } from './components/mobile/citoyen/CitoyenProtectedRoute';
+
+// Routage de la racine /. Authentifié : redirection role-based comme avant.
+// Visiteur anonyme : page d'atterrissage citoyen (deux cartes — citoyen /
+// personnel) au lieu de tomber sur /login partagé, qui n'expose pas
+// l'inscription citoyen.
 function RootRedirect() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <CitoyenLanding />;
+  }
+
   const role = user?.role || user?.role_par_defaut;
 
+  if (role === 'CITOYEN') {
+    return <Navigate to="/citoyen" replace />;
+  }
   if (role === 'GESTIONNAIRE') {
     return <Navigate to="/gestionnaire" replace />;
   }
@@ -226,11 +261,34 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/" element={
-            <ProtectedRoute>
-              <RootRedirect />
-            </ProtectedRoute>
-          } />
+          {/* Routes Citoyen (Mobile) — toutes encapsulées dans
+              CitoyenAuthProvider. Contexte d'auth isolé : upstream
+              AuthContext reste byte-identique. */}
+          <Route element={<CitoyenAuthProvider><Outlet /></CitoyenAuthProvider>}>
+            <Route path="/citoyen/login" element={<CitoyenLogin />} />
+            <Route path="/citoyen/inscription" element={<CitoyenRegister />} />
+            <Route path="/citoyen/mot-de-passe-oublie" element={<CitoyenForgotPassword />} />
+            <Route path="/citoyen/reset-password" element={<CitoyenResetPassword />} />
+            <Route path="/citoyen" element={<CitoyenProtectedRoute><MobileLayout /></CitoyenProtectedRoute>}>
+              <Route index element={<CitoyenHome />} />
+              <Route path="carte" element={<CitoyenMap />} />
+              <Route path="signaler" element={<CitoyenSignaler />} />
+              <Route path="signaler/success" element={<CitoyenSignalerSuccess />} />
+              <Route path="scanner" element={<CitoyenScanner />} />
+              <Route path="signalements" element={<CitoyenMesSignalements />} />
+              <Route path="signalements/:id" element={<CitoyenSignalementDetail />} />
+              <Route path="defis" element={<CitoyenDefis />} />
+              <Route path="profil" element={<CitoyenProfil />} />
+              <Route path="profil/modifier" element={<CitoyenEditProfil />} />
+              <Route path="notifications" element={<CitoyenNotifications />} />
+              <Route path="tri" element={<CitoyenTri />} />
+              <Route path="boutique" element={<Navigate to="/citoyen/defis" replace />} />
+              <Route path="points-historique" element={<CitoyenPointsHistorique />} />
+              <Route path="*" element={<CitoyenHome />} />
+            </Route>
+          </Route>
+
+          <Route path="/" element={<RootRedirect />} />
 
           <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
 
