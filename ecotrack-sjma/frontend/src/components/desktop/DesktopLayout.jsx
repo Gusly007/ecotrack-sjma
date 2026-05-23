@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../hooks';
 import api from '../../services/api';
 import { ADMIN_MENU, GESTIONNAIRE_MENU } from './menuData';
 import './DesktopLayout.css';
@@ -15,6 +16,7 @@ export default function DesktopLayout({ children }) {
   const location = useLocation();
   const { user, logout } = useAuth();
 
+  const { unreadCount: wsUnreadCount } = useNotifications();
   const role = user?.role || user?.role_par_defaut;
   const isAdmin = role === 'ADMIN';
   const menuItems = isAdmin ? ADMIN_MENU : GESTIONNAIRE_MENU;
@@ -232,8 +234,8 @@ export default function DesktopLayout({ children }) {
                 aria-label={notificationConfig.itemLabel}
               >
                 <i className="fas fa-bell"></i>
-                {filteredCount > 0 && (
-                  <span className="badge-notif">{filteredCount}</span>
+                {wsUnreadCount > 0 && (
+                  <span className="badge-notif">{wsUnreadCount}</span>
                 )}
               </button>
 

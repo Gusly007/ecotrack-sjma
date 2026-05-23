@@ -369,6 +369,8 @@ services:
       REDIS_PORT: 6379
       NODE_ENV: ${NODE_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      NOTIFICATION_SERVICE_URL: http://ecotrack-service-notification-gestionnaire-admin:3016
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
     ports:
       - "3012:3012"
     depends_on:
@@ -532,8 +534,9 @@ services:
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       KAFKAJS_NO_PARTITIONER_WARNING: 1
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
-      - "3017:3016"
+      - "3016:3016"
     depends_on:
       postgres:
         condition: service_healthy

@@ -77,7 +77,7 @@ class ContainerServices {
       () => this.repository.getContainerById(id),
       CONTAINER_TTL
     );
-    
+
     return result.data;
   }
 
@@ -85,15 +85,15 @@ class ContainerServices {
    * Récupère un conteneur par UID (avec cache)
    */
   async getContainerByUid(uid) {
-    Validators.validateContainerUid(uid); // Validation de l'UID du conteneur
-    
+    Validators.validateContainerUid(uid);
+
     const cacheKey = `container:uid:${uid}`;
     const result = await cacheService.getOrSet(
       cacheKey,
       () => this.repository.getContainerByUid(uid),
       CONTAINER_TTL
     );
-    
+
     return result.data;
   }
 

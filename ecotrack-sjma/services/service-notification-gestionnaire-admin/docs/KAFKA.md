@@ -159,7 +159,15 @@ corps : "Zone : Centre-Ville\nConteneur renversé, déchets éparpillés."
    + Invalidation cache Redis pour userId 2 et 1
         │
         ▼
-8. Gestionnaire (id=2) et Admin (id=1) ont leur notification ✅
+8. (Optionnel) Émission WebSocket via /internal/emit-ws
+   → io.to('user:2').emit('notification:new', ...)
+   → io.to('user:1').emit('notification:new', ...)
+        │
+        ▼
+9. Gestionnaire (id=2) et Admin (id=1) :
+   - Badge cloche +1 en temps réel si navigateur connecté
+   - Son de notification joué
+   - Sinon : visible au prochain polling HTTP (15s) 
 ```
 
 ---
@@ -190,7 +198,8 @@ corps : "Zone : Centre-Ville\nConteneur renversé, déchets éparpillés."
    ])
         │
         ▼
-6. Gestionnaire et Admin notifiés ✅
+6. Gestionnaire et Admin notifiés 
+   (badge +1 temps réel si navigateur connecté via WS, sinon polling 15s)
 ```
 
 ---

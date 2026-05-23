@@ -90,6 +90,74 @@ export async function fetchAllTournees({ statut, page = 1, limit = 12, signal } 
   return extractPaginated(response.data || {});
 }
 
+// --- Mobile agent methods ---
+export async function fetchMyTournee() {
+  const response = await api.get('/api/routes/my-tournee');
+  return unwrap(response.data);
+}
+
+export async function fetchEtapes(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/etapes`);
+  return unwrap(response.data);
+}
+
+export async function fetchEtapeById(etapeId) {
+  const response = await api.get(`/api/routes/etapes/${etapeId}`);
+  return unwrap(response.data);
+}
+
+export async function fetchProgress(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/progress`);
+  return unwrap(response.data);
+}
+
+export async function changeStatut(tourneeId, statut) {
+  const response = await api.patch(`/api/routes/tournees/${tourneeId}/statut`, { statut });
+  return unwrap(response.data);
+}
+
+export async function recordCollecte(tourneeId, data) {
+  const response = await api.post(`/api/routes/tournees/${tourneeId}/collecte`, data);
+  return unwrap(response.data);
+}
+
+export async function reportAnomalie(tourneeId, data) {
+  const payload = {
+    ...data,
+    type_anomalie: data.type_anomalie || data.type,
+  };
+  delete payload.type;
+  const response = await api.post(`/api/routes/tournees/${tourneeId}/anomalie`, payload);
+  return unwrap(response.data);
+}
+
+export async function fetchAnomalies(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/anomalies`);
+  return unwrap(response.data);
+}
+
+export async function fetchMapData(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/map`);
+  return unwrap(response.data);
+}
+
+export async function fetchAgentHistory(agentId, params = {}) {
+  const response = await api.get('/api/routes/tournees', {
+    params: { id_agent: agentId, ...params },
+  });
+  return extractPaginated(response.data || {});
+}
+
+export async function fetchKpis() {
+  const response = await api.get('/api/routes/stats/kpis');
+  return unwrap(response.data);
+}
+
+export async function fetchAgentStats(period = 'semaine') {
+  const response = await api.get('/api/routes/stats/agent', { params: { period } });
+  return unwrap(response.data) || {};
+}
+
 export async function fetchTourneesPageData({
   statut,
   allPage = 1,
@@ -166,19 +234,19 @@ export async function fetchTourneeCreationOptions() {
   }
 
   const zones = zonesResult.status === "fulfilled"
-    ? extractList(zonesResult.value.data)
+    ? extractList(zonesResult.value?.data)
     : [];
 
   const agents = agentsResult.status === "fulfilled"
-    ? extractList(agentsResult.value.data)
+    ? extractList(agentsResult.value?.data)
     : [];
 
   const vehicles = vehiclesResult.status === "fulfilled"
-    ? extractList(vehiclesResult.value.data)
+    ? extractList(vehiclesResult.value?.data)
     : [];
 
   const types = typesResult.status === "fulfilled"
-    ? extractList(typesResult.value.data)
+    ? extractList(typesResult.value?.data)
     : [];
 
   return { zones, agents, vehicles, types };

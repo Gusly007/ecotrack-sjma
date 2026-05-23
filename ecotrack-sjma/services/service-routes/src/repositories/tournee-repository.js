@@ -283,6 +283,7 @@ class TourneeRepository {
         ${EST_EN_RETARD_SQL} AS est_en_retard,
         z.code AS zone_code, z.nom AS zone_nom,
         v.numero_immatriculation, v.modele AS vehicule_modele, v.capacite_kg,
+        CONCAT(v.numero_immatriculation, ' — ', v.modele) AS vehicule,
         COUNT(e.id_etape) AS total_etapes,
         COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees
        FROM tournee t
@@ -294,7 +295,10 @@ class TourneeRepository {
          AND t.statut IN ('PLANIFIEE', 'EN_COURS')
        GROUP BY t.id_tournee, z.code, z.nom,
                 v.numero_immatriculation, v.modele, v.capacite_kg
-       ORDER BY t.statut DESC
+       ORDER BY
+         CASE t.statut WHEN 'EN_COURS' THEN 0 ELSE 1 END ASC,
+         COUNT(e.id_etape) DESC,
+         t.id_tournee DESC
        LIMIT 1`,
       [agentId]
     );
@@ -404,6 +408,33 @@ class TourneeRepository {
   /**
    * Récupère les étapes d'une tournée avec détails conteneur
    */
+  async findEtapeById(etapeId) {
+    const result = await this.db.query(
+      `SELECT
+        e.id_etape, e.sequence, e.heure_estimee, e.collectee,
+        e.id_conteneur, e.id_tournee,
+        c.uid AS conteneur_uid, c.capacite_l, c.statut AS conteneur_statut,
+        ST_X(c.position) AS longitude, ST_Y(c.position) AS latitude,
+        z.nom AS zone_nom, tc.nom AS type_nom,
+        COALESCE(m.niveau_remplissage_pct, NULL) AS fill_level
+       FROM etape_tournee e
+       JOIN conteneur c ON c.id_conteneur = e.id_conteneur
+       LEFT JOIN zone z ON z.id_zone = c.id_zone
+       LEFT JOIN type_conteneur tc ON tc.id_type = c.id_type
+       LEFT JOIN LATERAL (
+         SELECT m2.niveau_remplissage_pct
+         FROM mesure m2
+         JOIN capteur cap ON cap.id_capteur = m2.id_capteur
+         WHERE cap.id_conteneur = c.id_conteneur
+         ORDER BY m2.date_heure_mesure DESC
+         LIMIT 1
+       ) m ON TRUE
+       WHERE e.id_etape = $1`,
+      [etapeId]
+    );
+    return result.rows[0] || null;
+  }
+
   async findEtapes(tourneeId) {
     const result = await this.db.query(
       `SELECT

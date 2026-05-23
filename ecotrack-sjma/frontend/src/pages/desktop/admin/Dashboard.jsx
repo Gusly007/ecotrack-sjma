@@ -297,13 +297,14 @@ export default function AdminDashboard() {
   const activeServices = healthData?.services?.filter(s =>
     s.status === 'up' || s.status === 'ok' || s.status === 'OK'
   ).length || 0;
-  const totalServices = healthData?.services?.length || 13;
+  const totalServices = healthData?.services?.length || 14;
 
   const microservices = [
     { name: 'api-gateway', displayName: 'API Gateway' },
     { name: 'service-users', displayName: 'Service Users' },
     { name: 'service-containers', displayName: 'Service Containers' },
     { name: 'service-routes', displayName: 'Service Routes' },
+    { name: 'service-notification-gestionnaire-admin', displayName: 'Service Notification' },
     { name: 'service-iot', displayName: 'Service IoT' },
     { name: 'service-gamifications', displayName: 'Service Gamifications' },
     { name: 'service-analytics', displayName: 'Service Analytics' }
@@ -436,8 +437,8 @@ export default function AdminDashboard() {
             {recentAlerts.length === 0 ? (
               <div className="no-alerts"><i className="fas fa-check-circle" style={{ color: '#4CAF50', marginRight: '8px' }}></i>Aucune alerte active</div>
             ) : (
-              recentAlerts.map(alert => (
-                <div key={alert.id} className={`alert-item ${alert.type}`}>
+              recentAlerts.map((alert, i) => (
+                <div key={`${alert.id}-${i}`} className={`alert-item ${alert.type}`}>
                   <i className={`fas ${alert.icon}`} style={{ color: alert.iconColor }}></i>
                   <div className="alert-content">
                     <span>{alert.message}</span>

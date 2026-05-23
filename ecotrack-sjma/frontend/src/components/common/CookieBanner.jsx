@@ -44,7 +44,6 @@ export default function CookieBanner() {
         cookies_accepted: consentData
       });
 
-      setCookies(consentData);
       setShowBanner(false);
     } catch (error) {
       console.error('Failed to save cookie consent:', error);

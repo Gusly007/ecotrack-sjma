@@ -60,6 +60,7 @@ export default function GestionnaireDashboard() {
 		const collectes30j = stats.collectes_30j || {};
 		const totalTournees = Number(tournees.total || 0);
 		const tourneesEnCours = Number(tournees.en_cours || 0);
+		const agentsTerrain = Number(tournees.agents_terrain || 0);
 		const conteneursCollectes = Number(collectes30j.conteneurs_collectes || 0);
 		const totalCollectes = Number(collectes30j.total_collectes || 0);
 		const alertesCount = dashboardData.notifications.length;
@@ -76,8 +77,8 @@ export default function GestionnaireDashboard() {
 				icon: "fa-users",
 				iconColor: "blue",
 				label: "Agents terrain",
-				value: `${tourneesEnCours}`,
-				change: `${totalTournees} tournees planifiees`,
+				value: `${agentsTerrain}`,
+				change: `${tourneesEnCours} tournees en cours`,
 			},
 			{
 				icon: "fa-trash-alt",

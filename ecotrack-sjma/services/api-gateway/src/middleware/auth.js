@@ -32,6 +32,8 @@ const publicRoutes = [
   { path: '/api/consent', methods: ['POST'] }, // Consentement RGPD
   { path: '/api/cookies/consent', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }, // Consentement cookies RGPD
   { path: '/avatars', methods: ['GET'] }, // Avatars publiques
+  // WebSocket notifications — auth gérée par le service lui-même (Socket.IO auth.token)
+  { path: '/ws', methods: ['GET'] },
 ];
 
 /**

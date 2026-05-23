@@ -336,6 +336,25 @@ app.use(requestLogger);
 app.use(detailedRequestLogger);
 
 // =========================================================================
+// PROXY WEBSOCKET NOTIFICATIONS (avant JWT — auth gérée par le service)
+// =========================================================================
+// Express strip /ws → pathRewrite le restaure pour le service cible.
+{
+  const notifWsTarget = services.notifications?.baseUrl || 'http://localhost:3016';
+  const wsNotifProxy = createProxyMiddleware({
+    target: notifWsTarget,
+    changeOrigin: true,
+    ws: true,
+    // HTTP requests: Express strips /ws → _path = /notifications/... → add /ws back
+    // WS upgrades:  Express not involved  → _path = /ws/notifications/... → pass as-is
+    pathRewrite: (_path) => _path.startsWith('/ws') ? _path : `/ws${_path}`,
+  });
+  app.use('/ws', wsNotifProxy);
+  // Stocké sur app pour que server.on('upgrade') y accède après app.listen
+  app.locals._wsNotifProxy = wsNotifProxy;
+}
+
+// =========================================================================
 // AUTHENTIFICATION
 // =========================================================================
 // Validation JWT sur toutes les routes (sauf publiques)
@@ -795,6 +814,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
         { name: 'service-users', url: 'http://ecotrack-service-users:3010/health' },
         { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/health' },
         { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/health' },
+        { name: 'service-notification-gestionnaire-admin', url: 'http://ecotrack-service-notification-gestionnaire-admin:3016/health' },
         { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/health' },
         { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/health' },
         { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/health' }
@@ -856,10 +876,11 @@ app.post('/api/consent', express.json(), async (req, res) => {
     { name: 'api-gateway', url: 'http://ecotrack-api-gateway:3000/metrics' },
     { name: 'service-users', url: 'http://ecotrack-service-users:3010/metrics' },
     { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/metrics' },
+    { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/metrics' },
+    { name: 'service-notification-gestionnaire-admin', url: 'http://ecotrack-service-notification-gestionnaire-admin:3016/metrics' },
     { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/metrics' },
     { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/metrics' },
-    { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/metrics' },
-    { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/metrics' }
+    { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/metrics' }
   ];
 
     try {
@@ -1115,7 +1136,9 @@ cacheService.connect().then(() => {
 
   if (process.env.DISABLE_AUTO_START !== 'true') {
     const server = app.listen(gatewayPort, () => {
+      const notifBase = services.notifications?.baseUrl || 'http://localhost:3016';
       logger.info({ port: gatewayPort }, 'API Gateway ready');
+      logger.info({ target: notifBase }, 'WebSocket /ws → notification service');
       console.table(
         Object.entries(services).map(([key, svc]) => ({
           service: key,
@@ -1124,6 +1147,10 @@ cacheService.connect().then(() => {
         }))
       );
     });
+
+    // Upgrade HTTP → WS pour Socket.IO (proxy enregistré via app.locals)
+    const wsProxy = app.locals._wsNotifProxy;
+    if (wsProxy?.upgrade) server.on('upgrade', wsProxy.upgrade);
 
     process.on('SIGINT', () => {
       logger.info('Shutting down gateway');

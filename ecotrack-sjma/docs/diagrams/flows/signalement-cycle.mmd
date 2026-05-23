@@ -1,0 +1,7 @@
+flowchart LR
+    C[Citoyen signale] --> API[API Gateway]
+    API --> R[service-routes]
+    R --> G[Gestionnaire assigne]
+    G --> A[Agent traite]
+    A --> T[Traite ou Rejete]
+    T --> N[Notification citoyen]

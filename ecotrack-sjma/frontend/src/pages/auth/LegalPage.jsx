@@ -1,14 +1,15 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Footer from '../../components/layout/Footer';
 
 const LegalPage = () => {
+  const navigate = useNavigate();
   return (
     <div className="auth-container">
       <div className="auth-wrapper" style={{ maxWidth: '860px', width: '100%' }}>
         <div className="auth-box">
-          <Link to="/login" className="back-link">
-            <i className="fas fa-arrow-left"></i> Retour à la connexion
-          </Link>
+          <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <i className="fas fa-arrow-left"></i> Retour
+          </button>
 
           <div className="auth-header">
             <div className="auth-logo">

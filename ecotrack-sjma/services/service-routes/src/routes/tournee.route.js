@@ -92,6 +92,25 @@ const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
+ * /routes/etapes/{etapeId}:
+ *   get:
+ *     summary: Détail d'une étape par son ID
+ *     tags: [Agent]
+ *     parameters:
+ *       - in: path
+ *         name: etapeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Étape avec infos conteneur, coordonnées et remplissage
+ *       404:
+ *         description: Étape introuvable
+ */
+
+/**
+ * @swagger
  * /routes/optimize:
  *   post:
  *     summary: Génère une tournée optimisée
@@ -300,6 +319,28 @@ const { requirePermission } = require('../middleware/rbac');
  *         description: Données GeoJSON avec les points des conteneurs
  */
 
+/**
+ * @swagger
+ * /routes/types-conteneurs:
+ *   get:
+ *     summary: Liste les types de conteneurs disponibles
+ *     tags: [Tournées]
+ *     responses:
+ *       200:
+ *         description: Liste des types (id, nom, description)
+ */
+
+/**
+ * @swagger
+ * /routes/tournees/active/map:
+ *   get:
+ *     summary: Données cartographiques de toutes les tournées actives
+ *     tags: [Tournées]
+ *     responses:
+ *       200:
+ *         description: Points des conteneurs des tournées EN_COURS pour la carte
+ */
+
 router.get('/types-conteneurs', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getTypeConteneur(req, res, next));
 router.get('/tournees/active/map', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActiveMapData(req, res, next));
 router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getAll(req, res, next));
@@ -307,12 +348,12 @@ router.get('/tournees/active', requirePermission('tournee:read'), (req, res, nex
 router.get('/my-tournee', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getMyTournee(req, res, next));
 router.post('/optimize/preview', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.previewOptimization(req, res, next));
 router.post('/optimize', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.optimize(req, res, next));
-router.post('/optimize/preview', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.previewOptimization(req, res, next));
 router.post('/tournees', requirePermission('tournee:create'), (req, res, next) => req.controllers.tournee.create(req, res, next));
 router.get('/tournees/:id', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getById(req, res, next));
 router.patch('/tournees/:id', requirePermission('tournee:update'), (req, res, next) => req.controllers.tournee.update(req, res, next));
 router.patch('/tournees/:id/statut', requirePermission('tournee:update'), (req, res, next) => req.controllers.tournee.updateStatut(req, res, next));
 router.delete('/tournees/:id', requirePermission('tournee:delete'), (req, res, next) => req.controllers.tournee.delete(req, res, next));
+router.get('/etapes/:etapeId', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getEtapeById(req, res, next));
 router.get('/tournees/:id/etapes', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getEtapes(req, res, next));
 router.get('/tournees/:id/progress', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getProgress(req, res, next));
 router.get('/tournees/:id/pdf', requirePermission('tournee:read'), (req, res, next) => req.controllers.export.generatePDF(req, res, next));

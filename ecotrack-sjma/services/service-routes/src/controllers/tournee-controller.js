@@ -125,6 +125,16 @@ class TourneeController {
     }
   }
 
+  async getEtapeById(req, res, next) {
+    try {
+      const { etapeId } = req.params;
+      const etape = await this.service.getEtapeById(etapeId);
+      return res.status(200).json(ApiResponse.success(etape));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getProgress(req, res, next) {
     try {
       const { id } = req.params;

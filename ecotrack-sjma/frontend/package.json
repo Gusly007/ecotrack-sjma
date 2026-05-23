@@ -17,12 +17,18 @@
   },
   "dependencies": {
     "axios": "^1.13.5",
+    "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.0"
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.13.0",
+    "socket.io-client": "^4.8.3",
+    "vite-plugin-mkcert": "^2.0.0",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

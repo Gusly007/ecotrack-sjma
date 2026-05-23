@@ -75,7 +75,8 @@ const anomalieSchema = Joi.object({
   }),
   description: Joi.string().max(500).required().messages({
     'any.required': 'La description est requise'
-  })
+  }),
+  gravite: Joi.string().valid('Basse', 'Moyenne', 'Haute', 'Critique').default('Moyenne')
 });
 
 function validateSchema(schema, data) {

@@ -57,5 +57,18 @@ export const containerService = {
   getWithFillLevel: async () => {
     const response = await api.get('/api/containers/fill-levels');
     return response.data;
-  }
+  },
+
+  // --- Mobile agent methods ---
+  searchByRadius: async (latitude, longitude, rayon = 1000) => {
+    const response = await api.get('/api/containers/search/radius', {
+      params: { latitude, longitude, rayon },
+    });
+    return response.data;
+  },
+
+  getByZone: async (zoneId) => {
+    const response = await api.get(`/api/containers/zone/${zoneId}`);
+    return response.data;
+  },
 };

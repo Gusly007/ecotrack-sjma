@@ -130,5 +130,45 @@ router.get('/stats/algorithm-comparison', requirePermission('tournee:read'), (re
  */
 router.get('/stats/average-progression', requirePermission('tournee:read'), (req, res, next) => req.controllers.stats.getAverageProgression(req, res, next));
 router.get('/stats/nearly-done', requirePermission('tournee:read'), (req, res, next) => req.controllers.stats.getNearlyDone(req, res, next));
+/**
+ * @swagger
+ * /routes/stats/agent:
+ *   get:
+ *     summary: Statistiques personnelles de l'agent connecté
+ *     description: Stats filtrées par x-user-id (collectes, tournées, taux réussite, classement)
+ *     tags: [Statistiques Routes]
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [jour, semaine, mois]
+ *           default: semaine
+ *         description: Période d'analyse
+ *     responses:
+ *       200:
+ *         description: Statistiques de l'agent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 period:              { type: string }
+ *                 total_collectes:     { type: integer }
+ *                 total_tournees:      { type: integer }
+ *                 tournees_terminees:  { type: integer }
+ *                 taux_reussite_pct:   { type: number }
+ *                 total_kg:            { type: number }
+ *                 distance_totale_km:  { type: number }
+ *                 co2_economise_kg:    { type: number }
+ *                 classement:
+ *                   type: object
+ *                   properties:
+ *                     rang:         { type: integer }
+ *                     total_agents: { type: integer }
+ *       400:
+ *         description: Identifiant agent manquant
+ */
+router.get('/stats/agent', requirePermission('tournee:read'), (req, res, next) => req.controllers.stats.getAgentStats(req, res, next));
 
 module.exports = router;
