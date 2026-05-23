@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
 import MobileLayout from './components/mobile/MobileLayout';
+import CookieBanner from './components/common/CookieBanner';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -11,6 +13,7 @@ import TermsPage from './pages/auth/TermsPage';
 import PrivacyPage from './pages/auth/PrivacyPage';
 import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
+import ProfilePage from './pages/auth/ProfilePage';
 
 // Desktop - Admin
 import AdminDashboard from './pages/desktop/admin/Dashboard';
@@ -29,11 +32,12 @@ import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
-import NotificationsPage from './pages/desktop/NotificationsPage';
+import DesktopNotificationsPage from './pages/desktop/NotificationsPage';
 
 // Desktop - Gestionnaire
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
 import GestionnaireTourneePage from './pages/desktop/gestionnaire/tournee';
+import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
 
 // Mobile - Agent
 import AgentDashboard from './pages/mobile/agent/AgentDashboard';
@@ -279,14 +283,14 @@ function App() {
           <Route path="/admin/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
