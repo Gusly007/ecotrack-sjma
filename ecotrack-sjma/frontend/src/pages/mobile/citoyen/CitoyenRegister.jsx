@@ -27,6 +27,11 @@ export default function CitoyenRegister() {
     password: '',
     confirmPassword: '',
   });
+  // État dédié à la case d'acceptation des CGU / politique de confidentialité.
+  // Volontairement hors de `form` pour qu'il ne puisse jamais fuir dans le
+  // payload envoyé à /auth/citoyen/register (qui reste { prenom, nom, email,
+  // password }).
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,6 +49,10 @@ export default function CitoyenRegister() {
     if (!isValidEmail(email)) return setError('Adresse email invalide.');
     if (!form.password || form.password.length < 6) return setError('Le mot de passe doit contenir au moins 6 caractères.');
     if (form.password !== form.confirmPassword) return setError('Les mots de passe ne correspondent pas.');
+    // Defense-in-depth : le bouton submit est déjà `disabled` quand la case
+    // n'est pas cochée, mais un submit déclenché au clavier peut contourner
+    // ce blocage sur certains navigateurs. On bloque aussi côté handler.
+    if (!acceptedTerms) return setError("Veuillez accepter les conditions d'utilisation et la politique de confidentialité.");
 
     setLoading(true);
     try {
@@ -294,7 +303,30 @@ export default function CitoyenRegister() {
               />
             </div>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            {/* Case d'acceptation obligatoire des CGU / politique de
+                confidentialité. Le bouton de soumission reste désactivé
+                tant qu'elle n'est pas cochée. */}
+            <div className="citoyen-register-terms">
+              <input
+                id="reg-accept-terms"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                required
+                aria-required="true"
+              />
+              <label htmlFor="reg-accept-terms" className="citoyen-register-terms-label">
+                En créant un compte, vous acceptez nos{' '}
+                <Link to="/terms">conditions d'utilisation</Link> et notre{' '}
+                <Link to="/privacy">politique de confidentialité</Link>.
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading || !acceptedTerms}
+            >
               {loading ? (
                 <span className="spinner"></span>
               ) : (
@@ -305,10 +337,6 @@ export default function CitoyenRegister() {
               )}
             </button>
           </form>
-
-          <p className="citoyen-register-legal">
-            En créant un compte, vous acceptez nos <Link to="/terms">conditions d'utilisation</Link> et notre <Link to="/privacy">politique de confidentialité</Link>.
-          </p>
 
           <div className="auth-footer">
             <p>
