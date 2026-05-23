@@ -21,3 +21,165 @@
 .tri-chevron { color: #aaa; font-size: 0.8rem; }
 .tri-cat-items { padding: 4px 14px 12px 62px; display: flex; flex-direction: column; gap: 6px; }
 .tri-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #555; }
+
+/* Section pédagogique additive : "Comprendre l'impact environnemental".
+   Repliée par défaut, repose sur le même schéma de carte que les
+   catégories existantes pour rester cohérent visuellement. */
+.tri-impact {
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  border-left: 4px solid #4CAF50;
+}
+.tri-impact-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.tri-impact-icon {
+  background: rgba(76, 175, 80, 0.14);
+  color: #4CAF50;
+}
+.tri-impact-toggle-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tri-impact-title { font-size: 0.9rem; font-weight: 600; color: #333; }
+.tri-impact-subtitle { font-size: 0.75rem; color: #888; }
+.tri-impact-body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.tri-impact-intro {
+  margin: 4px 0 8px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #555;
+}
+.tri-impact-intro strong { color: #333; }
+
+.tri-impact-section {
+  border-radius: 10px;
+  background: #f8f9fa;
+  overflow: hidden;
+}
+.tri-impact-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+.tri-impact-section-header span { flex: 1; }
+.tri-impact-section-icon { color: #4CAF50; width: 16px; text-align: center; }
+.tri-impact-section-body {
+  padding: 4px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid #ececec;
+  padding-top: 10px;
+}
+.tri-impact-note { margin: 0; font-size: 0.8rem; color: #666; line-height: 1.45; }
+.tri-impact-note-small { font-size: 0.75rem; color: #888; font-style: italic; }
+
+.tri-impact-table-wrap { overflow-x: auto; margin: 4px -4px 0; }
+.tri-impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.tri-impact-table th,
+.tri-impact-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #ececec;
+}
+.tri-impact-table th {
+  font-weight: 600;
+  color: #555;
+  background: #fff;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.tri-impact-table td { color: #444; }
+.tri-impact-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tri-impact-table tr:last-child td { border-bottom: none; }
+
+.tri-impact-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 152, 0, 0.15);
+  color: #d68900;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+.tri-impact-rules {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #444;
+  line-height: 1.5;
+}
+.tri-impact-rules strong { color: #333; }
+.tri-impact-rules code {
+  background: #ececec;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  color: #2e7d32;
+}
+
+.tri-impact-sources {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tri-impact-sources a {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ececec;
+  color: #2e7d32;
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.tri-impact-sources a:hover,
+.tri-impact-sources a:focus { background: #f0f7f1; border-color: #c8e6c9; }
+.tri-impact-sources i { margin-top: 3px; flex-shrink: 0; font-size: 0.75rem; color: #4CAF50; }
+
+.tri-impact-methodology {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  background: #f0f7f1;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #2e7d32;
+  line-height: 1.45;
+}
