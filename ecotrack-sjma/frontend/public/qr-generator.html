@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur QR Code - EcoTrack</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+    h1 { color: #333; }
+    p { color: #666; margin-bottom: 30px; }
+    .input-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; }
+    input { padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; flex: 1; max-width: 300px; }
+    button { padding: 12px 24px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #45a049; }
+    #qrcode { margin: 20px auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px; background: white; display: inline-block; }
+    .info { font-size: 0.9rem; color: #666; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Générateur de QR Code</h1>
+  <p>Entrez l'UID d'un conteneur pour générer son QR code</p>
+  
+  <div class="input-group">
+    <input type="text" id="uidInput" placeholder="Ex: CNT-00001" />
+    <button onclick="generateQR()">Générer</button>
+  </div>
+  
+  <div id="qrcode"></div>
+  <p id="info" class="info"></p>
+
+  <script>
+    function generateQR() {
+      const uid = document.getElementById('uidInput').value.trim();
+      if (!uid) {
+        alert('Veuillez entrer un UID');
+        return;
+      }
+      
+      document.getElementById('qrcode').innerHTML = '';
+      document.getElementById('info').textContent = '';
+      
+      new QRCode(document.getElementById('qrcode'), {
+        text: uid,
+        width: 256,
+        height: 256,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      
+      document.getElementById('info').textContent = 'Ce QR code contient uniquement l\'UID: ' + uid;
+    }
+  </script>
+</body>
+</html>

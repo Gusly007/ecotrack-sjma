@@ -1,0 +1,118 @@
+.etape-center {
+  text-align: center;
+  padding: 12px 0 16px;
+}
+
+.etape-number-lg {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #4CAF50;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.etape-center h3 {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.detail-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row span {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.detail-row strong {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.gps-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: #e3f2fd;
+  color: #2196F3;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.gps-nav-btn:active {
+  background: #bbdefb;
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action-btn i {
+  font-size: 1.2rem;
+}
+
+.action-btn.collect {
+  background: #e8f5e9;
+  color: #4CAF50;
+}
+
+.action-btn.anomaly {
+  background: #fff3e0;
+  color: #FF9800;
+}
+
+.action-btn.skip {
+  background: #f5f5f5;
+  color: #888;
+}
+
+.action-btn:active {
+  opacity: 0.8;
+}

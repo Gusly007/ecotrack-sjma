@@ -4,8 +4,8 @@ import Footer from '../../components/layout/Footer';
 const PrivacyPage = () => {
   return (
     <div className="auth-container">
-      <div className="auth-wrapper" style={{ maxWidth: '860px', width: '100%' }}>
-        <div className="auth-box">
+      <div className="auth-wrapper">
+        <div className="auth-box" style={{ maxWidth: '800px' }}>
           <Link to="/login" className="back-link">
             <i className="fas fa-arrow-left"></i> Retour à la connexion
           </Link>

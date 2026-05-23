@@ -1,0 +1,13 @@
+flowchart TD
+    G[Gestionnaire] --> API[API Gateway]
+    API --> R[service-routes]
+    API --> C[service-containers]
+    API --> U[service-users]
+    
+    G --> D[Dashboard KPIs]
+    D --> T[Creer tournee]
+    T --> A[Assigner agent]
+    A --> S[Suivi temps reel]
+    
+    S --> I[Intervention]
+    I --> R

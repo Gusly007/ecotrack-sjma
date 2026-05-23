@@ -1,0 +1,22 @@
+.mobile-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.mobile-card-gradient {
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  color: #fff;
+}
+
+.mobile-card-gradient p,
+.mobile-card-gradient span {
+  color: rgba(255,255,255,0.8);
+}
+
+.mobile-card-gradient strong,
+.mobile-card-gradient h3 {
+  color: #fff;
+}

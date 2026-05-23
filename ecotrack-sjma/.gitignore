@@ -17,6 +17,19 @@ database/DB_OPTIMIZATION_PROPOSAL.md
 
 /maquette/
 docs/SECURITY_FIXES.md
+/EcoTrack_Docs
+frontend/public/qrcodes/
+*.png
 
-# Claude Code local config
-.claude/settings.local.json
+# OS / Editor
+.DS_Store
+**/.DS_Store
+
+# PWA dev artifacts
+frontend/dev-dist/
+frontend/public/registerSW.js
+frontend/public/sw.js
+frontend/public/workbox-*.js
+
+# Archives
+*.zip

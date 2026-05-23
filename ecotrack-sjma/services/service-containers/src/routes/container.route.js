@@ -2,8 +2,45 @@ const router = require('express').Router();
 const controller = require('../container-di.js');
 const { requirePermission } = require('../middleware/rbac');
 const { authenticateToken } = require('../middleware/auth');
+const QRCode = require('qrcode');
+const { pool } = require('../db/connexion');
 
-// Apply authentication to all routes
+// Strict UID format: CNT- followed by 11 or 12 uppercase alphanumerics.
+// Enforced inline (not via the relaxed validator) so this public endpoint
+// cannot be used as an enumeration oracle.
+const QR_UID_REGEX = /^CNT-[A-Z0-9]{11,12}$/;
+
+// QR Code - PUBLIC (no auth, placed BEFORE auth middleware).
+// Mounted at /api/containers/qrcode/:uid via service index, proxied through gateway.
+router.get('/containers/qrcode/:uid', async (req, res, next) => {
+  try {
+    const { uid } = req.params;
+    if (!uid || !QR_UID_REGEX.test(uid)) {
+      return res.status(400).json({ message: 'UID invalide' });
+    }
+
+    const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5173';
+
+    const result = await pool.query('SELECT uid FROM conteneur WHERE uid = $1', [uid]);
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Conteneur introuvable' });
+
+    const qrUrl = `${baseUrl.replace(/\/+$/, '')}/scan/result/${encodeURIComponent(uid)}`;
+
+    const qrBuffer = await QRCode.toBuffer(qrUrl, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' }
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.send(qrBuffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Apply authentication to all other routes
 router.use(authenticateToken);
 
 // POST - Créer un nouveau conteneur

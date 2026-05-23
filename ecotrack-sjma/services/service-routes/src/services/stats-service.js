@@ -14,6 +14,10 @@ class StatsService {
     return this.statsRepo.getKpis(options);
   }
 
+  async getAgentStats(agentId, period = 'mois') {
+    return this.statsRepo.getAgentStats(agentId, period);
+  }
+
   async getCollecteStats(options = {}) {
     return this.statsRepo.getCollecteStats(options);
   }

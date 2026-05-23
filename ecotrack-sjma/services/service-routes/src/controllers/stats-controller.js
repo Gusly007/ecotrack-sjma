@@ -7,6 +7,7 @@ class StatsController {
 
     this.getDashboard = this.getDashboard.bind(this);
     this.getKpis = this.getKpis.bind(this);
+    this.getAgentStats = this.getAgentStats.bind(this);
     this.getCollecteStats = this.getCollecteStats.bind(this);
     this.getAlgorithmComparison = this.getAlgorithmComparison.bind(this);
     this.getAverageProgression = this.getAverageProgression.bind(this);
@@ -27,6 +28,20 @@ class StatsController {
       const { date_debut, date_fin, id_zone } = req.query;
       const data = await this.service.getKpis({ date_debut, date_fin, id_zone });
       return res.status(200).json(ApiResponse.success(data, 'KPIs des tournées'));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getAgentStats(req, res, next) {
+    try {
+      const agentId = parseInt(req.headers['x-user-id'], 10);
+      if (!agentId) {
+        return res.status(400).json(ApiResponse.error(400, 'Identifiant agent manquant'));
+      }
+      const { period } = req.query; // 'jour' | 'semaine' | 'mois' (default: mois)
+      const data = await this.service.getAgentStats(agentId, period);
+      return res.status(200).json(ApiResponse.success(data, 'Statistiques agent'));
     } catch (err) {
       next(err);
     }

@@ -81,6 +81,25 @@ services:
       start_period: 30s
 
   # =========================================================================
+  # SERVICE-ROUTES - Mode développement
+  # =========================================================================
+  service-routes:
+    build:
+      context: ./services/service-routes
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./services/service-routes/src:/app/src:ro
+      - ./services/service-routes/package.json:/app/package.json:ro
+      - ./services/service-routes/index.js:/app/index.js:ro
+    # Healthcheck plus permissif en dev
+    healthcheck:
+      interval: 30s
+      retries: 10
+      start_period: 30s
+
+  # =========================================================================
   # SERVICE-IOT - Mode développement
   # =========================================================================
   service-iot:

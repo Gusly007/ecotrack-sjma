@@ -1,0 +1,32 @@
+# ============================================================================
+# DOCKERFILE.DEV - SERVICE ROUTES (Développement)
+# ============================================================================
+# Version développement avec nodemon pour le hot-reload.
+# Utilisé par docker-compose.override.yml
+# ============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+# Installer nodemon globalement pour le hot-reload
+RUN npm install -g nodemon
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer toutes les dépendances (y compris devDependencies)
+RUN npm install
+
+# Copier le code source
+COPY . .
+
+EXPOSE 3012
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=15s \
+  CMD node healthcheck.cjs
+
+# Démarrage avec nodemon (hot-reload)
+CMD ["nodemon", "--watch", "src", "--watch", "index.js", "--ext", "js,json", "index.js"]

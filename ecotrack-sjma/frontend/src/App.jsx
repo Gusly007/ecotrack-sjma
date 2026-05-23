@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
+import MobileLayout from './components/mobile/MobileLayout';
 import CookieBanner from './components/common/CookieBanner';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -12,6 +14,8 @@ import PrivacyPage from './pages/auth/PrivacyPage';
 import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 import ProfilePage from './pages/auth/ProfilePage';
+
+// Desktop - Admin
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
 import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
@@ -28,19 +32,41 @@ import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
-import NotificationsPage from './pages/desktop/NotificationsPage';
+import DesktopNotificationsPage from './pages/desktop/NotificationsPage';
 
+// Desktop - Gestionnaire
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
-import TourneePage from './pages/desktop/gestionnaire/tournee';
+import GestionnaireTourneePage from './pages/desktop/gestionnaire/tournee';
 import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
+
+// Mobile - Agent
+import AgentDashboard from './pages/mobile/agent/AgentDashboard';
+import AgentTourneePage from './pages/mobile/agent/TourneePage';
+import EtapeDetail from './pages/mobile/agent/EtapeDetail';
+import ScanPage from './pages/mobile/agent/ScanPage';
+import ScanResult from './pages/mobile/agent/ScanResult';
+import AnomaliePage from './pages/mobile/agent/AnomaliePage';
+import AnomalieForm from './pages/mobile/agent/AnomalieForm';
+import TerminerTournee from './pages/mobile/agent/TerminerTournee';
+import AgentHistorique from './pages/mobile/agent/HistoriquePage';
+import AgentStats from './pages/mobile/agent/StatsPage';
+
+// Mobile - Shared
+import ProfilPage from './pages/mobile/shared/ProfilPage';
+import EditProfilPage from './pages/mobile/shared/EditProfilPage';
+import NotificationsPage from './pages/mobile/shared/NotificationsPage';
+import NotificationSettings from './pages/mobile/shared/NotificationSettings';
+import QRCodePage from './pages/QRCodePage';
+import SharedScanPage from './pages/mobile/shared/ScanPage';
+import SharedScanResult from './pages/mobile/shared/ScanResult';
 
 function RootRedirect() {
   const { user } = useAuth();
   const role = user?.role || user?.role_par_defaut;
 
-  if (role === 'GESTIONNAIRE') {
-    return <Navigate to="/gestionnaire" replace />;
-  }
+  if (role === 'CITOYEN') return <Navigate to="/citoyen" replace />;
+  if (role === 'AGENT') return <Navigate to="/agent" replace />;
+  if (role === 'GESTIONNAIRE') return <Navigate to="/gestionnaire" replace />;
   return <Navigate to="/admin" replace />;
 }
 
@@ -151,6 +177,30 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Mobile Routes - Agent (role-gated) */}
+          <Route path="/agent" element={<ProtectedRoute requiredRole="AGENT"><AgentDashboard /></ProtectedRoute>} />
+          <Route path="/agent/tournee" element={<ProtectedRoute requiredRole="AGENT"><AgentTourneePage /></ProtectedRoute>} />
+          <Route path="/agent/tournee/etape/:id" element={<ProtectedRoute requiredRole="AGENT"><EtapeDetail /></ProtectedRoute>} />
+          <Route path="/agent/scan" element={<ProtectedRoute requiredRole="AGENT"><ScanPage /></ProtectedRoute>} />
+          <Route path="/agent/scan/result/:uid" element={<ProtectedRoute requiredRole="AGENT"><ScanResult /></ProtectedRoute>} />
+          <Route path="/agent/anomalie" element={<ProtectedRoute requiredRole="AGENT"><AnomaliePage /></ProtectedRoute>} />
+          <Route path="/agent/anomalie/form" element={<ProtectedRoute requiredRole="AGENT"><AnomalieForm /></ProtectedRoute>} />
+          <Route path="/agent/tournee/terminer" element={<ProtectedRoute requiredRole="AGENT"><TerminerTournee /></ProtectedRoute>} />
+          <Route path="/agent/historique" element={<ProtectedRoute requiredRole="AGENT"><AgentHistorique /></ProtectedRoute>} />
+          <Route path="/agent/stats" element={<ProtectedRoute requiredRole="AGENT"><AgentStats /></ProtectedRoute>} />
+          <Route path="/agent/profil" element={<ProtectedRoute requiredRole="AGENT"><ProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/profil/edit" element={<ProtectedRoute requiredRole="AGENT"><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications" element={<ProtectedRoute requiredRole="AGENT"><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications/settings" element={<ProtectedRoute requiredRole="AGENT"><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
+
+          {/* Public QR Codes Page - no auth required */}
+          <Route path="/qr-codes" element={<QRCodePage />} />
+
+          {/* Universal Scan Routes - accessible to all roles */}
+          <Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
+          <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
+
+
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
@@ -162,7 +212,7 @@ function App() {
           <Route path="/gestionnaire/tournees" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <TourneePage />
+                <GestionnaireTourneePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
@@ -233,14 +283,14 @@ function App() {
           <Route path="/admin/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
