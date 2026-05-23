@@ -41,7 +41,26 @@ const LoginPage = () => {
       // avant que le MFA ne soit validé.
       const response = await authService.login(formData.email, formData.password);
       const result = response.data || response;
-      
+
+      // Filtrage de scope : /login est réservé au personnel EcoTrack
+      // (ADMIN / GESTIONNAIRE / AGENT). Un compte CITOYEN est rejeté ici, AVANT
+      // toute redirection MFA. Le rôle est lu dans la branche MFA (`result.role`,
+      // exposé par le backend) ou dans la branche sans MFA (`result.role_par_defaut`,
+      // l'objet user étant renvoyé directement par authService.login).
+      const userRole = result?.role || result?.role_par_defaut || null;
+      if (userRole === 'CITOYEN') {
+        // En branche sans MFA, authService.login a déjà persisté les tokens.
+        // On purge pour ne laisser aucune session active.
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('mfa_user_id');
+        localStorage.removeItem('mfa_setup');
+        sessionStorage.removeItem('mfa_pending_setup');
+        setError("Cet espace de connexion est réservé au personnel EcoTrack.");
+        return;
+      }
+
       // Si MFA requis
       if (result?.requiresMFA) {
         const userId = Number(result.userId);

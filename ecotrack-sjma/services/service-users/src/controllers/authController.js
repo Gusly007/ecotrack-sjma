@@ -89,6 +89,9 @@ export const login = asyncHandler(async (req, res) => {
     user: result.user,
     userId: result.userId,
     email: result.user?.email,
+    // role expose dans les deux branches (MFA via result.role, sans MFA via result.user)
+    // pour permettre au frontend de filtrer le scope citoyen vs personnel avant MFA.
+    role: result.role || result.user?.role_par_defaut || null,
     requiresMFA: result.requiresMFA || false,
     requiresSetup: result.requiresSetup || false,
     mfaSetup: result.mfaSetup || null

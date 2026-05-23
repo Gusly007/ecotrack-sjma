@@ -30,6 +30,9 @@ export const authService = {
         userId,
         email: response.data?.email,
         mfaSetup: response.data?.mfaSetup || null,
+        // role expose par le backend (cf. authController) pour permettre aux
+        // pages de login de filtrer le scope avant la redirection MFA partagee.
+        role: response.data?.role || response.data?.user?.role_par_defaut || null,
       };
     }
 

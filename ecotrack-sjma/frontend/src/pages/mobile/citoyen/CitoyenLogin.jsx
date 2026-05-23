@@ -39,6 +39,25 @@ const CitoyenLogin = () => {
       const response = await authService.login(formData.email, formData.password);
       const result = response.data || response;
 
+      // Filtrage de scope : /citoyen/login est réservé aux comptes CITOYEN.
+      // Le rôle est lu dans la branche MFA (`result.role`, exposé par le
+      // backend à cet effet) ou dans la branche sans MFA (`result.role_par_defaut`,
+      // présent sur l'objet user renvoyé directement).
+      const userRole = result?.role || result?.role_par_defaut || null;
+      if (userRole && userRole !== 'CITOYEN') {
+        // En branche sans MFA, authService.login a déjà persisté les tokens.
+        // On purge pour ne laisser aucune session active. Pas d'appel à
+        // /auth/logout : le refresh token expirera via son TTL serveur.
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('mfa_user_id');
+        localStorage.removeItem('mfa_setup');
+        sessionStorage.removeItem('mfa_pending_setup');
+        setError("Cet espace de connexion est réservé aux citoyens.");
+        return;
+      }
+
       if (result?.requiresMFA) {
         const userId = Number(result.userId);
         localStorage.setItem('mfa_user_id', userId);

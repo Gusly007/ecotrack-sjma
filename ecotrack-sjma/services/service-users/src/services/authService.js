@@ -115,6 +115,9 @@ export const loginUser = async (email, password, ipAddress = null) => {
         requiresSetup: false,
         userId: user.id_utilisateur,
         email: user.email,
+        // role expose pour permettre au frontend de filtrer par scope
+        // (citoyen vs personnel) AVANT la navigation vers la page MFA partagee.
+        role: user.role_par_defaut,
         message: 'Entrez le code MFA de votre application'
       };
     }
@@ -161,6 +164,8 @@ export const loginUser = async (email, password, ipAddress = null) => {
       },
       userId: user.id_utilisateur,
       email: user.email,
+      // role expose pour le filtrage de scope cote frontend (cf. branche MFA ci-dessus).
+      role: user.role_par_defaut,
       message: 'Veuillez scanner le QR code avec Google Authenticator'
     };
   } catch (err) {
