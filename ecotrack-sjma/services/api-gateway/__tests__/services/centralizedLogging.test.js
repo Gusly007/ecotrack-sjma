@@ -4,7 +4,8 @@ const mockLogRepository = {
   connect: jest.fn(),
   createTable: jest.fn(),
   save: jest.fn(),
-  getLogs: jest.fn(),
+  getLogs: jest.fn().mockResolvedValue([]),
+  getLogsCount: jest.fn().mockResolvedValue(0),
   getStats: jest.fn(),
   getSummary: jest.fn(),
   getDistinctValues: jest.fn(),
@@ -64,6 +65,7 @@ describe('centralizedLoggingService', () => {
 
   it('queryLogs should remove all filters and keep useful filters', async () => {
     mockLogRepository.getLogs.mockResolvedValue([{ id: 1 }]);
+    mockLogRepository.getLogsCount.mockResolvedValue(1);
 
     const result = await centralizedLoggingService.queryLogs({
       service: 'all',
@@ -75,7 +77,7 @@ describe('centralizedLoggingService', () => {
       offset: 40
     });
 
-    expect(result).toEqual([{ id: 1 }]);
+    expect(result).toEqual({ logs: [{ id: 1 }], total: 1 });
     expect(mockLogRepository.getLogs).toHaveBeenCalledWith({
       level: 'error',
       search: 'token',

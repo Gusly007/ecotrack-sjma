@@ -99,6 +99,13 @@ export const loginUser = async (email, password, ipAddress = null) => {
       throw error;
     }
 
+    // Vérifier si le compte a été soft-deleted (période de grâce expirée)
+    if (user.deleted_at) {
+      const error = new Error('Votre compte a été supprimé définitivement. Veuillez contacter l\'administrateur.');
+      error.status = 403;
+      throw error;
+    }
+
     // Si MFA est activé, demander juste le code (pas de setup)
     if (user.mfa_enabled) {
       await sessionService.limitConcurrentSessions(user.id_utilisateur);

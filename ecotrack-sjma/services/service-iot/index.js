@@ -136,7 +136,7 @@ app.get('/api', iotLimiter, (req, res) => {
 
 app.use('/api', iotLimiter, iotRoutes);
 
-app.get('/health', async (req, res) => {
+app.get('/health', iotLimiter, async (req, res) => {
   const healthcheck = {
     status: 'OK',
     timestamp: new Date().toISOString(),

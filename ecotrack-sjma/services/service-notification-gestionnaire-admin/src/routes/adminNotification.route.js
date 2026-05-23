@@ -281,10 +281,70 @@ router.get(
  *             schema:
  *               type: object
  */
+/**
+ * @swagger
+ * /admin/notifications/stats:
+ *   get:
+ *     summary: Récupère les statistiques des notifications admin
+ *     tags: [AdminNotifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistiques de notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totals:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 42
+ *                     non_lues:
+ *                       type: integer
+ *                       example: 8
+ *                     lues:
+ *                       type: integer
+ *                       example: 34
+ */
 router.get(
   '/admin/notifications/stats',
   requirePermission('notifications:own'),
   controller.stats
+);
+
+/**
+ * @swagger
+ * /admin/notifications/{id}:
+ *   delete:
+ *     summary: Supprime une notification admin
+ *     tags: [AdminNotifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant de la notification
+ *     responses:
+ *       204:
+ *         description: Notification supprimée
+ *       400:
+ *         description: Identifiant invalide
+ *       403:
+ *         description: Non propriétaire de la notification
+ *       404:
+ *         description: Notification introuvable
+ */
+router.delete(
+  '/admin/notifications/:id',
+  requirePermission('notifications:own'),
+  controller.delete
 );
 
 module.exports = router;

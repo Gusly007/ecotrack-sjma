@@ -1,0 +1,25 @@
+%% Auth citoyen : inscription (code email) + connexion (MFA partagé) + refresh JWT
+flowchart TB
+  subgraph Inscription["Inscription / activation"]
+    R[CitoyenRegister] --> API1["POST /auth/citoyen/register"]
+    API1 --> INACTIF[(compte inactif + code 6 chiffres)]
+    INACTIF --> MAIL[Email SMTP]
+    MAIL --> ACT[Saisie code]
+    ACT --> API2["POST /auth/citoyen/verify-activation"]
+    API2 --> JWT1[(token + refreshToken + user)]
+  end
+
+  subgraph Connexion["Connexion / MFA"]
+    L[CitoyenLogin] --> API3["POST /auth/login"]
+    API3 --> MFA{MFA requis ?}
+    MFA -->|oui| MFA_PAGE["/auth/mfa (page partagée)"]
+    MFA -->|non| HOME["/citoyen"]
+    MFA_PAGE --> HOME
+  end
+
+  subgraph Session["Session"]
+    JWT1 --> STORE[(localStorage token/user)]
+    HOME --> STORE
+    STORE --> REFRESH["citoyenApi : refresh sur 401"]
+    REFRESH --> API4["POST /auth/refresh"]
+  end

@@ -3,10 +3,12 @@ import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRole } from '../middleware/auth.js';
 import { ConfigurationRepository } from '../repositories/configuration.repository.js';
 import env from '../config/env.js';
+import { publicLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 
 router.get('/',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN', 'GESTIONNAIRE']),
     async (req, res) => {
@@ -49,6 +51,7 @@ router.get('/',
 );
 
 router.get('/category/:category',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN', 'GESTIONNAIRE']),
     async (req, res) => {
@@ -84,6 +87,7 @@ router.get('/category/:category',
 );
 
 router.get('/:key',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN', 'GESTIONNAIRE']),
     async (req, res) => {
@@ -126,6 +130,7 @@ router.get('/:key',
 );
 
 router.put('/:key',
+    publicLimiter,
     authenticateToken,
     authorizeRole(['ADMIN']),
     async (req, res) => {

@@ -177,9 +177,11 @@ export default function SignalementDetailPage() {
 
   const getUrgenceClass = (urgence) => {
     switch (urgence?.toUpperCase()) {
-      case 'HAUTE': return 'haute';
-      case 'MOYENNE': return 'moyenne';
-      case 'BASSE': return 'basse';
+      case 'URGENTE': return 'urgente';
+      case 'HAUTE':   return 'haute';
+      case 'NORMALE':
+      case 'MOYENNE': return 'normale';
+      case 'BASSE':   return 'basse';
       default: return '';
     }
   };

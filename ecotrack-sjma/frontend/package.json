@@ -10,9 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage --passWithNoTests || true",
-    "test:integration": "vitest run __tests__/integration --passWithNoTests || true",
-    "test:e2e": "vitest run __tests__/e2e --passWithNoTests || true",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test:integration": "vitest run __tests__/integration --passWithNoTests",
+    "test:e2e": "vitest run __tests__/e2e --passWithNoTests",
     "lint:lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./reports/performance/lighthouse.html --chrome-flags='--headless --no-sandbox'"
   },
   "dependencies": {

@@ -14,18 +14,22 @@ export default function SignalementTable({
   const routePrefix = role === 'ADMIN' ? '/admin' : '/gestionnaire';
   const getUrgenceClass = (urgence) => {
     switch (urgence?.toUpperCase()) {
-      case 'HAUTE': return 'urgence-haute';
-      case 'MOYENNE': return 'urgence-moyenne';
-      case 'BASSE': return 'urgence-basse';
+      case 'URGENTE': return 'urgence-urgente';
+      case 'HAUTE':   return 'urgence-haute';
+      case 'NORMALE':
+      case 'MOYENNE': return 'urgence-normale';
+      case 'BASSE':   return 'urgence-basse';
       default: return '';
     }
   };
 
   const getUrgenceLabel = (urgence) => {
     switch (urgence?.toUpperCase()) {
-      case 'HAUTE': return 'Haute';
-      case 'MOYENNE': return 'Moyenne';
-      case 'BASSE': return 'Basse';
+      case 'URGENTE': return 'Urgente';
+      case 'HAUTE':   return 'Haute';
+      case 'NORMALE':
+      case 'MOYENNE': return 'Normale';
+      case 'BASSE':   return 'Basse';
       default: return urgence || '-';
     }
   };

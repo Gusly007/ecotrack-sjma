@@ -13,7 +13,7 @@ const resolveUserRow = (result) => {
 export const UserRepository = {
   async getUserProfile(userId) {
     const result = await pool.query(
-      `SELECT ${userProfileColumns} FROM UTILISATEUR WHERE id_utilisateur = $1`,
+      `SELECT ${userProfileColumns} FROM UTILISATEUR WHERE id_utilisateur = $1 AND deleted_at IS NULL`,
       [userId]
     );
     return resolveUserRow(result);
@@ -22,8 +22,8 @@ export const UserRepository = {
     const result = await pool.query(
       `UPDATE UTILISATEUR
        SET prenom = COALESCE($1, prenom),
-           nom    = COALESCE($2, nom),
-           email  = COALESCE($3, email),
+           nom = COALESCE($2, nom),
+           email = COALESCE($3, email),
            updated_at = CURRENT_TIMESTAMP
        WHERE id_utilisateur = $4
        RETURNING ${userProfileColumns}`,
@@ -33,7 +33,7 @@ export const UserRepository = {
   },
   async getPasswordHash(userId) {
     const result = await pool.query(
-      'SELECT password_hash FROM UTILISATEUR WHERE id_utilisateur = $1',
+      'SELECT password_hash FROM UTILISATEUR WHERE id_utilisateur = $1 AND deleted_at IS NULL',
       [userId]
     );
     if (result.rows.length === 0) throw new Error('User not found');
@@ -62,7 +62,7 @@ export const UserRepository = {
           COUNT(DISTINCT ub.id_badge) as badge_count
         FROM UTILISATEUR u
         LEFT JOIN user_badge ub ON u.id_utilisateur = ub.id_utilisateur
-        WHERE u.id_utilisateur = $1
+        WHERE u.id_utilisateur = $1 AND u.deleted_at IS NULL
         GROUP BY u.id_utilisateur`,
       [userId]
     );
@@ -159,7 +159,7 @@ export const UserRepository = {
     const pageNumber = Number.isNaN(parseInt(page, 10)) ? 1 : Math.max(1, parseInt(page, 10));
     const limitNumber = Number.isNaN(parseInt(limit, 10)) ? 20 : Math.max(1, Math.min(100, parseInt(limit, 10)));
     const offset = (pageNumber - 1) * limitNumber;
-    const filters = [];
+    const filters = ['deleted_at IS NULL'];
     const params = [];
     console.log('[DEBUG listUsers] est_active:', est_active, 'type:', typeof est_active);
     if (role) {
@@ -223,5 +223,134 @@ export const UserRepository = {
     );
     if (result.rows.length === 0) throw new Error('User not found');
     return { message: 'User deleted successfully' };
+  },
+
+  async markAccountForDeletion(userId) {
+    return await pool.query(
+      `UPDATE UTILISATEUR 
+       SET deletion_requested_at = NOW() 
+       WHERE id_utilisateur = $1 AND deleted_at IS NULL`,
+      [userId]
+    );
+  },
+
+  async anonymizeInactiveUsers() {
+    const result = await pool.query(`
+      WITH inactive_users AS (
+        SELECT u.id_utilisateur
+        FROM UTILISATEUR u
+        WHERE u.deleted_at IS NULL
+          AND COALESCE(
+            (SELECT MAX(ja.date_creation) FROM journal_audit ja
+             WHERE ja.id_acteur = u.id_utilisateur AND ja.action = 'LOGIN_SUCCESS'),
+            u.date_creation
+          ) < NOW() - INTERVAL '3 years'
+      )
+      UPDATE UTILISATEUR
+      SET
+        deleted_at = NOW(),
+        anonymized = true,
+        est_active = false,
+        email = 'anonymized_' || id_utilisateur || '@anonymized.com',
+        prenom = 'Anonymized',
+        nom = 'Anonymized',
+        password_hash = NULL,
+        avatar_url = NULL,
+        avatar_thumbnail = NULL,
+        avatar_mini = NULL
+      WHERE id_utilisateur IN (SELECT id_utilisateur FROM inactive_users)
+      RETURNING id_utilisateur, email, prenom, nom
+    `);
+    return result.rows;
+  },
+
+  async exportUserData(userId) {
+    const profilePromise = pool.query(
+      `SELECT id_utilisateur, email, prenom, nom, role_par_defaut, points, est_active, date_creation, avatar_url, deleted_at, deletion_requested_at, anonymized
+       FROM UTILISATEUR WHERE id_utilisateur = $1`,
+      [userId]
+    );
+
+    const signalementsPromise = pool.query(
+      `SELECT s.id_signalement, s.description, s.url_photo, s.statut, s.date_creation, ts.libelle as type_libelle
+       FROM signalement s
+       JOIN type_signalement ts ON s.id_type = ts.id_type
+       WHERE s.id_citoyen = $1
+       ORDER BY s.date_creation DESC`,
+      [userId]
+    );
+
+    const tourneesPromise = pool.query(
+      `SELECT id_tournee, code, date_tournee, statut, distance_prevue_km, duree_prevue_min, duree_reelle_min, distance_reelle_km
+       FROM tournee
+       WHERE id_agent = $1
+       ORDER BY date_tournee DESC`,
+      [userId]
+    );
+
+    const badgesPromise = pool.query(
+      `SELECT b.code, b.nom, b.description, ub.date_obtention
+       FROM user_badge ub
+       JOIN badge b ON ub.id_badge = b.id_badge
+       WHERE ub.id_utilisateur = $1
+       ORDER BY ub.date_obtention DESC`,
+      [userId]
+    );
+
+    const defisPromise = pool.query(
+      `SELECT gd.titre, gd.description as defi_description, gpd.progression, gpd.statut, gpd.derniere_maj
+       FROM gamification_participation_defi gpd
+       JOIN gamification_defi gd ON gpd.id_defi = gd.id_defi
+       WHERE gpd.id_utilisateur = $1
+       ORDER BY gpd.derniere_maj DESC`,
+      [userId]
+    );
+
+    const pointsHistoryPromise = pool.query(
+      `SELECT delta_points, raison, date_creation
+       FROM historique_points
+       WHERE id_utilisateur = $1
+       ORDER BY date_creation DESC`,
+      [userId]
+    );
+
+    const auditPromise = pool.query(
+      `SELECT action, type_entite, id_entite, date_creation
+       FROM journal_audit
+       WHERE id_acteur = $1
+       ORDER BY date_creation DESC`,
+      [userId]
+    );
+
+    const [
+      profileRes,
+      signalementsRes,
+      tourneesRes,
+      badgesRes,
+      defisRes,
+      pointsHistoryRes,
+      auditRes
+    ] = await Promise.all([
+      profilePromise,
+      signalementsPromise,
+      tourneesPromise,
+      badgesPromise,
+      defisPromise,
+      pointsHistoryPromise,
+      auditPromise
+    ]);
+
+    if (profileRes.rows.length === 0) throw new Error('User not found');
+
+    return {
+      profile: profileRes.rows[0],
+      signalements: signalementsRes.rows,
+      tournees: tourneesRes.rows,
+      badges: badgesRes.rows,
+      defis: defisRes.rows,
+      pointsHistory: pointsHistoryRes.rows,
+      auditLog: auditRes.rows
+    };
   }
+
 };

@@ -1,18 +1,22 @@
-import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import client from 'prom-client';
 import swaggerUi from 'swagger-ui-express';
-import { unifiedSwaggerSpec, swaggerOptions } from './swagger-config.js';
+import './cron-gdpr.js';
 import { jwtValidationMiddleware } from './middleware/auth.js';
-import { requestLogger, detailedRequestLogger, errorLogger, logger } from './middleware/logger.js';
-import healthCheckService from './services/healthCheck.js';
+import { detailedRequestLogger, errorLogger, logger, requestLogger } from './middleware/logger.js';
+import consentRepository from './repositories/consentRepository.js';
+import cookieConsentRoutes from './routes/cookieConsentRoutes.js';
+import gdprRoutes from './routes/gdpr.route.js';
+import cacheService from './services/cacheService.js';
 import centralizedLogging from './services/centralizedLogging.js';
 import dashboardStatsService from './services/dashboardStats.js';
-import cacheService from './services/cacheService.js';
-import client from 'prom-client';
+import healthCheckService from './services/healthCheck.js';
+import { swaggerOptions, unifiedSwaggerSpec } from './swagger-config.js';
 
 dotenv.config();
 
@@ -198,28 +202,51 @@ const globalRateLimit = rateLimit({
   }
 });
 
-const createProxy = (target, pathRewrite, timeoutMs = 10_000) => createProxyMiddleware({
+const forwardParsedBody = (proxyReq, req) => {
+  if (!req.body || req.method === 'GET' || req.method === 'HEAD') {
+    return;
+  }
+
+  const contentType = String(req.headers['content-type'] || '').toLowerCase();
+  let bodyData;
+
+  if (Buffer.isBuffer(req.body)) {
+    bodyData = req.body;
+  } else if (typeof req.body === 'string') {
+    bodyData = req.body;
+  } else if (contentType.includes('application/x-www-form-urlencoded')) {
+    bodyData = new URLSearchParams(req.body).toString();
+  } else if (contentType.includes('application/json') || Object.keys(req.body).length > 0) {
+    bodyData = JSON.stringify(req.body);
+  }
+
+  if (!bodyData) {
+    return;
+  }
+
+  proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+  proxyReq.write(bodyData);
+  proxyReq.end();
+};
+
+const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMiddleware({
   target,
   changeOrigin: true,
   proxyTimeout: timeoutMs,
   pathRewrite: (path, req) => {
-    // When mounted under a path (e.g. app.use('/auth', proxy)), Express removes the
-    // mount prefix from req.url. Re-add it so upstream receives the expected paths.
     const fullPath = `${req.baseUrl || ''}${path}`;
-
     if (typeof pathRewrite === 'function') {
-      // Support simple (path) => string rewrites used in this gateway.
       return pathRewrite.length >= 2 ? pathRewrite(fullPath, req) : pathRewrite(fullPath);
     }
-
     return fullPath;
   },
-  // Best-effort fix for body forwarding when other middleware consumed it.
-  onProxyReq: fixRequestBody,
-  onError: (err, req, res) => {
-    logger.error({ error: err.message }, 'Proxy error');
-    if (!res.headersSent) {
-      res.status(502).json({ error: 'Upstream service unavailable' });
+  on: {
+    proxyReq: forwardParsedBody,
+    error: (err, req, res) => {
+      logger.error({ error: err.message }, 'Proxy error');
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'Upstream service unavailable' });
+      }
     }
   }
 });
@@ -236,7 +263,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With', 'X-Session-Id'],
   exposedHeaders: ['Cache-Control', 'Pragma', 'Expires', 'X-Total-Count'],
   maxAge: 86400
 }));
@@ -277,23 +304,18 @@ app.use(helmet({
       workerSrc: ["'self'", "blob:"],
     },
   },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: false
+  },
+  noSniff: true,
+  xssFilter: true,
+  frameguard: { action: 'deny' },
   crossOriginEmbedderPolicy: { policy: 'require-corp' },
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   crossOriginResourcePolicy: { policy: 'same-site' },
-  referrerPolicy: { policy: 'no-referrer' },
-  permissionsPolicy: {
-    features: {
-      accelerometer: [],
-      camera: [],
-      geolocation: [],
-      gyroscope: [],
-      magnetometer: [],
-      microphone: [],
-      payment: [],
-      usb: [],
-      fullscreen: ['self']
-    }
-  }
+  referrerPolicy: { policy: 'no-referrer' }
 }));
 
 // En-têtes de sécurité complémentaires
@@ -304,6 +326,8 @@ app.use((req, res, next) => {
 
 // Rate limiting global
 app.use(globalRateLimit);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // =========================================================================
 // LOGGING
@@ -316,6 +340,12 @@ app.use(detailedRequestLogger);
 // =========================================================================
 // Validation JWT sur toutes les routes (sauf publiques)
 app.use(jwtValidationMiddleware);
+
+// =========================================================================
+// COOKIE CONSENT ROUTES (GDPR Compliance)
+// =========================================================================
+app.use('/api/cookies', cookieConsentRoutes);
+app.use('/api', gdprRoutes);
 
 // =========================================================================
 // DOCUMENTATION API UNIFIÉE
@@ -435,19 +465,24 @@ app.get('/api/logs', async (req, res) => {
       userId
     } = req.query;
     
-    const logs = await centralizedLogging.queryLogs({
+    const result = await centralizedLogging.queryLogs({
       service,
       level,
       action,
       startDate,
       endDate,
-      limit: parseInt(limit) || 100,
+      limit: parseInt(limit) || 50,
       offset: parseInt(offset) || 0,
       search,
       userId
     });
     
-    res.json({ logs });
+    res.json({
+      logs: result.logs,
+      total: result.total,
+      limit: parseInt(limit) || 50,
+      offset: parseInt(offset) || 0
+    });
   } catch (err) {
     logger.error({ err: err.message }, 'Failed to query logs');
     res.status(500).json({ error: 'Failed to query logs' });
@@ -527,10 +562,18 @@ app.get('/api/logs/export', async (req, res) => {
   }
 });
 
-// Cleanup old logs (admin only)
+// Cleanup old logs (admin only) - seuls les logs archivés peuvent être supprimés
 app.delete('/api/logs/cleanup', async (req, res) => {
   try {
     const { days, level, action, service, startDate, endDate } = req.query;
+    
+    if (days) {
+      const daysNum = parseInt(days);
+      if (isNaN(daysNum) || daysNum < 1) {
+        return res.status(400).json({ error: 'Invalid days parameter' });
+      }
+    }
+    
     const deleted = await centralizedLogging.cleanup({ 
       days: days ? parseInt(days) : undefined,
       level: level && level !== 'all' ? level : undefined,
@@ -539,10 +582,43 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       startDate,
       endDate
     });
-    res.json({ success: true, deleted });
+    res.json({ success: true, deleted, message: 'Seuls les logs archivés ont été supprimés' });
   } catch (err) {
     logger.error({ err: err.message }, 'Failed to cleanup logs');
     res.status(500).json({ error: 'Failed to cleanup logs' });
+  }
+});
+
+// =========================================================================
+// CONSENTEMENT RGPD (Art. 7)
+// =========================================================================
+app.post('/api/consent', express.json(), async (req, res) => {
+  try {
+    const { type, action, version, intitule } = req.body;
+
+    if (!type || !action) {
+      return res.status(400).json({ error: 'Missing required fields: type, action' });
+    }
+
+    if (!['accepted', 'rejected'].includes(action)) {
+      return res.status(400).json({ error: 'action must be "accepted" or "rejected"' });
+    }
+
+    const id = await consentRepository.logConsent({
+      userId: req.user?.id,
+      sessionId: req.headers['x-session-id'] || null,
+      type,
+      action,
+      version: version || null,
+      intitule: intitule || null,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ success: true, id_consent: id });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to record consent');
+    res.status(500).json({ error: 'Failed to record consent' });
   }
 });
 
@@ -613,7 +689,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
           icon: 'fa-server',
           title: alert.annotations?.summary || alert.labels?.alertname,
           description: alert.annotations?.description || '',
-          time: new Date(alert.startsAt).toISOString(),
+          time: alert.startsAt ? new Date(alert.startsAt).toISOString() : new Date().toISOString(),
           statut: alert.state?.toUpperCase() || 'ACTIVE',
           valeur: alert.annotations?.current_value || '',
           seuil: alert.annotations?.threshold || '',
@@ -662,7 +738,11 @@ app.delete('/api/logs/cleanup', async (req, res) => {
       }
 
       // Sort by time (newest first)
-      allAlerts.sort((a, b) => new Date(b.time) - new Date(a.time));
+      allAlerts.sort((a, b) => {
+        const ta = a.time ? new Date(a.time).getTime() : 0;
+        const tb = b.time ? new Date(b.time).getTime() : 0;
+        return isNaN(tb) || isNaN(ta) ? 0 : tb - ta;
+      });
 
       const total = allAlerts.length;
       const paginatedAlerts = allAlerts.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
@@ -702,26 +782,6 @@ app.delete('/api/logs/cleanup', async (req, res) => {
     } catch (err) {
       logger.error({ err: err.message }, 'Failed to get alert stats');
       res.status(500).json({ error: 'Failed to get alert stats' });
-    }
-  });
-
-  // Get sensors status
-  app.get('/api/iot/sensors/status', async (req, res) => {
-    try {
-      const axios = (await import('axios')).default;
-
-      const response = await axios.get('http://ecotrack-service-iot:3013/api/iot/sensors/status', {
-        timeout: 5000,
-        headers: {
-          'x-user-id': '1',
-          'x-user-role': 'ADMIN'
-        }
-      });
-
-      res.json(response.data);
-    } catch (err) {
-      logger.error({ err: err.message }, 'Failed to get sensors status');
-      res.status(500).json({ error: 'Failed to get sensors status' });
     }
   });
 

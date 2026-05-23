@@ -85,7 +85,7 @@ const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
     info: {
-      title:       'EcoTrack — Notifications Gestionnaire API',
+      title:       'EcoTrack — Notifications Admin-Gestionnaire API',
       version:     '1.0.0',
       description: 'API de gestion des notifications pour les gestionnaires de zones EcoTrack',
     },

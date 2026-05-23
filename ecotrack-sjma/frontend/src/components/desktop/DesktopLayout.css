@@ -154,6 +154,32 @@
   overflow-y: auto;
 }
 
+.notifications-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 8px 12px;
+}
+
+.notifications-view-all {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: #2196F3;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.notifications-view-all:hover {
+  background: #e3f2fd;
+}
+
 .notifications-empty {
   padding: 18px 16px;
   color: #6b7280;

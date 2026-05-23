@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { useAlert } from '../../hooks/useAlert';
+import Footer from '../../components/layout/Footer';
 
 export default function MfaPage() {
   const [code, setCode] = useState('');
@@ -223,6 +224,7 @@ export default function MfaPage() {
             )}
           </div>
         </form>
+        <Footer />
       </div>
     </div>
   );

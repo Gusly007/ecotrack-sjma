@@ -3,6 +3,7 @@ import LogoEcoTrack from '../../assets/LogoEcoTrack.svg';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import Footer from '../../components/layout/Footer';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -193,6 +194,7 @@ const LoginPage = () => {
             </p>
           </div>
         </div>
+        <Footer />
       </div>
     </div>
   );

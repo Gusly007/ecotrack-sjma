@@ -29,6 +29,8 @@ export default function DesktopLayout({ children }) {
     '/gestionnaire/signalements': 'Signalements',
     '/gestionnaire/maintenance': 'Maintenance',
     '/gestionnaire/rapports': 'Rapports',
+    '/gestionnaire/notifications': 'Notifications',
+    '/admin/notifications': 'Notifications',
   };
 
   const currentDate = new Date().toLocaleDateString('fr-FR', {
@@ -96,11 +98,14 @@ export default function DesktopLayout({ children }) {
     }
 
     const signal = { active: true };
-
     loadNotifications(signal);
+
+    const onRefresh = () => loadNotifications({ active: true });
+    window.addEventListener('notifications-refresh', onRefresh);
 
     return () => {
       signal.active = false;
+      window.removeEventListener('notifications-refresh', onRefresh);
     };
   }, [user, isAdmin, notificationConfig.countPath, notificationConfig.listPath]);
 
@@ -156,12 +161,20 @@ export default function DesktopLayout({ children }) {
     }
   };
 
+  const notificationsPagePath = isAdmin ? '/admin/notifications' : '/gestionnaire/notifications';
+
   const navigateToNotifications = () => {
     setNotificationsOpen(false);
-    navigate(notificationConfig.fallbackRoute);
+    navigate(notificationsPagePath);
   };
 
-  const visibleNotifications = notifications.filter((notification) => !notification.est_lu);
+  const visibleNotifications = notifications.filter((notification) => {
+    if (notification.est_lu) return false;
+    if (notification.type && localStorage.getItem(`notif_${notification.type}`) === 'false') return false;
+    return true;
+  });
+
+  const filteredCount = visibleNotifications.length;
 
   const handleLogout = async () => {
     await logout();
@@ -219,8 +232,8 @@ export default function DesktopLayout({ children }) {
                 aria-label={notificationConfig.itemLabel}
               >
                 <i className="fas fa-bell"></i>
-                {notificationsCount > 0 && (
-                  <span className="badge-notif">{notificationsCount}</span>
+                {filteredCount > 0 && (
+                  <span className="badge-notif">{filteredCount}</span>
                 )}
               </button>
 
@@ -229,9 +242,9 @@ export default function DesktopLayout({ children }) {
                   <div className="notifications-header">
                     <div>
                       <strong>{notificationConfig.itemLabel}</strong>
-                      <span>{notificationsCount} non lue{notificationsCount > 1 ? 's' : ''}</span>
+                      <span>{filteredCount} non lue{filteredCount > 1 ? 's' : ''}</span>
                     </div>
-                    <button type="button" className="notifications-see-all" onClick={handleMarkAllAsRead}>
+                    <button type="button" className="notifications-see-all" onClick={navigateToNotifications}>
                       Voir tout
                     </button>
                   </div>
@@ -261,10 +274,16 @@ export default function DesktopLayout({ children }) {
                       ))
                     )}
                   </div>
+
+                  <div className="notifications-footer">
+                    <button type="button" className="notifications-view-all" onClick={navigateToNotifications}>
+                      <i className="fas fa-list"></i> Voir toutes les notifications
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-            <div className="user-info">
+            <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
               <i className={`fas ${isAdmin ? 'fa-user-shield' : 'fa-user-circle'}`}></i>
               <span>{userName} ({userLabel})</span>
             </div>

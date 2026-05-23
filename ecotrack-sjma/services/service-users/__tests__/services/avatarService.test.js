@@ -88,10 +88,10 @@ describe('Avatar Service', () => {
       });
 
       expect(pool.query).toHaveBeenCalledWith(expect.any(String), [
-        1,
         '/a.png',
         '/t.png',
-        '/m.png'
+        '/m.png',
+        1
       ]);
       expect(result).toEqual(stored);
     });
