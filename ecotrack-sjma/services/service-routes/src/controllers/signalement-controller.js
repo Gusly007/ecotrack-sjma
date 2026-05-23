@@ -62,6 +62,8 @@ class SignalementController {
   getById = async (req, res) => {
     try {
       const signalement = await this.service.getById(parseInt(req.params.id));
+      const denied = this._denyCitoyenForeignSignalement(req, signalement);
+      if (denied) return denied;
       return res.json(ApiResponse.success(signalement));
     } catch (error) {
       const status = error.status || error.statusCode || 500;
@@ -71,13 +73,31 @@ class SignalementController {
 
   getHistory = async (req, res) => {
     try {
-      const history = await this.service.getHistory(parseInt(req.params.id));
+      const id = parseInt(req.params.id, 10);
+      const signalement = await this.service.getById(id);
+      const denied = this._denyCitoyenForeignSignalement(req, signalement);
+      if (denied) return denied;
+      const history = await this.service.getHistory(id);
       return res.json(ApiResponse.success(history));
     } catch (error) {
       const status = error.status || error.statusCode || 500;
       return res.status(status).json(ApiResponse.error(status, error.message));
     }
   };
+
+  // BOLA : un CITOYEN ne peut lire que ses propres signalements (détail + historique).
+  _denyCitoyenForeignSignalement(req, signalement) {
+    const callerRole = req.headers['x-user-role'];
+    if (callerRole !== 'CITOYEN') return null;
+    const callerId = parseInt(req.headers['x-user-id'], 10);
+    const ownerId = signalement?.id_citoyen != null
+      ? parseInt(signalement.id_citoyen, 10)
+      : NaN;
+    if (!Number.isInteger(callerId) || !Number.isInteger(ownerId) || callerId !== ownerId) {
+      return res.status(403).json(ApiResponse.error(403, 'Accès refusé à ce signalement'));
+    }
+    return null;
+  }
 
   updateStatus = async (req, res) => {
     try {
