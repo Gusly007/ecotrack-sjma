@@ -1,5 +1,4 @@
 import * as avatarService from '../services/avatarService.js';
-import cacheService from '../services/cacheService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import fs from 'fs/promises';
 import sharp from 'sharp';
