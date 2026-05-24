@@ -22,10 +22,8 @@ export default function CookieBanner() {
         } else {
           setShowBanner(false);
         }
-      } catch (error) {
-        if (error.response?.status === 404) {
-          setShowBanner(true);
-        }
+      } catch {
+        setShowBanner(true);
       }
     };
 
@@ -44,7 +42,6 @@ export default function CookieBanner() {
         cookies_accepted: consentData
       });
 
-      setCookies(consentData);
       setShowBanner(false);
     } catch (error) {
       console.error('Failed to save cookie consent:', error);

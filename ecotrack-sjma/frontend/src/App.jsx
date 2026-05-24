@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -37,10 +38,10 @@ import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
 // Mobile Citoyen App — module feature isolé sous pages/mobile/citoyen/
 import MobileLayout from './pages/mobile/citoyen/MobileLayout';
 import CitoyenHome from './pages/mobile/citoyen/CitoyenHome';
-import CitoyenMap from './pages/mobile/citoyen/CitoyenMap';
+const CitoyenMap = lazy(() => import('./pages/mobile/citoyen/CitoyenMap'));
 import CitoyenSignaler from './pages/mobile/citoyen/CitoyenSignaler';
 import CitoyenSignalerSuccess from './pages/mobile/citoyen/CitoyenSignalerSuccess';
-import CitoyenScanner from './pages/mobile/citoyen/CitoyenScanner';
+const CitoyenScanner = lazy(() => import('./pages/mobile/citoyen/CitoyenScanner'));
 import CitoyenMesSignalements from './pages/mobile/citoyen/CitoyenMesSignalements';
 import CitoyenSignalementDetail from './pages/mobile/citoyen/CitoyenSignalementDetail';
 import CitoyenDefis from './pages/mobile/citoyen/CitoyenDefis';
@@ -82,8 +83,8 @@ function RootRedirect() {
 function App() {
   return (
     <AuthProvider>
-      <CookieBanner />
       <BrowserRouter>
+        <CookieBanner />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
@@ -296,10 +297,10 @@ function App() {
             <Route path="/citoyen/reset-password" element={<CitoyenResetPassword />} />
             <Route path="/citoyen" element={<CitoyenProtectedRoute><MobileLayout /></CitoyenProtectedRoute>}>
               <Route index element={<CitoyenHome />} />
-              <Route path="carte" element={<CitoyenMap />} />
+              <Route path="carte" element={<Suspense fallback={null}><CitoyenMap /></Suspense>} />
               <Route path="signaler" element={<CitoyenSignaler />} />
               <Route path="signaler/success" element={<CitoyenSignalerSuccess />} />
-              <Route path="scanner" element={<CitoyenScanner />} />
+              <Route path="scanner" element={<Suspense fallback={null}><CitoyenScanner /></Suspense>} />
               <Route path="signalements" element={<CitoyenMesSignalements />} />
               <Route path="signalements/:id" element={<CitoyenSignalementDetail />} />
               <Route path="defis" element={<CitoyenDefis />} />

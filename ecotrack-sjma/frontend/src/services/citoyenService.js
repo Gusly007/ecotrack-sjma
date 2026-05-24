@@ -96,6 +96,11 @@ export const citoyenService = {
       .get(`/api/gamification/stats/utilisateurs/${userId}/historique?limit=${limit}`)
       .then((r) => r.data?.data ?? r.data),
 
+  // RGPD — Article 15 (export) et Article 17 (suppression).
+  exportMyData: () => api.get('/api/users/me/export').then((r) => r.data?.data ?? r.data),
+  deleteAccountRequest: (password) =>
+    api.delete('/api/users/me', { data: { password } }).then((r) => r.data),
+
   // Notifications — endpoint PUT (PATCH renverrait 404).
   getNotifications: () => api.get('/notifications').then((r) => r.data?.data ?? r.data),
   markNotificationRead: (id) => api.put(`/notifications/${id}/read`).then((r) => r.data),

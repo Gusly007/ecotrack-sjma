@@ -7,7 +7,10 @@ export default defineConfig({
   server: {
     host: 'localhost',
     port: parseInt(process.env.VITE_PORT || '5173'),
-    strictPort: false, // Si le port est occupé, utiliser le suivant
+    strictPort: false,
     cors: true,
-  }
+  },
+  optimizeDeps: {
+    include: ['leaflet', 'leaflet-draw', 'html5-qrcode', 'react-easy-crop', 'axios', 'jwt-decode'],
+  },
 })

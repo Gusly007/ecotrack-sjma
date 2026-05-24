@@ -50,6 +50,7 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       NODE_ENV: development
+      RATE_LIMIT_BYPASS_LOCAL: 'true'
     volumes:
       - ./services/service-users/src:/app/src:ro
       - ./services/service-users/package.json:/app/package.json:ro

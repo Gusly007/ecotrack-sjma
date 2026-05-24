@@ -101,6 +101,18 @@ const CitoyenLogin = () => {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-box">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'none', border: 'none', color: '#666',
+              cursor: 'pointer', fontSize: '0.85rem', padding: '0 0 10px 0',
+              fontFamily: 'inherit',
+            }}
+          >
+            <i className="fas fa-arrow-left" style={{ fontSize: '0.78rem' }}></i> Retour
+          </button>
           <div className="auth-header">
             <div className="auth-logo" aria-hidden="true">
               <i className="fas fa-leaf"></i>
