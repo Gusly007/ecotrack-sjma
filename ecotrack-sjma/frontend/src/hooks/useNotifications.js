@@ -1,13 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 
-export function useNotifications(pollInterval = 60000) {
+export function useNotifications(pollInterval = 60000, onNew) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const prevRef = useRef(null);
+  const onNewRef = useRef(onNew);
+  onNewRef.current = onNew;
 
   const fetchCount = useCallback(async () => {
     try {
       const res = await api.get('/notifications/unread-count');
-      setUnreadCount(res.data?.count || res.data?.unreadCount || 0);
+      const count = res.data?.count || res.data?.unreadCount || 0;
+      setUnreadCount(count);
+      if (prevRef.current !== null && count > prevRef.current) {
+        onNewRef.current?.();
+      }
+      prevRef.current = count;
     } catch {
       // Silently fail - notifications are non-critical
     }
