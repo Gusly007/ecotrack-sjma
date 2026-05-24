@@ -69,17 +69,14 @@ const anomalieSchema = Joi.object({
   id_conteneur: Joi.number().integer().positive().required().messages({
     'any.required': 'Le conteneur est requis'
   }),
-  type_anomalie: Joi.string()
-    .valid('CONTENEUR_INACCESSIBLE', 'CONTENEUR_ENDOMMAGE', 'CAPTEUR_DEFAILLANT', 'CONTENEUR_PLEIN', 'CONTENEUR_SALE', 'MAUVAISE_ODEUR')
-    .required()
-    .messages({
-      'any.required': "Le type d'anomalie est requis",
-      'any.only': "Type d'anomalie invalide"
-    }),
-  gravite: Joi.string().valid('Basse', 'Moyenne', 'Haute', 'Critique').optional(),
+  type_anomalie: Joi.string().valid('CONTENEUR_INACCESSIBLE', 'CONTENEUR_ENDOMMAGE', 'CAPTEUR_DEFAILLANT', 'CONTENEUR_PLEIN', 'MAUVAISE_ODEUR').required().messages({
+    'any.required': "Le type d'anomalie est requis",
+    'any.only': 'Type invalide. Valeurs: CONTENEUR_INACCESSIBLE, CONTENEUR_ENDOMMAGE, CAPTEUR_DEFAILLANT, CONTENEUR_PLEIN, MAUVAISE_ODEUR'
+  }),
   description: Joi.string().max(500).required().messages({
     'any.required': 'La description est requise'
-  })
+  }),
+  gravite: Joi.string().valid('Basse', 'Moyenne', 'Haute', 'Critique').default('Moyenne')
 });
 
 function validateSchema(schema, data) {

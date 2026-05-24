@@ -101,6 +101,7 @@ function RootRedirect() {
 function App() {
   return (
     <AuthProvider>
+      <NotificationProvider>
       <BrowserRouter basename="/ecotrack-sjma">
         <CookieBanner />
         <Routes>
@@ -227,8 +228,6 @@ function App() {
           {/* Universal Scan Routes - accessible to all roles */}
           <Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
           <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
-
-
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
@@ -372,6 +371,7 @@ function App() {
           } />
         </Routes>
       </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

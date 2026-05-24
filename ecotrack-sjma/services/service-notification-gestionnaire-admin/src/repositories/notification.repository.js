@@ -379,12 +379,9 @@ class NotificationRepository {
     const params = [id_utilisateur];
     let paramIndex = 2;
 
-    if (type && ADMIN_TYPES.includes(type)) {
+    if (type) {
       conditions.push(`type = $${paramIndex++}`);
       params.push(type);
-    } else {
-      conditions.push(`type = ANY($${paramIndex++}::text[])`);
-      params.push(ADMIN_TYPES);
     }
 
     if (priorite) {
@@ -412,7 +409,7 @@ class NotificationRepository {
     const dataResult = await pool.query(
       `SELECT * FROM notification
        WHERE ${whereClause}
-       ORDER BY priorite ASC, date_creation DESC
+       ORDER BY date_creation DESC, priorite ASC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset]
     );

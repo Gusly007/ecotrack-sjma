@@ -6,7 +6,7 @@ import ProgressBar from '../../../components/mobile/ProgressBar';
 import MapView, { markerIcons } from '../../../components/mobile/MapView';
 import MobileListItem from '../../../components/mobile/MobileListItem';
 import EmptyState from '../../../components/mobile/EmptyState';
-import { fetchMyTournee, fetchEtapes, changeStatut } from '../../../services/tourneeService';
+import { fetchMyTournee, fetchEtapes } from '../../../services/tourneeService';
 import './TourneePage.css';
 
 function getFillColor(pct) {
@@ -26,37 +26,24 @@ export default function TourneePage() {
   const [tournee, setTournee] = useState(null);
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState(false);
 
-  const loadTournee = async () => {
-    try {
-      const t = await fetchMyTournee();
-      setTournee(t);
-      if (t?.id_tournee) {
-        const etapesRes = await fetchEtapes(t.id_tournee);
-        setEtapes(etapesRes || []);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const t = await fetchMyTournee();
+        setTournee(t);
+        if (t?.id_tournee) {
+          const etapesRes = await fetchEtapes(t.id_tournee);
+          setEtapes(etapesRes || []);
+        }
+      } catch {
+        setTournee(null);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setTournee(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { loadTournee(); }, []);
-
-  const handleStart = async () => {
-    if (!tournee?.id_tournee) return;
-    setStarting(true);
-    try {
-      await changeStatut(tournee.id_tournee, 'EN_COURS');
-      await loadTournee();
-    } catch (err) {
-      console.error('Erreur démarrage tournée:', err);
-    } finally {
-      setStarting(false);
-    }
-  };
+    };
+    fetch();
+  }, []);
 
   if (loading) {
     return (
@@ -101,20 +88,6 @@ export default function TourneePage() {
         </button>
       }
     >
-      {tournee.statut === 'PLANIFIEE' && (
-        <button
-          className="btn-primary-mobile"
-          onClick={handleStart}
-          disabled={starting}
-          style={{ marginBottom: 12 }}
-        >
-          {starting
-            ? <><i className="fas fa-spinner fa-spin"></i> Demarrage...</>
-            : <><i className="fas fa-play"></i> Demarrer la tournee</>
-          }
-        </button>
-      )}
-
       <ProgressBar value={collected} max={total} label={`${collected}/${total}`} color="#4CAF50" />
 
       {markers.length > 0 && (

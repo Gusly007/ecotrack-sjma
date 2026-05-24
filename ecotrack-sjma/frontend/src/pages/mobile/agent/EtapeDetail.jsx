@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
-import { fetchMyTournee, fetchEtapes } from '../../../services/tourneeService';
+import MapView, { markerIcons } from '../../../components/mobile/MapView';
+import { fetchEtapeById } from '../../../services/tourneeService';
 import './EtapeDetail.css';
 
 export default function EtapeDetail() {
@@ -10,24 +11,20 @@ export default function EtapeDetail() {
   const navigate = useNavigate();
   const [etape, setEtape] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
+    const load = async () => {
       try {
-        const t = await fetchMyTournee();
-        if (t?.id_tournee) {
-          const etapesRes = await fetchEtapes(t.id_tournee);
-          const etapes = etapesRes || [];
-          const found = etapes.find(e => String(e.id_etape) === String(id));
-          setEtape(found || null);
-        }
+        const found = await fetchEtapeById(id);
+        setEtape(found || null);
       } catch {
         setEtape(null);
       } finally {
         setLoading(false);
       }
     };
-    fetch();
+    load();
   }, [id]);
 
   if (loading) {
@@ -50,11 +47,14 @@ export default function EtapeDetail() {
     );
   }
 
-  const gpsNavigate = () => {
-    if (etape.latitude && etape.longitude) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${etape.latitude},${etape.longitude}`, '_blank');
-    }
-  };
+  const hasCoords = etape.latitude && etape.longitude;
+  const mapMarkers = hasCoords ? [{
+    id: etape.id_etape,
+    lat: parseFloat(etape.latitude),
+    lng: parseFloat(etape.longitude),
+    icon: markerIcons.red,
+    popup: etape.conteneur_uid || `Conteneur #${etape.id_conteneur}`,
+  }] : [];
 
   return (
     <MobileLayout title="Detail de l'etape" showBack>
@@ -83,9 +83,21 @@ export default function EtapeDetail() {
         <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? 'Collecte' : 'En attente'}</strong></div>
       </MobileCard>
 
-      <button className="gps-nav-btn" onClick={gpsNavigate}>
-        <i className="fas fa-directions"></i> Naviguer vers ce conteneur
+      <button className="gps-nav-btn" onClick={() => hasCoords && setShowMap(v => !v)} style={!hasCoords ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
+        <i className="fas fa-map-marker-alt"></i> {showMap ? 'Masquer la carte' : 'Naviguer vers ce conteneur'}
       </button>
+
+      {showMap && hasCoords && (
+        <div style={{ marginBottom: 16 }}>
+          <MapView
+            markers={mapMarkers}
+            center={[parseFloat(etape.latitude), parseFloat(etape.longitude)]}
+            zoom={16}
+            height="240px"
+            fitBounds={false}
+          />
+        </div>
+      )}
 
       <div className="action-buttons-row">
         <button className="action-btn collect" onClick={() => navigate('/agent/scan')}>

@@ -77,8 +77,8 @@ class ContainerServices {
       () => this.repository.getContainerById(id),
       CONTAINER_TTL
     );
-    
-    return result;
+
+    return result.data;
   }
 
   /**
@@ -86,15 +86,15 @@ class ContainerServices {
    */
   async getContainerByUid(uid) {
     Validators.validateContainerUid(uid);
-    
+
     const cacheKey = `container:uid:${uid}`;
     const result = await cacheService.getOrSet(
       cacheKey,
       () => this.repository.getContainerByUid(uid),
       CONTAINER_TTL
     );
-    
-    return result;
+
+    return result.data;
   }
 
   /**
@@ -112,8 +112,8 @@ class ContainerServices {
       () => this.repository.getAllContainers({ page, limit, ...filters }),
       CONTAINERS_LIST_TTL
     );
-
-    return result;
+    
+    return result.data;
   }
 
   /**
@@ -129,7 +129,7 @@ class ContainerServices {
       CONTAINER_TTL
     );
 
-    return result;
+    return result.data;
   }
 
   /**
@@ -144,8 +144,8 @@ class ContainerServices {
       () => this.repository.getContainersByZone(idZone),
       CONTAINER_TTL
     );
-
-    return result;
+    
+    return result.data;
   }
 
   /**
@@ -185,18 +185,20 @@ class ContainerServices {
   }
 
   /**
-   * Compte le nombre de conteneurs (avec filtres optionnels)
+   * Compte le nombre de conteneurs
    */
-  async countContainers(filters = {}) {
-    if (filters && Object.keys(filters).length > 0) {
-      return this.repository.countContainers(filters);
-    }
+  async countContainers() {
     const cacheKey = 'containers:count';
-    return cacheService.getOrSet(
+    const result = await cacheService.getOrSet(
       cacheKey,
       () => this.repository.countContainers(),
       CONTAINER_TTL
     );
+    
+    return result.data;
+  }
+  async countContainers(filters = {}) {
+    return this.repository.countContainers(filters);
   }
 
   /**

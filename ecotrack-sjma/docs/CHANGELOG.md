@@ -4,6 +4,409 @@
 
 ---
 
+### [4.4.0] 2026-05-23 - Interface Agent Mobile complète + Notifications temps réel (WebSocket)
+
+Implémentation de l'interface mobile complète pour le rôle **AGENT**, du système de notifications temps réel par WebSocket pour les trois rôles (AGENT, GESTIONNAIRE, ADMIN), et intégration du scan QR universel.
+
+---
+
+## Interface Agent Mobile — Description fonctionnelle complète
+
+### 1. Dashboard (`/agent`) — `AgentDashboard.jsx`
+
+Point d'entrée de l'agent après connexion.
+
+**Carte tournée du jour**
+- Affiche : zone, nombre de conteneurs, distance prévue (km), heure de départ, durée estimée (heures/minutes)
+- Indicateur de statut : `PLANIFIEE` / `EN_COURS`
+- Progression : `X/N étapes collectées` + pourcentage
+- Véhicule assigné
+- Bouton **"Voir la tournée"** / **"Continuer la tournée"** selon le statut
+- Si aucune tournée : message contextuel "Pas de tournée aujourd'hui"
+
+**Widget statistiques de la semaine**
+- Collectes réalisées sur 7 jours glissants
+- Taux de réussite (%)
+- Classement parmi les agents actifs (`#X / N agents`)
+
+**En-tête**
+- Salutation personnalisée avec le prénom de l'agent
+- Date du jour en français (ex : "vendredi 23 mai 2026")
+- Bouton cloche avec badge de notifications non lues (temps réel)
+- Bouton profil
+
+---
+
+### 2. Tournée en cours (`/agent/tournee`) — `TourneePage.jsx`
+
+Vue opérationnelle de la tournée active.
+
+**Barre de progression** — `X/N` étapes collectées, couleur verte
+
+**Carte interactive** (`MapView` — Leaflet)
+- Marqueurs colorés selon le niveau de remplissage :
+  - Rouge ≥ 80 %, Orange ≥ 50 %, Vert < 50 %
+  - Bleu : étapes déjà collectées
+- Clic sur un marqueur → navigation vers le détail de l'étape
+- `fitBounds` automatique pour afficher tous les conteneurs
+
+**Prochain conteneur** (carte mise en avant)
+- UID du conteneur, adresse, niveau de remplissage coloré
+- Bouton **"Scanner ce conteneur"** → `/agent/scan`
+
+**File d'attente** (étapes restantes)
+- Liste ordonnée par séquence
+- Clic → détail de l'étape
+
+**Bouton terminer** (en-tête droit) → `/agent/tournee/terminer`
+
+---
+
+### 3. Détail d'une étape (`/agent/tournee/etape/:id`) — `EtapeDetail.jsx`
+
+**Numéro de séquence** affiché en grand
+
+**Informations du conteneur**
+- Type (ex : Verre, Plastique, Papier)
+- Capacité en litres
+- Niveau de remplissage (rouge si ≥ 80 %)
+- Zone de collecte
+
+**Horaire prévu**
+- Heure estimée d'intervention
+- Statut : `Collecté` / `En attente`
+
+**Navigation GPS**
+- Bouton **"Naviguer vers ce conteneur"** → affiche la carte Leaflet centrée sur les coordonnées GPS du conteneur (zoom 16, marqueur rouge)
+
+**Actions**
+- **Scanner** → `/agent/scan` (scan QR pour valider la collecte)
+- **Anomalie** → `/agent/anomalie/form` (signalement)
+- **Passer** → retour à la liste (étape ignorée)
+
+---
+
+### 4. Scan QR Code (`/agent/scan`) — `ScanPage.jsx` agent
+
+- Activation de la caméra via `html5-qrcode`
+- Extraction automatique de l'UID depuis l'URL du QR code ou le texte brut
+- **Saisie manuelle** : champ texte UID (format `CNT-XXXXX`) avec bouton recherche
+- Redirection vers `/scan/result/:uid` après reconnaissance
+
+---
+
+### 5. Résultat de scan agent (`/agent/scan/result/:uid`) — `ScanResult.jsx` agent
+
+Affiché après chaque scan réussi.
+
+- UID, zone, type de conteneur, niveau de remplissage avec barre colorée
+- Bouton **"Valider la collecte"** → PUT statut étape en base
+- Bouton **"Signaler une anomalie"** → `/agent/anomalie/form?uid=...`
+- Gestion des erreurs : conteneur non trouvé, réseau indisponible
+
+---
+
+### 6. Signalement d'anomalie (`/agent/anomalie/form`) — `AnomalieForm.jsx`
+
+**Sélection du conteneur**
+- Champ UID avec lookup API en temps réel (blur ou bouton loupe)
+- Préremplissage automatique si `?uid=...` en paramètre URL (depuis le scan)
+- Affichage de confirmation : UID + zone si trouvé
+
+**Type d'anomalie** (3 options visuelles en grille)
+- `CONTENEUR_INACCESSIBLE` — Accès bloqué
+- `CONTENEUR_ENDOMMAGE` — Conteneur endommagé
+- `CAPTEUR_DEFAILLANT` — Capteur défectueux
+
+**Gravité** (4 niveaux, sélection par bouton)
+- **Basse** → priorité 4
+- **Moyenne** → priorité 3 (par défaut)
+- **Haute** → priorité 2
+- **Critique** → priorité 1
+
+**Description** : champ texte libre (obligatoire)
+
+**Géolocalisation** : si disponible, affiche les coordonnées GPS détectées
+
+**Soumission** → `POST /api/collectes/:id/anomalie`
+- En succès : notification temps réel envoyée à tous les GESTIONNAIRE et ADMIN actifs
+- Toast de confirmation + retour à la liste des étapes
+
+---
+
+### 7. Terminer la tournée (`/agent/tournee/terminer`) — `TerminerTournee.jsx`
+
+**Bilan avant validation**
+- Barre de progression (étapes collectées / total)
+- Nombre d'étapes restantes non collectées
+- Quantité totale collectée (kg)
+
+**Confirmation**
+- Bouton **"Terminer la tournée"** → `PUT /api/tournees/:id/statut { statut: "TERMINEE" }`
+- Écran de succès avec animation après validation
+
+---
+
+### 8. Historique des tournées (`/agent/historique`) — `HistoriquePage.jsx`
+
+Liste chronologique de toutes les tournées de l'agent.
+
+Chaque entrée affiche :
+- Code tournée, date en français, nom de la zone
+- Badge statut coloré :
+  - Vert `TERMINEE`, Orange `EN_COURS`, Rouge `ANNULEE`, Bleu `PLANIFIEE`
+- Nombre d'étapes, distance parcourue
+
+---
+
+### 9. Statistiques (`/agent/stats`) — `StatsPage.jsx`
+
+**Sélecteur de période** : Aujourd'hui / Cette semaine / Ce mois
+
+**Résumé (carte gradient)**
+- Collectes réalisées
+- Tournées effectuées
+- kg collectés
+
+**Performance**
+- Taux de réussite (%)
+- Distance totale parcourue (km)
+- Classement agents : `#X / N agents`
+
+**Impact environnemental** (si données disponibles)
+- CO2 économisé (kg) grâce à l'optimisation des tournées
+
+---
+
+## Pages partagées Mobile (AGENT + rôles mobiles futurs)
+
+### Profil (`/agent/profil`) — `ProfilPage.jsx`
+
+- Avatar (upload vers API, preview)
+- Prénom, nom, rôle affiché (badge coloré), email, date de création du compte
+- Bouton **Modifier le profil** → `/agent/profil/edit`
+- Bouton **Paramètres notifications** → `/agent/notifications/settings`
+- Bouton **Déconnexion** avec confirmation
+
+### Édition du profil (`/agent/profil/edit`) — `EditProfilPage.jsx`
+
+- Formulaire : prénom, nom, email
+- Upload avatar avec preview immédiat
+- Changement de mot de passe (ancien + nouveau + confirmation)
+- Validation côté client + messages d'erreur inline
+
+### Notifications (`/agent/notifications`) — `NotificationsPage.jsx`
+
+- Onglets : **Non lues** / **Toutes**
+- Liste paginée avec pull-to-refresh (bouton)
+- Chaque notification : icône par type, titre, corps, date relative
+- Badges colorés :
+  -  `TOURNEE` — assignation d'une tournée
+  -  `ALERTE` — anomalie ou alerte IoT
+  -  `SYSTEME` — message système
+- **Marquer tout comme lu** (bouton en haut)
+- Clic sur une notification → marquage individuel comme lu
+
+### Paramètres notifications (`/agent/notifications/settings`) — `NotificationSettings.jsx`
+
+- Toggles par catégorie (persistés en `localStorage`) :
+  - Tournées assignées
+  - Alertes et anomalies
+  - Messages système
+
+---
+
+## Layout et Navigation Mobile
+
+### MobileLayout (`MobileLayout.jsx`)
+
+Wrapper de toutes les pages agent. Fournit :
+- En-tête configurable (titre, bouton retour, actions à droite)
+- **Barre de navigation inférieure** (5 onglets persistants)
+  -  Dashboard (`/agent`)
+  -  Tournée (`/agent/tournee`)
+  -  Scan (`/scan`)
+  -  Notifications (`/agent/notifications`) avec badge
+  -  Profil (`/agent/profil`)
+- Onglet actif mis en évidence automatiquement selon la route
+
+### MobileHeader (`MobileHeader.jsx`)
+
+- Logo EcoTrack + titre de la page
+- Badge de notifications non lues (temps réel via `useNotifications()`)
+- Mise à jour immédiate sans rechargement de la page (WebSocket)
+
+---
+
+## Scan QR Universel (tous rôles)
+
+### Scanner universel (`/scan`) — `mobile/shared/ScanPage.jsx`
+
+Accessible à tous les rôles connectés (agent, gestionnaire, admin).
+
+- Scanner QR via caméra (composant `QRScanner` — `html5-qrcode`)
+- Extraction de l'UID depuis l'URL du QR code ou le texte brut
+- Fallback : saisie manuelle de l'UID si caméra refusée
+- Redirection vers `/scan/result/:uid`
+
+### Résultat universel (`/scan/result/:uid`) — `mobile/shared/ScanResult.jsx`
+
+- Informations du conteneur (UID, zone, type, capacité, remplissage)
+- Actions contextuelles selon le rôle :
+  - Agent : **Valider la collecte**, **Signaler une anomalie**
+  - Autres rôles : consultation uniquement
+
+### Page QR Codes publique (`/qr-codes`) — `QRCodePage.jsx`
+
+- Accessible sans authentification
+- Génération et impression des QR codes de conteneurs (via `qr-generator.html`)
+
+---
+
+## Notifications temps réel — WebSocket (AGENT + GESTIONNAIRE + ADMIN)
+
+### Flux de données
+
+```
+AGENT signale une anomalie
+  ↓ service-routes : INSERT notification en base (id_utilisateur = tous GESTIONNAIRE + ADMIN actifs)
+  ↓ POST /internal/emit-ws  {userIds: [...], notification: {type, titre, corps}}
+      → Socket.IO : io.to('user:{id}').emit('notification:new', ...)  →  GESTIONNAIRE / ADMIN
+      → Redis : DEL ecotrack:notifications:unread:{id}  (invalidation cache)
+
+GESTIONNAIRE assigne une tournée à AGENT
+  ↓ service-routes : INSERT notification en base (id_utilisateur = agentId)
+  ↓ POST /internal/emit-ws  {userIds: [agentId], notification: {}}
+      → Socket.IO : io.to('user:{agentId}').emit('notification:new', ...)  →  AGENT
+      → Redis : DEL ecotrack:notifications:unread:{agentId}
+```
+
+### Backend — service-notification-gestionnaire-admin
+
+**`websocketNotifService.js`** (nouveau)
+- Serveur Socket.IO v4, path `/ws/notifications`
+- Authentification middleware : JWT dans `socket.handshake.auth.token`
+- Chaque socket rejoint la room `user:{id_utilisateur}`
+- Stabilisation : `pingInterval: 25s`, `pingTimeout: 60s`, `upgradeTimeout: 10s`
+- `emitToUser(userId, data)` → `io.to('user:${userId}').emit('notification:new', data)`
+
+**`index.js`** — endpoint `POST /internal/emit-ws`
+- Protégé par header `x-internal-secret` (secret JWT partagé)
+- Émet l'événement WS + invalide le cache Redis pour chaque `userId`
+- Accessible uniquement depuis le réseau Docker interne (non exposé via API Gateway)
+
+**`notification.repository.js`**
+- Correction tri : `ORDER BY date_creation DESC, priorite ASC`
+  - Avant : `priorite ASC, date_creation DESC` — les nouvelles notifications de faible priorité disparaissaient au-delà du `LIMIT 100`
+
+### Backend — service-routes
+
+**`notifyStaff.js`** (nouveau utilitaire)
+- `notifyAllStaff(db, {type, titre, corps, priorite, categorie})` : INSERT bulk + emit WS fire-and-forget
+- `emitWsForUser(userId)` : emit WS pour un seul agent (après assignation de tournée)
+
+**Mapping gravité → priorité notification** (dans `collecte-service.js`)
+
+| Gravité | Priorité DB | Usage |
+|---------|-------------|-------|
+| Critique | 1 | Danger immédiat, rouge |
+| Haute | 2 | Problème sérieux |
+| Moyenne | 3 | Signalement standard (défaut) |
+| Basse | 4 | Information, vert |
+
+**Correctif Docker** : `axios` déplacé de `devDependencies` → `dependencies` dans `service-routes/package.json` (Docker `--omit=dev` le supprimait)
+
+### Backend — API Gateway
+
+- Proxy WebSocket vers `ecotrack-service-notification-gestionnaire-admin:3016` sur `/ws/notifications`
+- Correction `pathRewrite` : les upgrades WebSocket byppassent Express → le path arrive déjà préfixé `/ws/...` → vérification `startsWith('/ws')` avant ajout du préfixe
+
+### Frontend — `NotificationContext.jsx` (nouveau)
+
+`NotificationProvider` global, wrappé en dehors du `BrowserRouter` dans `App.jsx`.
+
+**Connexion WebSocket**
+- Socket.IO connecté au démarrage (dès que `userId` est disponible)
+- Auth : `{ token: localStorage.getItem('token') }` dans `socket.handshake.auth`
+- Événement `notification:new` → `setUnreadCount(prev => prev + 1)` + chime audio
+
+**Polling HTTP (fallback)**
+- `GET /api/notifications/unread/count` toutes les 15 secondes
+- Si WS connecté : utilise `Math.max(prev, count)` — le cache Redis périmé ne peut pas faire régresser le badge déjà incrémenté par le WS
+- Si WS déconnecté : utilise le count exact + joue le chime si count a augmenté
+- Refresh exact forcé (`{ exact: true }`) sur : chargement initial, événement `notifications-refresh`, appel explicite de `refresh()`
+
+**Système audio**
+- `<audio>` avec WAV généré programmatiquement (880 Hz + 1100 Hz, enveloppe 380 ms)
+- Pré-chauffe sur le premier geste utilisateur (click, touchstart, keydown, pointerdown) pour lever la restriction autoplay Chrome
+- Chime mis en file si la page est en arrière-plan (`visibilitychange` → reprise à la réactivation)
+
+### Desktop — Notifications (ADMIN + GESTIONNAIRE)
+
+- `NotificationsPage.jsx` (desktop) — pages `/admin/notifications` et `/gestionnaire/notifications`
+- `AdminLayout.jsx` + `GestionnaireLayout.jsx` — badge `{count}` sur l'icône cloche, alimenté par `useNotifications()`
+
+### Infrastructure Docker
+
+```yaml
+# docker-compose.yml — service-routes
+environment:
+  NOTIFICATION_SERVICE_URL: http://ecotrack-service-notification-gestionnaire-admin:3016
+  JWT_SECRET: ${JWT_SECRET}
+```
+
+---
+
+#### Fichiers modifiés / créés
+
+| Couche | Fichier | Type | Description |
+|--------|---------|------|-------------|
+| Frontend | `context/NotificationContext.jsx` | **NOUVEAU** | Provider WS + polling + audio, badge temps réel |
+| Frontend | `hooks/index.js` | MOD | Re-export `useNotifications` depuis Context |
+| Frontend | `App.jsx` | MOD | Routes agent, scan universel, QR, notifs desktop |
+| Frontend | `components/mobile/MobileHeader.jsx` | MOD | Badge notif WS, menu contextuel par rôle |
+| Frontend | `components/mobile/MobileHeader.css` | MOD | Styles badge et menu |
+| Frontend | `components/mobile/MobileLayout.jsx` | MOD | Barre navigation inférieure 5 onglets |
+| Frontend | `components/desktop/admin/AdminLayout.jsx` | MOD | Badge notif sur cloche |
+| Frontend | `components/desktop/gestionnaire/GestionnaireLayout.jsx` | MOD | Badge notif sur cloche |
+| Frontend | `pages/mobile/agent/AgentDashboard.jsx` | MOD | Dashboard : tournée du jour + stats semaine |
+| Frontend | `pages/mobile/agent/TourneePage.jsx` | — | Tournée : carte Leaflet + progression + file d'attente |
+| Frontend | `pages/mobile/agent/EtapeDetail.jsx` | MOD | Détail étape : infos conteneur + GPS + actions |
+| Frontend | `pages/mobile/agent/ScanResult.jsx` | MOD | Résultat scan agent + validation + anomalie |
+| Frontend | `pages/mobile/agent/AnomalieForm.jsx` | MOD | Formulaire signalement + gravité + géoloc |
+| Frontend | `pages/mobile/agent/TerminerTournee.jsx` | — | Finalisation tournée + bilan |
+| Frontend | `pages/mobile/agent/HistoriquePage.jsx` | — | Historique tournées passées |
+| Frontend | `pages/mobile/agent/StatsPage.jsx` | MOD | Stats par période + classement + CO2 |
+| Frontend | `pages/mobile/shared/ScanPage.jsx` | **NOUVEAU** | Scanner QR universel + saisie manuelle |
+| Frontend | `pages/mobile/shared/ScanPage.css` | **NOUVEAU** | Styles scanner |
+| Frontend | `pages/mobile/shared/ScanResult.jsx` | **NOUVEAU** | Résultat scan partagé tous rôles |
+| Frontend | `pages/mobile/shared/ScanResult.css` | **NOUVEAU** | Styles résultat scan |
+| Frontend | `pages/mobile/shared/NotificationsPage.jsx` | MOD | Liste notifs mobile paginée |
+| Frontend | `pages/mobile/shared/NotificationsPage.css` | MOD | Styles notifs mobile |
+| Frontend | `pages/mobile/shared/NotificationSettings.jsx` | MOD | Toggles préférences notifications |
+| Frontend | `pages/mobile/shared/ProfilPage.jsx` | MOD | Profil mobile responsive |
+| Frontend | `pages/mobile/shared/ProfilPage.css` | MOD | Styles profil mobile |
+| Frontend | `pages/mobile/shared/EditProfilPage.jsx` | MOD | Édition profil + avatar + mot de passe |
+| Frontend | `pages/mobile/shared/EditProfilPage.css` | MOD | Styles édition profil |
+| Frontend | `pages/desktop/NotificationsPage.jsx` | MOD | Page notifs admin/gestionnaire |
+| Frontend | `pages/QRCodePage.jsx` | **NOUVEAU** | Page publique impression QR codes |
+| Frontend | `pages/QRCodePage.css` | **NOUVEAU** | Styles QR codes |
+| Frontend | `pages/ScanUniversal.jsx` | MOD | Composant scan html5-qrcode |
+| Frontend | `public/qr-generator.html` | MOD | Générateur QR côté client |
+| Frontend | `services/tourneeService.js` | MOD | Appels API étapes, collecte, stats, historique |
+| Service-routes | `utils/notifyStaff.js` | **NOUVEAU** | `notifyAllStaff` + `emitWsForUser` |
+| Service-routes | `services/tournee-service.js` | MOD | `emitWsForUser` sur assignation tournée → agent |
+| Service-routes | `services/collecte-service.js` | MOD | `notifyAllStaff` sur anomalie + mapping gravité |
+| Service-routes | `validators/tournee.validator.js` | MOD | Champ `gravite` (`Basse`/`Moyenne`/`Haute`/`Critique`) |
+| Service-routes | `package.json` | MOD | `axios` → `dependencies` (fix Docker `--omit=dev`) |
+| Service-notif | `src/services/websocketNotifService.js` | **NOUVEAU** | Serveur Socket.IO v4 + auth JWT |
+| Service-notif | `index.js` | MOD | Endpoint `POST /internal/emit-ws` |
+| Service-notif | `src/repositories/notification.repository.js` | MOD | Tri `date_creation DESC, priorite ASC` |
+| API-Gateway | `src/index.js` | MOD | Proxy WS + fix pathRewrite double-préfixe `/ws` |
+| Docker | `docker-compose.yml` | MOD | Env `NOTIFICATION_SERVICE_URL` + `JWT_SECRET` pour service-routes |
+
+---
+
 ### [4.3.0] 2026-05-19 - Corrections critiques, Profil utilisateur complet, Notifications réelles
 
 Corrections de bugs bloquants, refonte du profil utilisateur, alignement du système de notifications sur les types réels du backend, et stabilisation du proxy API Gateway.

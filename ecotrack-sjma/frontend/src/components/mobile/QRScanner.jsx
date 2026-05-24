@@ -7,22 +7,16 @@ export default function QRScanner({ onScan, onError }) {
   const html5QrRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
 
-  // Stocker les callbacks dans un ref évite que useEffect se relance à chaque
-  // render quand le parent passe une nouvelle référence de fonction.
-  const onScanRef = useRef(onScan);
-  const onErrorRef = useRef(onError);
-  onScanRef.current = onScan;
-  onErrorRef.current = onError;
-
   useEffect(() => {
     const scannerId = 'qr-scanner-region';
-
+    
     const startScanner = async () => {
       try {
+        // Clear any existing scanner first
         if (html5QrRef.current && html5QrRef.current.isScanning) {
           await html5QrRef.current.stop();
         }
-
+        
         const html5QrCode = new Html5Qrcode(scannerId);
         html5QrRef.current = html5QrCode;
 
@@ -30,14 +24,16 @@ export default function QRScanner({ onScan, onError }) {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            if (onScanRef.current) onScanRef.current(decodedText);
+            if (onScan) onScan(decodedText);
           },
-          () => { /* per-frame errors ignored */ }
+          (errorMessage) => {
+            // Ignore scan errors, only report start errors
+          }
         );
         setIsScanning(true);
       } catch (err) {
         console.error('QR Scanner error:', err);
-        if (onErrorRef.current) onErrorRef.current(err);
+        if (onError) onError(err);
       }
     };
 
@@ -48,7 +44,7 @@ export default function QRScanner({ onScan, onError }) {
         html5QrRef.current.stop().catch(() => {});
       }
     };
-  }, []);
+  }, [onScan, onError]);
 
   return (
     <div className="qr-scanner-wrapper">

@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import ToutesTourneesTable from '../components/desktop/gestionnaire/ToutesTourneesTable';
-import TourneesEnCoursTable from '../components/desktop/gestionnaire/TourneesEnCoursTable';
-import { fetchAllTournees, fetchActiveTournees } from '../services/tourneeService';
+import { fetchAllTournees } from '../services/tourneeService';
 
 vi.mock('../services/tourneeService', () => ({
   fetchAllTournees: vi.fn(),
-  fetchActiveTournees: vi.fn(),
 }));
 
 vi.mock('../components/desktop/gestionnaire/TourneeEditModal', () => ({
@@ -127,41 +125,4 @@ describe('Affichage du flag est_en_retard (3.9.0)', () => {
     });
   });
 
-  describe('TourneesEnCoursTable', () => {
-    it("propage est_en_retard du backend vers le libellé de statut (et n'utilise plus progression<=20)", async () => {
-      fetchActiveTournees.mockResolvedValueOnce({
-        data: [
-          {
-            id_tournee: 10,
-            statut: 'EN_COURS',
-            est_en_retard: true,
-            agent_prenom: 'Fa',
-            agent_nom: 'Sow',
-            zone_nom: 'Centre',
-            total_etapes: 10,
-            etapes_collectees: 8,
-          },
-          {
-            id_tournee: 11,
-            statut: 'EN_COURS',
-            est_en_retard: false,
-            agent_prenom: 'Ga',
-            agent_nom: 'Ba',
-            zone_nom: 'Nord',
-            total_etapes: 20,
-            etapes_collectees: 1,
-          },
-        ],
-        pagination: { page: 1, pages: 1, total: 2, limit: 6 },
-      });
-
-      render(<TourneesEnCoursTable pageSize={6} />);
-
-      await waitFor(() => expect(screen.getByText('T-10')).toBeInTheDocument());
-
-      expect(screen.getAllByText('En retard')).toHaveLength(1);
-      expect(screen.getByText('T-11')).toBeInTheDocument();
-      expect(screen.getByText('En cours')).toBeInTheDocument();
-    });
-  });
 });

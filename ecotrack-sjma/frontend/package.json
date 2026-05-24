@@ -27,6 +27,7 @@
     "react-easy-crop": "^5.5.7",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.13.0",
+    "socket.io-client": "^4.8.3",
     "vite-plugin-mkcert": "^2.0.0",
     "vite-plugin-pwa": "^1.2.0"
   },

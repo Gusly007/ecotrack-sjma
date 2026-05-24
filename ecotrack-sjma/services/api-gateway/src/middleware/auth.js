@@ -17,17 +17,7 @@ const publicRoutes = [
   { path: '/auth/forgot-password', methods: ['POST'] },
   { path: '/auth/reset-password', methods: ['POST'] },
   { path: '/auth/activate', methods: ['POST'] },
-  // Self-registration citoyen (doc.md §4.1) — backend force le rôle.
-  { path: '/auth/register', methods: ['POST'] },
-  // Flow code-email isolé du scope mobile citoyen (register/activate/resend).
-  { path: '/auth/citoyen/register', methods: ['POST'] },
-  { path: '/auth/citoyen/verify-activation', methods: ['POST'] },
-  { path: '/auth/citoyen/resend-activation', methods: ['POST'] },
-  // Avatars servis statiquement par service-users. Les <img src> du
-  // navigateur ne peuvent pas porter d'Authorization header donc les URLs
-  // /avatars/* doivent rester publiques (les noms incluent l'id, ce qui
-  // limite l'énumération).
-  { path: '/avatars/', methods: ['GET', 'HEAD'] },
+  // Register désactivé - inscription uniquement par ADMIN
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
   { path: '/api-docs', methods: ['GET'] },
@@ -39,7 +29,11 @@ const publicRoutes = [
   { path: '/api/iot/sensors/status', methods: ['GET'] }, // Sensors status
   { path: '/api/alerts', methods: ['GET'] }, // Alerts for monitoring
   { path: '/api/dashboard/stats', methods: ['GET'] }, // Dashboard stats
-  { path: '/api/containers/qrcode', methods: ['GET'] }, // QR PNG generation
+  { path: '/api/consent', methods: ['POST'] }, // Consentement RGPD
+  { path: '/api/cookies/consent', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }, // Consentement cookies RGPD
+  { path: '/avatars', methods: ['GET'] }, // Avatars publiques
+  // WebSocket notifications — auth gérée par le service lui-même (Socket.IO auth.token)
+  { path: '/ws', methods: ['GET'] },
 ];
 
 /**

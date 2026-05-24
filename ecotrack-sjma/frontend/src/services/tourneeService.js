@@ -96,13 +96,13 @@ export async function fetchMyTournee() {
   return unwrap(response.data);
 }
 
-export async function fetchTourneeById(id) {
-  const response = await api.get(`/api/routes/tournees/${id}`);
+export async function fetchEtapes(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/etapes`);
   return unwrap(response.data);
 }
 
-export async function fetchEtapes(tourneeId) {
-  const response = await api.get(`/api/routes/tournees/${tourneeId}/etapes`);
+export async function fetchEtapeById(etapeId) {
+  const response = await api.get(`/api/routes/etapes/${etapeId}`);
   return unwrap(response.data);
 }
 
@@ -122,7 +122,12 @@ export async function recordCollecte(tourneeId, data) {
 }
 
 export async function reportAnomalie(tourneeId, data) {
-  const response = await api.post(`/api/routes/tournees/${tourneeId}/anomalie`, data);
+  const payload = {
+    ...data,
+    type_anomalie: data.type_anomalie || data.type,
+  };
+  delete payload.type;
+  const response = await api.post(`/api/routes/tournees/${tourneeId}/anomalie`, payload);
   return unwrap(response.data);
 }
 
@@ -148,7 +153,7 @@ export async function fetchKpis() {
   return unwrap(response.data);
 }
 
-export async function fetchAgentStats(period = 'mois') {
+export async function fetchAgentStats(period = 'semaine') {
   const response = await api.get('/api/routes/stats/agent', { params: { period } });
   return unwrap(response.data) || {};
 }
@@ -229,27 +234,27 @@ export async function fetchTourneeCreationOptions() {
   }
 
   const zones = zonesResult.status === "fulfilled"
-    ? extractList(zonesResult.value.data)
+    ? extractList(zonesResult.value?.data)
     : [];
 
   const agents = agentsResult.status === "fulfilled"
-    ? extractList(agentsResult.value.data)
+    ? extractList(agentsResult.value?.data)
     : [];
 
   const vehicles = vehiclesResult.status === "fulfilled"
-    ? extractList(vehiclesResult.value.data)
+    ? extractList(vehiclesResult.value?.data)
     : [];
 
   const types = typesResult.status === "fulfilled"
-    ? extractList(typesResult.value.data)
+    ? extractList(typesResult.value?.data)
     : [];
 
   return { zones, agents, vehicles, types };
 }
 
 // L'optimisation 2-opt sur une zone avec beaucoup de conteneurs peut prendre
-// plusieurs secondes (matrice de distances + itÃ©rations d'amÃ©lioration).
-// On override le timeout axios (dÃ©faut 10 s) Ã  30 s pour ces 2 endpoints.
+// plusieurs secondes (matrice de distances + itérations d'amélioration).
+// On override le timeout axios (défaut 10 s) à 30 s pour ces 2 endpoints.
 const OPTIMIZE_TIMEOUT_MS = 30000;
 
 export async function optimizeTournee(payload) {
@@ -265,6 +270,12 @@ export async function previewOptimizeTournee(payload) {
   });
   return unwrap(response.data) || response.data;
 }
+
+export async function fetchTourneeById(id) {
+  const response = await api.get(`/api/routes/tournees/${id}`);
+  return unwrap(response.data) || response.data;
+}
+
 export async function fetchTourneeEtapes(id) {
   const response = await api.get(`/api/routes/tournees/${id}/etapes`);
   return extractList(response.data || {});

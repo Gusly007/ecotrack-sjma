@@ -74,10 +74,11 @@ export default function MonitoringPage() {
     { name: 'api-gateway', displayName: 'API Gateway', category: 'microservice' },
     { name: 'service-users', displayName: 'Service Users', category: 'microservice' },
     { name: 'service-containers', displayName: 'Service Containers', category: 'microservice' },
+    { name: 'service-routes', displayName: 'Service Routes', category: 'microservice' },
+    { name: 'service-notification-gestionnaire-admin', displayName: 'Service Notification', category: 'microservice' },
     { name: 'service-iot', displayName: 'Service IoT', category: 'microservice' },
     { name: 'service-gamifications', displayName: 'Service Gamifications', category: 'microservice' },
     { name: 'service-analytics', displayName: 'Service Analytics', category: 'microservice' },
-    { name: 'service-routes', displayName: 'Service Routes', category: 'microservice' },
     { name: 'postgresql', displayName: 'PostgreSQL', category: 'database' },
     { name: 'redis', displayName: 'Redis Cache', category: 'cache' },
     { name: 'kafka', displayName: 'Kafka', category: 'messaging' },
@@ -90,16 +91,17 @@ export default function MonitoringPage() {
     { name: 'api-gateway', displayName: 'API Gateway' },
     { name: 'service-users', displayName: 'Service Users' },
     { name: 'service-containers', displayName: 'Service Containers' },
+    { name: 'service-routes', displayName: 'Service Routes' },
+    { name: 'service-notification-gestionnaire-admin', displayName: 'Service Notification' },
     { name: 'service-iot', displayName: 'Service IoT' },
     { name: 'service-gamifications', displayName: 'Service Gamifications' },
-    { name: 'service-analytics', displayName: 'Service Analytics' },
-    { name: 'service-routes', displayName: 'Service Routes' }
+    { name: 'service-analytics', displayName: 'Service Analytics' }
   ];
 
   const totalRequests = metricsData?.services?.reduce((sum, s) => sum + (s.httpRequests || 0), 0) || 0;
   const totalMemory = metricsData?.services?.reduce((sum, s) => sum + (s.memoryBytes || 0), 0) || 0;
   const activeServices = healthData?.services?.filter(s => s.status === 'up' || s.status === 'ok' || s.status === 'OK' || s.status === 'healthy').length || 0;
-  const totalServices = healthData?.services?.length || 13;
+  const totalServices = healthData?.services?.length || 14;
   const downServicesCount = totalServices - activeServices;
 
   const totalMemoryUsed = metricsData?.services?.reduce((sum, s) => sum + (s.memoryBytes || 0), 0) || 0;

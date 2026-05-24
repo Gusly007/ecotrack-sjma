@@ -1,49 +1,45 @@
 const SignalementRepository = require('../repositories/signalement-repository');
-const kafkaProducer = require('../../kafkaProducer');
+const { notifyAllStaff } = require('../utils/notifyStaff');
 
 class SignalementService {
   constructor(db) {
+    this.db = db;
     this.repository = new SignalementRepository(db);
   }
 
-  async create(data) {
-    const ApiError = require('../utils/api-error');
-    if (!data.description || !String(data.description).trim()) {
-      throw ApiError.badRequest('Le champ "description" est requis');
-    }
-    if (!data.id_type) {
-      throw ApiError.badRequest('Le champ "id_type" est requis');
-    }
-    if (!data.id_citoyen) {
-      throw ApiError.badRequest('Le champ "id_citoyen" est requis');
-    }
-
-    // Le mobile citoyen peut envoyer conteneur_uid (scan QR / saisie
-    // manuelle) à la place de id_conteneur. On résout l'UID en id.
-    let id_conteneur = data.id_conteneur;
-    if (!id_conteneur && data.conteneur_uid) {
-      const row = await this.repository.findConteneurByUidOrId(data.conteneur_uid);
-      if (!row) {
-        throw ApiError.badRequest(`Conteneur introuvable pour "${data.conteneur_uid}"`);
-      }
-      id_conteneur = row.id_conteneur;
-    }
-    if (!id_conteneur) {
-      throw ApiError.badRequest('Le champ "id_conteneur" ou "conteneur_uid" est requis');
+  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
+    if (!description || !id_type || !id_conteneur || !id_citoyen) {
+      const ApiError = require('../utils/api-error');
+      throw ApiError.badRequest('Champs requis manquants : description, id_type, id_conteneur, id_citoyen');
     }
 
     const signalement = await this.repository.create({
-      description: data.description,
-      id_type: data.id_type,
+      description,
+      url_photo,
+      id_type,
       id_conteneur,
-      id_citoyen: data.id_citoyen,
-      url_photo: data.url_photo || null,
-      urgence: data.urgence || null,
+      id_citoyen
     });
 
-    // Publier l'événement — service-notification-gestionnaire-admin
-    // notifie gestionnaire/admin de la zone concernée.
-    await kafkaProducer.sendSignalement(signalement);
+    // Notifier gestionnaires + admins directement en DB
+    let conteneurUid = `#${id_conteneur}`;
+    let typeLibelle = '';
+    try {
+      const [uidRow, typeRow] = await Promise.all([
+        this.db.query('SELECT uid FROM conteneur WHERE id_conteneur = $1', [id_conteneur]),
+        this.db.query('SELECT libelle FROM type_signalement WHERE id_type = $1', [id_type]),
+      ]);
+      if (uidRow.rows[0]?.uid) conteneurUid = uidRow.rows[0].uid;
+      if (typeRow.rows[0]?.libelle) typeLibelle = typeRow.rows[0].libelle;
+    } catch { /* ignore */ }
+
+    await notifyAllStaff(this.db, {
+      type:      'ALERTE',
+      titre:     `Nouveau signalement — ${conteneurUid}`,
+      corps:     `Type : ${typeLibelle || id_type}\n${description}`.trim(),
+      priorite:  2,
+      categorie: 'ALERTE',
+    });
 
     return signalement;
   }

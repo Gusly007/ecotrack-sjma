@@ -377,6 +377,8 @@ services:
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
       RATE_LIMIT_BYPASS_LOCAL: ${RATE_LIMIT_BYPASS_LOCAL:-false}
+      NOTIFICATION_SERVICE_URL: http://ecotrack-service-notification-gestionnaire-admin:3016
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_access_secret}
     ports:
       - "3012:3012"
     depends_on:
@@ -540,8 +542,9 @@ services:
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
       KAFKAJS_NO_PARTITIONER_WARNING: 1
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
-      - "3017:3016"
+      - "3016:3016"
     depends_on:
       postgres:
         condition: service_healthy

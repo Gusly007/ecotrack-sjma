@@ -35,8 +35,8 @@ export default function AlertesUrgentesPanel({ alertes = defaultAlertesUrgentes 
   return (
     <div className="panel">
       <h3><i className="fas fa-exclamation-circle" style={{ color: "#f44336" }}></i> Alertes urgentes</h3>
-      {alertes.map((alerte) => (
-        <div key={alerte.text} className={`alert-item ${alerte.level}`}>
+      {alertes.map((alerte, i) => (
+        <div key={`${alerte.text}-${i}`} className={`alert-item ${alerte.level}`}>
           <i className={`fas ${alerte.icon}`} style={{ color: alerte.color }}></i>
           {alerte.text}
         </div>

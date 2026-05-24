@@ -4,107 +4,82 @@ import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
 import { useAlert } from '../../../hooks';
 import { useGeolocation } from '../../../hooks';
-import { fetchMyTournee, fetchEtapes, reportAnomalie } from '../../../services/tourneeService';
+import { fetchMyTournee, reportAnomalie } from '../../../services/tourneeService';
 import { containerService } from '../../../services/containerService';
 import './AnomalieForm.css';
 
 const ANOMALIE_TYPES = [
-  { value: 'CONTENEUR_INACCESSIBLE', label: 'Acces bloque', icon: 'fa-car' },
-  { value: 'CONTENEUR_ENDOMMAGE', label: 'Conteneur endommage', icon: 'fa-tools' },
-  { value: 'CAPTEUR_DEFAILLANT', label: 'Capteur defectueux', icon: 'fa-microchip' },
-  { value: 'CONTENEUR_PLEIN', label: 'Conteneur plein', icon: 'fa-fill' },
-  { value: 'CONTENEUR_SALE', label: 'Conteneur sale', icon: 'fa-broom' },
-  { value: 'MAUVAISE_ODEUR', label: 'Mauvaise odeur', icon: 'fa-wind' },
+  { value: 'CONTENEUR_INACCESSIBLE', label: 'Acces bloque',        icon: 'fa-car' },
+  { value: 'CONTENEUR_ENDOMMAGE',    label: 'Conteneur endommage', icon: 'fa-tools' },
+  { value: 'CAPTEUR_DEFAILLANT',     label: 'Capteur defectueux',  icon: 'fa-microchip' },
 ];
 
 const GRAVITE_LEVELS = ['Basse', 'Moyenne', 'Haute', 'Critique'];
 
 export default function AnomalieForm() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { showSuccess, showError } = useAlert();
   const { position } = useGeolocation();
-
-  const [tourneeId, setTourneeId] = useState(null);
-  const [containers, setContainers] = useState([]);
-  const [loadingContainers, setLoadingContainers] = useState(true);
+  const [tourneeId, setTourneeId]       = useState(null);
+  const [uidInput, setUidInput]         = useState(searchParams.get('uid') || '');
+  const [container, setContainer]       = useState(null);
+  const [uidError, setUidError]         = useState('');
   const [form, setForm] = useState({
-    type: 'CONTENEUR_INACCESSIBLE',
+    type_anomalie: 'CONTENEUR_INACCESSIBLE',
     description: '',
     gravite: 'Moyenne',
-    id_conteneur: null,
-    conteneur_uid: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Pre-selection via ?container=UID query param
   useEffect(() => {
-    const containerUid = params.get('container');
-    if (!containerUid) return;
-    (async () => {
-      try {
-        const res = await containerService.getByUid(containerUid);
-        const c = res?.data ?? res;
-        if (c?.id_conteneur) {
-          setForm((f) => ({ ...f, id_conteneur: c.id_conteneur, conteneur_uid: c.uid }));
-        }
-      } catch { /* ignore */ }
-    })();
-  }, [params]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const t = await fetchMyTournee();
-        if (!t?.id_tournee) {
-          setLoadingContainers(false);
-          return;
-        }
-        setTourneeId(t.id_tournee);
-        const etapes = await fetchEtapes(t.id_tournee);
-        const list = (etapes || []).map((e) => ({
-          id: e.id_conteneur,
-          uid: e.conteneur_uid || `Conteneur #${e.id_conteneur}`,
-          zone: e.zone_nom || '',
-        }));
-        setContainers(list);
-      } catch {
-        setContainers([]);
-      } finally {
-        setLoadingContainers(false);
-      }
-    })();
+    fetchMyTournee()
+      .then(t => { if (t?.id_tournee) setTourneeId(t.id_tournee); })
+      .catch(() => {});
   }, []);
 
-  const handleSubmit = async (e) => {
-    e?.preventDefault?.();
-    if (!tourneeId) {
-      showError('Aucune tournee active');
-      return;
+  // Auto-fetch container if uid passed via URL
+  useEffect(() => {
+    const uid = searchParams.get('uid');
+    if (uid) lookupContainer(uid);
+  }, []);
+
+  const lookupContainer = async (uid) => {
+    if (!uid.trim()) { setContainer(null); setUidError(''); return; }
+    setUidError('');
+    try {
+      const res = await containerService.getByUid(uid.trim().toUpperCase());
+      if (res?.id_conteneur) {
+        setContainer(res);
+      } else {
+        setContainer(null);
+        setUidError('Conteneur introuvable');
+      }
+    } catch {
+      setContainer(null);
+      setUidError('Conteneur introuvable');
     }
-    if (!form.id_conteneur) {
-      showError('Veuillez selectionner un conteneur');
-      return;
-    }
-    if (!form.description.trim()) {
-      showError('Veuillez decrire le probleme');
-      return;
-    }
+  };
+
+  const handleUidBlur = () => lookupContainer(uidInput);
+
+  const handleSubmit = async () => {
+    if (!tourneeId) { showError('Aucune tournee active'); return; }
+    if (!container)  { showError('Veuillez saisir un UID de conteneur valide'); return; }
+    if (!form.description.trim()) { showError('Veuillez decrire le probleme'); return; }
+
     setSubmitting(true);
     try {
       await reportAnomalie(tourneeId, {
-        id_conteneur: form.id_conteneur,
-        type_anomalie: form.type,
-        description: form.description.trim(),
-        gravite: form.gravite,
+        type_anomalie: form.type_anomalie,
+        description:   form.description,
+        id_conteneur:  container.id_conteneur,
+        gravite:       form.gravite,
       });
-      showSuccess('Anomalie signalee avec succes');
-      navigate('/agent/anomalie');
+      showSuccess('Anomalie signalee avec succes !');
+      navigate('/agent/tournee');
     } catch (err) {
-      const msg = err.response?.data?.message
-        || err.response?.data?.error
-        || 'Erreur lors de l\'envoi';
-      showError(msg);
+      showError(err.response?.data?.message || "Erreur lors de l'envoi");
     } finally {
       setSubmitting(false);
     }
@@ -112,47 +87,46 @@ export default function AnomalieForm() {
 
   return (
     <MobileLayout title="Signaler une anomalie" showBack>
-      {form.conteneur_uid && (
-        <MobileCard className="selected-container-card">
-          <i className="fas fa-check-circle" style={{ color: '#4CAF50' }}></i>
-          <strong>{form.conteneur_uid}</strong>
+
+      {/* Conteneur */}
+      <h3 className="form-section-title">Conteneur concerne</h3>
+      <div className="uid-lookup-row">
+        <input
+          className="form-input-mobile"
+          type="text"
+          placeholder="Ex: CNT-00001"
+          value={uidInput}
+          onChange={e => { setUidInput(e.target.value); setUidError(''); setContainer(null); }}
+          onBlur={handleUidBlur}
+          style={{ textTransform: 'uppercase' }}
+        />
+        <button className="btn-outline-mobile btn-sm-icon" onClick={() => lookupContainer(uidInput)}>
+          <i className="fas fa-search"></i>
+        </button>
+      </div>
+      {uidError && <p style={{ color: '#f44336', fontSize: '0.8rem', margin: '4px 0 0' }}>{uidError}</p>}
+      {container && (
+        <MobileCard style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fas fa-check-circle" style={{ color: '#4CAF50', fontSize: '1.1rem' }}></i>
+            <div>
+              <strong style={{ fontFamily: 'monospace' }}>{container.uid}</strong>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#666' }}>
+                {container.zone_nom || container.adresse || ''}
+              </p>
+            </div>
+          </div>
         </MobileCard>
       )}
 
-      <h3 className="form-section-title">Conteneur concerne</h3>
-      {loadingContainers ? (
-        <p style={{ fontSize: '0.85rem', color: '#888' }}>Chargement…</p>
-      ) : containers.length === 0 ? (
-        <p style={{ fontSize: '0.85rem', color: '#f44336' }}>
-          Aucun conteneur dans votre tournee. Scannez d'abord un conteneur ou utilisez la liste depuis la tournee.
-        </p>
-      ) : (
-        <select
-          className="form-input-mobile"
-          value={form.id_conteneur ?? ''}
-          onChange={(e) => {
-            const id = parseInt(e.target.value, 10);
-            const found = containers.find((c) => c.id === id);
-            setForm({ ...form, id_conteneur: id, conteneur_uid: found?.uid || '' });
-          }}
-        >
-          <option value="">— Choisir —</option>
-          {containers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.uid} {c.zone ? `(${c.zone})` : ''}
-            </option>
-          ))}
-        </select>
-      )}
-
-      <h3 className="form-section-title">Type d'anomalie</h3>
+      {/* Type */}
+      <h3 className="form-section-title" style={{ marginTop: 16 }}>Type d'anomalie</h3>
       <div className="anomalie-type-grid">
-        {ANOMALIE_TYPES.map((t) => (
+        {ANOMALIE_TYPES.map(t => (
           <button
             key={t.value}
-            type="button"
-            className={`anomalie-type-btn ${form.type === t.value ? 'active' : ''}`}
-            onClick={() => setForm({ ...form, type: t.value })}
+            className={`anomalie-type-btn ${form.type_anomalie === t.value ? 'active' : ''}`}
+            onClick={() => setForm({ ...form, type_anomalie: t.value })}
           >
             <i className={`fas ${t.icon}`}></i>
             <span>{t.label}</span>
@@ -160,12 +134,12 @@ export default function AnomalieForm() {
         ))}
       </div>
 
+      {/* Gravite */}
       <h3 className="form-section-title">Gravite</h3>
       <div className="gravite-selector">
-        {GRAVITE_LEVELS.map((g) => (
+        {GRAVITE_LEVELS.map(g => (
           <button
             key={g}
-            type="button"
             className={`gravite-btn ${form.gravite === g ? 'active' : ''}`}
             onClick={() => setForm({ ...form, gravite: g })}
           >
@@ -174,6 +148,7 @@ export default function AnomalieForm() {
         ))}
       </div>
 
+      {/* Description */}
       <h3 className="form-section-title">Description</h3>
       <textarea
         className="form-textarea-mobile"
@@ -183,26 +158,25 @@ export default function AnomalieForm() {
         rows={4}
       />
 
+      {/* Geoloc */}
       {position && (
-        <>
-          <h3 className="form-section-title">Geolocalisation</h3>
-          <div className="geo-info">
-            <i className="fas fa-map-marker-alt" style={{ color: '#2196F3', fontSize: '1.2rem' }}></i>
-            <div>
-              <strong>Position detectee automatiquement</strong>
-              <p>{position.lat.toFixed(4)}, {position.lng.toFixed(4)}</p>
-            </div>
+        <div className="geo-info" style={{ marginTop: 12 }}>
+          <i className="fas fa-map-marker-alt" style={{ color: '#2196F3', fontSize: '1.1rem' }}></i>
+          <div>
+            <strong>Position detectee</strong>
+            <p style={{ margin: 0, fontSize: '0.78rem', color: '#666' }}>
+              {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+            </p>
           </div>
-        </>
+        </div>
       )}
 
       <div className="form-actions">
-        <button type="button" className="btn-outline-mobile" onClick={() => navigate(-1)}>Annuler</button>
+        <button className="btn-outline-mobile" onClick={() => navigate(-1)}>Annuler</button>
         <button
-          type="button"
           className="btn-primary-mobile"
           onClick={handleSubmit}
-          disabled={submitting || !form.id_conteneur || !form.description.trim()}
+          disabled={submitting || !container}
         >
           {submitting
             ? <><i className="fas fa-spinner fa-spin"></i> Envoi...</>

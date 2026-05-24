@@ -23,9 +23,9 @@ Gain performance   : 25x plus rapide
 - Endpoint GET `/notifications/unread/count`
 
 **Invalidation :**
-- Automatique lors de `createNotification`
-- Automatique lors de `markAsRead`
-- Automatique lors de `markAllAsRead`
+- Automatique lors de `createNotification` (API REST)
+- Automatique lors de `markAsRead` / `markAllAsRead`
+- Automatique via `/internal/emit-ws` — appelé par service-routes après un INSERT direct en base (ex : anomalie agent → `notifyAllStaff`)
 
 **Code :**
 ```javascript

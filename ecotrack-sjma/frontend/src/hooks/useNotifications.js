@@ -23,8 +23,12 @@ export function useNotifications(pollInterval = 60000, onNew) {
 
   useEffect(() => {
     fetchCount();
-    const interval = setInterval(fetchCount, pollInterval);
-    return () => clearInterval(interval);
+    const id = setInterval(fetchCount, pollInterval);
+    window.addEventListener('notifications-refresh', fetchCount);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('notifications-refresh', fetchCount);
+    };
   }, [fetchCount, pollInterval]);
 
   return { unreadCount, refresh: fetchCount };

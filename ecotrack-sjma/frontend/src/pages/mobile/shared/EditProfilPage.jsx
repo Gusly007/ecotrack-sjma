@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import MobileLayout from '../../../components/mobile/MobileLayout';
@@ -7,14 +7,15 @@ import api from '../../../services/api';
 import './EditProfilPage.css';
 
 export default function EditProfilPage({ basePath = '/agent' }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { showSuccess, showError } = useAlert();
-  const fileInputRef = useRef(null);
   const [form, setForm] = useState({ prenom: '', nom: '', email: '' });
-  const [avatarUrl, setAvatarUrl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -22,7 +23,6 @@ export default function EditProfilPage({ basePath = '/agent' }) {
         const res = await api.get('/users/profile');
         const data = res.data?.data || res.data;
         setForm({ prenom: data.prenom || '', nom: data.nom || '', email: data.email || '' });
-        setAvatarUrl(data.avatar_thumbnail || data.avatar_url || null);
       } catch {
         if (user) {
           setForm({ prenom: user.prenom || '', nom: user.nom || '', email: user.email || '' });
@@ -31,6 +31,37 @@ export default function EditProfilPage({ basePath = '/agent' }) {
     };
     fetchProfile();
   }, [user]);
+
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const response = await api.get('/users/me/export');
+      const dataStr = JSON.stringify(response.data?.data || response.data, null, 2);
+      const a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(dataStr);
+      a.download = `ecotrack-data-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showSuccess('Données exportées');
+    } catch {
+      showError("Erreur lors de l'export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    try {
+      await api.delete('/users/me', { data: { password: deletePassword } });
+      setShowDeleteModal(false);
+      await logout();
+      navigate('/login?deleted=true');
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || 'Mot de passe incorrect');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,56 +77,8 @@ export default function EditProfilPage({ basePath = '/agent' }) {
     }
   };
 
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showError('Image trop volumineuse (max 5 Mo)');
-      return;
-    }
-    setUploadingAvatar(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await api.post('/users/avatar/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const newUrl = res.data?.data?.avatar_thumbnail || res.data?.data?.avatar_url;
-      setAvatarUrl(newUrl ? `${newUrl}?t=${Date.now()}` : null);
-      showSuccess('Avatar mis a jour');
-    } catch (err) {
-      showError(err.response?.data?.message || "Echec de l'upload");
-    } finally {
-      setUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
   return (
     <MobileLayout title="Modifier le profil" showBack>
-      <div className="avatar-edit-section">
-        <div className="avatar-preview" onClick={() => fileInputRef.current?.click()}>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="avatar" />
-          ) : (
-            <i className="fas fa-user-circle"></i>
-          )}
-          <div className="avatar-overlay">
-            {uploadingAvatar
-              ? <i className="fas fa-spinner fa-spin"></i>
-              : <i className="fas fa-camera"></i>}
-          </div>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          style={{ display: 'none' }}
-          onChange={handleAvatarChange}
-        />
-        <p className="avatar-hint">Touchez pour changer la photo</p>
-      </div>
-
       <form className="edit-profil-form" onSubmit={handleSubmit}>
         <div className="form-group-mobile">
           <label>Prenom</label>
@@ -129,6 +112,82 @@ export default function EditProfilPage({ basePath = '/agent' }) {
           {loading ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-save"></i> Enregistrer</>}
         </button>
       </form>
+
+      {/* Section — Vos données personnelles */}
+      <div className="edit-section-block">
+        <h3 className="edit-section-heading">
+          <i className="fas fa-download" style={{ color: '#2196F3' }}></i> Vos données personnelles
+        </h3>
+        <p className="edit-section-desc">
+          Téléchargez l'intégralité de vos données (profil, tournées, badges) au format JSON — conforme RGPD Art. 15.
+        </p>
+        <button
+          className="btn-outline-mobile"
+          onClick={handleExportData}
+          disabled={exporting}
+          style={{ width: '100%' }}
+        >
+          {exporting
+            ? <><i className="fas fa-spinner fa-spin"></i> Exportation...</>
+            : <><i className="fas fa-file-download"></i> Télécharger mes données</>
+          }
+        </button>
+      </div>
+
+      {/* Section — Supprimer mon compte */}
+      <div className="edit-section-block edit-section-danger">
+        <h3 className="edit-section-heading" style={{ color: '#f44336' }}>
+          <i className="fas fa-trash"></i> Supprimer mon compte
+        </h3>
+        <p className="edit-section-desc">
+          Suppression permanente avec délai de grâce de 30 jours. Vos données seront anonymisées.
+        </p>
+        <button
+          className="btn-danger-mobile"
+          onClick={() => setShowDeleteModal(true)}
+          style={{ width: '100%' }}
+        >
+          <i className="fas fa-trash-alt"></i> Demander la suppression
+        </button>
+      </div>
+
+      {/* Modal confirmation suppression */}
+      {showDeleteModal && (
+        <div className="mobile-modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="mobile-modal-card" onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#f44336', marginBottom: 8 }}>
+              <i className="fas fa-exclamation-triangle"></i> Confirmation
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#555', marginBottom: 16 }}>
+              Entrez votre mot de passe pour confirmer la suppression de votre compte.
+            </p>
+            {deleteError && (
+              <p style={{ color: '#f44336', fontSize: '0.8rem', marginBottom: 8 }}>{deleteError}</p>
+            )}
+            <input
+              type="password"
+              className="form-input-mobile"
+              placeholder="Mot de passe"
+              value={deletePassword}
+              onChange={e => { setDeletePassword(e.target.value); setDeleteError(''); }}
+              style={{ marginBottom: 12 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-outline-mobile" style={{ flex: 1 }} onClick={() => setShowDeleteModal(false)}>
+                Annuler
+              </button>
+              <button
+                className="btn-danger-mobile"
+                style={{ flex: 1 }}
+                onClick={handleDeleteAccount}
+                disabled={!deletePassword}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MobileLayout>
   );
 }
