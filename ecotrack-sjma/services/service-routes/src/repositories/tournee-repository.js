@@ -277,6 +277,9 @@ class TourneeRepository {
    * Récupère la tournée d'un agent pour aujourd'hui
    */
   async findAgentTodayTournee(agentId) {
+    // Stratégie : 1) tournée EN_COURS / PLANIFIEE aujourd'hui (priorité)
+    //            2) sinon, la prochaine tournée PLANIFIEE dans les 7 jours
+    //            3) sinon, la dernière tournée TERMINEE aujourd'hui (récap)
     const result = await this.db.query(
       `SELECT
         t.*,
@@ -290,15 +293,57 @@ class TourneeRepository {
        LEFT JOIN vehicule v ON v.id_vehicule = t.id_vehicule
        LEFT JOIN etape_tournee e ON e.id_tournee = t.id_tournee
        WHERE t.id_agent = $1
-         AND t.date_tournee = CURRENT_DATE
-         AND t.statut IN ('PLANIFIEE', 'EN_COURS')
+         AND (
+           (t.date_tournee = CURRENT_DATE AND t.statut IN ('PLANIFIEE', 'EN_COURS', 'TERMINEE'))
+           OR (t.date_tournee BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
+               AND t.statut = 'PLANIFIEE')
+         )
        GROUP BY t.id_tournee, z.code, z.nom,
                 v.numero_immatriculation, v.modele, v.capacite_kg
-       ORDER BY t.statut DESC
+       ORDER BY
+         CASE t.statut
+           WHEN 'EN_COURS' THEN 1
+           WHEN 'PLANIFIEE' THEN 2
+           WHEN 'TERMINEE' THEN 3
+           ELSE 4
+         END,
+         t.date_tournee ASC
        LIMIT 1`,
       [agentId]
     );
     return result.rows[0] || null;
+  }
+
+  /**
+   * Liste toutes les tournées d'un agent (pour la page historique / sélection)
+   */
+  async findAllByAgent(agentId, options = {}) {
+    const { limit = 50, statut } = options;
+    const conditions = ['t.id_agent = $1'];
+    const params = [agentId];
+    let idx = 2;
+    if (statut) {
+      conditions.push(`t.statut = $${idx++}`);
+      params.push(statut);
+    }
+    params.push(limit);
+    const result = await this.db.query(
+      `SELECT
+        t.id_tournee, t.code, t.date_tournee, t.statut,
+        t.distance_prevue_km, t.duree_prevue_min,
+        z.nom AS zone_nom,
+        COUNT(e.id_etape) AS total_etapes,
+        COUNT(CASE WHEN e.collectee = TRUE THEN 1 END) AS etapes_collectees
+       FROM tournee t
+       LEFT JOIN zone z ON z.id_zone = t.id_zone
+       LEFT JOIN etape_tournee e ON e.id_tournee = t.id_tournee
+       WHERE ${conditions.join(' AND ')}
+       GROUP BY t.id_tournee, z.nom
+       ORDER BY t.date_tournee DESC, t.id_tournee DESC
+       LIMIT $${idx}`,
+      params
+    );
+    return result.rows;
   }
 
   /**

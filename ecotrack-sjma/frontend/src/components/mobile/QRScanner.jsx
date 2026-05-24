@@ -2,68 +2,61 @@ import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import './QRScanner.css';
 
-// Fallback JS pour CitoyenScanner quand BarcodeDetector natif n'est pas
-// disponible (desktop, vieux iOS, Firefox). Utilise html5-qrcode.
-//
-// Props :
-//   onScan(decodedText) appelé à chaque décodage réussi (peut se répéter
-//                       pour le même QR — au consommateur de debouncer)
-//   onError(err)        appelé une seule fois si le démarrage caméra échoue
 export default function QRScanner({ onScan, onError }) {
+  const scannerRef = useRef(null);
   const html5QrRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
 
+  // Stocker les callbacks dans un ref évite que useEffect se relance à chaque
+  // render quand le parent passe une nouvelle référence de fonction.
+  const onScanRef = useRef(onScan);
+  const onErrorRef = useRef(onError);
+  onScanRef.current = onScan;
+  onErrorRef.current = onError;
+
   useEffect(() => {
     const scannerId = 'qr-scanner-region';
-    let cancelled = false;
 
-    const start = async () => {
+    const startScanner = async () => {
       try {
-        // Si une instance précédente tourne encore (StrictMode peut monter
-        // deux fois en dev), on l'arrête avant d'en créer une nouvelle.
         if (html5QrRef.current && html5QrRef.current.isScanning) {
           await html5QrRef.current.stop();
         }
-        const instance = new Html5Qrcode(scannerId);
-        html5QrRef.current = instance;
 
-        await instance.start(
+        const html5QrCode = new Html5Qrcode(scannerId);
+        html5QrRef.current = html5QrCode;
+
+        await html5QrCode.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            if (onScan) onScan(decodedText);
+            if (onScanRef.current) onScanRef.current(decodedText);
           },
-          () => {
-            // Erreurs de décodage par frame — silencieuses, normales.
-          }
+          () => { /* per-frame errors ignored */ }
         );
-        if (!cancelled) setIsScanning(true);
+        setIsScanning(true);
       } catch (err) {
         console.error('QR Scanner error:', err);
-        if (onError) onError(err);
+        if (onErrorRef.current) onErrorRef.current(err);
       }
     };
 
-    start();
+    startScanner();
 
     return () => {
-      cancelled = true;
       if (html5QrRef.current && html5QrRef.current.isScanning) {
         html5QrRef.current.stop().catch(() => {});
       }
     };
-    // onScan/onError sont volontairement hors deps : les passer en deps
-    // ferait redémarrer la caméra à chaque rendu du parent.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="qr-scanner-wrapper">
-      <div id="qr-scanner-region" className="qr-scanner-region" />
+      <div id="qr-scanner-region" ref={scannerRef} className="qr-scanner-region" />
       {!isScanning && (
         <div className="qr-scanner-loading">
           <i className="fas fa-spinner fa-spin"></i>
-          <p>Activation de la caméra…</p>
+          <p>Activation de la camera...</p>
         </div>
       )}
     </div>

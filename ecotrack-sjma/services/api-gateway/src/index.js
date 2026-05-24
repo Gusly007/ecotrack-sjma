@@ -240,13 +240,11 @@ const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMidd
     }
     return fullPath;
   },
-  on: {
-    proxyReq: forwardParsedBody,
-    error: (err, req, res) => {
-      logger.error({ error: err.message }, 'Proxy error');
-      if (!res.headersSent) {
-        res.status(502).json({ error: 'Upstream service unavailable' });
-      }
+  onProxyReq: fixRequestBody,
+  onError: (err, req, res) => {
+    logger.error({ error: err.message }, 'Proxy error');
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Upstream service unavailable' });
     }
   }
 });

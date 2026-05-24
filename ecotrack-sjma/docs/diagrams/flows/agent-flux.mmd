@@ -1,0 +1,8 @@
+flowchart LR
+    A[Agent] --> B[API Gateway]
+    B --> C[service-routes]
+    C --> D[(PostgreSQL)]
+    
+    A --> F[Debut tournee]
+    F --> G[Collecte conteneur]
+    G --> H[Fin tournee]

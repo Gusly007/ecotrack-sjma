@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleBasedLayout } from './components/desktop/RoleBasedLayout';
+import MobileLayout from './components/mobile/MobileLayout';
 import CookieBanner from './components/common/CookieBanner';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -13,6 +15,8 @@ import PrivacyPage from './pages/auth/PrivacyPage';
 import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 import ProfilePage from './pages/auth/ProfilePage';
+
+// Desktop - Admin
 import AdminDashboard from './pages/desktop/admin/Dashboard';
 import RolesPage from './pages/desktop/admin/Roles';
 import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
@@ -29,14 +33,36 @@ import AlertsPage from './pages/desktop/admin/Alerts';
 import LogsPage from './pages/desktop/admin/Logs';
 import MonitoringPage from './pages/desktop/admin/Monitoring';
 import ConfigurationPage from './pages/desktop/admin/Configuration';
-import NotificationsPage from './pages/desktop/NotificationsPage';
+import DesktopNotificationsPage from './pages/desktop/NotificationsPage';
 
+// Desktop - Gestionnaire
 import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
-import TourneePage from './pages/desktop/gestionnaire/tournee';
+import GestionnaireTourneePage from './pages/desktop/gestionnaire/tournee';
 import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
 
-// Mobile Citoyen App — module feature isolé sous pages/mobile/citoyen/
-import MobileLayout from './pages/mobile/citoyen/MobileLayout';
+// Mobile - Agent
+import AgentDashboard from './pages/mobile/agent/AgentDashboard';
+import AgentTourneePage from './pages/mobile/agent/TourneePage';
+import EtapeDetail from './pages/mobile/agent/EtapeDetail';
+import ScanPage from './pages/mobile/agent/ScanPage';
+import ScanResult from './pages/mobile/agent/ScanResult';
+import AnomaliePage from './pages/mobile/agent/AnomaliePage';
+import AnomalieForm from './pages/mobile/agent/AnomalieForm';
+import TerminerTournee from './pages/mobile/agent/TerminerTournee';
+import AgentHistorique from './pages/mobile/agent/HistoriquePage';
+import AgentStats from './pages/mobile/agent/StatsPage';
+
+// Mobile - Shared
+import ProfilPage from './pages/mobile/shared/ProfilPage';
+import EditProfilPage from './pages/mobile/shared/EditProfilPage';
+import NotificationsPage from './pages/mobile/shared/NotificationsPage';
+import NotificationSettings from './pages/mobile/shared/NotificationSettings';
+import QRCodePage from './pages/QRCodePage';
+import SharedScanPage from './pages/mobile/shared/ScanPage';
+import SharedScanResult from './pages/mobile/shared/ScanResult';
+
+// Mobile Citoyen App
+import CitoyenMobileLayout from './pages/mobile/citoyen/MobileLayout';
 import CitoyenHome from './pages/mobile/citoyen/CitoyenHome';
 const CitoyenMap = lazy(() => import('./pages/mobile/citoyen/CitoyenMap'));
 import CitoyenSignaler from './pages/mobile/citoyen/CitoyenSignaler';
@@ -57,11 +83,6 @@ import CitoyenForgotPassword from './pages/mobile/citoyen/CitoyenForgotPassword'
 import CitoyenResetPassword from './pages/mobile/citoyen/CitoyenResetPassword';
 import { CitoyenAuthProvider } from './pages/mobile/citoyen/auth/CitoyenAuthContext';
 import { CitoyenProtectedRoute } from './components/mobile/citoyen/CitoyenProtectedRoute';
-
-// Routage de la racine /. Authentifié : redirection role-based comme avant.
-// Visiteur anonyme : page d'atterrissage citoyen (deux cartes — citoyen /
-// personnel) au lieu de tomber sur /login partagé, qui n'expose pas
-// l'inscription citoyen.
 function RootRedirect() {
   const { user, isAuthenticated } = useAuth();
 
@@ -71,19 +92,16 @@ function RootRedirect() {
 
   const role = user?.role || user?.role_par_defaut;
 
-  if (role === 'CITOYEN') {
-    return <Navigate to="/citoyen" replace />;
-  }
-  if (role === 'GESTIONNAIRE') {
-    return <Navigate to="/gestionnaire" replace />;
-  }
+  if (role === 'CITOYEN') return <Navigate to="/citoyen" replace />;
+  if (role === 'AGENT') return <Navigate to="/agent" replace />;
+  if (role === 'GESTIONNAIRE') return <Navigate to="/gestionnaire" replace />;
   return <Navigate to="/admin" replace />;
 }
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/ecotrack-sjma">
         <CookieBanner />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -187,6 +205,30 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* Mobile Routes - Agent (role-gated) */}
+          <Route path="/agent" element={<ProtectedRoute requiredRole="AGENT"><AgentDashboard /></ProtectedRoute>} />
+          <Route path="/agent/tournee" element={<ProtectedRoute requiredRole="AGENT"><AgentTourneePage /></ProtectedRoute>} />
+          <Route path="/agent/tournee/etape/:id" element={<ProtectedRoute requiredRole="AGENT"><EtapeDetail /></ProtectedRoute>} />
+          <Route path="/agent/scan" element={<ProtectedRoute requiredRole="AGENT"><ScanPage /></ProtectedRoute>} />
+          <Route path="/agent/scan/result/:uid" element={<ProtectedRoute requiredRole="AGENT"><ScanResult /></ProtectedRoute>} />
+          <Route path="/agent/anomalie" element={<ProtectedRoute requiredRole="AGENT"><AnomaliePage /></ProtectedRoute>} />
+          <Route path="/agent/anomalie/form" element={<ProtectedRoute requiredRole="AGENT"><AnomalieForm /></ProtectedRoute>} />
+          <Route path="/agent/tournee/terminer" element={<ProtectedRoute requiredRole="AGENT"><TerminerTournee /></ProtectedRoute>} />
+          <Route path="/agent/historique" element={<ProtectedRoute requiredRole="AGENT"><AgentHistorique /></ProtectedRoute>} />
+          <Route path="/agent/stats" element={<ProtectedRoute requiredRole="AGENT"><AgentStats /></ProtectedRoute>} />
+          <Route path="/agent/profil" element={<ProtectedRoute requiredRole="AGENT"><ProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/profil/edit" element={<ProtectedRoute requiredRole="AGENT"><EditProfilPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications" element={<ProtectedRoute requiredRole="AGENT"><NotificationsPage basePath="/agent" /></ProtectedRoute>} />
+          <Route path="/agent/notifications/settings" element={<ProtectedRoute requiredRole="AGENT"><NotificationSettings basePath="/agent" /></ProtectedRoute>} />
+
+          {/* Public QR Codes Page - no auth required */}
+          <Route path="/qr-codes" element={<QRCodePage />} />
+
+          {/* Universal Scan Routes - accessible to all roles */}
+          <Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
+          <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
+
+
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
@@ -198,7 +240,7 @@ function App() {
           <Route path="/gestionnaire/tournees" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <TourneePage />
+                <GestionnaireTourneePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
@@ -269,14 +311,14 @@ function App() {
           <Route path="/admin/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/notifications" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <NotificationsPage />
+                <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
@@ -295,7 +337,7 @@ function App() {
             <Route path="/citoyen/inscription" element={<CitoyenRegister />} />
             <Route path="/citoyen/mot-de-passe-oublie" element={<CitoyenForgotPassword />} />
             <Route path="/citoyen/reset-password" element={<CitoyenResetPassword />} />
-            <Route path="/citoyen" element={<CitoyenProtectedRoute><MobileLayout /></CitoyenProtectedRoute>}>
+            <Route path="/citoyen" element={<CitoyenProtectedRoute><CitoyenMobileLayout /></CitoyenProtectedRoute>}>
               <Route index element={<CitoyenHome />} />
               <Route path="carte" element={<Suspense fallback={null}><CitoyenMap /></Suspense>} />
               <Route path="signaler" element={<CitoyenSignaler />} />
@@ -323,8 +365,8 @@ function App() {
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center">
                 <h1 className="text-4xl font-bold text-red-600 mb-4">403</h1>
-                <p className="text-gray-600">Vous n'avez pas accès à cette page</p>
-                <a href="/login" className="text-green-600 hover:underline">Retour à la connexion</a>
+                <p className="text-gray-600">Vous n'avez pas accÃ¨s Ã  cette page</p>
+                <a href="/login" className="text-green-600 hover:underline">Retour Ã  la connexion</a>
               </div>
             </div>
           } />

@@ -1,0 +1,10 @@
+flowchart TD
+    E[Evenement] --> K[Kafka]
+    K --> C[notifications]
+    C --> P[Push Notification]
+    C --> E2[Email]
+    C --> S[SMS]
+    
+    U[Utilisateur] --> P
+    U --> E2
+    U --> S

@@ -16,8 +16,12 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to="/unauthorized" replace />;
+  if (requiredRole) {
+    const role = user?.role || user?.role_par_defaut;
+    const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!allowed.includes(role)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;

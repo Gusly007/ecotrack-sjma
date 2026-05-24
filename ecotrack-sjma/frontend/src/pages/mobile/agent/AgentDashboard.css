@@ -1,0 +1,135 @@
+.agent-greeting {
+  margin-bottom: 16px;
+}
+
+.greeting-text {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.greeting-date {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.summary-item strong {
+  font-size: 1.2rem;
+}
+
+.summary-item span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.route-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.route-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e0e0e0;
+  color: #666;
+}
+
+.route-badge.active {
+  background: #e8f5e9;
+  color: #4CAF50;
+}
+
+.route-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.route-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.route-stat strong {
+  font-size: 1rem;
+  color: #333;
+}
+
+.route-stat span {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #555;
+  margin: 20px 0 10px;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.impact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 8px !important;
+}
+
+.impact-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 4px 0;
+}
+
+.impact-label {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.btn-primary-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary-mobile:active {
+  opacity: 0.9;
+}

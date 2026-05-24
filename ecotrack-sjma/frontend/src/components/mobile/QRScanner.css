@@ -2,6 +2,7 @@
   position: relative;
   border-radius: 16px;
   overflow: hidden;
+  margin-bottom: 16px;
   background: #000;
 }
 
@@ -12,7 +13,6 @@
 
 .qr-scanner-region video {
   border-radius: 16px;
-  width: 100%;
 }
 
 .qr-scanner-loading {
@@ -22,7 +22,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0,0,0,0.7);
   color: #fff;
   gap: 12px;
 }
@@ -33,11 +33,8 @@
 
 .qr-scanner-loading p {
   font-size: 0.9rem;
-  margin: 0;
 }
 
-/* html5-qrcode injecte parfois un <img> de "scan-region-highlight" qui
-   pollue le rendu sur mobile — on le masque. */
 #qr-scanner-region img {
   display: none;
 }

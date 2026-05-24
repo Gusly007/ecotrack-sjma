@@ -39,9 +39,7 @@ const publicRoutes = [
   { path: '/api/iot/sensors/status', methods: ['GET'] }, // Sensors status
   { path: '/api/alerts', methods: ['GET'] }, // Alerts for monitoring
   { path: '/api/dashboard/stats', methods: ['GET'] }, // Dashboard stats
-  { path: '/api/consent', methods: ['POST'] }, // Consentement RGPD
-  { path: '/api/cookies/consent', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }, // Consentement cookies RGPD
-  { path: '/avatars', methods: ['GET'] }, // Avatars publiques
+  { path: '/api/containers/qrcode', methods: ['GET'] }, // QR PNG generation
 ];
 
 /**

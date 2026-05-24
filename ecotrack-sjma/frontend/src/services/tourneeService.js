@@ -90,6 +90,69 @@ export async function fetchAllTournees({ statut, page = 1, limit = 12, signal } 
   return extractPaginated(response.data || {});
 }
 
+// --- Mobile agent methods ---
+export async function fetchMyTournee() {
+  const response = await api.get('/api/routes/my-tournee');
+  return unwrap(response.data);
+}
+
+export async function fetchTourneeById(id) {
+  const response = await api.get(`/api/routes/tournees/${id}`);
+  return unwrap(response.data);
+}
+
+export async function fetchEtapes(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/etapes`);
+  return unwrap(response.data);
+}
+
+export async function fetchProgress(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/progress`);
+  return unwrap(response.data);
+}
+
+export async function changeStatut(tourneeId, statut) {
+  const response = await api.patch(`/api/routes/tournees/${tourneeId}/statut`, { statut });
+  return unwrap(response.data);
+}
+
+export async function recordCollecte(tourneeId, data) {
+  const response = await api.post(`/api/routes/tournees/${tourneeId}/collecte`, data);
+  return unwrap(response.data);
+}
+
+export async function reportAnomalie(tourneeId, data) {
+  const response = await api.post(`/api/routes/tournees/${tourneeId}/anomalie`, data);
+  return unwrap(response.data);
+}
+
+export async function fetchAnomalies(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/anomalies`);
+  return unwrap(response.data);
+}
+
+export async function fetchMapData(tourneeId) {
+  const response = await api.get(`/api/routes/tournees/${tourneeId}/map`);
+  return unwrap(response.data);
+}
+
+export async function fetchAgentHistory(agentId, params = {}) {
+  const response = await api.get('/api/routes/tournees', {
+    params: { id_agent: agentId, ...params },
+  });
+  return extractPaginated(response.data || {});
+}
+
+export async function fetchKpis() {
+  const response = await api.get('/api/routes/stats/kpis');
+  return unwrap(response.data);
+}
+
+export async function fetchAgentStats(period = 'mois') {
+  const response = await api.get('/api/routes/stats/agent', { params: { period } });
+  return unwrap(response.data) || {};
+}
+
 export async function fetchTourneesPageData({
   statut,
   allPage = 1,
@@ -185,8 +248,8 @@ export async function fetchTourneeCreationOptions() {
 }
 
 // L'optimisation 2-opt sur une zone avec beaucoup de conteneurs peut prendre
-// plusieurs secondes (matrice de distances + itérations d'amélioration).
-// On override le timeout axios (défaut 10 s) à 30 s pour ces 2 endpoints.
+// plusieurs secondes (matrice de distances + itÃ©rations d'amÃ©lioration).
+// On override le timeout axios (dÃ©faut 10 s) Ã  30 s pour ces 2 endpoints.
 const OPTIMIZE_TIMEOUT_MS = 30000;
 
 export async function optimizeTournee(payload) {
@@ -202,12 +265,6 @@ export async function previewOptimizeTournee(payload) {
   });
   return unwrap(response.data) || response.data;
 }
-
-export async function fetchTourneeById(id) {
-  const response = await api.get(`/api/routes/tournees/${id}`);
-  return unwrap(response.data) || response.data;
-}
-
 export async function fetchTourneeEtapes(id) {
   const response = await api.get(`/api/routes/tournees/${id}/etapes`);
   return extractList(response.data || {});

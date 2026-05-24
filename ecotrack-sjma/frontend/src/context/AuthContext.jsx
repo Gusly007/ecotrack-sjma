@@ -39,15 +39,8 @@ export const AuthProvider = ({ children }) => {
     return result;
   };
 
-  // Inscription désactivée - only ADMIN can create users via API
-  /*
-  const register = async (userData) => {
-    const user = await authService.register(userData);
-    setUser(authService.getCurrentUser());
-    setIsAuthenticated(true);
-    return user;
-  };
-  */
+  // Inscription désactivée - only ADMIN can create users via API.
+  // See LoginPage / RegisterPage: there is no public /register entry point.
 
   const logout = async () => {
     try {
@@ -80,13 +73,12 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
-    //register, // Désactivé
     logout,
     forgotPassword,
     resetPassword,
     hasPermission,
-    isMobileUser: authService.isMobileUser(),
-    isDesktopUser: authService.isDesktopUser(),
+    isMobileUser: user ? ['CITOYEN', 'AGENT'].includes(user.role || user.role_par_defaut) : false,
+    isDesktopUser: user ? ['GESTIONNAIRE', 'ADMIN'].includes(user.role || user.role_par_defaut) : false,
   };
 
   return (

@@ -47,6 +47,25 @@ router.get('/stats/kpis', requirePermission('tournee:read'), (req, res, next) =>
 
 /**
  * @swagger
+ * /routes/stats/agent:
+ *   get:
+ *     summary: Statistiques de l'agent connecté (filtrées par x-user-id)
+ *     tags: [Statistiques Routes]
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema: { type: string, enum: [jour, semaine, mois] }
+ *         description: Période d'agrégation (défaut: mois)
+ *     responses:
+ *       200:
+ *         description: Stats personnelles de l'agent (tournées, collectes, kg, CO2, anomalies)
+ *       400:
+ *         description: Identifiant agent manquant
+ */
+router.get('/stats/agent', (req, res, next) => req.controllers.stats.getAgentStats(req, res, next));
+
+/**
+ * @swagger
  * /routes/stats/collectes:
  *   get:
  *     summary: Statistiques des collectes par période

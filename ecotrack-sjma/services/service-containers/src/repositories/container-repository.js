@@ -379,11 +379,18 @@ class ContainerRepository {
     }
 
     const result = await this.db.query(
-      `SELECT id_conteneur, uid, capacite_l, statut, date_installation, 
-              ST_X(position) as longitude, ST_Y(position) as latitude, 
-              id_zone, id_type
-       FROM conteneur 
-       WHERE id_conteneur = $1`,
+      `SELECT c.id_conteneur, c.uid, c.capacite_l, c.statut, c.date_installation, 
+              ST_X(c.position) as longitude, ST_Y(c.position) as latitude, 
+              c.id_zone, c.id_type,
+              tc.nom as type_conteneur,
+              z.nom as zone_nom,
+              (SELECT m.niveau_remplissage_pct FROM mesure m 
+               WHERE m.id_conteneur = c.id_conteneur 
+               ORDER BY m.date_heure_mesure DESC LIMIT 1) as fill_level
+       FROM conteneur c
+       LEFT JOIN type_conteneur tc ON c.id_type = tc.id_type
+       LEFT JOIN zone z ON c.id_zone = z.id_zone
+       WHERE c.id_conteneur = $1`,
       [id]
     );
 
@@ -399,11 +406,18 @@ class ContainerRepository {
     }
 
     const result = await this.db.query(
-      `SELECT id_conteneur, uid, capacite_l, statut, date_installation, 
-              ST_X(position) as longitude, ST_Y(position) as latitude, 
-              id_zone, id_type
-       FROM conteneur 
-       WHERE uid = $1`,
+      `SELECT c.id_conteneur, c.uid, c.capacite_l, c.statut, c.date_installation, 
+              ST_X(c.position) as longitude, ST_Y(c.position) as latitude, 
+              c.id_zone, c.id_type,
+              tc.nom as type_conteneur,
+              z.nom as zone_nom,
+              (SELECT m.niveau_remplissage_pct FROM mesure m 
+               WHERE m.id_conteneur = c.id_conteneur 
+               ORDER BY m.date_heure_mesure DESC LIMIT 1) as fill_level
+       FROM conteneur c
+       LEFT JOIN type_conteneur tc ON c.id_type = tc.id_type
+       LEFT JOIN zone z ON c.id_zone = z.id_zone
+       WHERE c.uid = $1`,
       [uid]
     );
 

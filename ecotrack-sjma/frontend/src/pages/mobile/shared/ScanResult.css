@@ -1,0 +1,45 @@
+.scan-result-card {
+  text-align: center;
+}
+
+.scan-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #4CAF50;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.scan-result-uid {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 4px 0;
+}
+
+.scan-result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 14px;
+}
+
+.scan-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scan-stat strong {
+  font-size: 1.05rem;
+}
+
+.scan-stat span {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 2px;
+}
