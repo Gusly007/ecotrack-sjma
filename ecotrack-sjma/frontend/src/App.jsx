@@ -74,7 +74,7 @@ function App() {
   return (
     <AuthProvider>
       <CookieBanner />
-      <BrowserRouter>
+      <BrowserRouter basename="/ecotrack-sjma">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
@@ -295,7 +295,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Route Profil accessible à tous les utilisateurs connectés */}
+          {/* Route Profil accessible Ã  tous les utilisateurs connectÃ©s */}
           <Route path="/profile" element={
             <ProtectedRoute>
               <RoleBasedLayout>
@@ -316,8 +316,8 @@ function App() {
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center">
                 <h1 className="text-4xl font-bold text-red-600 mb-4">403</h1>
-                <p className="text-gray-600">Vous n'avez pas accès à cette page</p>
-                <a href="/login" className="text-green-600 hover:underline">Retour à la connexion</a>
+                <p className="text-gray-600">Vous n'avez pas accÃ¨s Ã  cette page</p>
+                <a href="/login" className="text-green-600 hover:underline">Retour Ã  la connexion</a>
               </div>
             </div>
           } />
