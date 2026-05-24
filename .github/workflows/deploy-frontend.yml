@@ -28,13 +28,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: ecotrack-sjma/frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: ecotrack-sjma/frontend
-        run: npm ci
+        run: npm install
 
       - name: Build
         working-directory: ecotrack-sjma/frontend
