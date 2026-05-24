@@ -14,5 +14,12 @@ ALTER TABLE notification
     'TOURNEE'::varchar,
     'BADGE'::varchar,
     'SYSTEME'::varchar,
-    'DEFI'::varchar
+    'DEFI'::varchar,
+    'ADMIN_ALERTE'::varchar,
+    'ADMIN_SERVICE'::varchar,
+    'ADMIN_SEUIL'::varchar,
+    'ADMIN_ML'::varchar,
+    'ADMIN_SECURITE'::varchar,
+    'ADMIN_PERFORMANCE'::varchar,
+    'ADMIN_IOT'::varchar
   ]::text[]));
