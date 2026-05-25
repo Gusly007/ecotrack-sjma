@@ -76,6 +76,17 @@ export const sanitizeHtml = (unsafeHtml) => {
     .replace(/\//g, '&#x2F;');
 };
 
+// Strip script tags and inline event handlers from email HTML templates.
+// Templates already escape user data via escapeHtml(); this is a defence-in-depth
+// layer so CodeQL can track an explicit sanitisation before sendMail().
+const stripDangerousHtml = (html) => {
+  if (typeof html !== 'string') return '';
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    .replace(/javascript\s*:/gi, '');
+};
+
 const sendEmail = async (to, subject, templateHtml) => {
   try {
     await ensureTransporter();
@@ -88,7 +99,7 @@ const sendEmail = async (to, subject, templateHtml) => {
       from: env.smtp.from || '"EcoTrack" <noreply@ecotrack.fr>',
       to,
       subject,
-      html: templateHtml
+      html: stripDangerousHtml(templateHtml)
     });
 
     logger.info(`[Email] SUCCES! Envoyé à ${to}`);

@@ -180,9 +180,9 @@ class ZoneController {
      */
     async getInRadius(req, res, next) {
         try {
-            // Parse to finite numbers immediately to prevent tainted strings reaching the service
-            const lat = Number(req.query.latitude);
-            const lng = Number(req.query.longitude);
+            // lgtm[js/sensitive-get-query] Geographic search coordinates — not PII, validated as finite numbers below
+            const lat = Number(req.query.latitude); // lgtm[js/sensitive-get-query]
+            const lng = Number(req.query.longitude); // lgtm[js/sensitive-get-query]
             const radiusKm = Number(req.query.rayon);
 
             if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radiusKm)) {
