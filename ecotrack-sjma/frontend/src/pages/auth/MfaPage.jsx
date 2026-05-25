@@ -89,8 +89,9 @@ export default function MfaPage() {
       
       console.log('[MfaPage] Login finalized. Redirecting to dashboard...');
       const role = userData.role;
-      const dest = role === 'ADMIN' ? '/admin' : role === 'GESTIONNAIRE' ? '/gestionnaire' : role === 'AGENT' ? '/agent' : '/citoyen';
-      window.location.href = dest;
+      const path = role === 'ADMIN' ? '/admin' : role === 'GESTIONNAIRE' ? '/gestionnaire' : role === 'AGENT' ? '/agent' : '/citoyen';
+      const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+      window.location.href = `${base}${path}`;
     }
   };
 
