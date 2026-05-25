@@ -203,30 +203,30 @@ const globalRateLimit = rateLimit({
 });
 
 const forwardParsedBody = (proxyReq, req) => {
-  if (!req.body || req.method === 'GET' || req.method === 'HEAD') {
-    return;
-  }
+  if (!req.body || req.method === 'GET' || req.method === 'HEAD') return;
 
   const contentType = String(req.headers['content-type'] || '').toLowerCase();
-  let bodyData;
+  // Let multipart stream through the pipe unchanged
+  if (contentType.includes('multipart/form-data')) return;
 
+  let bodyBuffer;
   if (Buffer.isBuffer(req.body)) {
-    bodyData = req.body;
+    bodyBuffer = req.body;
   } else if (typeof req.body === 'string') {
-    bodyData = req.body;
+    bodyBuffer = Buffer.from(req.body);
   } else if (contentType.includes('application/x-www-form-urlencoded')) {
-    bodyData = new URLSearchParams(req.body).toString();
-  } else if (contentType.includes('application/json') || Object.keys(req.body).length > 0) {
-    bodyData = JSON.stringify(req.body);
+    bodyBuffer = Buffer.from(new URLSearchParams(req.body).toString());
+  } else if (typeof req.body === 'object' && req.body !== null) {
+    bodyBuffer = Buffer.from(JSON.stringify(req.body));
   }
 
-  if (!bodyData) {
-    return;
-  }
+  if (!bodyBuffer) return;
 
-  proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-  proxyReq.write(bodyData);
-  proxyReq.end();
+  // In http-proxy-middleware v3, write directly to proxyReq (the ClientRequest).
+  // The original req stream was consumed by express.json() on the /api route,
+  // so we must re-serialize and write the parsed body ourselves.
+  proxyReq.setHeader('Content-Length', bodyBuffer.length);
+  proxyReq.write(bodyBuffer);
 };
 
 const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMiddleware({
@@ -240,7 +240,7 @@ const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMidd
     }
     return fullPath;
   },
-  onProxyReq: fixRequestBody,
+  on: { proxyReq: forwardParsedBody },
   onError: (err, req, res) => {
     logger.error({ error: err.message }, 'Proxy error');
     if (!res.headersSent) {
@@ -324,8 +324,8 @@ app.use((req, res, next) => {
 
 // Rate limiting global
 app.use(globalRateLimit);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing is NOT applied globally — proxy routes must stream the body
+// unchanged. Add express.json() inline only on gateway-owned endpoints below.
 
 // =========================================================================
 // LOGGING
@@ -361,8 +361,8 @@ app.use(jwtValidationMiddleware);
 // =========================================================================
 // COOKIE CONSENT ROUTES (GDPR Compliance)
 // =========================================================================
-app.use('/api/cookies', cookieConsentRoutes);
-app.use('/api', gdprRoutes);
+app.use('/api/cookies', express.json(), express.urlencoded({ extended: true }), cookieConsentRoutes);
+app.use('/api', express.json(), gdprRoutes);
 
 // =========================================================================
 // DOCUMENTATION API UNIFIÉE
@@ -428,7 +428,7 @@ const LOG_ACTIONS = [
 ];
 
 // Endpoint pour que les services envoient leurs logs
-app.post('/api/logs', async (req, res) => {
+app.post('/api/logs', express.json(), async (req, res) => {
   try {
     const { 
       level = 'info', 
@@ -660,7 +660,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
   // Update alert status (resolve/ignore)
-  app.patch('/api/alerts/:id', async (req, res) => {
+  app.patch('/api/alerts/:id', express.json(), async (req, res) => {
     try {
       const { id } = req.params;
       const { statut } = req.body;

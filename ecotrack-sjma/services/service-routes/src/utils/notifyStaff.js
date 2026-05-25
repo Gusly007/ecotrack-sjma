@@ -62,4 +62,21 @@ async function emitWsForUser(userId) {
   } catch { /* non-critical */ }
 }
 
-module.exports = { notifyAllStaff, emitWsForUser };
+/**
+ * Insère une notification de confirmation pour le citoyen qui vient de signaler.
+ * @param {object} db
+ * @param {number} idCitoyen
+ * @param {object} opts - { titre, corps }
+ */
+async function notifyCitoyen(db, idCitoyen, { titre, corps }) {
+  try {
+    await db.query(
+      `INSERT INTO notification (id_utilisateur, type, titre, corps, priorite, categorie)
+       VALUES ($1, 'SYSTEME', $2, $3, 1, 'SYSTEME')`,
+      [idCitoyen, titre, corps]
+    );
+    await emitWsForUser(idCitoyen);
+  } catch { /* non-critical */ }
+}
+
+module.exports = { notifyAllStaff, emitWsForUser, notifyCitoyen };

@@ -1,5 +1,5 @@
 const SignalementRepository = require('../repositories/signalement-repository');
-const { notifyAllStaff } = require('../utils/notifyStaff');
+const { notifyAllStaff, notifyCitoyen } = require('../utils/notifyStaff');
 
 class SignalementService {
   constructor(db) {
@@ -7,7 +7,7 @@ class SignalementService {
     this.repository = new SignalementRepository(db);
   }
 
-  async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) {
+  async create({ description, url_photo, id_type, id_conteneur, id_citoyen, urgence }) {
     if (!description || !id_type || !id_conteneur || !id_citoyen) {
       const ApiError = require('../utils/api-error');
       throw ApiError.badRequest('Champs requis manquants : description, id_type, id_conteneur, id_citoyen');
@@ -18,7 +18,8 @@ class SignalementService {
       url_photo,
       id_type,
       id_conteneur,
-      id_citoyen
+      id_citoyen,
+      urgence
     });
 
     // Notifier gestionnaires + admins directement en DB
@@ -39,6 +40,11 @@ class SignalementService {
       corps:     `Type : ${typeLibelle || id_type}\n${description}`.trim(),
       priorite:  2,
       categorie: 'ALERTE',
+    });
+
+    await notifyCitoyen(this.db, id_citoyen, {
+      titre: 'Signalement reçu',
+      corps: `Votre signalement sur ${conteneurUid} a bien été enregistré. Nous le traitons dans les meilleurs délais.`,
     });
 
     return signalement;
