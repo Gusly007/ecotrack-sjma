@@ -178,9 +178,8 @@ class ContainerController {
    */
   async getInRadius(req, res, next) {
     try {
-      // lgtm[js/sensitive-get-query] Geographic search coordinates — not PII, validated as finite numbers below
-      const lat = Number(req.query.latitude); // lgtm[js/sensitive-get-query]
-      const lng = Number(req.query.longitude); // lgtm[js/sensitive-get-query]
+      const lat = Number(req.query.latitude); // codeql[js/sensitive-get-query]
+      const lng = Number(req.query.longitude); // codeql[js/sensitive-get-query]
       const radius = Number(req.query.radiusKm);
 
       if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radius)) {
