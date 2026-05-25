@@ -341,6 +341,24 @@ const { requirePermission } = require('../middleware/rbac');
  *         description: Points des conteneurs des tournées EN_COURS pour la carte
  */
 
+/**
+ * @swagger
+ * /routes/prochaines-collectes:
+ *   get:
+ *     summary: Prochaines collectes (feed public app citoyen)
+ *     tags: [Tournées]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *         description: Nombre maximum de tournées à retourner
+ *     responses:
+ *       200:
+ *         description: Liste des prochaines tournées PLANIFIEE ou EN_COURS (projection minimale)
+ */
+router.get('/prochaines-collectes', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getUpcomingPublic(req, res, next));
 router.get('/types-conteneurs', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getTypeConteneur(req, res, next));
 router.get('/tournees/active/map', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getActiveMapData(req, res, next));
 router.get('/tournees', requirePermission('tournee:read'), (req, res, next) => req.controllers.tournee.getAll(req, res, next));

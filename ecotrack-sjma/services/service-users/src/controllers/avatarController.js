@@ -4,7 +4,6 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import fs from 'fs/promises';
 import sharp from 'sharp';
 import pool from '../config/database.js';
-import cacheService from '../services/cacheService.js';
 
 
 /**
