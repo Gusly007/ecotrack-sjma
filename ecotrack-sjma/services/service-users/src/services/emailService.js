@@ -1,6 +1,6 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtmlLib from 'sanitize-html';
 import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
@@ -84,8 +84,8 @@ const sendEmail = async (to, subject, templateHtml) => {
     if (typeof templateHtml !== 'string' || templateHtml.length === 0) {
       throw new TypeError('Email HTML template must be a non-empty string');
     }
-    const safeHtml = sanitizeHtml(templateHtml, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+    const safeHtml = sanitizeHtmlLib(templateHtml, {
+      allowedTags: sanitizeHtmlLib.defaults.allowedTags.concat([
         'html', 'head', 'body', 'meta', 'style',
         'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
         'img', 'span', 'div', 'center', 'font',
