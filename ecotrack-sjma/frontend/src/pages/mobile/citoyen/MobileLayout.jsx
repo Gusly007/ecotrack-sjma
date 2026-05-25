@@ -14,7 +14,7 @@ export default function MobileLayout() {
   const poll = useCallback(async () => {
     try {
       const data = await citoyenService.getUnreadCount();
-      const count = data?.count || data?.unreadCount || 0;
+      const count = data?.unread_count ?? data?.count ?? data?.unreadCount ?? 0;
       if (prevRef.current !== null && count > prevRef.current) {
         playRef.current('default');
       }

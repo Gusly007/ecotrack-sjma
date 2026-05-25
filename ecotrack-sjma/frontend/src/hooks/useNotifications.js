@@ -10,7 +10,7 @@ export function useNotifications(pollInterval = 60000, onNew) {
   const fetchCount = useCallback(async () => {
     try {
       const res = await api.get('/notifications/unread-count');
-      const count = res.data?.count || res.data?.unreadCount || 0;
+      const count = res.data?.unread_count ?? res.data?.count ?? res.data?.unreadCount ?? 0;
       setUnreadCount(count);
       if (prevRef.current !== null && count > prevRef.current) {
         onNewRef.current?.();
