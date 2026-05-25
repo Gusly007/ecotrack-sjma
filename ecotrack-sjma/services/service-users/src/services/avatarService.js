@@ -25,13 +25,16 @@ function assertWithinDir(resolvedPath, baseDir) {
 export const processAvatar = async (userId, tempFile) => {
   try {
     const tempPath = tempFile.path;
-    const fileExt = path.extname(tempFile.filename).toLowerCase();
+    // Extract extension from the basename only, never from a path with separators
+    const safeName = path.basename(String(tempFile.filename || ''));
+    const rawExt = path.extname(safeName).toLowerCase();
 
-    if (!ALLOWED_AVATAR_EXTENSIONS.has(fileExt)) {
+    if (!ALLOWED_AVATAR_EXTENSIONS.has(rawExt)) {
       await fs.unlink(tempPath).catch(() => {});
-      throw new Error(`File extension not allowed: ${fileExt}`);
+      throw new Error(`File extension not allowed: ${rawExt}`);
     }
 
+    const fileExt = rawExt;
     const safeUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
     const baseFilename = `${safeUserId}${fileExt}`;
 
@@ -46,13 +49,18 @@ export const processAvatar = async (userId, tempFile) => {
     assertWithinDir(thumbnailPath, THUMBNAILS_DIR);
     assertWithinDir(miniPath, MINI_DIR);
 
+    // safeOriginalPath / safeMiniPath are validated strings — use them for I/O
+    const safeOriginalPath = originalPath;
+    const safeThumbnailPath = thumbnailPath;
+    const safeMiniPath = miniPath;
+
     // 1. Redimensionner et stocker l'original (1000x1000)
     await sharp(tempPath)
       .resize(1000, 1000, {
         fit: 'cover',
         position: 'center'
       })
-      .toFile(originalPath);
+      .toFile(safeOriginalPath);
 
     // 2. Créer la thumbnail (200x200)
     await sharp(tempPath)
@@ -60,7 +68,7 @@ export const processAvatar = async (userId, tempFile) => {
         fit: 'cover',
         position: 'center'
       })
-      .toFile(thumbnailPath);
+      .toFile(safeThumbnailPath);
 
     // 3. Créer la mini (64x64)
     await sharp(tempPath)
@@ -68,12 +76,12 @@ export const processAvatar = async (userId, tempFile) => {
         fit: 'cover',
         position: 'center'
       })
-      .toFile(miniPath);
+      .toFile(safeMiniPath);
 
     // 4. Supprimer le fichier temporaire
     await fs.unlink(tempPath);
 
-    // 5. Récupérer les URLs
+    // 5. Récupérer les URLs (baseFilename est composé de safeUserId + fileExt validé)
     const urls = {
       original: `/avatars/original/${baseFilename}`,
       thumbnail: `/avatars/thumbnails/${baseFilename}`,

@@ -49,7 +49,19 @@ if (env.nodeEnv !== 'test') {
 
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
     hsts: env.nodeEnv === 'production' ? undefined : false
   })
@@ -84,7 +96,7 @@ app.get('/health', (req, res) => {
 });
 
 // Health check DB
-app.get('/health/db', async (req, res) => {
+app.get('/health/db', publicLimiter, async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'up' });

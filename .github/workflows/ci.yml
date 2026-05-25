@@ -2063,7 +2063,7 @@ jobs:
         run: |
           nohup npm run preview -- --port 4173 > preview.log 2>&1 &
           for i in {1..30}; do
-            curl -sf http://localhost:4173 && break
+            curl -sf http://localhost:4173/ecotrack-sjma/ && break
             sleep 2
           done
 
@@ -2075,7 +2075,7 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
-          npx lighthouse http://localhost:4173 \
+          npx lighthouse http://localhost:4173/ecotrack-sjma/ \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
@@ -2132,7 +2132,7 @@ jobs:
       run: |
         nohup npm run preview -- --port 4173 > preview.log 2>&1 &
         for i in {1..30}; do
-          curl -sf http://localhost:4173 && break
+          curl -sf http://localhost:4173/ecotrack-sjma/ && break
           sleep 2
         done
 
@@ -2144,7 +2144,7 @@ jobs:
       working-directory: ecotrack-sjma/frontend
       run: |
         mkdir -p reports/accessibility
-        npx lighthouse http://localhost:4173 \
+        npx lighthouse http://localhost:4173/ecotrack-sjma/ \
           --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
           --output json \
           --output html \
@@ -2200,7 +2200,7 @@ jobs:
       run: |
         nohup npm run preview -- --port 4173 > preview.log 2>&1 &
         for i in {1..30}; do
-          curl -sf http://localhost:4173 && break
+          curl -sf http://localhost:4173/ecotrack-sjma/ && break
           sleep 2
         done
 
@@ -2212,7 +2212,7 @@ jobs:
       working-directory: ecotrack-sjma/frontend
       run: |
         mkdir -p reports/seo
-        npx lighthouse http://localhost:4173 \
+        npx lighthouse http://localhost:4173/ecotrack-sjma/ \
           --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
           --output json \
           --output html \

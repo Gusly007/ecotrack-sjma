@@ -178,21 +178,20 @@ class ContainerController {
    */
   async getInRadius(req, res, next) {
     try {
-      const { latitude, longitude, radiusKm } = req.query;
+      // Parse to finite numbers immediately to prevent tainted strings reaching the service
+      const lat = Number(req.query.latitude);
+      const lng = Number(req.query.longitude);
+      const radius = Number(req.query.radiusKm);
 
-      if (!latitude || !longitude || !radiusKm) {
-        return res.status(400).json({ 
-          message: 'latitude, longitude et radiusKm sont requis' 
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radius)) {
+        return res.status(400).json({
+          message: 'latitude, longitude et radiusKm sont requis'
         });
       }
 
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
-      const radius = parseFloat(radiusKm);
-
-      if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
-          !Number.isFinite(lng) || lng < -180 || lng > 180 ||
-          !Number.isFinite(radius) || radius <= 0 || radius > 500) {
+      if (lat < -90 || lat > 90 ||
+          lng < -180 || lng > 180 ||
+          radius <= 0 || radius > 500) {
         return res.status(400).json({ message: 'Coordonnées ou rayon invalides' });
       }
 

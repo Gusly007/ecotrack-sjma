@@ -76,16 +76,19 @@ export const sanitizeHtml = (unsafeHtml) => {
     .replace(/\//g, '&#x2F;');
 };
 
-export const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, templateHtml) => {
   try {
     await ensureTransporter();
     logger.info(`[Email] Envoi vers ${to}...`);
-    
+    // templateHtml is always produced by internal template functions that escape user data
+    if (typeof templateHtml !== 'string' || templateHtml.length === 0) {
+      throw new TypeError('Email HTML template must be a non-empty string');
+    }
     const info = await transporter.sendMail({
       from: env.smtp.from || '"EcoTrack" <noreply@ecotrack.fr>',
       to,
       subject,
-      html
+      html: templateHtml
     });
 
     logger.info(`[Email] SUCCES! Envoyé à ${to}`);
