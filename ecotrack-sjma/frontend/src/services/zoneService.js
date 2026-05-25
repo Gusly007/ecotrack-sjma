@@ -49,9 +49,7 @@ export const zoneService = {
 
   // Rechercher des zones dans un rayon
   getInRadius: async (latitude, longitude, rayon) => {
-    const response = await api.get('/api/V1/zones/radius', {
-      params: { latitude, longitude, rayon }
-    });
+    const response = await api.post('/api/V1/zones/radius', { latitude, longitude, rayon });
     return response.data;
   },
 

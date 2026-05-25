@@ -460,7 +460,7 @@ router.delete('/containers', requirePermission('containers:delete'), controller.
  *       500:
  *         description: Erreur serveur
  */
-router.get('/search/radius', requirePermission('containers:read'), controller.getInRadius);
+router.post('/search/radius', requirePermission('containers:read'), controller.getInRadius);
 
 // GET - Compter les conteneurs
 /**

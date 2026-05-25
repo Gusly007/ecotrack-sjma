@@ -1,5 +1,6 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
+import sanitizeHtml from 'sanitize-html';
 import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
@@ -83,12 +84,29 @@ const sendEmail = async (to, subject, templateHtml) => {
     if (typeof templateHtml !== 'string' || templateHtml.length === 0) {
       throw new TypeError('Email HTML template must be a non-empty string');
     }
+    const safeHtml = sanitizeHtml(templateHtml, {
+      allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+        'html', 'head', 'body', 'meta', 'style',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+        'img', 'span', 'div', 'center', 'font',
+      ]),
+      allowedAttributes: {
+        '*': ['style', 'class', 'align', 'width', 'height', 'bgcolor', 'border', 'cellpadding', 'cellspacing'],
+        'a': ['href', 'target', 'rel'],
+        'img': ['src', 'alt', 'width', 'height'],
+        'meta': ['charset', 'name', 'content', 'http-equiv'],
+        'td': ['colspan', 'rowspan', 'valign'],
+        'th': ['colspan', 'rowspan', 'valign'],
+        'font': ['color', 'face', 'size'],
+      },
+      allowedSchemes: ['http', 'https', 'mailto'],
+      allowedSchemesByTag: { img: ['data', 'http', 'https'] },
+    });
     const info = await transporter.sendMail({
       from: env.smtp.from || '"EcoTrack" <noreply@ecotrack.fr>',
       to,
       subject,
-      // codeql[js/xss]
-      html: templateHtml,
+      html: safeHtml,
     });
 
     logger.info(`[Email] SUCCES! Envoyé à ${to}`);

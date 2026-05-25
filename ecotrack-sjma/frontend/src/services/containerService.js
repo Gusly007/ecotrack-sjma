@@ -61,9 +61,7 @@ export const containerService = {
 
   // --- Mobile agent methods ---
   searchByRadius: async (latitude, longitude, rayon = 1000) => {
-    const response = await api.get('/api/V1/containers/search/radius', {
-      params: { latitude, longitude, rayon },
-    });
+    const response = await api.post('/api/V1/containers/search/radius', { latitude, longitude, rayon });
     return response.data;
   },
 

@@ -180,11 +180,9 @@ class ZoneController {
      */
     async getInRadius(req, res, next) {
         try {
-            // codeql[js/sensitive-get-query]
-            const lat = Number(req.query.latitude);
-            // codeql[js/sensitive-get-query]
-            const lng = Number(req.query.longitude);
-            const radiusKm = Number(req.query.rayon);
+                const lat = Number(req.body.latitude);
+            const lng = Number(req.body.longitude);
+            const radiusKm = Number(req.body.rayon);
 
             if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radiusKm)) {
                 return res.status(400).json({
