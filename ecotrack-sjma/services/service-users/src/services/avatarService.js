@@ -10,6 +10,15 @@ const ORIGINAL_DIR = path.join(AVATARS_DIR, 'original');
 const THUMBNAILS_DIR = path.join(AVATARS_DIR, 'thumbnails');
 const MINI_DIR = path.join(AVATARS_DIR, 'mini');
 
+const ALLOWED_AVATAR_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif']);
+
+function assertWithinDir(resolvedPath, baseDir) {
+  const base = path.resolve(baseDir);
+  if (!resolvedPath.startsWith(base + path.sep) && resolvedPath !== base) {
+    throw new Error('Path traversal detected');
+  }
+}
+
 /**
  * Traiter et redimensionner l'avatar
  */
@@ -17,15 +26,25 @@ export const processAvatar = async (userId, tempFile) => {
   try {
     const tempPath = tempFile.path;
     const fileExt = path.extname(tempFile.filename).toLowerCase();
-    const baseFilename = `${userId}${fileExt}`;
+
+    if (!ALLOWED_AVATAR_EXTENSIONS.has(fileExt)) {
+      await fs.unlink(tempPath).catch(() => {});
+      throw new Error(`File extension not allowed: ${fileExt}`);
+    }
+
+    const safeUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
+    const baseFilename = `${safeUserId}${fileExt}`;
 
     // Créer les répertoires s'ils n'existent pas
     await ensureDirectories();
 
-    // Chemins de stockage
-    const originalPath = path.join(ORIGINAL_DIR, baseFilename);
-    const thumbnailPath = path.join(THUMBNAILS_DIR, baseFilename);
-    const miniPath = path.join(MINI_DIR, baseFilename);
+    // Chemins de stockage (vérification de containment)
+    const originalPath = path.resolve(ORIGINAL_DIR, baseFilename);
+    const thumbnailPath = path.resolve(THUMBNAILS_DIR, baseFilename);
+    const miniPath = path.resolve(MINI_DIR, baseFilename);
+    assertWithinDir(originalPath, ORIGINAL_DIR);
+    assertWithinDir(thumbnailPath, THUMBNAILS_DIR);
+    assertWithinDir(miniPath, MINI_DIR);
 
     // 1. Redimensionner et stocker l'original (1000x1000)
     await sharp(tempPath)

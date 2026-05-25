@@ -192,9 +192,11 @@ class ZoneController {
             const lng = parseFloat(longitude);
             const radiusKm = parseFloat(rayon);
 
-            if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
-                return res.status(400).json({ 
-                    message: 'Latitude, longitude et rayon doivent être des nombres' 
+            if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
+                !Number.isFinite(lng) || lng < -180 || lng > 180 ||
+                !Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 500) {
+                return res.status(400).json({
+                    message: 'Latitude, longitude et rayon doivent être des nombres valides'
                 });
             }
 

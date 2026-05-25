@@ -2,6 +2,7 @@ import * as avatarService from '../services/avatarService.js';
 import cacheService from '../services/cacheService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import fs from 'fs/promises';
+import path from 'path';
 import sharp from 'sharp';
 import pool from '../config/database.js';
 
@@ -21,9 +22,13 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
   const { width, height } = await getImageDimensions(req.file.path);
 
   if (width < 100 || height < 100) {
-    await fs.unlink(req.file.path);
-    return res.status(400).json({ 
-      error: 'Image must be at least 100x100 pixels' 
+    const tempBase = path.resolve('storage/temp');
+    const resolvedTmp = path.resolve(req.file.path);
+    if (resolvedTmp.startsWith(tempBase + path.sep)) {
+      await fs.unlink(resolvedTmp).catch(() => {});
+    }
+    return res.status(400).json({
+      error: 'Image must be at least 100x100 pixels'
     });
   }
 

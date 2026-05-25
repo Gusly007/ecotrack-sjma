@@ -130,22 +130,26 @@ class ReportController {
   static async downloadReport(req, res) {
     try {
       const { filename } = req.params;
-      const filePath = path.join(process.env.REPORTS_DIR || './reports', filename);
+
+      if (!/^[a-zA-Z0-9_-]+\.(pdf|xlsx|csv)$/.test(filename)) {
+        return res.status(400).json({ success: false, error: 'Invalid filename' });
+      }
+
+      const reportsDir = path.resolve(process.env.REPORTS_DIR || './reports');
+      const filePath = path.resolve(reportsDir, filename);
+
+      if (!filePath.startsWith(reportsDir + path.sep)) {
+        return res.status(400).json({ success: false, error: 'Invalid filename' });
+      }
 
       if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
-          success: false,
-          error: 'Report not found'
-        });
+        return res.status(404).json({ success: false, error: 'Report not found' });
       }
 
       res.download(filePath);
     } catch (error) {
       logger.error('Error downloading report:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to download report'
-      });
+      res.status(500).json({ success: false, error: 'Failed to download report' });
     }
   }
 

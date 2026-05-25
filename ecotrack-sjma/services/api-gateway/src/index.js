@@ -300,6 +300,7 @@ app.use(helmet({
       fontSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
       workerSrc: ["'self'", "blob:"],
+      upgradeInsecureRequests: [],
     },
   },
   hsts: {
@@ -308,8 +309,9 @@ app.use(helmet({
     preload: false
   },
   noSniff: true,
-  xssFilter: true,
   frameguard: { action: 'deny' },
+  dnsPrefetchControl: { allow: false },
+  permittedCrossDomainPolicies: false,
   crossOriginEmbedderPolicy: { policy: 'require-corp' },
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   crossOriginResourcePolicy: { policy: 'same-site' },
@@ -642,11 +644,16 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
 // Get all alerts
   app.get('/api/V1/alerts', async (req, res) => {
     try {
-      const { status, limit = 50, offset = 0 } = req.query;
-      const axios = (await import('axios')).default;
+      const ALLOWED_ALERT_STATUSES = new Set(['active', 'resolved', 'ignored', 'new']);
+      const rawLimit = parseInt(req.query.limit, 10);
+      const rawOffset = parseInt(req.query.offset, 10);
+      const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50;
+      const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+      const status = ALLOWED_ALERT_STATUSES.has(req.query.status) ? req.query.status : undefined;
 
-      const params = new URLSearchParams({ limit, offset });
-      if (status && status !== 'all') params.append('status', status);
+      const axios = (await import('axios')).default;
+      const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+      if (status) params.append('status', status);
 
       const response = await axios.get(`http://ecotrack-service-iot:3013/api/V1/alerts?${params.toString()}`, {
         timeout: 5000
@@ -663,7 +670,14 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
   app.patch('/api/V1/alerts/:id', express.json(), async (req, res) => {
     try {
       const { id } = req.params;
+      if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: 'Invalid alert id' });
+      }
+      const ALLOWED_STATUTS = new Set(['resolved', 'ignored', 'active']);
       const { statut } = req.body;
+      if (!ALLOWED_STATUTS.has(statut)) {
+        return res.status(400).json({ error: 'Invalid statut value' });
+      }
       const axios = (await import('axios')).default;
 
       const response = await axios.patch(`http://ecotrack-service-iot:3013/api/V1/iot/alerts/${id}`, {

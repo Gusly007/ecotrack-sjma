@@ -186,11 +186,17 @@ class ContainerController {
         });
       }
 
-      const containers = await this.service.getContainersInRadius(
-        parseFloat(latitude),
-        parseFloat(longitude),
-        parseFloat(radiusKm)
-      );
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      const radius = parseFloat(radiusKm);
+
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
+          !Number.isFinite(lng) || lng < -180 || lng > 180 ||
+          !Number.isFinite(radius) || radius <= 0 || radius > 500) {
+        return res.status(400).json({ message: 'Coordonnées ou rayon invalides' });
+      }
+
+      const containers = await this.service.getContainersInRadius(lat, lng, radius);
       return res.status(200).json(containers);
     } catch (err) {
       next(err);
