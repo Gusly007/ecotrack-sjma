@@ -95,7 +95,7 @@ describe('ContainerController', () => {
     await controller.getInRadius(req, res, next);
     expect(res.status).toHaveBeenCalledWith(400);
 
-    req.query = { latitude: '1.5', longitude: '2.5', radiusKm: '3' };
+    req.body = { latitude: '1.5', longitude: '2.5', rayon: '3' };
     service.getContainersInRadius.mockResolvedValue([]);
     await controller.getInRadius(req, res, next);
     expect(service.getContainersInRadius).toHaveBeenCalledWith(1.5, 2.5, 3);
