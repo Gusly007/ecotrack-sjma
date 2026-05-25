@@ -1,9 +1,11 @@
 import { jest } from '@jest/globals';
 
 const mockRecupererStatsUtilisateur = jest.fn();
+const mockRecupererHistoriquePoints = jest.fn();
 
 jest.unstable_mockModule('../../src/services/stats.service.js', () => ({
-  recupererStatsUtilisateur: mockRecupererStatsUtilisateur
+  recupererStatsUtilisateur: mockRecupererStatsUtilisateur,
+  recupererHistoriquePoints: mockRecupererHistoriquePoints
 }));
 
 const { obtenirStatsUtilisateur } = await import('../../src/controllers/statsController.js');

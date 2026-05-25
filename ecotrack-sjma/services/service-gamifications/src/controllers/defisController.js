@@ -49,7 +49,7 @@ export const listerDefisHandler = async (req, res, next) => {
 
     // `id_utilisateur` can arrive as the explicit query param, or via the
     // `x-user-id` header set by the API Gateway JWT middleware — accept both.
-    const rawUserId = query.id_utilisateur ?? req.headers['x-user-id'];
+    const rawUserId = query.id_utilisateur ?? req.headers?.['x-user-id'];
     const parsedUserId = rawUserId ? parseInt(rawUserId, 10) : NaN;
     if (Number.isFinite(parsedUserId) && parsedUserId > 0) {
       options.idUtilisateur = parsedUserId;

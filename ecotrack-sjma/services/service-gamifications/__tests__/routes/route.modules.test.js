@@ -63,7 +63,8 @@ describe('Route modules registration', () => {
     }));
 
     jest.unstable_mockModule('../../src/controllers/statsController.js', () => ({
-      obtenirStatsUtilisateur: 'obtenirStatsUtilisateur'
+      obtenirStatsUtilisateur: 'obtenirStatsUtilisateur',
+      obtenirHistoriquePoints: 'obtenirHistoriquePoints'
     }));
 
     await import(modulePath);

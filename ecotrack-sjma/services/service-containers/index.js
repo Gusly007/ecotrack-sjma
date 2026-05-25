@@ -155,18 +155,18 @@ app.get('/api', (req, res) => {
 
 // Container routes
 const containerRoutes = require('./src/routes/container.route.js');
-app.use('/api', containerRoutes);
+app.use('/api/V1', containerRoutes);
 
 // Zone routes
 const zoneRoutes = require('./src/routes/zone.route.js');
-app.use('/api', zoneRoutes);
+app.use('/api/V1', zoneRoutes);
 
 // Type Container routes
 const typeContainerRoutes = require('./src/routes/typecontainer.route.js');
-app.use('/api', typeContainerRoutes);
+app.use('/api/V1', typeContainerRoutes);
 // Stats routes
 const statsRoutes = require('./src/routes/stats.route.js');
-app.use('/api', statsRoutes);
+app.use('/api/V1', statsRoutes);
 // ========== HEALTH CHECK ==========
 app.get('/health', async (req, res) => {
   const healthcheck = {

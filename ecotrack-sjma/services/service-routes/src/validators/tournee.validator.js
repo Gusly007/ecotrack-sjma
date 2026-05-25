@@ -69,9 +69,9 @@ const anomalieSchema = Joi.object({
   id_conteneur: Joi.number().integer().positive().required().messages({
     'any.required': 'Le conteneur est requis'
   }),
-  type_anomalie: Joi.string().valid('CONTENEUR_INACCESSIBLE', 'CONTENEUR_ENDOMMAGE', 'CAPTEUR_DEFAILLANT', 'CONTENEUR_PLEIN', 'MAUVAISE_ODEUR').required().messages({
+  type_anomalie: Joi.string().valid('CONTENEUR_INACCESSIBLE', 'CONTENEUR_ENDOMMAGE', 'CAPTEUR_DEFAILLANT', 'CONTENEUR_PLEIN', 'MAUVAISE_ODEUR', 'CONTENEUR_SALE').required().messages({
     'any.required': "Le type d'anomalie est requis",
-    'any.only': 'Type invalide. Valeurs: CONTENEUR_INACCESSIBLE, CONTENEUR_ENDOMMAGE, CAPTEUR_DEFAILLANT, CONTENEUR_PLEIN, MAUVAISE_ODEUR'
+    'any.only': 'Type invalide. Valeurs: CONTENEUR_INACCESSIBLE, CONTENEUR_ENDOMMAGE, CAPTEUR_DEFAILLANT, CONTENEUR_PLEIN, MAUVAISE_ODEUR, CONTENEUR_SALE'
   }),
   description: Joi.string().max(500).required().messages({
     'any.required': 'La description est requise'

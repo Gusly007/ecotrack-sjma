@@ -7,6 +7,7 @@ describe('gamificationService.enregistrerAction', () => {
     const client = {
       query: jest.fn(async (sql) => {
         if (failAt && sql === failAt) throw new Error(`failed at ${sql}`);
+        return { rows: [] };
       }),
       release: jest.fn()
     };
@@ -60,7 +61,8 @@ describe('gamificationService.enregistrerAction', () => {
     expect(result).toEqual({
       pointsAjoutes: 10,
       totalPoints: 120,
-      nouveauxBadges: [{ nom: 'Debutant' }]
+      nouveauxBadges: [{ nom: 'Debutant' }],
+      defisTermines: []
     });
   });
 

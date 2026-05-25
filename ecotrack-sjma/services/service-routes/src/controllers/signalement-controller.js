@@ -34,8 +34,8 @@ class SignalementController {
     try {
       // BOLA scope : un CITOYEN ne peut voir que ses propres signalements,
       // peu importe la valeur de ?id_citoyen= dans l'URL.
-      const callerId = parseInt(req.headers['x-user-id'], 10);
-      const callerRole = req.headers['x-user-role'];
+      const callerId = parseInt(req.headers?.['x-user-id'], 10);
+      const callerRole = req.headers?.['x-user-role'];
       const queryIdCitoyen = req.query.id_citoyen ? parseInt(req.query.id_citoyen, 10) : undefined;
       const scopedIdCitoyen = callerRole === 'CITOYEN'
         ? (Number.isInteger(callerId) ? callerId : undefined)
@@ -87,9 +87,9 @@ class SignalementController {
 
   // BOLA : un CITOYEN ne peut lire que ses propres signalements (détail + historique).
   _denyCitoyenForeignSignalement(req, signalement) {
-    const callerRole = req.headers['x-user-role'];
+    const callerRole = req.headers?.['x-user-role'];
     if (callerRole !== 'CITOYEN') return null;
-    const callerId = parseInt(req.headers['x-user-id'], 10);
+    const callerId = parseInt(req.headers?.['x-user-id'], 10);
     const ownerId = signalement?.id_citoyen != null
       ? parseInt(signalement.id_citoyen, 10)
       : NaN;

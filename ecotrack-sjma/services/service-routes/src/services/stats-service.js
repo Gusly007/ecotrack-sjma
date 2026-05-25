@@ -85,9 +85,6 @@ class StatsService {
       simulation_actuelle: simulationResult
     };
   }
-  async getAgentStats(agentId, period) {
-    return this.statsRepo.getAgentStats(agentId, period);
-  }
 }
 
 module.exports = StatsService;

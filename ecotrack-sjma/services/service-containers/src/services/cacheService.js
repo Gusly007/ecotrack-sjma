@@ -95,14 +95,14 @@ class CacheService {
   async getOrSet(key, fetchFn, ttlSeconds = 300) {
     const cached = await this.get(key);
     if (cached) {
-      return cached;
+      return { data: cached, fromCache: true };
     }
-    
+
     const data = await fetchFn();
     if (data) {
       await this.set(key, data, ttlSeconds);
     }
-    return data;
+    return { data, fromCache: false };
   }
 
   async close() {
