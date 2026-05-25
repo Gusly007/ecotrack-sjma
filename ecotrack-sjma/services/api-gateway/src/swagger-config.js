@@ -53,6 +53,11 @@ Cette documentation unifie tous les microservices de la plateforme EcoTrack.
 ### Service Analytics (Port 3015)
 - **Agrégations** : Dashboard complet, stats globales, journalières, par zone, par type
 
+### Service Notifications Gestionnaire (Port 3016)
+- **Notifications utilisateurs** : Création, liste, compteur non-lus, marquage lu/lu-tout, suppression
+- **Notifications gestionnaires/admins** : Création individuelle et en masse, liste filtrée, stats, marquage, suppression
+- **Temps réel** : Distribution via Socket.IO aux gestionnaires et admins connectés
+
 ## Architecture
 
 Toutes les requêtes passent par l'API Gateway (\`http://localhost:3000\`) qui route vers les microservices appropriés.
@@ -75,54 +80,15 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
   servers: [
-    {
-        AdminNotification: {
-          type: 'object',
-          properties: {
-            id_notification: { type: 'integer', example: 1001 },
-            id_utilisateur: { type: 'integer', example: 7 },
-            type: { type: 'string', example: 'ADMIN_ALERTE' },
-            titre: { type: 'string', example: 'Service hors ligne' },
-            corps: { type: 'string', example: 'Le service API ne répond plus.' },
-            priorite: { type: 'integer', example: 1 },
-            categorie: { type: 'string', nullable: true },
-            est_lu: { type: 'boolean', example: false },
-            date_creation: { type: 'string', format: 'date-time' }
-          }
-        },
-      url: 'http://localhost:3000',
-      description: 'API Gateway (Point d\'entree unifie)'
-    },
-    {
-      url: 'http://localhost:3010',
-      description: 'Service Users (Direct)'
-    },
-    {
-      url: 'http://localhost:3011',
-      description: 'Service Containers (Direct)'
-    },
-    {
-      url: 'http://localhost:3012',
-      description: 'Service Routes (Direct)'
-    },
-    {
-      url: 'http://localhost:3013',
-      description: 'Service IoT (Direct)'
-    },
-    {
-      url: 'http://localhost:3014',
-      description: 'Service Gamification (Direct)'
-    },
-    {
-      url: 'http://localhost:3015',
-      description: 'Service Analytics (Direct)'
-    }
-  ],
-  servers: [
-    {
-      url: 'http://localhost:3016',
-      description: 'Service Notifications Gestionnaire (Direct)'
-    }
+    { url: 'http://localhost:3000',  description: 'API Gateway — point d\'entrée unifié' },
+    { url: 'http://localhost:3010',  description: 'Service Users (Direct)' },
+    { url: 'http://localhost:3011',  description: 'Service Containers (Direct)' },
+    { url: 'http://localhost:3012',  description: 'Service Routes (Direct)' },
+    { url: 'http://localhost:3013',  description: 'Service IoT (Direct)' },
+    { url: 'http://localhost:3014',  description: 'Service Gamification (Direct)' },
+    { url: 'http://localhost:3015',  description: 'Service Analytics (Direct)' },
+    { url: 'http://localhost:3016',  description: 'Service Notification Gestionnaire (Direct)' }
+
   ],
   tags: [
     {
@@ -231,13 +197,8 @@ Obtenez un token via \`POST /auth/login\`
     },
     {
       name: 'Notifications',
-      description: 'Service Notifications Gestionnaire - endpoints utilisateurs',
-      externalDocs: { description: 'Service notifications', url: 'http://localhost:3016/api-docs' }
-    },
-    {
-      name: 'AdminNotifications',
-      description: 'Endpoints administratifs de notifications (gestionnaire)',
-      externalDocs: { description: 'Docs gestionnaire', url: 'http://localhost:3016/api-docs' }
+      description: 'Service Notifications Gestionnaire (port 3016) — notifications utilisateurs (/api/V1/notifications) et notifications gestionnaires/admins (/api/V1/admin/notifications)',
+      externalDocs: { description: 'Documentation complète', url: 'http://localhost:3016/api-docs' }
     },
     {
       name: 'Stats Gamification',
@@ -1681,7 +1642,7 @@ Obtenez un token via \`POST /auth/login\`
     // ─────────────────────────────────────────────────────────────
     '/api/V1/admin/notifications/types': {
       get: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Récupère les types de notifications admin disponibles',
         servers: [{ url: 'http://localhost:3016' }],
         responses: { 200: { description: 'Liste des types' } }
@@ -1689,7 +1650,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/V1/admin/notifications/priorities': {
       get: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Récupère la table des priorités disponibles',
         servers: [{ url: 'http://localhost:3016' }],
         responses: { 200: { description: 'Objet map des priorités' } }
@@ -1697,14 +1658,14 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/V1/admin/notifications': {
       post: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Crée une notification admin pour un gestionnaire',
         servers: [{ url: 'http://localhost:3016' }],
         requestBody: { required: true },
         responses: { 201: { description: 'Notification admin créée' } }
       },
       get: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Liste les notifications admin avec filtres et pagination',
         servers: [{ url: 'http://localhost:3016' }],
         responses: { 200: { description: 'Liste paginée de notifications admin' } }
@@ -1712,7 +1673,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/V1/admin/notifications/bulk': {
       post: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Crée plusieurs notifications admin en masse',
         servers: [{ url: 'http://localhost:3016' }],
         requestBody: { required: true },
@@ -1721,7 +1682,7 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/V1/admin/notifications/{id}/read': {
       patch: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Marque une notification admin comme lue',
         servers: [{ url: 'http://localhost:3016' }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
@@ -1730,12 +1691,177 @@ Obtenez un token via \`POST /auth/login\`
     },
     '/api/V1/admin/notifications/stats': {
       get: {
-        tags: ['AdminNotifications'],
+        tags: ['Notifications'],
         summary: 'Récupère des statistiques basiques sur les notifications admin',
         servers: [{ url: 'http://localhost:3016' }],
         responses: { 200: { description: 'Statistiques' } }
       }
     },
+    '/api/V1/admin/notifications/read-all': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Marque toutes les notifications admin comme lues',
+        servers: [{ url: 'http://localhost:3016' }],
+        responses: { 200: { description: 'Toutes les notifications admin marquées comme lues' } }
+      }
+    },
+    '/api/V1/admin/notifications/{id}': {
+      delete: {
+        tags: ['Notifications'],
+        summary: 'Supprime une notification admin',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          200: { description: 'Notification admin supprimée' },
+          404: { description: 'Notification non trouvée' }
+        }
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // Service Notifications (port 3016) — endpoints utilisateurs
+    // ─────────────────────────────────────────────────────────────
+    '/api/V1/notifications': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Créer une notification',
+        description: 'Crée une nouvelle notification pour un utilisateur',
+        servers: [{ url: 'http://localhost:3016' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['userId', 'type', 'title', 'message'],
+                properties: {
+                  userId: { type: 'integer', example: 1 },
+                  type: { type: 'string', example: 'INFO' },
+                  title: { type: 'string', example: 'Nouvelle notification' },
+                  message: { type: 'string', example: 'Votre action a été enregistrée' },
+                  priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], default: 'MEDIUM' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: { description: 'Notification créée' },
+          400: { description: 'Données invalides' }
+        }
+      }
+    },
+    '/api/V1/notifications/bulk': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Créer plusieurs notifications en masse',
+        servers: [{ url: 'http://localhost:3016' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['notifications'],
+                properties: {
+                  notifications: { type: 'array', items: { type: 'object' } }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          201: { description: 'Notifications insérées en masse' },
+          400: { description: 'Données invalides' }
+        }
+      }
+    },
+    '/api/V1/notifications/read-all': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Marquer toutes les notifications comme lues',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [
+          { name: 'userId', in: 'query', required: true, schema: { type: 'integer' }, description: "ID de l'utilisateur" }
+        ],
+        responses: { 200: { description: 'Toutes les notifications marquées comme lues' } }
+      }
+    },
+    '/api/V1/notifications/unread/count': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Nombre de notifications non lues',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [
+          { name: 'userId', in: 'query', required: true, schema: { type: 'integer' }, description: "ID de l'utilisateur" }
+        ],
+        responses: {
+          200: {
+            description: 'Compteur de notifications non lues',
+            content: {
+              'application/json': {
+                schema: { type: 'object', properties: { count: { type: 'integer' } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/V1/notifications/list': {
+      get: {
+        tags: ['Notifications'],
+        summary: "Lister les notifications d'un utilisateur",
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [
+          { name: 'userId', in: 'query', required: true, schema: { type: 'integer' }, description: "ID de l'utilisateur" },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'unreadOnly', in: 'query', schema: { type: 'boolean', default: false } }
+        ],
+        responses: {
+          200: {
+            description: 'Liste paginée des notifications',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    data: { type: 'array', items: { type: 'object' } },
+                    total: { type: 'integer' },
+                    page: { type: 'integer' },
+                    limit: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/V1/notifications/{id}/read': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Marquer une notification comme lue',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          200: { description: 'Notification marquée comme lue' },
+          404: { description: 'Notification non trouvée' }
+        }
+      }
+    },
+    '/api/V1/notifications/{id}': {
+      delete: {
+        tags: ['Notifications'],
+        summary: 'Supprimer une notification',
+        servers: [{ url: 'http://localhost:3016' }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          200: { description: 'Notification supprimée' },
+          404: { description: 'Notification non trouvée' }
+        }
+      }
+    }
 
   },
 
