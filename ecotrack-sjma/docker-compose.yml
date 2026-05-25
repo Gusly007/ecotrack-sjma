@@ -161,6 +161,7 @@ services:
     build:
       context: ./database
       dockerfile: Dockerfile
+    image: ecotrack/migrations:${VERSION:-1.0.0}
     container_name: ecotrack-migrations
     environment:
       DATABASE_URL: postgresql://${DB_USER:-ecotrack_user}:${DB_PASSWORD:-ecotrack_password}@postgres:5432/${DB_NAME:-ecotrack}
@@ -180,6 +181,7 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
+    image: ecotrack/api-gateway:${VERSION:-1.0.0}
     container_name: ecotrack-api-gateway
     environment:
       GATEWAY_PORT: 3000
@@ -240,6 +242,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: ecotrack/frontend:${VERSION:-1.0.0}
     container_name: ecotrack-frontend
     environment:
       VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
@@ -270,6 +273,7 @@ services:
     build:
       context: ./services/service-users
       dockerfile: Dockerfile
+    image: ecotrack/service-users:${VERSION:-1.0.0}
     container_name: ecotrack-service-users
     environment:
       APP_PORT: 3010
@@ -320,6 +324,7 @@ services:
     build:
       context: ./services/service-containers
       dockerfile: Dockerfile
+    image: ecotrack/service-containers:${VERSION:-1.0.0}
     container_name: ecotrack-service-containers
     environment:
       APP_PORT: 3011
@@ -365,6 +370,7 @@ services:
     build:
       context: ./services/service-routes
       dockerfile: Dockerfile
+    image: ecotrack/service-routes:${VERSION:-1.0.0}
     container_name: ecotrack-service-routes
     environment:
       APP_PORT: 3012
@@ -410,6 +416,7 @@ services:
     build:
       context: ./services/service-iot
       dockerfile: Dockerfile
+    image: ecotrack/service-iot:${VERSION:-1.0.0}
     container_name: ecotrack-service-iot
     environment:
       APP_PORT: 3013
@@ -458,6 +465,7 @@ services:
     build:
       context: ./services/service-gamifications
       dockerfile: Dockerfile
+    image: ecotrack/service-gamifications:${VERSION:-1.0.0}
     container_name: ecotrack-service-gamifications
     environment:
       PORT: 3014
@@ -489,6 +497,7 @@ services:
     build:
       context: ./services/service-analytics
       dockerfile: Dockerfile
+    image: ecotrack/service-analytics:${VERSION:-1.0.0}
     container_name: ecotrack-service-analytics
     environment:
       APP_PORT: 3015
@@ -527,6 +536,7 @@ services:
     build:
       context: ./services/service-notification-gestionnaire-admin
       dockerfile: Dockerfile
+    image: ecotrack/service-notification:${VERSION:-1.0.0}
     container_name: ecotrack-service-notification-gestionnaire-admin
     environment:
       APP_PORT: 3016
