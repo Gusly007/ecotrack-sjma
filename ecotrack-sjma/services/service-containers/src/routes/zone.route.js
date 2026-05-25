@@ -342,7 +342,7 @@ router.get('/zones/search', requirePermission('zone:read'), zoneController.searc
  *       500:
  *         description: Erreur serveur
  */
-router.get('/zones/radius', requirePermission('zone:read'), zoneController.getInRadius);
+router.post('/zones/radius', requirePermission('zone:read'), zoneController.getInRadius);
 
 // ========== Statistiques et vérifications ==========
 

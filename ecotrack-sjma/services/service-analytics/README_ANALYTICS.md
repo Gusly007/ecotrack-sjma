@@ -72,34 +72,34 @@ docker-compose up -d
 ### Agrégations
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/analytics/aggregations` | Toutes agrégations |
-| GET | `/api/analytics/aggregations/zones` | Par zone |
-| GET | `/api/analytics/aggregations/agents` | Performance agents |
+| GET | `/api/V1/analytics/aggregations` | Toutes agrégations |
+| GET | `/api/V1/analytics/aggregations/zones` | Par zone |
+| GET | `/api/V1/analytics/aggregations/agents` | Performance agents |
 
 ### Dashboard
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/analytics/dashboard` | Dashboard complet |
-| GET | `/api/analytics/realtime` | Stats temps réel |
-| GET | `/api/analytics/heatmap` | Heatmap GeoJSON |
-| GET | `/api/analytics/evolution` | Évolutions |
+| GET | `/api/V1/analytics/dashboard` | Dashboard complet |
+| GET | `/api/V1/analytics/realtime` | Stats temps réel |
+| GET | `/api/V1/analytics/heatmap` | Heatmap GeoJSON |
+| GET | `/api/V1/analytics/evolution` | Évolutions |
 
 ### Rapports
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/api/analytics/reports/generate` | Générer rapport |
-| GET | `/api/analytics/reports/download/:file` | Télécharger |
-| POST | `/api/analytics/reports/environmental` | Impact environnemental |
-| POST | `/api/analytics/reports/routes-performance` | Performance tournées |
+| POST | `/api/V1/analytics/reports/generate` | Générer rapport |
+| GET | `/api/V1/analytics/reports/download/:file` | Télécharger |
+| POST | `/api/V1/analytics/reports/environmental` | Impact environnemental |
+| POST | `/api/V1/analytics/reports/routes-performance` | Performance tournées |
 
 ### ML Predictions
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/api/analytics/ml/predict` | Prédire remplissage |
-| GET | `/api/analytics/ml/predict-critical` | Conteneurs critiques |
-| GET | `/api/analytics/ml/anomalies/:id` | Détecter anomalies |
-| GET | `/api/analytics/ml/defective-sensors` | Capteurs défaillants |
-| POST | `/api/analytics/ml/anomalies/:id/alerts` | Créer alertes |
+| POST | `/api/V1/analytics/ml/predict` | Prédire remplissage |
+| GET | `/api/V1/analytics/ml/predict-critical` | Conteneurs critiques |
+| GET | `/api/V1/analytics/ml/anomalies/:id` | Détecter anomalies |
+| GET | `/api/V1/analytics/ml/defective-sensors` | Capteurs défaillants |
+| POST | `/api/V1/analytics/ml/anomalies/:id/alerts` | Créer alertes |
 
 ## WebSocket
 

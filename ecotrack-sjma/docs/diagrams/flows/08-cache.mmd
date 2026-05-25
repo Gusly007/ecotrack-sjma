@@ -7,7 +7,7 @@ sequenceDiagram
 
     Note over C,G: First request (Cache Miss)
 
-    C->>G: GET /api/zones
+    C->>G: GET /api/V1/zones
     G->>Svc: Forward request
     
     Svc->>Redis: GET cache:zones:all
@@ -26,7 +26,7 @@ sequenceDiagram
 
     Note over C,G: Second request (Cache Hit)
 
-    C->>G: GET /api/zones
+    C->>G: GET /api/V1/zones
     G->>Svc: Forward request
     
     Svc->>Redis: GET cache:zones:all
@@ -37,7 +37,7 @@ sequenceDiagram
 
     Note over C,G: Cache Invalidation
 
-    Svc->>G: POST /api/zones<br/>{new zone}
+    Svc->>G: POST /api/V1/zones<br/>{new zone}
     G->>Svc: Forward
     
     Svc->>DB: INSERT new zone

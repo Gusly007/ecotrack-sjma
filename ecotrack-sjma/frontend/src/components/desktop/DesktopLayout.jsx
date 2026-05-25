@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../hooks';
 import api from '../../services/api';
-import { ADMIN_MENU, GESTIONNAIRE_MENU } from './menuData';
 import './DesktopLayout.css';
+import { ADMIN_MENU, GESTIONNAIRE_MENU } from './menuData';
 
 export default function DesktopLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -15,6 +16,7 @@ export default function DesktopLayout({ children }) {
   const location = useLocation();
   const { user, logout } = useAuth();
 
+  const { unreadCount: wsUnreadCount } = useNotifications();
   const role = user?.role || user?.role_par_defaut;
   const isAdmin = role === 'ADMIN';
   const menuItems = isAdmin ? ADMIN_MENU : GESTIONNAIRE_MENU;
@@ -45,10 +47,10 @@ export default function DesktopLayout({ children }) {
   const userLabel = isAdmin ? 'Administrateur' : 'Gestionnaire';
 
   const notificationConfig = useMemo(() => ({
-    listPath: isAdmin ? '/api/admin/notifications' : '/api/notifications/list',
-    countPath: isAdmin ? '/api/admin/notifications/stats' : '/api/notifications/unread/count',
-    markReadPath: (id) => isAdmin ? `/api/admin/notifications/${id}/read` : `/api/notifications/${id}/read`,
-    markAllReadPath: isAdmin ? '/api/admin/notifications/read-all' : '/api/notifications/read-all',
+    listPath: isAdmin ? '/api/V1/admin/notifications' : '/api/V1/notifications/list',
+    countPath: isAdmin ? '/api/V1/admin/notifications/stats' : '/api/V1/notifications/unread/count',
+    markReadPath: (id) => isAdmin ? `/api/V1/admin/notifications/${id}/read` : `/api/V1/notifications/${id}/read`,
+    markAllReadPath: isAdmin ? '/api/V1/admin/notifications/read-all' : '/api/V1/notifications/read-all',
     itemLabel: isAdmin ? 'Notifications admin' : 'Notifications gestionnaire',
     emptyLabel: isAdmin ? 'Aucune notification admin' : 'Aucune notification gestionnaire',
     fallbackRoute: isAdmin ? '/admin/alerts' : '/gestionnaire/signalements'
@@ -232,8 +234,8 @@ export default function DesktopLayout({ children }) {
                 aria-label={notificationConfig.itemLabel}
               >
                 <i className="fas fa-bell"></i>
-                {filteredCount > 0 && (
-                  <span className="badge-notif">{filteredCount}</span>
+                {wsUnreadCount > 0 && (
+                  <span className="badge-notif">{wsUnreadCount}</span>
                 )}
               </button>
 

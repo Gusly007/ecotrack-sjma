@@ -7,7 +7,7 @@ sequenceDiagram
 
     Note over U,F: User makes request with JWT
 
-    F->>G: GET /api/containers<br/>Authorization: Bearer JWT
+    F->>G: GET /api/V1/containers<br/>Authorization: Bearer JWT
     G->>G: Validate JWT signature
     alt JWT invalid
         G-->>F: 401 Unauthorized
@@ -30,7 +30,7 @@ sequenceDiagram
 
     Note over U,F: User tries to create (requires higher permission)
 
-    F->>G: POST /api/containers<br/>Authorization: Bearer JWT
+    F->>G: POST /api/V1/containers<br/>Authorization: Bearer JWT
     G->>Svc: Forward + JWT
     Svc->>RBAC: requirePermission('containers:create')
     

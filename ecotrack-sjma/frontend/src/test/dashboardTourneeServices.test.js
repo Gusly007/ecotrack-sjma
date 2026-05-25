@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import api from '../services/api';
 import { dashboardService, fetchDashboardData } from '../services/dashboardService';
 import {
-  fetchActiveTournees,
-  fetchAllTournees,
-  fetchTourneesPageData,
-  fetchTourneesStats,
+    fetchActiveTournees,
+    fetchAllTournees,
+    fetchTourneesPageData,
+    fetchTourneesStats,
 } from '../services/tourneeService';
 
 vi.mock('../services/api', () => ({
@@ -24,7 +24,7 @@ describe('dashboardService + tourneeService', () => {
 
     const result = await dashboardService.getStats();
 
-    expect(api.get).toHaveBeenCalledWith('/api/dashboard/stats');
+    expect(api.get).toHaveBeenCalledWith('/api/V1/dashboard/stats');
     expect(result).toEqual({ total: 3 });
   });
 

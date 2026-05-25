@@ -83,24 +83,24 @@ http://localhost:3011/api-docs
 ### Endpoints Disponibles dans Swagger
 
 #### Conteneurs
-- `GET /api/containers` - Liste paginée
-- `POST /api/containers` - Créer un conteneur
-- `GET /api/containers/:id` - Détails
-- `PATCH /api/containers/:id` - Modifier
-- `PATCH /api/containers/:id/status` - Changer statut
-- `DELETE /api/containers/:id` - Supprimer
+- `GET /api/V1/containers` - Liste paginée
+- `POST /api/V1/containers` - Créer un conteneur
+- `GET /api/V1/containers/:id` - Détails
+- `PATCH /api/V1/containers/:id` - Modifier
+- `PATCH /api/V1/containers/:id/status` - Changer statut
+- `DELETE /api/V1/containers/:id` - Supprimer
 
 #### Statistiques
-- `GET /api/stats/dashboard` - Tableau de bord
-- `GET /api/stats` - Stats globales
-- `GET /api/stats/fill-levels` - Niveaux de remplissage
-- `GET /api/stats/by-zone` - Par zone
-- `GET /api/stats/by-type` - Par type
-- `GET /api/stats/critical` - Conteneurs critiques
+- `GET /api/V1/stats/dashboard` - Tableau de bord
+- `GET /api/V1/stats` - Stats globales
+- `GET /api/V1/stats/fill-levels` - Niveaux de remplissage
+- `GET /api/V1/stats/by-zone` - Par zone
+- `GET /api/V1/stats/by-type` - Par type
+- `GET /api/V1/stats/critical` - Conteneurs critiques
 
 #### Zones et Types
-- `GET /api/zones` - Liste des zones
-- `GET /api/typecontainers` - Types de conteneurs
+- `GET /api/V1/zones` - Liste des zones
+- `GET /api/V1/typecontainers` - Types de conteneurs
 
 ## Vérifier la Santé du Service
 
@@ -122,13 +122,13 @@ Réponse attendue:
 ### Exemple 1: Liste des conteneurs
 
 ```bash
-curl http://localhost:3011/api/containers
+curl http://localhost:3011/api/V1/containers
 ```
 
 ### Exemple 2: Créer un conteneur
 
 ```bash
-curl -X POST http://localhost:3011/api/containers \
+curl -X POST http://localhost:3011/api/V1/containers \
   -H "Content-Type: application/json" \
   -d '{
     "numero_serie": "CNT-001",
@@ -144,7 +144,7 @@ curl -X POST http://localhost:3011/api/containers \
 ### Exemple 3: Statistiques dashboard
 
 ```bash
-curl http://localhost:3011/api/stats/dashboard
+curl http://localhost:3011/api/V1/stats/dashboard
 ```
 
 ## Tester Socket.IO (Temps Réel)
@@ -172,7 +172,7 @@ npm run test:socket:client
 
 2. Dans un autre terminal, changez un statut:
 ```bash
-curl -X PATCH http://localhost:3011/api/containers/1/status \
+curl -X PATCH http://localhost:3011/api/V1/containers/1/status \
   -H "Content-Type: application/json" \
   -d '{"statut": "EN_MAINTENANCE"}'
 ```

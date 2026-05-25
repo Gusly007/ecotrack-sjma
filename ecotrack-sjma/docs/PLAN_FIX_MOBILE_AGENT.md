@@ -19,7 +19,7 @@
 | Cause | Conséquence |
 |-------|-------------|
 | **Aucun test manuel end-to-end** avant push (PR ouverte depuis 2026-04-22, pas de revue UI) | Bugs visibles dès le 1er clic ne sont pas détectés |
-| **Pas de tests d'intégration** sur les routes mobile (`/api/routes/my-tournee`, `/anomalie`, `/collecte`) | Mismatch payload front/back invisibles en CI |
+| **Pas de tests d'intégration** sur les routes mobile (`/api/V1/routes/my-tournee`, `/anomalie`, `/collecte`) | Mismatch payload front/back invisibles en CI |
 | **Pas de seed agent** : la BDD a 200+ tournées de seed mais pas pour `MOUSSA` connecté | « Pas de tournée » alors qu'il y en a une ajoutée manuellement |
 | **Refactor cache (`getOrSet`)** côté collègue casse 4 endpoints `service-containers` (`getAll`, `getByStatus`, `getByZone`, `count`) qui retournent encore `result.data` | Liste conteneurs renvoie `undefined` |
 | **Imports React non vérifiés** dans `App.jsx` après ajout des routes `/scan` `/scan/result` `/qr-codes` | Build Vite échoue immédiatement (3 fichiers manquants) |
@@ -41,7 +41,7 @@
 | **B4** | `ScanUniversal.jsx` casse : import `'./ScanResult.css'` (fichier supprimé) + `'../../context/AuthContext'` (chemin incorrect : remonte hors `src/`) | `frontend/src/pages/ScanUniversal.jsx:3,5` | Fichier déplacé sans corriger imports |
 | **B5** | Endpoints `service-containers` cassés : `getAllContainers`, `getContainersByStatus`, `getContainersByZone`, `countContainers` retournent `undefined` | `services/service-containers/src/services/container-services.js:116,132,148,198` | Cache `getOrSet` retourne maintenant la donnée brute, mais ces 4 méthodes utilisent encore `result.data` |
 | **B6** | Anomalie ne s'envoie jamais (400) | `frontend/src/pages/mobile/agent/AnomalieForm.jsx:54-58` | Envoie `{type, description, id_conteneur:null}` mais backend exige `{type_anomalie, description, id_conteneur:int>0}` |
-| **B7** | Route QR `/qrcode/:uid` enregistrée 2× dans le même router : la 2ᵉ est **derrière** `authenticateToken` | `services/service-containers/src/routes/container.route.js:13-30` (avant auth) **et** `577-606` (après auth) | Express utilise la 1ʳᵉ qui matche, donc public OK, mais doublon = code mort à supprimer. Surtout : le mount path est `/api/qrcode/:uid` (pas `/api/containers/qrcode/:uid`) — non couvert par le proxy gateway `/api/containers` |
+| **B7** | Route QR `/qrcode/:uid` enregistrée 2× dans le même router : la 2ᵉ est **derrière** `authenticateToken` | `services/service-containers/src/routes/container.route.js:13-30` (avant auth) **et** `577-606` (après auth) | Express utilise la 1ʳᵉ qui matche, donc public OK, mais doublon = code mort à supprimer. Surtout : le mount path est `/api/V1/qrcode/:uid` (pas `/api/V1/containers/qrcode/:uid`) — non couvert par le proxy gateway `/api/V1/containers` |
 | **B8** | `Pool` PostgreSQL créé en doublon dans `container.route.js` (vars `POSTGRES_*` au lieu de `DATABASE_URL` projet) | Idem ligne 6-13 | Pool jamais fermé, env mismatch — utiliser le repository injecté |
 
 ### P1 — Fonctionnels visibles (feedbacks utilisateur)
@@ -49,11 +49,11 @@
 | # | Bug feedback | Fichier | Cause |
 |---|--------------|---------|-------|
 | **F1** | « Tournée pas affichée » alors qu'elle existe en BDD | `service-routes/.../tournee-repository.js:188-190` | La query exige `t.id_agent = $1 AND t.date_tournee = CURRENT_DATE AND t.statut IN ('PLANIFIEE','EN_COURS')`. Si la tournée insérée a un `date_tournee` ≠ aujourd'hui ou un `statut` différent → invisible. Le frontend ne montre aucun message d'aide. |
-| **F2** | « 201 tournées » sur `/agent/stats` | `frontend/.../StatsPage.jsx:59` + `service-routes/.../stats-repository.js:64-88` | Stats globales (toutes tournées DB), aucun filtre `id_agent`. Il faut un endpoint `GET /api/routes/stats/agent/:id` ou filtrer via `x-user-id` |
+| **F2** | « 201 tournées » sur `/agent/stats` | `frontend/.../StatsPage.jsx:59` + `service-routes/.../stats-repository.js:64-88` | Stats globales (toutes tournées DB), aucun filtre `id_agent`. Il faut un endpoint `GET /api/V1/routes/stats/agent/:id` ou filtrer via `x-user-id` |
 | **F3** | « Conteneur non trouvé » sur scan d'un UID existant | `frontend/.../ScanResult.jsx:22` (correct) — souvent symptôme de **B5** quand on liste mais ici `getByUid` marche. Le user a confirmé que ça marche maintenant via la screenshot CNT-00002 | Probablement déjà corrigé par le commit du collègue (JOIN type/zone) |
 | **F4** | Décalage du « Bonjour, MOUSSA » sous le header (mauvais placement) | `AgentDashboard.jsx:46` (`title=""`) + `MobileHeader.css` | Le header conserve sa hauteur même vide → greeting apparaît sous une barre blanche. Il faut soit injecter le greeting **dans** le header, soit cacher le header sur le dashboard |
 | **F5** | « Retour à l'inscription » → page blanche | `frontend/src/App.jsx` (pas de route `/register`) + `pages/auth/TermsPage.jsx:8` + `PrivacyPage.jsx:8` | `RegisterPage.jsx` existe mais n'est pas monté |
-| **F6** | Avatar profile « ne fonctionne pas » | `pages/mobile/shared/ProfilPage.jsx:36-39` | Aucune logique upload/affichage — c'est juste un `<i className="fa-user-circle">`. À implémenter via `/api/avatars` (déjà mounté dans gateway) |
+| **F6** | Avatar profile « ne fonctionne pas » | `pages/mobile/shared/ProfilPage.jsx:36-39` | Aucune logique upload/affichage — c'est juste un `<i className="fa-user-circle">`. À implémenter via `/api/V1/avatars` (déjà mounté dans gateway) |
 | **F7** | Settings « Badges » et « Système » non pertinents pour Agent | `pages/mobile/shared/NotificationSettings.jsx:49-67` | Badges/recompenses = gamification citoyen ; système = admin. À filtrer par rôle ou retirer |
 | **F8** | Settings notifications uniquement en `localStorage` (pas persistées) | Idem `NotificationSettings.jsx:7-23` | Pas critique mais à brancher sur `/users/profile` ou `/notifications/preferences` |
 | **F9** | « Conteneur » vs « Container » dans labels | UI déjà OK (vérifié : aucun `>Container<` dans `frontend/src`). Le fix doit venir du backend qui retourne `type_conteneur`/`zone_nom` (déjà fait dans commit `156e8ed`) | Vérifier que la chaîne `type_conteneur` est bien renvoyée par le repo |
@@ -79,7 +79,7 @@
 
 1. **Supprimer ou créer** les pages manquantes dans `App.jsx`. Recommandé : **supprimer** les 3 imports + routes `/qr-codes`, `/scan`, `/scan/result/:uid` car non aboutis. Si on veut garder le scan partagé : déplacer `ScanUniversal.jsx` → `pages/mobile/shared/ScanResult.jsx` et créer un `ScanPage.jsx` jumeau avec navigate `/scan/result/:uid`.
 2. **Corriger `container-services.js`** : remplacer `result.data` → `result` aux lignes 116, 132, 148, 198. Supprimer la 2ᵉ déclaration `countContainers` (ligne 200) qui shadow celle avec cache.
-3. **Dédupliquer `container.route.js`** : retirer le 2ᵉ bloc QR (lignes 577-606), garder uniquement le bloc public en haut. **Ajouter une ligne dans `api-gateway/src/index.js`** pour mounter `/api/qrcode` ou changer le path en `/api/containers/qrcode/:uid`.
+3. **Dédupliquer `container.route.js`** : retirer le 2ᵉ bloc QR (lignes 577-606), garder uniquement le bloc public en haut. **Ajouter une ligne dans `api-gateway/src/index.js`** pour mounter `/api/V1/qrcode` ou changer le path en `/api/V1/containers/qrcode/:uid`.
 4. **Remplacer le `Pool` ad-hoc** dans `container.route.js` par `req.app.locals.db` ou injection via DI déjà présente.
 5. `npm run build` doit passer.
 
@@ -96,13 +96,13 @@
    Forcer la sélection d'un conteneur (passer par `/scan` puis `/anomalie/form?container=ID`) avant de pouvoir soumettre. Retirer la valeur `AUTRE` (non supportée) ou l'ajouter au validator backend.
 2. **`tournee-repository.findAgentTodayTournee`** : élargir la fenêtre temporelle ou ajouter un fallback :
    - Option A : si pas de `PLANIFIEE/EN_COURS` aujourd'hui, prendre la plus récente `PLANIFIEE` future.
-   - Option B : ajouter un endpoint `/api/routes/my-tournees` (liste) + dropdown sur le dashboard.
+   - Option B : ajouter un endpoint `/api/V1/routes/my-tournees` (liste) + dropdown sur le dashboard.
 3. **`AgentDashboard.jsx`** : si pas de tournée → afficher un message d'aide explicite (« Vérifiez que votre `id_agent` correspond à une tournée du jour ») + bouton « Toutes mes tournées » → `/agent/historique`.
 4. **Seed dédié** : créer `seeds/100_agent_moussa_tournee.sql` qui insère 1 tournée `PLANIFIEE` sur `CURRENT_DATE` pour l'agent connecté de test (id à parametrer via `--var agent_id=X`).
 
 ### PR-3 — Stats agent réelles + greeting + register (P1, 2h)
 
-1. **Backend** : nouvel endpoint `GET /api/routes/stats/agent` (lit `x-user-id`) qui renvoie :
+1. **Backend** : nouvel endpoint `GET /api/V1/routes/stats/agent` (lit `x-user-id`) qui renvoie :
    ```json
    { "total_tournees": 0, "total_collectes": 0, "taux_reussite_pct": 0,
      "distance_totale_km": 0, "total_anomalies": 0, "total_kg": 0,
@@ -119,7 +119,7 @@
 
 ### PR-4 — Profil avatar + settings filtrées par rôle (P1, 3h)
 
-1. **Avatar upload** dans `EditProfilPage.jsx` : ajouter input `<input type="file" accept="image/*">` → POST vers `/api/avatars` (mounté dans gateway). Stocker URL dans `users.avatar_url`. Afficher dans `ProfilPage.jsx` via `<img src={user.avatar_url}>`. Fallback icône si null.
+1. **Avatar upload** dans `EditProfilPage.jsx` : ajouter input `<input type="file" accept="image/*">` → POST vers `/api/V1/avatars` (mounté dans gateway). Stocker URL dans `users.avatar_url`. Afficher dans `ProfilPage.jsx` via `<img src={user.avatar_url}>`. Fallback icône si null.
 2. **`NotificationSettings.jsx`** : filtrer items selon `user.role` :
    - `AGENT` : Alertes, Tournées seulement.
    - `CITOYEN` : Alertes, Badges (futur).
@@ -136,7 +136,7 @@
    - `service-routes/__tests__/integration/anomalie.test.js` : payload mobile (`type_anomalie`, `id_conteneur`).
    - `service-containers/__tests__/integration/scan-by-uid.test.js` : QR public + auth.
 5. **Tests E2E frontend** (Vitest + jsdom) :
-   - `__tests__/e2e/agent-dashboard.test.jsx` : mock `/api/routes/my-tournee` → vérifier greeting + tournée affichée.
+   - `__tests__/e2e/agent-dashboard.test.jsx` : mock `/api/V1/routes/my-tournee` → vérifier greeting + tournée affichée.
    - `__tests__/e2e/anomalie-form.test.jsx` : payload envoyé conforme.
    - `__tests__/e2e/scan-flow.test.jsx` : scan UID → résultat → collecte.
 
@@ -183,13 +183,13 @@ cd frontend && npm run test:run
 ```bash
 # Stats agent (PR-3)
 curl -H "x-user-id: 5" -H "x-user-role: AGENT" \
-  http://localhost:3000/api/routes/stats/agent
+  http://localhost:3000/api/V1/routes/stats/agent
 
 # QR public (PR-1)
-curl -o qr.png http://localhost:3000/api/containers/qrcode/CNT-00001
+curl -o qr.png http://localhost:3000/api/V1/containers/qrcode/CNT-00001
 
 # Anomalie (PR-2)
-curl -X POST http://localhost:3000/api/routes/tournees/12/anomalie \
+curl -X POST http://localhost:3000/api/V1/routes/tournees/12/anomalie \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"id_conteneur":3,"type_anomalie":"CONTENEUR_INACCESSIBLE","description":"test"}'
@@ -202,8 +202,8 @@ curl -X POST http://localhost:3000/api/routes/tournees/12/anomalie \
 - **Notification réelle** sur nouvelle tournée assignée (Kafka topic `tournee.assigned` + WS push).
 - **Mode offline** : queue des collectes/anomalies dans `IndexedDB`, sync à la reconnexion.
 - **PWA install prompt** activée + icônes 192/512 dans `public/`.
-- **Géolocalisation continue** pendant tournée : poll `/api/routes/tournees/:id/position` toutes les 30 s pour le suivi temps réel sur le dashboard gestionnaire.
-- **Photos** sur anomalie (upload via `/api/avatars` ou bucket dédié).
+- **Géolocalisation continue** pendant tournée : poll `/api/V1/routes/tournees/:id/position` toutes les 30 s pour le suivi temps réel sur le dashboard gestionnaire.
+- **Photos** sur anomalie (upload via `/api/V1/avatars` ou bucket dédié).
 - **Tests E2E Playwright** sur le flow complet (login → tournée → collecte → fin).
 
 ---

@@ -17,10 +17,15 @@ const obtenirNiveau = (points) => {
 
 
 // Met en forme les lignes SQL pour la réponse API.
+// `prenom`/`nom` viennent de la repo (JOIN utilisateur) — utilisés par la modale
+// Classement de l'UI mobile. Si absents (payload legacy), on fournit un fallback
+// "Citoyen #<id>" côté front.
 const mapperClassement = (rows) =>
   rows.map((row) => ({
     rang: Number(row.rang),
     id_utilisateur: row.id_utilisateur,
+    prenom: row.prenom ?? null,
+    nom: row.nom ?? null,
     points: row.points,
     niveau: obtenirNiveau(row.points),
     badges: row.badges ?? []

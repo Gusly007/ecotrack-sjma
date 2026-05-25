@@ -60,24 +60,24 @@ GAMIFICATIONS_SERVICE_URL=http://localhost:3014
 
 | Route | Service | Description |
 |-------|---------|-------------|
-| `/api/users/*` | service-users | Authentification, profils, avatars |
-| `/api/containers/*` | service-containers | Gestion des conteneurs, IoT |
-| `/api/gamifications/*` | service-gamifications | Points, badges, défis |
+| `/api/V1/users/*` | service-users | Authentification, profils, avatars |
+| `/api/V1/containers/*` | service-containers | Gestion des conteneurs, IoT |
+| `/api/V1/gamifications/*` | service-gamifications | Points, badges, défis |
 | `/health` | api-gateway | Health check global |
 
 **Configuration :**
 ```javascript
 // Exemple de configuration de route
-app.use('/api/users', createProxyMiddleware({
+app.use('/api/V1/users', createProxyMiddleware({
   target: process.env.USERS_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/users': '' }
+  pathRewrite: { '^/api/V1/users': '' }
 }));
 ```
 
 **Routes en attente de services :**
-- `/api/routes/*` → service-routes (Planification) - Service non disponible
-- `/api/analytics/*` → service-analytics (Dashboards) - Service non disponible
+- `/api/V1/routes/*` → service-routes (Planification) - Service non disponible
+- `/api/V1/analytics/*` → service-analytics (Dashboards) - Service non disponible
 
 ### 2.2 Agrégation de réponses (En attente)
 
@@ -237,9 +237,9 @@ GET /health/gamification
 
 Toutes les routes sont protégées par JWT (sauf routes publiques listées ci-dessus).
 
-- `GET/POST/PUT/DELETE /api/users/*` → Proxy vers service-users
-- `GET/POST/PUT/DELETE /api/containers/*` → Proxy vers service-containers
-- `GET/POST/PUT/DELETE /api/gamifications/*` → Proxy vers service-gamifications
+- `GET/POST/PUT/DELETE /api/V1/users/*` → Proxy vers service-users
+- `GET/POST/PUT/DELETE /api/V1/containers/*` → Proxy vers service-containers
+- `GET/POST/PUT/DELETE /api/V1/gamifications/*` → Proxy vers service-gamifications
 
 **Headers ajoutés automatiquement :**
 - `x-user-id` - ID de l'utilisateur authentifié

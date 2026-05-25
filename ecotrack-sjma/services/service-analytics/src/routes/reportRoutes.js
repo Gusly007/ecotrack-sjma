@@ -8,7 +8,7 @@ const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
- * /api/analytics/reports/generate:
+ * /api/V1/analytics/reports/generate:
  *   post:
  *     summary: Générer un rapport PDF ou Excel
  *     tags: [Reports]
@@ -66,7 +66,7 @@ router.post('/reports/generate', authMiddleware, requirePermission('analytics:re
 
 /**
  * @swagger
- * /api/analytics/reports/download/{filename}:
+ * /api/V1/analytics/reports/download/{filename}:
  *   get:
  *     summary: Télécharger un rapport
  *     tags: [Reports]
@@ -100,7 +100,7 @@ router.get('/reports/download/:filename', authMiddleware, requirePermission('ana
 
 /**
  * @swagger
- * /api/analytics/reports/environmental:
+ * /api/V1/analytics/reports/environmental:
  *   post:
  *     summary: Générer un rapport d'impact environnemental
  *     tags: [Reports]
@@ -131,7 +131,7 @@ router.post('/reports/environmental', authMiddleware, requirePermission('analyti
 
 /**
  * @swagger
- * /api/analytics/reports/routes-performance:
+ * /api/V1/analytics/reports/routes-performance:
  *   post:
  *     summary: Générer un rapport de performance des tournées
  *     tags: [Reports]

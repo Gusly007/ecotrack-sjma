@@ -3,6 +3,9 @@ import pool from '../config/database.js';
 
 export const AvatarRepository = {
   async saveAvatarUrls(userId, urls) {
+    // Previously the SET clause and the WHERE both used `$1`, so Postgres
+    // complained "bind message supplies 4 parameters, but prepared
+    // statement requires 3". Distinct placeholders + matching param order.
     const result = await pool.query(
       `UPDATE UTILISATEUR
        SET avatar_url = $1, avatar_thumbnail = $2, avatar_mini = $3, updated_at = CURRENT_TIMESTAMP

@@ -1,0 +1,33 @@
+/* ==================== MOBILE LAYOUT ==================== */
+
+.mobile-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fff;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.mobile-content {
+  padding-bottom: 72px; /* space for bottom nav */
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* On wider screens, add a subtle frame effect */
+@media (min-width: 481px) {
+  body:has(.mobile-layout) {
+    background: #f0f2f5;
+  }
+
+  .mobile-layout {
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

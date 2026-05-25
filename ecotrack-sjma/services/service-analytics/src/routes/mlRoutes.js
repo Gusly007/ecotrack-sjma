@@ -71,7 +71,7 @@ const authMiddleware = (req, res, next) => {
 
 /**
  * @swagger
- * /api/analytics/ml/predict:
+ * /api/V1/analytics/ml/predict:
  *   post:
  *     summary: Prédire le niveau de remplissage d'un conteneur
  *     tags: [ML Predictions]
@@ -147,7 +147,7 @@ router.post('/ml/predict', authMiddleware, requirePermission('analytics:read'), 
 
 /**
  * @swagger
- * /api/analytics/ml/predict-critical:
+ * /api/V1/analytics/ml/predict-critical:
  *   get:
  *     summary: Prédire les conteneurs qui seront critiques
  *     tags: [ML Predictions]
@@ -181,7 +181,7 @@ router.get('/ml/predict-critical', authMiddleware, requirePermission('analytics:
 
 /**
  * @swagger
- * /api/analytics/ml/anomalies/{containerId}:
+ * /api/V1/analytics/ml/anomalies/{containerId}:
  *   get:
  *     summary: Détecter les anomalies pour un conteneur
  *     tags: [ML Anomalies]
@@ -228,7 +228,7 @@ router.get('/ml/anomalies/:containerId', authMiddleware, requirePermission('anal
 
 /**
  * @swagger
- * /api/analytics/ml/defective-sensors:
+ * /api/V1/analytics/ml/defective-sensors:
  *   get:
  *     summary: Détecter les capteurs défaillants
  *     tags: [ML Anomalies]
@@ -266,7 +266,7 @@ router.get('/ml/defective-sensors', authMiddleware, requirePermission('analytics
 
 /**
  * @swagger
- * /api/analytics/ml/anomalies/global:
+ * /api/V1/analytics/ml/anomalies/global:
  *   get:
  *     summary: Détection globale d'anomalies pour tous les conteneurs (auto-scan)
  *     tags: [ML Anomalies]
@@ -300,7 +300,7 @@ router.get('/ml/anomalies/global', authMiddleware, requirePermission('analytics:
 
 /**
  * @swagger
- * /api/analytics/ml/anomalies/{containerId}/alerts:
+ * /api/V1/analytics/ml/anomalies/{containerId}/alerts:
  *   post:
  *     summary: Détecter les anomalies et créer des alertes automatiques
  *     tags: [ML Anomalies]

@@ -71,7 +71,12 @@
   margin-bottom: 6px;
 }
 
-.form-input {
+/* Scopé à `select.form-input` : la règle précédente ciblait `.form-input`
+   sans tag → fuyait sur TOUS les <input type=text/email/password> partout
+   dans l'app (login, register, code activation, profil, etc.) et leur
+   ajoutait un triangle dropdown + appearance:none + cursor:pointer. Le
+   triangle SVG n'a de sens que sur un <select>. */
+select.form-input {
   width: 100%;
   padding: 10px 36px 10px 12px;
   border: 1px solid #ddd;
@@ -89,7 +94,7 @@
   cursor: pointer;
 }
 
-.form-input:focus {
+select.form-input:focus {
   outline: none;
   border-color: #4CAF50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);

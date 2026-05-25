@@ -24,11 +24,11 @@ describe('Signalement routes integration', () => {
       req.controllers = { signalement: controllers };
       next();
     });
-    app.use('/api/routes', signalementRoutes);
+    app.use('/api/V1/routes', signalementRoutes);
   });
 
   it('routes GET /signalements to getAll controller', async () => {
-    const res = await request(app).get('/api/routes/signalements');
+    const res = await request(app).get('/api/V1/routes/signalements');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getAll' }));
@@ -36,7 +36,7 @@ describe('Signalement routes integration', () => {
   });
 
   it('routes GET /signalements/:id/historique to getHistory controller', async () => {
-    const res = await request(app).get('/api/routes/signalements/22/historique');
+    const res = await request(app).get('/api/V1/routes/signalements/22/historique');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getHistory', id: '22' }));
@@ -44,7 +44,7 @@ describe('Signalement routes integration', () => {
   });
 
   it('routes PUT /signalements/:id/status to updateStatus controller', async () => {
-    const res = await request(app).put('/api/routes/signalements/5/status').send({ statut: 'RESOLU' });
+    const res = await request(app).put('/api/V1/routes/signalements/5/status').send({ statut: 'RESOLU' });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'updateStatus', id: '5' }));
@@ -52,7 +52,7 @@ describe('Signalement routes integration', () => {
   });
 
   it('routes PUT /signalements/:id/traitement to saveTreatment controller', async () => {
-    const res = await request(app).put('/api/routes/signalements/6/traitement').send({ id_agent: 1, commentaire: 'ok' });
+    const res = await request(app).put('/api/V1/routes/signalements/6/traitement').send({ id_agent: 1, commentaire: 'ok' });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'saveTreatment', id: '6' }));

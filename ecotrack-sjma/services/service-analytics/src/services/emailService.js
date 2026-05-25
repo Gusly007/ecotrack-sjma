@@ -81,6 +81,9 @@ class EmailService {
       weekly: 'hebdomadaire',
       monthly: 'mensuel'
     };
+    const escapeHtml = (s) => String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     return `
       <!DOCTYPE html>
@@ -98,7 +101,7 @@ class EmailService {
           <div class="container">
             <div class="header">
               <h1>ECOTRACK</h1>
-              <p>Rapport ${typeLabels[reportType] || reportType}</p>
+              <p>Rapport ${typeLabels[reportType] || escapeHtml(reportType)}</p>
             </div>
             <div class="content">
               <p>Bonjour,</p>

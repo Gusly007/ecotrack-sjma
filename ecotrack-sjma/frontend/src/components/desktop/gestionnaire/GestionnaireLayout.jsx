@@ -1,25 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { signalementService } from '../../../services/signalementService';
+import { useNotifications } from '../../../hooks';
 import Sidebar from './Sidebar';
 import './GestionnaireLayout.css';
 
 export default function GestionnaireLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [notificationsCount, setNotificationsCount] = useState(0);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
-  useEffect(() => {
-    signalementService.getStats()
-      .then((data) => {
-        const stats = data?.data || data || {};
-        const open = Number(stats.nouveau || stats.open || stats.total_open || 0);
-        setNotificationsCount(open);
-      })
-      .catch(() => {});
-  }, []);
+  const { unreadCount: notificationsCount } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -59,7 +49,7 @@ export default function GestionnaireLayout({ children }) {
             <button
               className="icon-btn"
               onClick={() => navigate('/gestionnaire/signalements')}
-              title="Signalements ouverts"
+              data-tooltip="Signalements ouverts"
             >
               <i className="fas fa-bell"></i>
               {notificationsCount > 0 && (

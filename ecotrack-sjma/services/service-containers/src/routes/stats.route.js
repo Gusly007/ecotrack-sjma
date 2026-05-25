@@ -4,7 +4,7 @@
  * Endpoints de statistiques pour le service-containers.
  * Tous les endpoints sont en lecture seule (GET).
  *
- * Préfixe : /api/stats  (monté dans index.js)
+ * Préfixe : /api/V1/stats  (monté dans index.js)
  */
 const express = require('express');
 const { statsController } = require('../container-di');

@@ -1,8 +1,23 @@
 -- ============================================================================
 -- SEED COMPLET - 2000 CONTENEURS + 1 MILLION DE MESURES
 -- ============================================================================
+--
+-- IDEMPOTENT : chaque section destructive (TRUNCATE + INSERT) est gardée
+-- par un DO block qui vérifie si la table est vide. Sans cette garde, un
+-- simple `docker compose up -d` détruisait tous les signalements citoyens
+-- (FK cascade depuis CONTENEUR), toutes les tournées modifiées par les
+-- gestionnaires, etc. Pour forcer un reset complet :
+--   docker compose down -v
+-- (wipe le volume postgres_data → la prochaine init repart à zéro).
 
-TRUNCATE TABLE TOURNEE CASCADE;
+DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM tournee) = 0 THEN
+    TRUNCATE TABLE tournee CASCADE;
+  ELSE
+    RAISE NOTICE 'Skipping TOURNEE truncate — % rows already exist', (SELECT COUNT(*) FROM tournee);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 1. DONNÉES DE BASE
@@ -40,67 +55,84 @@ WHERE NOT EXISTS (SELECT 1 FROM VEHICULE WHERE numero_immatriculation = 'VH-' ||
 -- 2. 2000 CONTENEURS + CAPTEURS
 -- ============================================================================
 
-TRUNCATE TABLE ALERTE_CAPTEUR CASCADE;
+-- Garde idempotente : on ne wipe et re-seed conteneur/capteur/alerte que
+-- si la table conteneur est vide (premier déploiement). Sinon on préserve
+-- les signalements citoyens (FK cascade) et toute modification existante.
+DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM conteneur) = 0 THEN
+    TRUNCATE TABLE alerte_capteur CASCADE;
+    TRUNCATE TABLE conteneur CASCADE;
 
-TRUNCATE TABLE CONTENEUR CASCADE;
-
-WITH conteneur_source AS (
+    WITH conteneur_source AS (
+        SELECT
+            i,
+            'CNT-' || LPAD(i::text, 5, '0') AS uid,
+            CASE (i % 4) WHEN 0 THEN 120 WHEN 1 THEN 240 WHEN 2 THEN 360 ELSE 1000 END AS capacite_l,
+            CASE WHEN i <= 1950 THEN 'ACTIF' WHEN i <= 1980 THEN 'EN_MAINTENANCE' ELSE 'INACTIF' END AS statut,
+            CURRENT_DATE - (random() * 730)::int AS date_installation,
+            ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.6, 48.86 + (random()-0.5)*0.6), 4326) AS position,
+            'Z' || LPAD((((i - 1) % 10) + 1)::text, 2, '0') AS zone_code,
+            CASE
+                WHEN i <= 500 THEN 'ORD'
+                WHEN i <= 1000 THEN 'REC'
+                WHEN i <= 1500 THEN 'VER'
+                ELSE 'COM'
+            END AS type_code
+        FROM generate_series(1, 2000) AS i
+    )
+    INSERT INTO conteneur (uid, capacite_l, statut, date_installation, position, id_zone, id_type)
     SELECT
-        i,
-        'CNT-' || LPAD(i::text, 5, '0') AS uid,
-        CASE (i % 4) WHEN 0 THEN 120 WHEN 1 THEN 240 WHEN 2 THEN 360 ELSE 1000 END AS capacite_l,
-        CASE WHEN i <= 1950 THEN 'ACTIF' WHEN i <= 1980 THEN 'EN_MAINTENANCE' ELSE 'INACTIF' END AS statut,
-        CURRENT_DATE - (random() * 730)::int AS date_installation,
-        ST_SetSRID(ST_MakePoint(2.35 + (random()-0.5)*0.6, 48.86 + (random()-0.5)*0.6), 4326) AS position,
-        'Z' || LPAD((((i - 1) % 10) + 1)::text, 2, '0') AS zone_code,
-        CASE
-            WHEN i <= 500 THEN 'ORD'
-            WHEN i <= 1000 THEN 'REC'
-            WHEN i <= 1500 THEN 'VER'
-            ELSE 'COM'
-        END AS type_code
-    FROM generate_series(1, 2000) AS i
-)
-INSERT INTO CONTENEUR (uid, capacite_l, statut, date_installation, position, id_zone, id_type)
-SELECT
-    cs.uid,
-    cs.capacite_l,
-    cs.statut,
-    cs.date_installation,
-    cs.position,
-    z.id_zone,
-    t.id_type
-FROM conteneur_source cs
-JOIN ZONE z ON z.code = cs.zone_code
-JOIN TYPE_CONTENEUR t ON t.code = cs.type_code;
+        cs.uid,
+        cs.capacite_l,
+        cs.statut,
+        cs.date_installation,
+        cs.position,
+        z.id_zone,
+        t.id_type
+    FROM conteneur_source cs
+    JOIN zone z ON z.code = cs.zone_code
+    JOIN type_conteneur t ON t.code = cs.type_code;
 
-INSERT INTO CAPTEUR (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
-SELECT 
-    'CAP-' || c.id_conteneur,
-    CASE WHEN random() > 0.6 THEN 'UltraSonic-V2' WHEN random() > 0.3 THEN 'LaserSense-Pro' ELSE 'EcoSensor-3000' END,
-    'v' || (1 + (random() * 4)::int) || '.' || (random() * 9)::int,
-    NOW() - (random() * 6 || ' hours')::interval,
-    c.id_conteneur
-FROM CONTENEUR c WHERE c.statut = 'ACTIF';
+    INSERT INTO capteur (uid_capteur, modele, version_firmware, derniere_communication, id_conteneur)
+    SELECT
+        'CAP-' || c.id_conteneur,
+        CASE WHEN random() > 0.6 THEN 'UltraSonic-V2' WHEN random() > 0.3 THEN 'LaserSense-Pro' ELSE 'EcoSensor-3000' END,
+        'v' || (1 + (random() * 4)::int) || '.' || (random() * 9)::int,
+        NOW() - (random() * 6 || ' hours')::interval,
+        c.id_conteneur
+    FROM conteneur c WHERE c.statut = 'ACTIF';
+  ELSE
+    RAISE NOTICE 'Skipping CONTENEUR/CAPTEUR/ALERTE_CAPTEUR truncate+seed — % conteneurs already exist (préserve les signalements citoyens)', (SELECT COUNT(*) FROM conteneur);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 3. 1 MILLION DE MESURES (500 par conteneur)
 -- ============================================================================
 
-TRUNCATE TABLE MESURE CASCADE;
+-- Idempotent : ne wipe et recrée les mesures que si la table est vide.
+DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM mesure) = 0 THEN
+    TRUNCATE TABLE mesure CASCADE;
 
-INSERT INTO MESURE (id_conteneur, id_capteur, niveau_remplissage_pct, batterie_pct, temperature, date_heure_mesure)
-SELECT 
-    c.id_conteneur,
-    cap.id_capteur,
-    (random() * 100)::numeric(5,2),
-    (10 + random() * 90)::numeric(5,2),
-    (5 + random() * 25)::numeric(5,2),
-    NOW() - ((random() * 90)::int || ' days')::interval + ((random() * 24)::int || ' hours')::interval
-FROM CONTENEUR c
-JOIN CAPTEUR cap ON cap.id_conteneur = c.id_conteneur
-CROSS JOIN generate_series(1, 500) AS n
-WHERE c.statut = 'ACTIF';
+    INSERT INTO mesure (id_conteneur, id_capteur, niveau_remplissage_pct, batterie_pct, temperature, date_heure_mesure)
+    SELECT
+        c.id_conteneur,
+        cap.id_capteur,
+        (random() * 100)::numeric(5,2),
+        (10 + random() * 90)::numeric(5,2),
+        (5 + random() * 25)::numeric(5,2),
+        NOW() - ((random() * 90)::int || ' days')::interval + ((random() * 24)::int || ' hours')::interval
+    FROM conteneur c
+    JOIN capteur cap ON cap.id_conteneur = c.id_conteneur
+    CROSS JOIN generate_series(1, 500) AS n
+    WHERE c.statut = 'ACTIF';
+  ELSE
+    RAISE NOTICE 'Skipping MESURE truncate+seed — % rows already exist', (SELECT COUNT(*) FROM mesure);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 4. TOURNEES ET COLLECTES
@@ -111,58 +143,79 @@ SELECT 'agent' || i || '@ecotrack.local', '$2b$10$example', 'Agent' || i, 'Nom' 
 FROM generate_series(1, 20) AS i
 WHERE NOT EXISTS (SELECT 1 FROM UTILISATEUR WHERE email = 'agent' || i || '@ecotrack.local');
 
-INSERT INTO TOURNEE (code, date_tournee, statut, distance_prevue_km, duree_prevue_min, id_vehicule, id_zone, id_agent)
-SELECT 
+-- Idempotent : seed les 200 tournées seulement si la table est vide.
+-- Le ON CONFLICT (code) DO NOTHING protège aussi contre les doublons si
+-- le seed est rejoué partiellement.
+INSERT INTO tournee (code, date_tournee, statut, distance_prevue_km, duree_prevue_min, id_vehicule, id_zone, id_agent)
+SELECT
     'TOUR-' || TO_CHAR(CURRENT_DATE - (i % 90), 'YYYYMMDD') || '-' || i,
     CURRENT_DATE - (i % 90),
     CASE WHEN i <= 40 THEN 'EN_COURS' WHEN i <= 120 THEN 'TERMINEE' ELSE 'PLANIFIEE' END,
     20 + (random() * 30),
     150 + (random() * 100)::int,
-    (SELECT id_vehicule FROM VEHICULE ORDER BY random() LIMIT 1),
-    (SELECT id_zone FROM ZONE ORDER BY random() LIMIT 1),
-    (SELECT id_utilisateur FROM UTILISATEUR WHERE role_par_defaut = 'AGENT' ORDER BY random() LIMIT 1)
-FROM generate_series(1, 200) AS i;
+    (SELECT id_vehicule FROM vehicule ORDER BY random() LIMIT 1),
+    (SELECT id_zone FROM zone ORDER BY random() LIMIT 1),
+    (SELECT id_utilisateur FROM utilisateur WHERE role_par_defaut = 'AGENT' ORDER BY random() LIMIT 1)
+FROM generate_series(1, 200) AS i
+WHERE NOT EXISTS (SELECT 1 FROM tournee LIMIT 1)
+ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================================
 -- 5. ALERTES
 -- ============================================================================
 
-INSERT INTO ALERTE_CAPTEUR (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
-SELECT 
-    'DEBORDEMENT',
-    90 + random() * 10,
-    90,
-    CASE WHEN random() > 0.6 THEN 'ACTIVE' ELSE 'RESOLUE' END,
-    NOW() - ((random() * 30)::int || ' days')::interval,
-    'Niveau critique détecté',
-    c.id_conteneur
-FROM CONTENEUR c WHERE c.statut = 'ACTIF' AND random() < 0.05 LIMIT 100;
+-- Idempotent : seed les alertes seulement si la table est vide.
+DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM alerte_capteur) = 0 THEN
+    INSERT INTO alerte_capteur (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
+    SELECT
+        'DEBORDEMENT',
+        90 + random() * 10,
+        90,
+        CASE WHEN random() > 0.6 THEN 'ACTIVE' ELSE 'RESOLUE' END,
+        NOW() - ((random() * 30)::int || ' days')::interval,
+        'Niveau critique détecté',
+        c.id_conteneur
+    FROM conteneur c WHERE c.statut = 'ACTIF' AND random() < 0.05 LIMIT 100;
 
-INSERT INTO ALERTE_CAPTEUR (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
-SELECT 
-    'BATTERIE_FAIBLE',
-    20 + random() * 20,
-    20,
-    CASE WHEN random() > 0.5 THEN 'ACTIVE' ELSE 'RESOLUE' END,
-    NOW() - ((random() * 30)::int || ' days')::interval,
-    'Batterie faible détectée',
-    c.id_conteneur
-FROM CONTENEUR c WHERE c.statut = 'ACTIF' AND random() < 0.03 LIMIT 60;
+    INSERT INTO alerte_capteur (type_alerte, valeur_detectee, seuil, statut, date_creation, description, id_conteneur)
+    SELECT
+        'BATTERIE_FAIBLE',
+        20 + random() * 20,
+        20,
+        CASE WHEN random() > 0.5 THEN 'ACTIVE' ELSE 'RESOLUE' END,
+        NOW() - ((random() * 30)::int || ' days')::interval,
+        'Batterie faible détectée',
+        c.id_conteneur
+    FROM conteneur c WHERE c.statut = 'ACTIF' AND random() < 0.03 LIMIT 60;
+  ELSE
+    RAISE NOTICE 'Skipping ALERTE_CAPTEUR seed — % rows already exist', (SELECT COUNT(*) FROM alerte_capteur);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 6. PRÉDICTIONS ML
 -- ============================================================================
 
-TRUNCATE TABLE PREDICTIONS CASCADE;
+-- Idempotent : seed les prédictions seulement si la table est vide.
+DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM predictions) = 0 THEN
+    TRUNCATE TABLE predictions CASCADE;
 
-INSERT INTO PREDICTIONS (container_id, predicted_fill_level, prediction_date, confidence, model_version)
-SELECT 
-    c.id_conteneur,
-    (50 + random() * 40)::numeric(5,2),
-    NOW() + interval '1 day',
-    (60 + random() * 30)::int,
-    'v1.0-linear'
-FROM CONTENEUR c WHERE c.statut = 'ACTIF' AND random() < 0.3;
+    INSERT INTO predictions (container_id, predicted_fill_level, prediction_date, confidence, model_version)
+    SELECT
+        c.id_conteneur,
+        (50 + random() * 40)::numeric(5,2),
+        NOW() + interval '1 day',
+        (60 + random() * 30)::int,
+        'v1.0-linear'
+    FROM conteneur c WHERE c.statut = 'ACTIF' AND random() < 0.3;
+  ELSE
+    RAISE NOTICE 'Skipping PREDICTIONS truncate+seed — % rows already exist', (SELECT COUNT(*) FROM predictions);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- STATISTIQUES

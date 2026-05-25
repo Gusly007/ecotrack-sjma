@@ -279,6 +279,14 @@ const logoutSchema = {
  */
 router.post('/register', publicLimiter, validate(registerSchema), authController.register);
 
+// ====================================================================
+// Routes self-registration citoyen — flow code-email isolé du register
+// admin upstream. Préfixées /citoyen/* pour rester clairement scopées.
+// ====================================================================
+router.post('/citoyen/register', publicLimiter, authController.citoyenRegister);
+router.post('/citoyen/verify-activation', publicLimiter, authController.citoyenVerifyActivation);
+router.post('/citoyen/resend-activation', publicLimiter, authController.citoyenResendActivation);
+
 /**
  * @swagger
  * /auth/login:

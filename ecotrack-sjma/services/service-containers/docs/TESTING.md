@@ -53,7 +53,7 @@ ID du socket: abc123...
 Pendant que le serveur tourne:
 ```bash
 # Changer le statut d'un conteneur
-PATCH http://localhost:3011/api/containers/:id/status
+PATCH http://localhost:3011/api/V1/containers/:id/status
 Content-Type: application/json
 
 {

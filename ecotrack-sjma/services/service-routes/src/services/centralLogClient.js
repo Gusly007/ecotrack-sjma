@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const CENTRAL_LOG_URL = process.env.CENTRAL_LOG_URL || 'http://api-gateway:3000/api/logs';
+const CENTRAL_LOG_URL = process.env.CENTRAL_LOG_URL || 'http://api-gateway:3000/api/V1/logs';
 const SERVICE_NAME = process.env.SERVICE_NAME || 'service-routes';
 
 class CentralLogClient {

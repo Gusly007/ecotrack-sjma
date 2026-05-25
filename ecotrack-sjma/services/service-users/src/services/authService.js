@@ -3,8 +3,19 @@ import { hashPassword, comparePassword } from "../utils/crypto.js";
 import { generateToken, generateRefreshToken } from "../utils/jwt.js";
 import * as auditService from './auditService.js';
 import * as sessionService from './sessionService.js';
-import { sendPasswordResetEmail, sendAdminCreatedUserEmail } from './emailService.js';
+import { sendPasswordResetEmail, sendAdminCreatedUserEmail, sendCitoyenActivationEmail } from './emailService.js';
+import env from '../config/env.js';
 import crypto from 'crypto';
+
+// Code numérique à 6 chiffres (000000-999999) — facile à taper depuis un email
+// sur mobile. crypto.randomInt assure une distribution cryptographiquement
+// aléatoire sur toute la plage.
+const generateNumericCode = (digits = 6) => {
+  const max = 10 ** digits;
+  return String(crypto.randomInt(0, max)).padStart(digits, '0');
+};
+
+const ACTIVATION_TTL_MS = 30 * 60 * 1000;
 
 /**
  * Inscrire un nouvel utilisateur
@@ -111,6 +122,9 @@ export const loginUser = async (email, password, ipAddress = null) => {
         requiresSetup: false,
         userId: user.id_utilisateur,
         email: user.email,
+        // role expose pour permettre au frontend de filtrer par scope
+        // (citoyen vs personnel) AVANT la navigation vers la page MFA partagee.
+        role: user.role_par_defaut,
         message: 'Entrez le code MFA de votre application'
       };
     }
@@ -157,6 +171,8 @@ export const loginUser = async (email, password, ipAddress = null) => {
       },
       userId: user.id_utilisateur,
       email: user.email,
+      // role expose pour le filtrage de scope cote frontend (cf. branche MFA ci-dessus).
+      role: user.role_par_defaut,
       message: 'Veuillez scanner le QR code avec Google Authenticator'
     };
   } catch (err) {
@@ -196,19 +212,21 @@ export const storeMfaSetupSecret = async (userId, secret) => {
 /**
  * Demander la réinitialisation du mot de passe
  */
-export const forgotPassword = async (email) => {
+export const forgotPassword = async (email, { from } = {}) => {
   try {
     const user = await AuthRepository.findUserByEmail(email);
     if (!user) {
       throw Object.assign(new Error('Aucun compte trouvé avec cet email. Veuillez vérifier ou contacter l\'administrateur.'), { status: 404 });
     }
-    
+
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000);
-    
+
     await AuthRepository.createPasswordResetToken(email, resetToken, expiresAt);
-    
-    const emailResult = await sendPasswordResetEmail(email, resetToken);
+
+    // `from === 'citoyen'` aiguille le lien email vers /citoyen/reset-password
+    // (page isolée du scope mobile, redirige vers /citoyen/login après succès).
+    const emailResult = await sendPasswordResetEmail(email, resetToken, { from });
     
     const response = { 
       message: 'Un lien de réinitialisation a été envoyé à votre email.'
@@ -265,4 +283,133 @@ export const activateAccount = async (email, token, newPassword) => {
   await AuthRepository.updatePassword(email, hashedPassword);
 
   return { message: 'Compte activé avec succès' };
+};
+
+// ====================================================================
+// Self-registration citoyen (flow isolé du flow admin-créé upstream).
+// 1) POST /auth/citoyen/register   → crée user inactif + envoie code 6 chiffres
+// 2) POST /auth/citoyen/verify-activation → valide code, active, renvoie JWT
+// 3) POST /auth/citoyen/resend-activation → régénère et renvoie un code
+//
+// Admin/manager continuent d'utiliser registerUser() qui auto-active et
+// envoie un mot de passe temporaire. Aucune intersection.
+// ====================================================================
+
+export const registerCitoyen = async (email, nom, prenom, password) => {
+  const existing = await AuthRepository.findUserByEmailOrPrenom(email, prenom);
+  if (existing.length > 0) {
+    const error = new Error('Email already in use');
+    error.status = 409;
+    throw error;
+  }
+  if (!password || password.length < 6) {
+    throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+  }
+
+  const hashedPassword = await hashPassword(password);
+  // est_active = false : l'utilisateur doit saisir le code reçu par email
+  // avant de pouvoir se connecter.
+  const newUser = await AuthRepository.insertUser(email, nom, prenom, hashedPassword, 'CITOYEN', false);
+
+  const code = generateNumericCode(6);
+  const expiresAt = new Date(Date.now() + ACTIVATION_TTL_MS);
+  await AuthRepository.createActivationCode(email, code, expiresAt);
+
+  let emailResult = { success: false };
+  try {
+    emailResult = await sendCitoyenActivationEmail(email, prenom, code);
+  } catch (err) {
+    console.error('[registerCitoyen] activation email failed:', err.message);
+  }
+
+  // Audit best-effort.
+  try {
+    await auditService.logAction(newUser.id_utilisateur, 'CITOYEN_REGISTER', 'UTILISATEUR', newUser.id_utilisateur);
+  } catch (_) { /* ignore */ }
+
+  // En dev seulement : log le previewUrl Ethereal + le code côté serveur
+  // pour faciliter le test. En production, le code ne quitte jamais l'email.
+  if (env.nodeEnv !== 'production' && emailResult?.previewUrl) {
+    console.log('[Email][DEV] Citoyen activation preview:', emailResult.previewUrl, '| code:', code);
+  }
+
+  return {
+    message: "Un code d'activation a été envoyé à votre email.",
+    email,
+    requiresActivation: true,
+    user: {
+      id_utilisateur: newUser.id_utilisateur,
+      email: newUser.email,
+      prenom: newUser.prenom,
+      nom: newUser.nom
+    }
+  };
+};
+
+export const verifyCitoyenActivation = async (email, code) => {
+  const row = await AuthRepository.findActivationByEmailAndCode(email, code);
+  if (!row) {
+    const error = new Error("Code d'activation invalide ou expiré");
+    error.status = 400;
+    throw error;
+  }
+
+  await AuthRepository.setUserActive(email, true);
+  await AuthRepository.deleteActivationByEmail(email);
+
+  const user = await AuthRepository.findUserByEmail(email);
+  if (!user) {
+    throw new Error('User not found after activation');
+  }
+
+  const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
+  const refreshToken = generateRefreshToken(user.id_utilisateur);
+  await sessionService.limitConcurrentSessions(user.id_utilisateur);
+  await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);
+
+  return {
+    message: 'Compte activé avec succès',
+    token: accessToken,
+    refreshToken,
+    user: {
+      id_utilisateur: user.id_utilisateur,
+      email: user.email,
+      prenom: user.prenom,
+      nom: user.nom,
+      role_par_defaut: user.role_par_defaut,
+      points: user.points,
+      avatar_url: user.avatar_url || null,
+      avatar_thumbnail: user.avatar_thumbnail || null,
+      avatar_mini: user.avatar_mini || null
+    }
+  };
+};
+
+export const resendCitoyenActivation = async (email) => {
+  const user = await AuthRepository.findUserByEmail(email);
+  if (!user) {
+    const error = new Error("Aucun compte trouvé avec cet email");
+    error.status = 404;
+    throw error;
+  }
+  if (user.est_active) {
+    return { message: 'Compte déjà activé. Connectez-vous.', alreadyActive: true };
+  }
+
+  const code = generateNumericCode(6);
+  const expiresAt = new Date(Date.now() + ACTIVATION_TTL_MS);
+  await AuthRepository.createActivationCode(email, code, expiresAt);
+
+  let emailResult = { success: false };
+  try {
+    emailResult = await sendCitoyenActivationEmail(email, user.prenom, code);
+  } catch (err) {
+    console.error('[resendCitoyenActivation] email failed:', err.message);
+  }
+
+  if (env.nodeEnv !== 'production' && emailResult?.previewUrl) {
+    console.log('[Email][DEV] Citoyen re-activation preview:', emailResult.previewUrl, '| code:', code);
+  }
+
+  return { message: 'Un nouveau code a été envoyé à votre email.' };
 };

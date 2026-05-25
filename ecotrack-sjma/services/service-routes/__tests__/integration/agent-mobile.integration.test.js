@@ -8,9 +8,9 @@ const { anomalieSchema, validateSchema } = require('../../src/validators/tournee
 /**
  * Tests d'intégration des endpoints utilisés par le mobile agent.
  * Couvre :
- *   - GET  /api/routes/my-tournee  (agent's today route)
- *   - POST /api/routes/tournees/:id/anomalie  (payload mobile)
- *   - GET  /api/routes/stats/agent  (filtré par x-user-id)
+ *   - GET  /api/V1/routes/my-tournee  (agent's today route)
+ *   - POST /api/V1/routes/tournees/:id/anomalie  (payload mobile)
+ *   - GET  /api/V1/routes/stats/agent  (filtré par x-user-id)
  */
 describe('Mobile Agent endpoints — integration', () => {
   let app;
@@ -90,15 +90,15 @@ describe('Mobile Agent endpoints — integration', () => {
       };
       next();
     });
-    app.use('/api/routes', tourneeRoutes);
-    app.use('/api/routes', collecteRoutes);
-    app.use('/api/routes', statsRoutes);
+    app.use('/api/V1/routes', tourneeRoutes);
+    app.use('/api/V1/routes', collecteRoutes);
+    app.use('/api/V1/routes', statsRoutes);
   });
 
-  describe('GET /api/routes/my-tournee', () => {
+  describe('GET /api/V1/routes/my-tournee', () => {
     it('renvoie 200 avec la tournée du jour pour un agent valide', async () => {
       const res = await request(app)
-        .get('/api/routes/my-tournee')
+        .get('/api/V1/routes/my-tournee')
         .set('x-user-id', '5')
         .set('x-user-role', 'AGENT');
 
@@ -108,17 +108,17 @@ describe('Mobile Agent endpoints — integration', () => {
 
     it('renvoie 400 si x-user-id manquant', async () => {
       const res = await request(app)
-        .get('/api/routes/my-tournee')
+        .get('/api/V1/routes/my-tournee')
         .set('x-user-role', 'AGENT');
 
       expect(res.status).toBe(400);
     });
   });
 
-  describe('POST /api/routes/tournees/:id/anomalie', () => {
+  describe('POST /api/V1/routes/tournees/:id/anomalie', () => {
     it('accepte le payload mobile avec type_anomalie + id_conteneur', async () => {
       const res = await request(app)
-        .post('/api/routes/tournees/12/anomalie')
+        .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
         .set('x-user-role', 'AGENT')
         .send({
@@ -137,7 +137,7 @@ describe('Mobile Agent endpoints — integration', () => {
 
     it('rejette le payload sans id_conteneur', async () => {
       const res = await request(app)
-        .post('/api/routes/tournees/12/anomalie')
+        .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
         .send({
           type_anomalie: 'CONTENEUR_INACCESSIBLE',
@@ -150,7 +150,7 @@ describe('Mobile Agent endpoints — integration', () => {
 
     it('rejette un type_anomalie invalide', async () => {
       const res = await request(app)
-        .post('/api/routes/tournees/12/anomalie')
+        .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
         .send({
           id_conteneur: 3,
@@ -163,7 +163,7 @@ describe('Mobile Agent endpoints — integration', () => {
 
     it('accepte les nouveaux types CONTENEUR_PLEIN et MAUVAISE_ODEUR', async () => {
       const res1 = await request(app)
-        .post('/api/routes/tournees/12/anomalie')
+        .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
         .send({
           id_conteneur: 3,
@@ -173,7 +173,7 @@ describe('Mobile Agent endpoints — integration', () => {
       expect(res1.status).toBe(201);
 
       const res2 = await request(app)
-        .post('/api/routes/tournees/12/anomalie')
+        .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
         .send({
           id_conteneur: 3,
@@ -184,10 +184,10 @@ describe('Mobile Agent endpoints — integration', () => {
     });
   });
 
-  describe('GET /api/routes/stats/agent', () => {
+  describe('GET /api/V1/routes/stats/agent', () => {
     it('renvoie les stats agent filtrées par x-user-id', async () => {
       const res = await request(app)
-        .get('/api/routes/stats/agent')
+        .get('/api/V1/routes/stats/agent')
         .set('x-user-id', '5')
         .set('x-user-role', 'AGENT');
 
@@ -201,7 +201,7 @@ describe('Mobile Agent endpoints — integration', () => {
 
     it('accepte le query param period', async () => {
       const res = await request(app)
-        .get('/api/routes/stats/agent?period=semaine')
+        .get('/api/V1/routes/stats/agent?period=semaine')
         .set('x-user-id', '5');
 
       expect(res.status).toBe(200);
@@ -209,7 +209,7 @@ describe('Mobile Agent endpoints — integration', () => {
     });
 
     it('renvoie 400 sans x-user-id', async () => {
-      const res = await request(app).get('/api/routes/stats/agent');
+      const res = await request(app).get('/api/V1/routes/stats/agent');
       expect(res.status).toBe(400);
     });
   });

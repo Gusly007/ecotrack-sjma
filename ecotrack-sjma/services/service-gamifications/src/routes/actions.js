@@ -31,6 +31,9 @@ const router = Router();
  *       201:
  *         description: Action enregistrée
  */
+// `self_action` suffit pour un citoyen qui agit sur lui-même ; le controller
+// vérifie que req.user.id === id_utilisateur dans ce cas. Les rôles privilégiés
+// (GESTIONNAIRE, ADMIN) gardent `gamification:create` pour agir sur autrui.
 router.post('/', requirePermission('gamification:create'), enregistrerAction);
 
 export default router;

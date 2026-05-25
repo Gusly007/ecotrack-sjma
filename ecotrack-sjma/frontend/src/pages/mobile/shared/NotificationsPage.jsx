@@ -62,7 +62,10 @@ export default function NotificationsPage() {
         notifications.map((notif) => {
           const style = NOTIF_ICONS[notif.type] || NOTIF_ICONS.SYSTEME;
           return (
-            <div key={notif.id_notification} className={`notif-item ${!notif.est_lu ? 'notif-unread' : ''}`}>
+            <div
+              key={notif.id_notification}
+              className={`notif-item ${!notif.est_lu ? 'notif-unread' : ''}`}
+            >
               <MobileListItem
                 icon={style.icon}
                 iconColor={style.color}
@@ -71,7 +74,11 @@ export default function NotificationsPage() {
                 subtitle={notif.corps}
                 onClick={() => markAsRead(notif.id_notification)}
                 right={
-                  <button className="notif-delete-btn" onClick={(e) => { e.stopPropagation(); deleteNotif(notif.id_notification); }}>
+                  <button
+                    className="notif-delete-btn"
+                    data-tooltip="Supprimer"
+                    onClick={(e) => { e.stopPropagation(); deleteNotif(notif.id_notification); }}
+                  >
                     <i className="fas fa-trash-alt"></i>
                   </button>
                 }

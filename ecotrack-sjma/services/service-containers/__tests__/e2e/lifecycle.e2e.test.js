@@ -6,7 +6,7 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
   beforeAll(async () => {
     try {
-      const res = await request(app).post('/api/auth/login')
+      const res = await request(app).post('/api/V1/auth/login')
         .send({
           email: 'admin@ecotrack.com',
           password: 'Admin123!'
@@ -17,7 +17,7 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
   it('devrait créer un conteneur', async () => {
     if (!token) return;
-    const res = await request(app).post('/api/conteneurs')
+    const res = await request(app).post('/api/V1/conteneurs')
       .set('Authorization', `Bearer ${token}`)
       .send({ uid: `TEST-${Date.now()}`, latitude: 48.85, longitude: 2.35, capacite_l: 1100 });
     expect([201, 401]).toContain(res.status);
@@ -25,21 +25,21 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
   it('devrait récupérer tous les conteneurs', async () => {
     if (!token) return;
-    const res = await request(app).get('/api/conteneurs')
+    const res = await request(app).get('/api/V1/conteneurs')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
 
   it('devrait chercher par ID', async () => {
     if (!token) return;
-    const res = await request(app).get('/api/conteneurs/1')
+    const res = await request(app).get('/api/V1/conteneurs/1')
       .set('Authorization', `Bearer ${token}`);
     expect([200, 404]).toContain(res.status);
   });
 
   it('devrait mettre à jour le niveau', async () => {
     if (!token) return;
-    const res = await request(app).patch('/api/conteneurs/1/remplissage')
+    const res = await request(app).patch('/api/V1/conteneurs/1/remplissage')
       .set('Authorization', `Bearer ${token}`)
       .send({ fill_level: 75 });
     expect([200, 404]).toContain(res.status);
@@ -47,7 +47,7 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
   it('devrait supprimer un conteneur', async () => {
     if (!token) return;
-    const res = await request(app).delete('/api/conteneurs/999')
+    const res = await request(app).delete('/api/V1/conteneurs/999')
       .set('Authorization', `Bearer ${token}`);
     expect([204, 404]).toContain(res.status);
   });
@@ -55,7 +55,7 @@ describe('E2E - Conteneur Full Lifecycle', () => {
 
 describe('E2E - Geo Proximity', () => {
   it('devrait trouver les conteneurs proches', async () => {
-    const res = await request(app).get('/api/conteneurs/proches?lat=48.85&lng=2.35&rayon=5');
+    const res = await request(app).get('/api/V1/conteneurs/proches?lat=48.85&lng=2.35&rayon=5');
     expect([200, 401, 404]).toContain(res.status);
   });
 

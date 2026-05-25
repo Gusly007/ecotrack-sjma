@@ -11,6 +11,12 @@ export const authService = {
     
     // Si MFA requis, conserver toutes les infos de setup (QR code, secret, etc.)
     if (response.data?.requiresMFA) {
+      // Clear any stale session so NotificationContext/AuthContext deactivate while
+      // the user is on the MFA page (prevents sounds from an old WS connection).
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+
       const userId = response.data?.userId || response.data?.user?.id;
       if (userId) {
         localStorage.setItem('mfa_user_id', String(userId));
@@ -30,6 +36,9 @@ export const authService = {
         userId,
         email: response.data?.email,
         mfaSetup: response.data?.mfaSetup || null,
+        // role expose par le backend (cf. authController) pour permettre aux
+        // pages de login de filtrer le scope avant la redirection MFA partagee.
+        role: response.data?.role || response.data?.user?.role_par_defaut || null,
       };
     }
 
@@ -123,5 +132,20 @@ export const authService = {
   isDesktopUser() {
     const role = this.getUserRole();
     return role === 'GESTIONNAIRE' || role === 'ADMIN';
+  },
+
+  async generateMfaSetup(userId) {
+    const response = await api.post('/auth/mfa/regenerate', { userId });
+    return response.data;
+  },
+
+  async verifyMfaSetup(userId, code, secret) {
+    const response = await api.post('/auth/mfa/complete-setup', { userId, code, secret });
+    return response.data;
+  },
+
+  async loginWithMfa(userId, code) {
+    const response = await api.post('/auth/login/mfa', { userId, code });
+    return response.data;
   },
 };

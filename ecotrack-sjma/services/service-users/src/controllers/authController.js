@@ -89,6 +89,9 @@ export const login = asyncHandler(async (req, res) => {
     user: result.user,
     userId: result.userId,
     email: result.user?.email,
+    // role expose dans les deux branches (MFA via result.role, sans MFA via result.user)
+    // pour permettre au frontend de filtrer le scope citoyen vs personnel avant MFA.
+    role: result.role || result.user?.role_par_defaut || null,
     requiresMFA: result.requiresMFA || false,
     requiresSetup: result.requiresSetup || false,
     mfaSetup: result.mfaSetup || null
@@ -141,13 +144,16 @@ export const getProfileWithStats = asyncHandler(async (req, res) => {
  * POST /auth/forgot-password
  */
 export const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  
+  const { email, from } = req.body;
+
   if (!email) {
     return res.status(400).json({ error: 'Email requis' });
   }
-  
-  const result = await authService.forgotPassword(email);
+
+  // `from` ('citoyen' | undefined) — quand la requête vient du flow mobile
+  // citoyen, le lien email pointe vers /citoyen/reset-password (page isolée
+  // qui redirige vers /citoyen/login). Sinon comportement upstream inchangé.
+  const result = await authService.forgotPassword(email, { from });
   res.json(result);
 });
 
@@ -176,5 +182,39 @@ export const activateAccount = asyncHandler(async (req, res) => {
   }
   
   const result = await authService.activateAccount(email, token, newPassword);
+  res.json(result);
+});
+
+// ====================================================================
+// Self-registration citoyen — flow isolé du register admin upstream.
+// ====================================================================
+
+/** POST /auth/citoyen/register */
+export const citoyenRegister = asyncHandler(async (req, res) => {
+  const { email, nom, prenom, password } = req.body || {};
+  if (!email || !nom || !prenom || !password) {
+    return res.status(400).json({ error: 'Champs manquants' });
+  }
+  const result = await authService.registerCitoyen(email, nom, prenom, password);
+  res.status(201).json(result);
+});
+
+/** POST /auth/citoyen/verify-activation */
+export const citoyenVerifyActivation = asyncHandler(async (req, res) => {
+  const { email, code } = req.body || {};
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email et code requis' });
+  }
+  const result = await authService.verifyCitoyenActivation(email, String(code).trim());
+  res.json(result);
+});
+
+/** POST /auth/citoyen/resend-activation */
+export const citoyenResendActivation = asyncHandler(async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) {
+    return res.status(400).json({ error: 'Email requis' });
+  }
+  const result = await authService.resendCitoyenActivation(email);
   res.json(result);
 });

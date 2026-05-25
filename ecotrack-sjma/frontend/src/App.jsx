@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -60,8 +61,35 @@ import QRCodePage from './pages/QRCodePage';
 import SharedScanPage from './pages/mobile/shared/ScanPage';
 import SharedScanResult from './pages/mobile/shared/ScanResult';
 
+// Mobile Citoyen App
+import CitoyenMobileLayout from './pages/mobile/citoyen/MobileLayout';
+import CitoyenHome from './pages/mobile/citoyen/CitoyenHome';
+const CitoyenMap = lazy(() => import('./pages/mobile/citoyen/CitoyenMap'));
+import CitoyenSignaler from './pages/mobile/citoyen/CitoyenSignaler';
+import CitoyenSignalerSuccess from './pages/mobile/citoyen/CitoyenSignalerSuccess';
+const CitoyenScanner = lazy(() => import('./pages/mobile/citoyen/CitoyenScanner'));
+import CitoyenMesSignalements from './pages/mobile/citoyen/CitoyenMesSignalements';
+import CitoyenSignalementDetail from './pages/mobile/citoyen/CitoyenSignalementDetail';
+import CitoyenDefis from './pages/mobile/citoyen/CitoyenDefis';
+import CitoyenProfil from './pages/mobile/citoyen/CitoyenProfil';
+import CitoyenEditProfil from './pages/mobile/citoyen/CitoyenEditProfil';
+import CitoyenNotifications from './pages/mobile/citoyen/CitoyenNotifications';
+import CitoyenTri from './pages/mobile/citoyen/CitoyenTri';
+import CitoyenPointsHistorique from './pages/mobile/citoyen/CitoyenPointsHistorique';
+import CitoyenLogin from './pages/mobile/citoyen/CitoyenLogin';
+import CitoyenRegister from './pages/mobile/citoyen/CitoyenRegister';
+import CitoyenLanding from './pages/mobile/citoyen/CitoyenLanding';
+import CitoyenForgotPassword from './pages/mobile/citoyen/CitoyenForgotPassword';
+import CitoyenResetPassword from './pages/mobile/citoyen/CitoyenResetPassword';
+import { CitoyenAuthProvider } from './pages/mobile/citoyen/auth/CitoyenAuthContext';
+import { CitoyenProtectedRoute } from './components/mobile/citoyen/CitoyenProtectedRoute';
 function RootRedirect() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <CitoyenLanding />;
+  }
+
   const role = user?.role || user?.role_par_defaut;
 
   if (role === 'CITOYEN') return <Navigate to="/citoyen" replace />;
@@ -73,8 +101,9 @@ function RootRedirect() {
 function App() {
   return (
     <AuthProvider>
-      <CookieBanner />
+      <NotificationProvider>
       <BrowserRouter basename="/ecotrack-sjma">
+        <CookieBanner />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
@@ -199,8 +228,6 @@ function App() {
           {/* Universal Scan Routes - accessible to all roles */}
           <Route path="/scan" element={<ProtectedRoute><SharedScanPage /></ProtectedRoute>} />
           <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
-
-
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
             <ProtectedRoute>
@@ -295,7 +322,6 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Route Profil accessible Ã  tous les utilisateurs connectÃ©s */}
           <Route path="/profile" element={
             <ProtectedRoute>
               <RoleBasedLayout>
@@ -304,11 +330,33 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/" element={
-            <ProtectedRoute>
-              <RootRedirect />
-            </ProtectedRoute>
-          } />
+          {/* Routes Citoyen (Mobile) — CitoyenAuthProvider isolé */}
+          <Route element={<CitoyenAuthProvider><Outlet /></CitoyenAuthProvider>}>
+            <Route path="/citoyen/login" element={<CitoyenLogin />} />
+            <Route path="/citoyen/inscription" element={<CitoyenRegister />} />
+            <Route path="/citoyen/mot-de-passe-oublie" element={<CitoyenForgotPassword />} />
+            <Route path="/citoyen/reset-password" element={<CitoyenResetPassword />} />
+            <Route path="/citoyen" element={<CitoyenProtectedRoute><CitoyenMobileLayout /></CitoyenProtectedRoute>}>
+              <Route index element={<CitoyenHome />} />
+              <Route path="carte" element={<Suspense fallback={null}><CitoyenMap /></Suspense>} />
+              <Route path="signaler" element={<CitoyenSignaler />} />
+              <Route path="signaler/success" element={<CitoyenSignalerSuccess />} />
+              <Route path="scanner" element={<Suspense fallback={null}><CitoyenScanner /></Suspense>} />
+              <Route path="signalements" element={<CitoyenMesSignalements />} />
+              <Route path="signalements/:id" element={<CitoyenSignalementDetail />} />
+              <Route path="defis" element={<CitoyenDefis />} />
+              <Route path="profil" element={<CitoyenProfil />} />
+              <Route path="profil/modifier" element={<CitoyenEditProfil />} />
+              <Route path="notifications" element={<CitoyenNotifications />} />
+              <Route path="tri" element={<CitoyenTri />} />
+              <Route path="boutique" element={<Navigate to="/citoyen/defis" replace />} />
+              <Route path="points-historique" element={<CitoyenPointsHistorique />} />
+              <Route path="*" element={<CitoyenHome />} />
+            </Route>
+          </Route>
+
+          {/* Visiteur anonyme → landing citoyen ; authentifié → redirect par rôle */}
+          <Route path="/" element={<RootRedirect />} />
 
           <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
 
@@ -323,6 +371,7 @@ function App() {
           } />
         </Routes>
       </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

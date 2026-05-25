@@ -125,11 +125,11 @@ app.get('/api', iotLimiter, (req, res) => {
     endpoints: {
       documentation: '/api-docs',
       health: '/health',
-      measurements: '/api/iot/measurements',
-      sensors: '/api/iot/sensors',
-      alerts: '/api/iot/alerts',
-      stats: '/api/iot/stats',
-      simulate: '/api/iot/simulate'
+      measurements: '/api/V1/iot/measurements',
+      sensors: '/api/V1/iot/sensors',
+      alerts: '/api/V1/iot/alerts',
+      stats: '/api/V1/iot/stats',
+      simulate: '/api/V1/iot/simulate'
     }
   });
 });

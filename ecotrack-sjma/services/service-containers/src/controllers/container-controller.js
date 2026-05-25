@@ -178,19 +178,23 @@ class ContainerController {
    */
   async getInRadius(req, res, next) {
     try {
-      const { latitude, longitude, radiusKm } = req.query;
+      const lat = Number(req.body.latitude);
+      const lng = Number(req.body.longitude);
+      const radius = Number(req.body.rayon);
 
-      if (!latitude || !longitude || !radiusKm) {
-        return res.status(400).json({ 
-          message: 'latitude, longitude et radiusKm sont requis' 
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radius)) {
+        return res.status(400).json({
+          message: 'latitude, longitude et radiusKm sont requis'
         });
       }
 
-      const containers = await this.service.getContainersInRadius(
-        parseFloat(latitude),
-        parseFloat(longitude),
-        parseFloat(radiusKm)
-      );
+      if (lat < -90 || lat > 90 ||
+          lng < -180 || lng > 180 ||
+          radius <= 0 || radius > 500) {
+        return res.status(400).json({ message: 'Coordonnées ou rayon invalides' });
+      }
+
+      const containers = await this.service.getContainersInRadius(lat, lng, radius);
       return res.status(200).json(containers);
     } catch (err) {
       next(err);

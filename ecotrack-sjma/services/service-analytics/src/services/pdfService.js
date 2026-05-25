@@ -5,6 +5,17 @@ const DateUtils = require('../utils/dateUtils');
 const logger = require('../utils/logger');
 const ChartService = require('./chartService');
 
+const SAFE_SEGMENT_RE = /^[a-zA-Z0-9_-]{1,30}$/;
+function sanitizeSegment(value, fallback) {
+  return value && SAFE_SEGMENT_RE.test(value) ? value : fallback;
+}
+function safeReportsPath(fileName) {
+  const base = path.resolve(process.env.REPORTS_DIR || './reports');
+  const full = path.resolve(base, fileName);
+  if (!full.startsWith(base + path.sep)) throw new Error('Invalid report path');
+  return full;
+}
+
 // Instance unique de ChartService pour générer les graphiques
 const chartService = new ChartService();
 
@@ -41,8 +52,9 @@ class PDFService {
   static async generateReport(data, reportType = 'daily') {
     return new Promise((resolve, reject) => {
       try {
-        const fileName = `report_${reportType}_${Date.now()}.pdf`;
-        const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+        const safeType = sanitizeSegment(reportType, 'report');
+        const fileName = `report_${safeType}_${Date.now()}.pdf`;
+        const filePath = safeReportsPath(fileName);
 
         // Créer le dossier si nécessaire
         const dir = path.dirname(filePath);
@@ -50,11 +62,11 @@ class PDFService {
           fs.mkdirSync(dir, { recursive: true });
         }
 
-        const doc = new PDFDocument({ 
+        const doc = new PDFDocument({
           size: 'A4',
           margins: { top: 50, bottom: 50, left: 50, right: 50 }
         });
-        
+
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
@@ -387,8 +399,9 @@ class PDFService {
   static async generateEnvironmentalReport(data, period = 'week') {
     return new Promise(async (resolve, reject) => {
       try {
-        const fileName = `environmental_${period}_${Date.now()}.pdf`;
-        const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+        const safePeriod = sanitizeSegment(period, 'week');
+        const fileName = `environmental_${safePeriod}_${Date.now()}.pdf`;
+        const filePath = safeReportsPath(fileName);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
@@ -527,8 +540,9 @@ class PDFService {
   static async generateRoutesPerformanceReport(data, period = 'week') {
     return new Promise((resolve, reject) => {
       try {
-        const fileName = `routes_performance_${period}_${Date.now()}.pdf`;
-        const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+        const safePeriod = sanitizeSegment(period, 'week');
+        const fileName = `routes_performance_${safePeriod}_${Date.now()}.pdf`;
+        const filePath = safeReportsPath(fileName);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });

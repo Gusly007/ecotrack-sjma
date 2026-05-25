@@ -4,12 +4,16 @@ import MobileHeader from './MobileHeader';
 import BottomNav from './BottomNav';
 import { citoyenNavData } from './citoyenNavData';
 import { agentNavData } from './agentNavData';
+import { useNotifications } from '../../hooks/useNotifications';
+import { useNotificationSound } from '../../hooks/useNotificationSound';
 import './MobileLayout.css';
 
-export default function MobileLayout({ children, title, subtitle, showBack = false, onBack, rightAction }) {
+export default function MobileLayout({ children, title, subtitle, showBack = false, onBack, rightAction, greeting, greetingDate }) {
   const { user } = useAuth();
   const location = useLocation();
   const role = user?.role || user?.role_par_defaut;
+  const { play } = useNotificationSound();
+  useNotifications(30000, () => play('default'));
 
   const navData = role === 'AGENT' ? agentNavData : citoyenNavData;
 
@@ -20,7 +24,7 @@ export default function MobileLayout({ children, title, subtitle, showBack = fal
 
   return (
     <div className="mobile-layout">
-      <MobileHeader title={title} subtitle={subtitle} showBack={showBack} onBack={onBack} rightAction={rightAction} />
+      <MobileHeader title={title} subtitle={subtitle} showBack={showBack} onBack={onBack} rightAction={rightAction} greeting={greeting} greetingDate={greetingDate} />
       <main className="mobile-content">
         {children}
       </main>

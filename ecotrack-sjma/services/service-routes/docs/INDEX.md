@@ -45,7 +45,7 @@ Bienvenue dans la documentation technique du microservice de gestion des tourné
 | Swagger UI | http://localhost:3012/api-docs |
 | Health Check | http://localhost:3012/health |
 | Métriques Prometheus | http://localhost:3012/metrics |
-| Via API Gateway | http://localhost:3000/api/routes |
+| Via API Gateway | http://localhost:3000/api/V1/routes |
 | Tests | `npm test` |
 | Dev Server | `npm run dev` |
 

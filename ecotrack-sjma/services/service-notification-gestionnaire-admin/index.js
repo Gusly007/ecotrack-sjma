@@ -152,8 +152,8 @@ app.get('/api', (_req, res) => {
       documentation: '/api-docs',
       health:        '/health',
       metrics:       '/metrics',
-      notifications: '/api/notifications',
-      adminNotifications: '/api/admin/notifications',
+      notifications: '/api/V1/notifications',
+      adminNotifications: '/api/V1/admin/notifications',
     },
   });
 });
@@ -191,6 +191,31 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
+// ─── Internal WS emit (service-to-service, no JWT required) ──────────────────
+// Protected by x-internal-secret header (shared JWT_SECRET).
+// service-routes calls this after a direct DB insert to push real-time events.
+{
+  const INTERNAL_SECRET = process.env.INTERNAL_SECRET || process.env.JWT_SECRET || 'change_me_in_production_access_secret';
+  const { getWebSocketNotifService: _getWs } = require('./src/services/websocketNotifService');
+  const _notifSvc = require('./src/services/notification.service');
+
+  app.post('/internal/emit-ws', (req, res) => {
+    if (req.headers['x-internal-secret'] !== INTERNAL_SECRET) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { userIds, notification } = req.body || {};
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'userIds must be a non-empty array' });
+    }
+    const ws = _getWs();
+    if (ws) {
+      for (const uid of userIds) ws.emitToUser(uid, notification || {});
+    }
+    for (const uid of userIds) _notifSvc._invalidateUserCache(uid).catch(() => {});
+    return res.status(200).json({ ok: true, emitted: userIds.length });
+  });
+}
+
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
@@ -213,9 +238,11 @@ if (process.env.NODE_ENV !== 'test') {
   const kafkaConsumer = require('./kafkaConsumer');
   const kafkaAdminProducer = require('./kafkaAdminProducer');
   const { createWebSocketAdminService } = require('./src/services/websocketAdminService');
+  const { createWebSocketNotifService } = require('./src/services/websocketNotifService');
   const healthMonitorService = require('./src/services/healthMonitorService');
 
   let wsAdminService = null;
+  let wsNotifService = null;
 
   server.listen(PORT, async () => {
     logger.info({ port: PORT }, 'Service notification-gestionnaire démarré');
@@ -238,6 +265,13 @@ if (process.env.NODE_ENV !== 'test') {
       logger.info('WebSocket Admin Service démarré sur /ws/admin');
     } catch (err) {
       logger.warn({ error: err.message }, 'WebSocket Admin non disponible');
+    }
+
+    try {
+      wsNotifService = createWebSocketNotifService(server);
+      logger.info('WebSocket Notif Service démarré sur /ws/notifications');
+    } catch (err) {
+      logger.warn({ error: err.message }, 'WebSocket Notif non disponible');
     }
 
     try {
@@ -267,9 +301,8 @@ if (process.env.NODE_ENV !== 'test') {
     healthMonitorService.stop();
     await kafkaAdminProducer.disconnect();
     await kafkaConsumer.disconnect();
-    if (wsAdminService) {
-      wsAdminService.io.close();
-    }
+    if (wsAdminService) wsAdminService.io.close();
+    if (wsNotifService) wsNotifService.io.close();
     server.close(() => process.exit(0));
   };
 

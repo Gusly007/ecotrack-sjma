@@ -141,7 +141,7 @@ Métriques disponibles :
 En production, les logs sont JSON structurés :
 
 ```json
-{"level":30,"time":1741650000000,"service":"service-routes","method":"POST","url":"/api/routes/optimize","statusCode":201,"duration":245,"msg":"Request completed"}
+{"level":30,"time":1741650000000,"service":"service-routes","method":"POST","url":"/api/V1/routes/optimize","statusCode":201,"duration":245,"msg":"Request completed"}
 ```
 
 Agrégation recommandée : Loki + Grafana ou ELK Stack.
@@ -159,11 +159,11 @@ routes: {
   status: 'ready',
   port: 3012,
   baseUrl: 'http://service-routes:3012',
-  routes: [{ mountPath: '/api/routes' }]
+  routes: [{ mountPath: '/api/V1/routes' }]
 }
 ```
 
-Toutes les requêtes `GET /api/routes/*` depuis le frontend passent par le Gateway → service-routes.
+Toutes les requêtes `GET /api/V1/routes/*` depuis le frontend passent par le Gateway → service-routes.
 
 L'header `X-User-Id` est injecté par le Gateway sur toutes les requêtes authentifiées.
 

@@ -180,21 +180,21 @@ class ZoneController {
      */
     async getInRadius(req, res, next) {
         try {
-            const { latitude, longitude, rayon } = req.query;
+                const lat = Number(req.body.latitude);
+            const lng = Number(req.body.longitude);
+            const radiusKm = Number(req.body.rayon);
 
-            if (!latitude || !longitude || !rayon) {
-                return res.status(400).json({ 
-                    message: 'Paramètres requis: latitude, longitude, rayon' 
+            if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radiusKm)) {
+                return res.status(400).json({
+                    message: 'Paramètres requis: latitude, longitude, rayon'
                 });
             }
 
-            const lat = parseFloat(latitude);
-            const lng = parseFloat(longitude);
-            const radiusKm = parseFloat(rayon);
-
-            if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
-                return res.status(400).json({ 
-                    message: 'Latitude, longitude et rayon doivent être des nombres' 
+            if (lat < -90 || lat > 90 ||
+                lng < -180 || lng > 180 ||
+                radiusKm <= 0 || radiusKm > 500) {
+                return res.status(400).json({
+                    message: 'Latitude, longitude et rayon doivent être des nombres valides'
                 });
             }
 

@@ -42,7 +42,7 @@ const services = [
     { name: 'Service Containers', url: 'http://localhost:3011/health', port: 3011 },
     { name: 'Service Gamifications', url: 'http://localhost:3014/health', port: 3014 },
     { name: 'Prometheus', url: 'http://localhost:9090/-/healthy', port: 9090 },
-    { name: 'Grafana', url: 'http://localhost:3001/api/health', port: 3001 }
+    { name: 'Grafana', url: 'http://localhost:3001/api/V1/health', port: 3001 }
 ];
 
 function checkService(service) {

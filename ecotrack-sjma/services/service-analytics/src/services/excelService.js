@@ -3,6 +3,17 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
 
+const SAFE_SEGMENT_RE = /^[a-zA-Z0-9_-]{1,30}$/;
+function sanitizeSegment(value, fallback) {
+  return value && SAFE_SEGMENT_RE.test(value) ? value : fallback;
+}
+function safeReportsPath(fileName) {
+  const base = path.resolve(process.env.REPORTS_DIR || './reports');
+  const full = path.resolve(base, fileName);
+  if (!full.startsWith(base + path.sep)) throw new Error('Invalid report path');
+  return full;
+}
+
 class ExcelService {
   /**
    * Générer un rapport Excel
@@ -26,16 +37,17 @@ class ExcelService {
         await this._addRoutesSheet(workbook, data.routes);
       }
 
-      const fileName = `report_excel_${reportType}_${Date.now()}.xlsx`;
-      const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
-      
+      const safeType = sanitizeSegment(reportType, 'report');
+      const fileName = `report_excel_${safeType}_${Date.now()}.xlsx`;
+      const filePath = safeReportsPath(fileName);
+
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
 
       await workbook.xlsx.writeFile(filePath);
-      
+
       return {
         filePath,
         fileName,
@@ -239,8 +251,9 @@ class ExcelService {
       });
     }
 
-    const fileName = `environmental_${period}_${Date.now()}.xlsx`;
-    const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+    const safePeriod = sanitizeSegment(period, 'week');
+    const fileName = `environmental_${safePeriod}_${Date.now()}.xlsx`;
+    const filePath = safeReportsPath(fileName);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     await workbook.xlsx.writeFile(filePath);
@@ -293,8 +306,9 @@ class ExcelService {
       });
     }
 
-    const fileName = `routes_performance_${period}_${Date.now()}.xlsx`;
-    const filePath = path.join(process.env.REPORTS_DIR || './reports', fileName);
+    const safePeriod2 = sanitizeSegment(period, 'week');
+    const fileName = `routes_performance_${safePeriod2}_${Date.now()}.xlsx`;
+    const filePath = safeReportsPath(fileName);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     await workbook.xlsx.writeFile(filePath);

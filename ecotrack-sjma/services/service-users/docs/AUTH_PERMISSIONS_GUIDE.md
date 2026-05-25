@@ -288,10 +288,10 @@ export const permissionsService = {
 ### 3. Routes d'administration (`src/routes/admin-permissions.js`)
 
 ```javascript
-// GET /api/admin/permissions - Liste toutes
-// PUT /api/admin/permissions/:role - Mettre à jour
-// POST /api/admin/permissions/:role - Ajouter
-// DELETE /api/admin/permissions/:role/:permission - Supprimer
+// GET /api/V1/admin/permissions - Liste toutes
+// PUT /api/V1/admin/permissions/:role - Mettre à jour
+// POST /api/V1/admin/permissions/:role - Ajouter
+// DELETE /api/V1/admin/permissions/:role/:permission - Supprimer
 ```
 
 ---

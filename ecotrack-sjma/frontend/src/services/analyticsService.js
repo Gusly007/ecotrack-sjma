@@ -13,7 +13,7 @@ export const analyticsService = {
    * @param {boolean} includeWeather - Inclure l'ajustement météo (défaut: false)
    */
   predictFillLevel: async (containerId, daysAhead = 1, includeWeather = false) => {
-    const response = await api.post('/api/analytics/ml/predict', {
+    const response = await api.post('/api/V1/analytics/ml/predict', {
       containerId,
       daysAhead,
       includeWeather
@@ -28,7 +28,7 @@ export const analyticsService = {
    * @param {number} threshold - Seuil de criticité (défaut: 90%)
    */
   predictCriticalContainers: async (daysAhead = 1, threshold = 90) => {
-    const response = await api.get('/api/analytics/ml/predict-critical', {
+    const response = await api.get('/api/V1/analytics/ml/predict-critical', {
       params: { daysAhead, threshold }
     });
     return response.data;
@@ -41,7 +41,7 @@ export const analyticsService = {
    * @param {number} daysAhead - Nombre de jours pour la prédiction
    */
   predictWithWeather: async (containerId, daysAhead = 1) => {
-    const response = await api.post('/api/analytics/ml/predict', {
+    const response = await api.post('/api/V1/analytics/ml/predict', {
       containerId,
       daysAhead,
       includeWeather: true
@@ -68,7 +68,7 @@ export const analyticsService = {
    * @param {number} threshold - Seuil z-score (défaut: 2)
    */
   detectAnomalies: async (containerId, threshold = 2) => {
-    const response = await api.get(`/api/analytics/ml/anomalies/${containerId}`, {
+    const response = await api.get(`/api/V1/analytics/ml/anomalies/${containerId}`, {
       params: { threshold }
     });
     return response.data;
@@ -80,7 +80,7 @@ export const analyticsService = {
    * Critères: pas de données 48h, batterie <10%, capteur bloqué, données insuffisantes
    */
   detectDefectiveSensors: async () => {
-    const response = await api.get('/api/analytics/ml/defective-sensors');
+    const response = await api.get('/api/V1/analytics/ml/defective-sensors');
     return response.data;
   },
 
@@ -92,7 +92,7 @@ export const analyticsService = {
    * @param {boolean} autoCreate - Créer les alertes automatiquement
    */
   detectAnomaliesAndCreateAlerts: async (containerId, threshold = 2, autoCreate = true) => {
-    const response = await api.post(`/api/analytics/ml/anomalies/${containerId}/alerts`, null, {
+    const response = await api.post(`/api/V1/analytics/ml/anomalies/${containerId}/alerts`, null, {
       params: { threshold, autoCreate }
     });
     return response.data;
@@ -105,7 +105,7 @@ export const analyticsService = {
    * @param {number} limit - Nombre max de conteneurs à retourner (défaut: 20)
    */
   detectGlobalAnomalies: async (threshold = 2, limit = 20) => {
-    const response = await api.get('/api/analytics/ml/anomalies/global', {
+    const response = await api.get('/api/V1/analytics/ml/anomalies/global', {
       params: { threshold, limit }
     });
     return response.data;
@@ -124,12 +124,12 @@ export const analyticsService = {
   // ============================================
 
   getDashboardAnalytics: async () => {
-    const response = await api.get('/api/analytics/dashboard');
+    const response = await api.get('/api/V1/analytics/dashboard');
     return response.data;
   },
 
   getCriticalContainers: async (threshold = 85, limit = 15) => {
-    const response = await api.get('/api/analytics/critical-containers', {
+    const response = await api.get('/api/V1/analytics/critical-containers', {
       params: { threshold, limit }
     });
     return response.data;
@@ -140,7 +140,7 @@ export const analyticsService = {
    * @param {number} limit - Nombre maximum de conteneurs (défaut: 100)
    */
   getAllContainersForSelector: async (limit = 100) => {
-    const response = await api.get('/api/containers', {
+    const response = await api.get('/api/V1/containers', {
       params: { limit, page: 1 }
     });
     return response.data;
@@ -151,19 +151,19 @@ export const analyticsService = {
   // ============================================
 
   getKPIs: async (period = '7d') => {
-    const response = await api.get('/api/analytics/kpis', {
+    const response = await api.get('/api/V1/analytics/kpis', {
       params: { period }
     });
     return response.data;
   },
 
   getEnvironmentalMetrics: async () => {
-    const response = await api.get('/api/analytics/performance/environmental?t=' + Date.now());
+    const response = await api.get('/api/V1/analytics/performance/environmental?t=' + Date.now());
     return response.data;
   },
 
   getEnvironmentalMetricsByPeriod: async (period = 'week') => {
-    const response = await api.get('/api/analytics/performance/environmental', {
+    const response = await api.get('/api/V1/analytics/performance/environmental', {
       params: { period, t: Date.now() }
     });
     return response.data;
@@ -174,14 +174,14 @@ export const analyticsService = {
   // ============================================
 
   getFillTrends: async (days = 7) => {
-    const response = await api.get('/api/analytics/aggregation/fill-trends', {
+    const response = await api.get('/api/V1/analytics/aggregation/fill-trends', {
       params: { days }
     });
     return response.data;
   },
 
   getZonePerformance: async () => {
-    const response = await api.get('/api/analytics/aggregation/zone-performance');
+    const response = await api.get('/api/V1/analytics/aggregation/zone-performance');
     return response.data;
   },
 
@@ -190,7 +190,7 @@ export const analyticsService = {
   // ============================================
 
   getWeatherImpact: async () => {
-    const response = await api.get('/api/analytics/weather-impact');
+    const response = await api.get('/api/V1/analytics/weather-impact');
     return response.data;
   },
 
@@ -199,7 +199,7 @@ export const analyticsService = {
   // ============================================
 
   getCollecteStats: async (days = 30) => {
-    const response = await api.get('/api/analytics/collecte-stats', {
+    const response = await api.get('/api/V1/analytics/collecte-stats', {
       params: { days }
     });
     return response.data;
@@ -210,7 +210,7 @@ export const analyticsService = {
   // ============================================
 
   getMLPredictions: async (daysAhead = 1, threshold = 50) => {
-    const response = await api.get('/api/analytics/ml/predictions', {
+    const response = await api.get('/api/V1/analytics/ml/predictions', {
       params: { daysAhead, threshold }
     });
     return response.data;
@@ -221,7 +221,7 @@ export const analyticsService = {
   // ============================================
 
   refreshCache: async () => {
-    const response = await api.post('/api/analytics/cache/refresh');
+    const response = await api.post('/api/V1/analytics/cache/refresh');
     return response.data;
   }
 };

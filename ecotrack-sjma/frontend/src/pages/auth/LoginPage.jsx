@@ -42,7 +42,26 @@ const LoginPage = () => {
       // avant que le MFA ne soit validé.
       const response = await authService.login(formData.email, formData.password);
       const result = response.data || response;
-      
+
+      // Filtrage de scope : /login est réservé au personnel EcoTrack
+      // (ADMIN / GESTIONNAIRE / AGENT). Un compte CITOYEN est rejeté ici, AVANT
+      // toute redirection MFA. Le rôle est lu dans la branche MFA (`result.role`,
+      // exposé par le backend) ou dans la branche sans MFA (`result.role_par_defaut`,
+      // l'objet user étant renvoyé directement par authService.login).
+      const userRole = result?.role || result?.role_par_defaut || null;
+      if (userRole === 'CITOYEN') {
+        // En branche sans MFA, authService.login a déjà persisté les tokens.
+        // On purge pour ne laisser aucune session active.
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('mfa_user_id');
+        localStorage.removeItem('mfa_setup');
+        sessionStorage.removeItem('mfa_pending_setup');
+        setError("Cet espace de connexion est réservé au personnel EcoTrack.");
+        return;
+      }
+
       // Si MFA requis
       if (result?.requiresMFA) {
         const userId = Number(result.userId);
@@ -97,6 +116,18 @@ const LoginPage = () => {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-box">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'none', border: 'none', color: '#666',
+              cursor: 'pointer', fontSize: '0.85rem', padding: '0 0 10px 0',
+              fontFamily: 'inherit',
+            }}
+          >
+            <i className="fas fa-arrow-left" style={{ fontSize: '0.78rem' }}></i> Retour
+          </button>
           <div className="auth-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 24, justifyContent: 'center', marginBottom: 16 }}>
               <img src={LogoEcoTrack} alt="Logo EcoTrack" style={{ height: 150, width: 150, display: 'block' }} />

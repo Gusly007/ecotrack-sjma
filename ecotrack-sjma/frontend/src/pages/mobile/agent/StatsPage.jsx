@@ -4,32 +4,24 @@ import MobileCard from '../../../components/mobile/MobileCard';
 import { fetchAgentStats } from '../../../services/tourneeService';
 import './StatsPage.css';
 
-const TABS = [
-  { key: 'mois', label: 'Ce mois' },
-  { key: 'semaine', label: 'Cette semaine' },
-  { key: 'jour', label: "Aujourd'hui" },
-];
-
 export default function StatsPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('mois');
+  const [activeTab, setActiveTab] = useState('semaine');
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadStats = async (period) => {
     setLoading(true);
-    (async () => {
-      try {
-        const res = await fetchAgentStats(period);
-        if (!cancelled) setStats(res);
-      } catch {
-        if (!cancelled) setStats(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [period]);
+    try {
+      const res = await fetchAgentStats(period);
+      setStats(res);
+    } catch {
+      setStats(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadStats(activeTab); }, [activeTab]);
 
   if (loading) {
     return (
@@ -41,16 +33,18 @@ export default function StatsPage() {
     );
   }
 
-  const fmt = (v, suffix = '') => (v || v === 0 ? `${v}${suffix}` : '—');
-
   return (
     <MobileLayout title="Mes Statistiques">
       <div className="tabs-inline">
-        {TABS.map((t) => (
+        {[
+          { key: 'jour',    label: "Aujourd'hui" },
+          { key: 'semaine', label: 'Cette semaine' },
+          { key: 'mois',    label: 'Ce mois' },
+        ].map(t => (
           <button
             key={t.key}
-            className={`tab-inline ${period === t.key ? 'active' : ''}`}
-            onClick={() => setPeriod(t.key)}
+            className={`tab-inline ${activeTab === t.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(t.key)}
           >
             {t.label}
           </button>
@@ -61,17 +55,17 @@ export default function StatsPage() {
         <div className="stats-summary-grid">
           <div className="stats-summary-item">
             <i className="fas fa-check-circle" style={{ fontSize: '1.5rem' }}></i>
-            <strong>{fmt(stats?.total_collectes)}</strong>
+            <strong>{stats?.total_collectes ?? '—'}</strong>
             <span>Collectes</span>
           </div>
           <div className="stats-summary-item">
             <i className="fas fa-route" style={{ fontSize: '1.5rem' }}></i>
-            <strong>{fmt(stats?.total_tournees)}</strong>
+            <strong>{stats?.total_tournees ?? '—'}</strong>
             <span>Tournees</span>
           </div>
           <div className="stats-summary-item">
             <i className="fas fa-weight-hanging" style={{ fontSize: '1.5rem' }}></i>
-            <strong>{stats?.total_kg ? Math.round(stats.total_kg) : '—'}</strong>
+            <strong>{stats?.total_kg != null ? `${Math.round(stats.total_kg)}` : '—'}</strong>
             <span>kg collectes</span>
           </div>
         </div>
@@ -81,19 +75,21 @@ export default function StatsPage() {
         <h4 className="detail-section-title"><i className="fas fa-chart-bar" style={{ color: '#2196F3' }}></i> Performance</h4>
         <div className="detail-row">
           <span>Taux de reussite</span>
-          <strong style={{ color: '#4CAF50' }}>{fmt(stats?.taux_reussite_pct, '%')}</strong>
+          <strong style={{ color: '#4CAF50' }}>
+            {stats?.taux_reussite_pct != null ? `${stats.taux_reussite_pct}%` : '—'}
+          </strong>
         </div>
         <div className="detail-row">
           <span>Distance totale</span>
-          <strong>{fmt(stats?.distance_totale_km, ' km')}</strong>
+          <strong>{stats?.distance_totale_km != null ? `${stats.distance_totale_km} km` : '—'}</strong>
         </div>
         <div className="detail-row">
-          <span>Anomalies signalees</span>
-          <strong>{fmt(stats?.total_anomalies)}</strong>
-        </div>
-        <div className="detail-row">
-          <span>Tournees terminees</span>
-          <strong>{fmt(stats?.tournees_terminees)} / {fmt(stats?.total_tournees)}</strong>
+          <span>Classement agents</span>
+          <strong style={{ color: '#9c27b0' }}>
+            {stats?.classement?.rang != null
+              ? `#${stats.classement.rang} / ${stats.classement.total_agents}`
+              : '—'}
+          </strong>
         </div>
       </MobileCard>
 

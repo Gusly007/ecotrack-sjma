@@ -92,11 +92,11 @@ describe('ZoneController', () => {
     await controller.getInRadius(req, res, next);
     expect(res.status).toHaveBeenCalledWith(400);
 
-    req.query = { latitude: 'x', longitude: '2', rayon: '3' };
+    req.body = { latitude: 'x', longitude: '2', rayon: '3' };
     await controller.getInRadius(req, res, next);
     expect(res.status).toHaveBeenCalledWith(400);
 
-    req.query = { latitude: '48.8', longitude: '2.3', rayon: '10' };
+    req.body = { latitude: '48.8', longitude: '2.3', rayon: '10' };
     service.getZonesInRadius.mockResolvedValue([{ id: 1 }]);
     await controller.getInRadius(req, res, next);
     expect(service.getZonesInRadius).toHaveBeenCalledWith(48.8, 2.3, 10);

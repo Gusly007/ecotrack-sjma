@@ -78,6 +78,32 @@
   color: #4CAF50;
 }
 
+/* ── Tooltip CSS rapide (0.15s) ── */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(33, 33, 33, 0.88);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 300;
+}
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
 .badge-notif {
   position: absolute;
   top: 2px;

@@ -9,7 +9,7 @@ describe('🚀 API Gateway E2E Workflows', () => {
     it('should route authenticated user requests correctly', () => {
       const mockRequest = {
         method: 'GET',
-        path: '/api/users/profile',
+        path: '/api/V1/users/profile',
         headers: { authorization: 'Bearer test-token' },
         query: { id: '123' }
       };
@@ -52,7 +52,7 @@ describe('🚀 API Gateway E2E Workflows', () => {
         status: 404,
         body: {
           error: 'Route not found',
-          path: '/api/unknown'
+          path: '/api/V1/unknown'
         }
       };
 

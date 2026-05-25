@@ -8,7 +8,7 @@ const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
- * /api/analytics/aggregations:
+ * /api/V1/analytics/aggregations:
  *   get:
  *     summary: Récupérer toutes les agrégations
  *     tags: [Analytics]
@@ -37,7 +37,7 @@ router.get('/aggregations', authMiddleware, requirePermission('analytics:read'),
 
 /**
  * @swagger
- * /api/analytics/aggregations/refresh:
+ * /api/V1/analytics/aggregations/refresh:
  *   post:
  *     summary: Rafraîchir les vues matérialisées
  *     tags: [Analytics]
@@ -49,7 +49,7 @@ router.post('/aggregations/refresh', authMiddleware, requirePermission('analytic
 
 /**
  * @swagger
- * /api/analytics/aggregations/zones:
+ * /api/V1/analytics/aggregations/zones:
  *   get:
  *     summary: Statistiques par zone
  *     tags: [Analytics]
@@ -61,7 +61,7 @@ router.get('/aggregations/zones', AggregationController.getZoneAggregations);
 
 /**
  * @swagger
- * /api/analytics/aggregations/agents:
+ * /api/V1/analytics/aggregations/agents:
  *   get:
  *     summary: Performances des agents
  *     tags: [Analytics]

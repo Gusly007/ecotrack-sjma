@@ -39,7 +39,7 @@ const services = [
 const scenarios = [
   { name: 'Users health', url: 'http://127.0.0.1:3310/health', expectedStatus: 200 },
   { name: 'Containers API root', url: 'http://127.0.0.1:3311/api', expectedStatus: 200 },
-  { name: 'Routes API root', url: 'http://127.0.0.1:3312/api/routes', expectedStatus: 200 },
+  { name: 'Routes API root', url: 'http://127.0.0.1:3312/api/V1/routes', expectedStatus: 200 },
   { name: 'IoT API root', url: 'http://127.0.0.1:3313/api', expectedStatus: 200 },
   { name: 'Gamifications health', url: 'http://127.0.0.1:3314/health', expectedStatus: 200 },
   { name: 'Analytics health', url: 'http://127.0.0.1:3315/health', expectedStatus: 200 },

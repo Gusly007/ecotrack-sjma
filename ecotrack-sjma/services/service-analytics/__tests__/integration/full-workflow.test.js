@@ -8,7 +8,7 @@ describe('Complete Analytics Workflow', () => {
   describe('1. Data Aggregation', () => {
     it('should respond for aggregated data', async () => {
       const res = await request(app)
-        .get('/api/analytics/aggregations?period=week')
+        .get('/api/V1/analytics/aggregations?period=week')
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(res.status);
@@ -18,7 +18,7 @@ describe('Complete Analytics Workflow', () => {
   describe('2. Dashboard', () => {
     it('should respond for dashboard', async () => {
       const res = await request(app)
-        .get('/api/analytics/dashboard?period=week')
+        .get('/api/V1/analytics/dashboard?period=week')
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(res.status);
@@ -26,7 +26,7 @@ describe('Complete Analytics Workflow', () => {
 
     it('should respond for realtime', async () => {
       const res = await request(app)
-        .get('/api/analytics/realtime')
+        .get('/api/V1/analytics/realtime')
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(res.status);
@@ -36,7 +36,7 @@ describe('Complete Analytics Workflow', () => {
   describe('3. Reports', () => {
     it('should respond for PDF report', async () => {
       const res = await request(app)
-        .post('/api/analytics/reports/generate')
+        .post('/api/V1/analytics/reports/generate')
         .set('Authorization', authToken)
         .send({ format: 'pdf', reportType: 'weekly' });
 
@@ -45,7 +45,7 @@ describe('Complete Analytics Workflow', () => {
 
     it('should respond for Excel report', async () => {
       const res = await request(app)
-        .post('/api/analytics/reports/generate')
+        .post('/api/V1/analytics/reports/generate')
         .set('Authorization', authToken)
         .send({ format: 'excel', reportType: 'monthly' });
 
@@ -56,7 +56,7 @@ describe('Complete Analytics Workflow', () => {
   describe('4. ML Predictions', () => {
     it('should respond for predict fill level', async () => {
       const res = await request(app)
-        .post('/api/analytics/ml/predict')
+        .post('/api/V1/analytics/ml/predict')
         .set('Authorization', authToken)
         .send({ containerId, daysAhead: 1 });
 
@@ -65,7 +65,7 @@ describe('Complete Analytics Workflow', () => {
 
     it('should respond for predict critical', async () => {
       const res = await request(app)
-        .get('/api/analytics/ml/predict-critical?daysAhead=1')
+        .get('/api/V1/analytics/ml/predict-critical?daysAhead=1')
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(res.status);
@@ -73,7 +73,7 @@ describe('Complete Analytics Workflow', () => {
 
     it('should respond for anomalies', async () => {
       const res = await request(app)
-        .get(`/api/analytics/ml/anomalies/${containerId}`)
+        .get(`/api/V1/analytics/ml/anomalies/${containerId}`)
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(res.status);
@@ -85,7 +85,7 @@ describe('Complete Analytics Workflow', () => {
       const start = Date.now();
       
       await request(app)
-        .get('/api/analytics/dashboard')
+        .get('/api/V1/analytics/dashboard')
         .set('Authorization', authToken);
 
       const duration = Date.now() - start;

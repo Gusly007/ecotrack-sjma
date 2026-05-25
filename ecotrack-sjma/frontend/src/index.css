@@ -84,7 +84,7 @@ body {
 }
 
 .auth-header p {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 }
 
@@ -93,15 +93,26 @@ body {
   margin-bottom: 20px;
 }
 
-.form-group label {
+/* Labels des formulaires auth : prefixes .auth-box pour gagner la
+   cascade contre Form.css (.form-group label { color: #555 }). Bump
+   d'opacite a 0.92 pour la lisibilite sur le degrade sombre. */
+.auth-box .form-group label {
   display: block;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.92);
   margin-bottom: 8px;
   font-weight: 500;
 }
 
-.form-input {
+/* Inputs des pages auth (login / register / forgot / reset / activate /
+   MFA, côté personnel et côté citoyen). Préfixés `.auth-box`
+   pour gagner la cascade contre les autres `.form-input` du bundle
+   (cf. components/common/Form.css et pages/desktop/admin/*.css), qui
+   définissent un fond blanc opaque sans `color`. Sans ce préfixe le
+   texte blanc hérité reste invisible sur le fond blanc des autres
+   règles, sauf en :focus (qui est plus spécifique et restaure le
+   fond translucide). */
+.auth-box .form-input {
   width: 100%;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.1);
@@ -112,25 +123,40 @@ body {
   transition: all 0.3s ease;
 }
 
-.form-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+.auth-box .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.form-input:focus {
+.auth-box .form-input:focus {
   outline: none;
   border-color: var(--primary);
   background: rgba(255, 255, 255, 0.15);
 }
 
-.form-input.error {
+.auth-box .form-input.error {
   border-color: var(--danger);
+}
+
+/* Override autofill navigateur (Chrome/Edge) : sans cette règle, la
+   propagation auto repeint l'input avec un fond clair + sa propre
+   couleur de texte, ce qui peut redonner du texte invisible sur le
+   thème sombre des pages auth. Box-shadow inset 1000px masque le
+   fond auto, -webkit-text-fill-color force la couleur du texte. */
+.auth-box .form-input:-webkit-autofill,
+.auth-box .form-input:-webkit-autofill:hover,
+.auth-box .form-input:-webkit-autofill:focus,
+.auth-box .form-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset;
+  caret-color: #fff;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 .input-group {
   position: relative;
 }
 
-.input-group .form-input {
+.auth-box .input-group .form-input {
   padding-right: 45px;
 }
 
@@ -282,7 +308,7 @@ body {
 }
 
 .auth-footer p {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
   margin: 0;
 }

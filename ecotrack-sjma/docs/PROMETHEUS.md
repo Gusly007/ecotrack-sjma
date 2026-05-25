@@ -235,10 +235,10 @@ ecotrack_signalements_urgents > 0
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/metrics/alerts` | Liste des alertes (filtrable) |
-| `GET /api/metrics/alerts?severity=critical` | Filtrer par sévérité |
-| `GET /api/metrics/alerts?service=service-iot` | Filtrer par service |
-| `GET /api/metrics/alerts/counts` | Compteurs par sévérité |
+| `GET /api/V1/metrics/alerts` | Liste des alertes (filtrable) |
+| `GET /api/V1/metrics/alerts?severity=critical` | Filtrer par sévérité |
+| `GET /api/V1/metrics/alerts?service=service-iot` | Filtrer par service |
+| `GET /api/V1/metrics/alerts/counts` | Compteurs par sévérité |
 
 ### Paramètres de filtrage
 
@@ -296,14 +296,14 @@ ecotrack_signalements_urgents > 0
 
 ```javascript
 // Récupérer toutes les alertes
-const { alerts, counts, total } = await fetch('/api/metrics/alerts').then(r => r.json());
+const { alerts, counts, total } = await fetch('/api/V1/metrics/alerts').then(r => r.json());
 
 // Badge compteur (pour header/notification)
-const { counts } = await fetch('/api/metrics/alerts/counts').then(r => r.json());
+const { counts } = await fetch('/api/V1/metrics/alerts/counts').then(r => r.json());
 // counts = { critical: 1, warning: 3, info: 0 }
 
 // Filtrer critiques seulement
-const crit = await fetch('/api/metrics/alerts?severity=critical').then(r => r.json());
+const crit = await fetch('/api/V1/metrics/alerts?severity=critical').then(r => r.json());
 ```
 
 ---
@@ -377,13 +377,13 @@ ecotrack:services:health_ratio * 100
 
 ```bash
 # Targets status
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+curl -s http://localhost:9090/api/V1/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
 # Métriques brutes service
 curl -s http://localhost:3010/metrics | head -50
 
 # Alertes actives
-curl -s http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {name: .labels.alertname, state: .state}'
+curl -s http://localhost:9090/api/V1/v1/alerts | jq '.data.alerts[] | {name: .labels.alertname, state: .state}'
 
 # Recharger config
 curl -X POST http://localhost:9090/-/reload
@@ -409,5 +409,5 @@ curl -s http://localhost:3010/metrics | grep http
 ### Alertes non déclenchées
 ```bash
 # Vérifier que la condition est vraie
-curl "http://localhost:9090/api/v1/query?query=<votre_requete>"
+curl "http://localhost:9090/api/V1/v1/query?query=<votre_requete>"
 ```

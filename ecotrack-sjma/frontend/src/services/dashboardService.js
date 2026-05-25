@@ -2,7 +2,7 @@ import api from "./api";
 
 export const dashboardService = {
   async getStats() {
-    const response = await api.get("/api/dashboard/stats");
+    const response = await api.get("/api/V1/dashboard/stats");
     return response.data;
   },
 };
@@ -39,8 +39,8 @@ function extractPaginated(payload) {
 
 export async function fetchDashboardData({ activePage = 1, activeLimit = 6 } = {}) {
   const [statsResult, tourneesResult, notificationsResult] = await Promise.allSettled([
-    api.get("/api/routes/stats/dashboard"),
-    api.get("/api/routes/tournees", {
+    api.get("/api/V1/routes/stats/dashboard"),
+    api.get("/api/V1/routes/tournees", {
       params: {
         statut: "EN_COURS",
         page: activePage,

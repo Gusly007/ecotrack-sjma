@@ -2,6 +2,7 @@ const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSc
 const { optimizeRoute, estimateDuration, FUEL_CONSUMPTION_PER_100KM } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
 const cacheService = require('./cacheService');
+const { emitWsForUser } = require('../utils/notifyStaff');
 
 const TOURNEE_TTL = 60; // 1 minute
 const TOURNEES_LIST_TTL = 30; // 30 seconds
@@ -22,11 +23,34 @@ class TourneeService {
     this.collecteRepo = collecteRepository;
   }
 
+  async _notifyAgentAssigned(agentId, tournee) {
+    try {
+      const zoneName = tournee.zone_nom
+        || (tournee.id_zone ? await this.tourneeRepo.getZoneName(tournee.id_zone) : null)
+        || 'Zone inconnue';
+      const dateStr = tournee.date_tournee
+        ? new Date(tournee.date_tournee).toLocaleDateString('fr-FR')
+        : "aujourd'hui";
+      const heure = (tournee.heure_debut_prevue || '08:00:00').slice(0, 5);
+      const corps = `Vous avez été assigné à la tournée ${tournee.code} pour le ${dateStr} à ${heure} — Zone : ${zoneName}.`;
+      await this.tourneeRepo.db.query(
+        `INSERT INTO notification (id_utilisateur, type, titre, corps, priorite, categorie)
+         VALUES ($1, 'TOURNEE', 'Nouvelle tournée assignée', $2, 2, 'TOURNEE')`,
+        [agentId, corps]
+      );
+      emitWsForUser(agentId); // WS temps-réel + invalidation cache
+    } catch { /* non-critical */ }
+  }
+
   async createTournee(data) {
     const validated = validateSchema(createTourneeSchema, data);
     const result = await this.tourneeRepo.create(validated);
 
     await cacheService.invalidatePattern('tournee:*');
+
+    if (result.id_agent) {
+      await this._notifyAgentAssigned(result.id_agent, result);
+    }
 
     return result;
   }
@@ -87,6 +111,10 @@ class TourneeService {
     await cacheService.del(`tournee:${id}`);
     await cacheService.invalidatePattern('tournee:*');
 
+    if (validated.id_agent && validated.id_agent !== tournee.id_agent) {
+      await this._notifyAgentAssigned(validated.id_agent, updated);
+    }
+
     return updated;
   }
 
@@ -129,6 +157,12 @@ class TourneeService {
       throw ApiError.notFound(`Tournée ${id} introuvable`);
     }
     return this.tourneeRepo.findEtapes(id);
+  }
+
+  async getEtapeById(etapeId) {
+    const etape = await this.tourneeRepo.findEtapeById(etapeId);
+    if (!etape) throw ApiError.notFound(`Étape ${etapeId} introuvable`);
+    return etape;
   }
 
   async getTourneeProgress(id) {
@@ -227,6 +261,10 @@ class TourneeService {
 
     await this.tourneeRepo.addEtapes(tournee.id_tournee, etapes);
 
+    if (id_agent) {
+      await this._notifyAgentAssigned(id_agent, { ...tournee, zone_nom: nomZone });
+    }
+
     return {
       tournee,
       optimisation: {
@@ -303,6 +341,13 @@ class TourneeService {
         longitude: parseFloat(conteneur.longitude)
       }))
     };
+  }
+
+  // Feed prochaines tournées pour l'app citoyen (3 prochaines par défaut).
+  // Pas de cache : la home citoyen fait peu d'appels et le countdown doit
+  // refléter l'état réel (passage à EN_COURS, etc.).
+  async getUpcomingPublic({ limit = 5 } = {}) {
+    return this.tourneeRepo.findUpcomingPublic({ limit });
   }
 }
 

@@ -7,7 +7,7 @@ describe('E2E - User Profile Workflow', () => {
 
   beforeAll(async () => {
     try {
-      const loginRes = await axios.post(`${BASE_URL}/api/auth/login`, {
+      const loginRes = await axios.post(`${BASE_URL}/api/V1/auth/login`, {
         email: process.env.TEST_EMAIL || 'admin@ecotrack.com',
         password: process.env.TEST_PASSWORD || 'Admin123!'
       });
@@ -17,7 +17,7 @@ describe('E2E - User Profile Workflow', () => {
 
   it('devrait récupérer le profil utilisateur', async () => {
     if (!authToken) return;
-    const res = await axios.get(`${BASE_URL}/api/users/me`, {
+    const res = await axios.get(`${BASE_URL}/api/V1/users/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     expect(res.status).toBe(200);
@@ -25,7 +25,7 @@ describe('E2E - User Profile Workflow', () => {
 
   it('devrait mettre à jour le profil', async () => {
     if (!authToken) return;
-    const res = await axios.put(`${BASE_URL}/api/users/me`,
+    const res = await axios.put(`${BASE_URL}/api/V1/users/me`,
       { prenom: 'Test' },
       { headers: { Authorization: `Bearer ${authToken}` } }
     );
@@ -34,7 +34,7 @@ describe('E2E - User Profile Workflow', () => {
 
   it('devrait changer le mot de passe', async () => {
     if (!authToken) return;
-    const res = await axios.post(`${BASE_URL}/api/users/change-password`,
+    const res = await axios.post(`${BASE_URL}/api/V1/users/change-password`,
       { oldPassword: 'old', newPassword: 'new' },
       { headers: { Authorization: `Bearer ${authToken}` } }
     );
@@ -45,12 +45,12 @@ describe('E2E - User Profile Workflow', () => {
 describe('E2E - Role Permissions', () => {
   it('devrait vérifier les permissions ADMIN', async () => {
     try {
-      const loginRes = await axios.post(`${BASE_URL}/api/auth/login`, {
+      const loginRes = await axios.post(`${BASE_URL}/api/V1/auth/login`, {
         email: 'admin@ecotrack.com',
         password: 'Admin123!'
       });
       const token = loginRes.data?.token;
-      const res = await axios.get(`${BASE_URL}/api/admin/users`, {
+      const res = await axios.get(`${BASE_URL}/api/V1/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       expect([200, 401]).toContain(res.status);
@@ -59,7 +59,7 @@ describe('E2E - Role Permissions', () => {
 
   it('devrait refuser l\'accès GESTIONNAIRE aux routes admin', async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/admin/settings`, {
+      const res = await axios.get(`${BASE_URL}/api/V1/admin/settings`, {
         headers: { Authorization: `Bearer token-gestionnaire` }
       });
       expect([403, 401]).toContain(res.status);

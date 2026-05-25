@@ -1,6 +1,7 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
-import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml } from './emailTemplates.js';
+import sanitizeHtmlLib from 'sanitize-html';
+import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
 const logger = {
@@ -76,16 +77,36 @@ export const sanitizeHtml = (unsafeHtml) => {
     .replace(/\//g, '&#x2F;');
 };
 
-export const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, templateHtml) => {
   try {
     await ensureTransporter();
     logger.info(`[Email] Envoi vers ${to}...`);
-    
+    if (typeof templateHtml !== 'string' || templateHtml.length === 0) {
+      throw new TypeError('Email HTML template must be a non-empty string');
+    }
+    const safeHtml = sanitizeHtmlLib(templateHtml, {
+      allowedTags: sanitizeHtmlLib.defaults.allowedTags.concat([
+        'html', 'head', 'body', 'meta', 'style',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+        'img', 'span', 'div', 'center', 'font',
+      ]),
+      allowedAttributes: {
+        '*': ['style', 'class', 'align', 'width', 'height', 'bgcolor', 'border', 'cellpadding', 'cellspacing'],
+        'a': ['href', 'target', 'rel'],
+        'img': ['src', 'alt', 'width', 'height'],
+        'meta': ['charset', 'name', 'content', 'http-equiv'],
+        'td': ['colspan', 'rowspan', 'valign'],
+        'th': ['colspan', 'rowspan', 'valign'],
+        'font': ['color', 'face', 'size'],
+      },
+      allowedSchemes: ['http', 'https', 'mailto'],
+      allowedSchemesByTag: { img: ['data', 'http', 'https'] },
+    });
     const info = await transporter.sendMail({
       from: env.smtp.from || '"EcoTrack" <noreply@ecotrack.fr>',
       to,
       subject,
-      html
+      html: safeHtml,
     });
 
     logger.info(`[Email] SUCCES! Envoyé à ${to}`);
@@ -103,8 +124,13 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 
-export const sendPasswordResetEmail = async (email, resetToken) => {
-  const resetUrl = `${env.appUrl}/reset-password?token=${resetToken}`;
+// `from` ('citoyen' | undefined) — quand la requête vient du flow mobile
+// citoyen, on pointe le lien email vers /citoyen/reset-password (page isolée
+// qui redirige vers /citoyen/login après succès). Sinon on garde le chemin
+// /reset-password partagé (admin / gestionnaire / agent).
+export const sendPasswordResetEmail = async (email, resetToken, { from } = {}) => {
+  const path = from === 'citoyen' ? '/citoyen/reset-password' : '/reset-password';
+  const resetUrl = `${env.appUrl}${path}?token=${resetToken}`;
   const resetHtml = getPasswordResetHtml(resetUrl, env.appUrl);
   return sendEmail(email, 'Réinitialisation de votre mot de passe - EcoTrack', resetHtml);
 };
@@ -112,6 +138,14 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
 export const sendWelcomeEmail = async (email, prenom) => {
   const welcomeHtml = getWelcomeHtml(prenom, env.appUrl);
   return sendEmail(email, 'Bienvenue sur EcoTrack !', welcomeHtml);
+};
+
+// Envoie le code d'activation 6 chiffres pour le self-registration citoyen.
+// Distinct de sendAdminCreatedUserEmail (qui envoie un mot de passe temporaire
+// pour les comptes créés par un admin — destiné aux rôles AGENT/GESTIONNAIRE/ADMIN).
+export const sendCitoyenActivationEmail = async (email, prenom, code) => {
+  const html = getCitoyenActivationCodeHtml(prenom, code, env.appUrl);
+  return sendEmail(email, "Activez votre compte EcoTrack", html);
 };
 
 export const sendAdminCreatedUserEmail = async (email, prenom, nom, role, password) => {

@@ -35,6 +35,11 @@
   transition: border-color 0.2s;
   font-family: inherit;
   background-color: #fff;
+}
+
+/* Curseur "main" réservé aux <select> — sur un input text/email/password
+   le navigateur affiche déjà le caret texte natif et `pointer` est trompeur. */
+select.form-input {
   cursor: pointer;
 }
 

@@ -565,7 +565,7 @@ $alert_severity = [critical, warning, info]
 ### API Endpoints pour Frontend
 
 ```javascript
-// GET /api/metrics/overview
+// GET /api/V1/metrics/overview
 {
   infrastructure: {
     cpu: { current: 78, avg_1h: 65, max: 95 },
@@ -608,7 +608,7 @@ $alert_severity = [critical, warning, info]
   }
 }
 
-// GET /api/metrics/history?metric=cpu&period=24h
+// GET /api/V1/metrics/history?metric=cpu&period=24h
 {
   metric: 'cpu',
   period: '24h',
@@ -619,7 +619,7 @@ $alert_severity = [critical, warning, info]
   ]
 }
 
-// GET /api/alerts
+// GET /api/V1/alerts
 {
   alerts: [
     {
@@ -731,13 +731,13 @@ scrape_configs:
 
 ```bash
 # Vérifier métriques
-curl http://localhost:9090/api/v1/query?query=up
+curl http://localhost:9090/api/V1/v1/query?query=up
 
 # Tester alerte
-curl http://localhost:9090/api/v1/alerts
+curl http://localhost:9090/api/V1/v1/alerts
 
 # Voir targets
-curl http://localhost:9090/api/v1/targets | jq
+curl http://localhost:9090/api/V1/v1/targets | jq
 
 # Logs service
 docker compose logs -f service-iot

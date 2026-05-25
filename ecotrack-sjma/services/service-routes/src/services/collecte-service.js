@@ -1,6 +1,7 @@
 const { validateSchema, collecteSchema } = require('../validators/collecte.validator');
 const { validateSchema: validateTournee, anomalieSchema } = require('../validators/tournee.validator');
 const ApiError = require('../utils/api-error');
+const { notifyAllStaff } = require('../utils/notifyStaff');
 
 class CollecteService {
   constructor(collecteRepository, tourneeRepository) {
@@ -45,7 +46,7 @@ class CollecteService {
       validated.quantite_kg
     );
 
-    // Vérifier si toutes les étapes sont collectées → terminer la tournée
+    // Vérifier si toutes les étapes sont collectées
     const progress = await this.collecteRepo.getTourneeProgress(tourneeId);
     const allDone =
       parseInt(progress.total_etapes) > 0 &&
@@ -77,13 +78,35 @@ class CollecteService {
       throw ApiError.badRequest('Anomalie signalable uniquement pour une tournée EN_COURS ou PLANIFIEE');
     }
 
-    return this.collecteRepo.reportAnomalie(
+    const anomalie = await this.collecteRepo.reportAnomalie(
       tourneeId,
       validated.id_conteneur,
       agentId,
       validated.type_anomalie,
       validated.description
     );
+
+    // Notifier gestionnaires + admins
+    let conteneurUid = `#${validated.id_conteneur}`;
+    try {
+      const uidRow = await this.collecteRepo.db.query(
+        'SELECT uid FROM conteneur WHERE id_conteneur = $1', [validated.id_conteneur]
+      );
+      if (uidRow.rows[0]?.uid) conteneurUid = uidRow.rows[0].uid;
+    } catch { /* ignore */ }
+    const GRAVITE_PRIORITE = { Critique: 1, Haute: 2, Moyenne: 3, Basse: 4 };
+    const gravite  = validated.gravite || 'Moyenne';
+    const priorite = GRAVITE_PRIORITE[gravite] ?? 3;
+    const typeLabel = validated.type_anomalie.replace(/_/g, ' ');
+    await notifyAllStaff(this.collecteRepo.db, {
+      type:      'ALERTE',
+      titre:     `[${gravite.toUpperCase()}] Anomalie — ${conteneurUid}`,
+      corps:     `Type : ${typeLabel}\nGravité : ${gravite}\nTournée : ${tourneeId}\n${validated.description || ''}`.trim(),
+      priorite,
+      categorie: 'ALERTE',
+    });
+
+    return anomalie;
   }
 
   async getCollectesByTournee(tourneeId) {

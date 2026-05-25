@@ -76,7 +76,7 @@ docker logs ecotrack-grafana -f
 docker exec -it ecotrack-grafana grafana-cli admin reset-admin-password nouveau_mot_de_passe
 
 # Import dashboard via API
-curl -X POST http://localhost:3001/api/dashboards/import \
+curl -X POST http://localhost:3001/api/V1/dashboards/import \
   -H "Content-Type: application/json" \
   -d @monitoring/grafana/dashboards/ecotrack-overview.json
 ```

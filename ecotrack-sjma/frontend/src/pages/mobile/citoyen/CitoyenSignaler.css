@@ -1,0 +1,382 @@
+.citoyen-signaler {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: #fff;
+  overflow: hidden;
+}
+
+.signaler-body {
+  flex: 1;
+  padding: 16px 18px 96px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Section heading ---------- */
+.sig-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sig-section-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+/* ---------- Identifier: 2-column action cards ---------- */
+.sig-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sig-action-card {
+  background: #fff;
+  border: 2px dashed #cfd8dc;
+  border-radius: 14px;
+  padding: 18px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2e3b44;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sig-action-card i {
+  font-size: 1.5rem;
+  color: #4CAF50;
+}
+.sig-action-card:hover,
+.sig-action-card:focus-visible {
+  border-color: #4CAF50;
+  background: #f6fbf7;
+  outline: none;
+}
+
+/* ---------- UID fallback input ---------- */
+.sig-uid-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  outline: none;
+  background: #fafafa;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sig-uid-input:focus {
+  border-color: #4CAF50;
+  background: #fff;
+}
+
+/* ---------- Green confirmation card ---------- */
+.sig-container-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eaf6ec;
+  border: 1px solid #c8e6c9;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.sig-container-card > i {
+  font-size: 1.2rem;
+  color: #2e7d32;
+}
+.sig-container-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sig-container-card strong {
+  color: #1b5e20;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.sig-container-card span {
+  color: #3c6840;
+  font-size: 0.8rem;
+}
+
+/* ---------- Type de problème grid ---------- */
+.sig-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sig-type-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #37474f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sig-type-card i {
+  font-size: 1.35rem;
+  color: #78909c;
+  transition: color 0.15s;
+}
+.sig-type-card.active {
+  border-color: #4CAF50;
+  background: #eaf6ec;
+  color: #1b5e20;
+}
+.sig-type-card.active i {
+  color: #2e7d32;
+}
+.sig-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ---------- Photo drop ---------- */
+.sig-photo-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 110px;
+  border: 2px dashed #d0d7dc;
+  border-radius: 14px;
+  background: #fafbfc;
+  color: #8a96a0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 16px;
+  overflow: hidden;
+}
+.sig-photo-drop i {
+  font-size: 1.4rem;
+  color: #a0adb5;
+}
+.sig-photo-drop img {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.sig-photo-drop:hover {
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+.sig-photo-drop:hover i {
+  color: #4CAF50;
+}
+
+/* ---------- Urgence pills ---------- */
+.sig-urgence-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.sig-urgence-pill {
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #455a64;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sig-urgence-pill:hover {
+  border-color: #b0bec5;
+}
+
+/* ---------- Description textarea ---------- */
+.sig-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sig-textarea:focus {
+  border-color: #4CAF50;
+  background: #fff;
+}
+
+/* ---------- Submit ---------- */
+.sig-submit-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(90deg, #43a047 0%, #2e7d32 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(76, 175, 80, 0.25);
+  transition: transform 0.1s, box-shadow 0.15s, opacity 0.15s;
+}
+.sig-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.sig-submit-btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.sig-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+/* Spinner reused from global styles; fallback */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sig-spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes sig-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -------- Legacy styles kept for success page compatibility -------- */
+.sig-btn-primary {
+  flex: 1;
+  padding: 14px;
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sig-btn-outline {
+  flex: 1;
+  padding: 14px;
+  background: transparent;
+  color: #555;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* ---------- Scanner QR (modale plein-écran) ---------- */
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  animation: qr-fade-in 0.18s ease-out;
+}
+.qr-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: qr-slide-up 0.22s ease-out;
+}
+.qr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a1a2e;
+}
+.qr-modal-header i {
+  color: #4CAF50;
+  margin-right: 6px;
+}
+.qr-modal-close {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+}
+.qr-modal-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+}
+.qr-modal-error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.qr-modal-error i {
+  margin-right: 6px;
+}
+.qr-modal-error span {
+  color: #888;
+  font-size: 0.78rem;
+}
+@keyframes qr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes qr-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@media (min-width: 600px) {
+  .qr-modal-overlay { align-items: center; }
+  .qr-modal { border-radius: 16px; max-width: 420px; }
+}

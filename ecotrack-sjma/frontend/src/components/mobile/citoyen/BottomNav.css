@@ -1,0 +1,69 @@
+/* ==================== BOTTOM NAVIGATION ==================== */
+
+.mobile-bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0 max(env(safe-area-inset-bottom, 0px), 12px);
+  background: #fff;
+  border-top: 1px solid #eee;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #aaa;
+  font-size: 0.65rem;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item i {
+  font-size: 1.2rem;
+}
+
+.mobile-nav-item.active {
+  color: #4CAF50;
+}
+
+/* FAB center button */
+.mobile-nav-fab {
+  background: #4CAF50;
+  color: #fff !important;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -20px;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  font-size: 1.2rem;
+  flex-direction: row;
+  gap: 0;
+  padding: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mobile-nav-fab:active {
+  transform: scale(0.93);
+}
+
+.mobile-nav-fab i {
+  font-size: 1.2rem;
+}
+
+.mobile-nav-fab span {
+  display: none;
+}

@@ -1,24 +1,23 @@
 // Rôle du fichier : point d'entrée Express, routes et gestion d'erreurs.
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import helmet from 'helmet';
-import swaggerUi from 'swagger-ui-express';
-import { ZodError } from 'zod';
 import morgan from 'morgan';
-import swaggerSpec from './config/swagger.js';
-import env, { validateEnv } from './config/env.js';
+import client from 'prom-client';
+import swaggerUi from 'swagger-ui-express';
 import pool, { ensureGamificationTables } from './config/database.js';
+import env, { validateEnv } from './config/env.js';
 import { publicLimiter } from './config/rateLimit.js';
+import swaggerSpec from './config/swagger.js';
+import { errorHandler } from './middleware/errorHandler.js';
 import actionsRoutes from './routes/actions.js';
 import badgesRoutes from './routes/badges.js';
-import defisRoutes from './routes/defis.js';
 import classementRoutes from './routes/classement.js';
+import defisRoutes from './routes/defis.js';
 import notificationsRoutes from './routes/notifications.js';
 import statsRoutes from './routes/stats.js';
-import logger from './utils/logger.js';
-import client from 'prom-client';
-import { errorHandler } from './middleware/errorHandler.js';
 import centralizedLogging from './services/centralizedLogging.js';
+import logger from './utils/logger.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -50,7 +49,19 @@ if (env.nodeEnv !== 'test') {
 
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
     hsts: env.nodeEnv === 'production' ? undefined : false
   })
@@ -58,6 +69,20 @@ app.use(
 
 app.use(cors());
 app.use(express.json());
+
+// Populate req.user from gateway-forwarded headers (x-user-id / x-user-role).
+// Sans cette ligne, requirePermission renvoie 401 sur toute requête —
+// y compris l'appel interne service-routes → service-gamifications
+// (gamificationClient) après création d'un signalement, et les calls
+// /api/V1/gamification/* depuis le mobile citoyen.
+app.use((req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  const userRole = req.headers['x-user-role'];
+  if (userId && userRole) {
+    req.user = { id: parseInt(userId, 10), role: userRole };
+  }
+  next();
+});
 app.use(morgan('combined', {
   stream: {
     write: (message) => {
@@ -71,7 +96,7 @@ app.get('/health', (req, res) => {
 });
 
 // Health check DB
-app.get('/health/db', async (req, res) => {
+app.get('/health/db', publicLimiter, async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'up' });

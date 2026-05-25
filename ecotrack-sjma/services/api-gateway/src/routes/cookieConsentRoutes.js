@@ -5,35 +5,35 @@ import { requireRole } from '../middleware/auth.js';
 const router = express.Router();
 
 /**
- * @route POST /api/cookies/consent
+ * @route POST /api/V1/cookies/consent
  * @desc Enregistrer le consentement aux cookies (public)
  * @access Public
  */
 router.post('/consent', CookieConsentController.recordConsent);
 
 /**
- * @route GET /api/cookies/consent/:sessionId
+ * @route GET /api/V1/cookies/consent/:sessionId
  * @desc Récupérer le consentement existant (public)
  * @access Public
  */
 router.get('/consent/:sessionId', CookieConsentController.getConsent);
 
 /**
- * @route PATCH /api/cookies/consent/:sessionId
+ * @route PATCH /api/V1/cookies/consent/:sessionId
  * @desc Mettre à jour le consentement (public)
  * @access Public
  */
 router.patch('/consent/:sessionId', CookieConsentController.updateConsent);
 
 /**
- * @route DELETE /api/cookies/consent/:sessionId
+ * @route DELETE /api/V1/cookies/consent/:sessionId
  * @desc Supprimer le consentement (droit à l'oubli - RGPD) (public)
  * @access Public
  */
 router.delete('/consent/:sessionId', CookieConsentController.deleteConsent);
 
 /**
- * @route GET /api/cookies/stats
+ * @route GET /api/V1/cookies/stats
  * @desc Récupérer statistiques de consentement (admin)
  * @access Admin
  */

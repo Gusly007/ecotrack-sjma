@@ -23,7 +23,8 @@ export const UserRepository = {
       `UPDATE UTILISATEUR
        SET prenom = COALESCE($1, prenom),
            nom = COALESCE($2, nom),
-           email = COALESCE($3, email)
+           email = COALESCE($3, email),
+           updated_at = CURRENT_TIMESTAMP
        WHERE id_utilisateur = $4
        RETURNING ${userProfileColumns}`,
       [prenom, nom, email, userId]
@@ -46,7 +47,7 @@ export const UserRepository = {
   },
   async getProfileWithStats(userId) {
     const result = await pool.query(
-      `SELECT 
+      `SELECT
           u.id_utilisateur,
           u.email,
           u.prenom,
@@ -55,6 +56,9 @@ export const UserRepository = {
           u.points,
           u.date_creation,
           u.est_active,
+          u.avatar_url,
+          u.avatar_thumbnail,
+          u.avatar_mini,
           COUNT(DISTINCT ub.id_badge) as badge_count
         FROM UTILISATEUR u
         LEFT JOIN user_badge ub ON u.id_utilisateur = ub.id_utilisateur

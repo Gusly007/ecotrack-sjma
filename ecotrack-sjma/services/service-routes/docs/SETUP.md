@@ -93,7 +93,7 @@ curl http://localhost:3012/health
 ### 2. API REST
 
 ```bash
-curl http://localhost:3012/api/routes/stats/dashboard
+curl http://localhost:3012/api/V1/routes/stats/dashboard
 # { "success": true, "data": { "tournees": { ... } } }
 ```
 

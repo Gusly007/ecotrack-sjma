@@ -181,7 +181,7 @@ npm start
 
 #### Lister les conteneurs
 ```http
-GET /api/containers?page=1&limit=20
+GET /api/V1/containers?page=1&limit=20
 ```
 
 Paramètres de query:
@@ -207,7 +207,7 @@ Réponse:
 
 #### Créer un conteneur
 ```http
-POST /api/containers
+POST /api/V1/containers
 Content-Type: application/json
 
 {
@@ -225,12 +225,12 @@ Content-Type: application/json
 
 #### Obtenir un conteneur
 ```http
-GET /api/containers/:id
+GET /api/V1/containers/:id
 ```
 
 #### Modifier un conteneur
 ```http
-PATCH /api/containers/:id
+PATCH /api/V1/containers/:id
 Content-Type: application/json
 
 {
@@ -241,7 +241,7 @@ Content-Type: application/json
 
 #### Changer le statut
 ```http
-PATCH /api/containers/:id/status
+PATCH /api/V1/containers/:id/status
 Content-Type: application/json
 
 {
@@ -251,19 +251,19 @@ Content-Type: application/json
 
 #### Historique des statuts
 ```http
-GET /api/containers/:id/status/history
+GET /api/V1/containers/:id/status/history
 ```
 
 #### Supprimer un conteneur
 ```http
-DELETE /api/containers/:id
+DELETE /api/V1/containers/:id
 ```
 
 ### Statistiques
 
 #### Tableau de bord global
 ```http
-GET /api/stats/dashboard
+GET /api/V1/stats/dashboard
 ```
 
 Retourne:
@@ -276,32 +276,32 @@ Retourne:
 
 #### Statistiques globales
 ```http
-GET /api/stats
+GET /api/V1/stats
 ```
 
 #### Distribution des niveaux de remplissage
 ```http
-GET /api/stats/fill-levels
+GET /api/V1/stats/fill-levels
 ```
 
 #### Statistiques par zone
 ```http
-GET /api/stats/by-zone?zoneId=1
+GET /api/V1/stats/by-zone?zoneId=1
 ```
 
 #### Statistiques par type
 ```http
-GET /api/stats/by-type?typeId=1
+GET /api/V1/stats/by-type?typeId=1
 ```
 
 #### Alertes actives
 ```http
-GET /api/stats/alerts
+GET /api/V1/stats/alerts
 ```
 
 #### Conteneurs critiques
 ```http
-GET /api/stats/critical?threshold=80&includeInactive=false
+GET /api/V1/stats/critical?threshold=80&includeInactive=false
 ```
 
 Paramètres:
@@ -310,7 +310,7 @@ Paramètres:
 
 #### Historique de remplissage
 ```http
-GET /api/stats/containers/:id/history?days=30
+GET /api/V1/stats/containers/:id/history?days=30
 ```
 
 Paramètres:
@@ -319,26 +319,26 @@ Paramètres:
 
 #### Statistiques de collecte
 ```http
-GET /api/stats/collections?startDate=2026-01-01&endDate=2026-01-31
+GET /api/V1/stats/collections?startDate=2026-01-01&endDate=2026-01-31
 ```
 
 #### Statistiques de maintenance
 ```http
-GET /api/stats/maintenance?startDate=2026-01-01&endDate=2026-01-31
+GET /api/V1/stats/maintenance?startDate=2026-01-01&endDate=2026-01-31
 ```
 
 ### Zones
 
 #### Lister les zones
 ```http
-GET /api/zones
+GET /api/V1/zones
 ```
 
 ### Types de conteneurs
 
 #### Lister les types
 ```http
-GET /api/typecontainers
+GET /api/V1/typecontainers
 ```
 
 ### Health check

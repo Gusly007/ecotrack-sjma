@@ -7,7 +7,8 @@
   max-width: 480px;
   margin: 0 auto;
   position: relative;
-  overflow: hidden;
+  /* overflow:hidden retiré — causait le clip des tooltips CSS */
+  overflow: clip; /* bloque le scroll parasite sans créer de stacking context */
 }
 
 .mobile-content {

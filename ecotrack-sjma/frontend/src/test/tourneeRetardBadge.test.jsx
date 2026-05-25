@@ -1,27 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import ToutesTourneesTable from '../components/desktop/gestionnaire/ToutesTourneesTable';
-import TourneesActivesPanel from '../components/desktop/gestionnaire/TourneesActivesPanel';
-import { fetchAllTournees, fetchActiveTournees } from '../services/tourneeService';
+import { fetchAllTournees } from '../services/tourneeService';
 
 vi.mock('../services/tourneeService', () => ({
   fetchAllTournees: vi.fn(),
-  fetchActiveTournees: vi.fn(),
 }));
 
-// Sous-composant TourneesEnCoursTable est utilisé par TourneesActivesPanel.
-// On le remplace par un stub minimaliste pour cibler uniquement la logique du panel.
-vi.mock('../components/desktop/gestionnaire/TourneesEnCoursTable', () => ({
-  default: ({ tourneesEnCours }) => (
-    <div data-testid="tournees-en-cours-stub">
-      {tourneesEnCours.map((t) => (
-        <div key={t.id} data-testid={`row-${t.id}`}>
-          <span data-testid={`status-${t.id}`}>{t.statusText}</span>
-          {t.estEnRetard && <span data-testid={`retard-${t.id}`}>RETARD</span>}
-        </div>
-      ))}
-    </div>
-  ),
+vi.mock('../components/desktop/gestionnaire/TourneeEditModal', () => ({
+  default: () => null,
 }));
 
 describe('Affichage du flag est_en_retard (3.9.0)', () => {
@@ -138,40 +125,4 @@ describe('Affichage du flag est_en_retard (3.9.0)', () => {
     });
   });
 
-  describe('TourneesActivesPanel', () => {
-    it("propage est_en_retard du backend vers la ligne (et n'utilise plus progression<=20)", async () => {
-      fetchActiveTournees.mockResolvedValueOnce({
-        data: [
-          {
-            id_tournee: 10,
-            statut: 'EN_COURS',
-            est_en_retard: true,
-            agent_prenom: 'Fa',
-            agent_nom: 'Sow',
-            zone_nom: 'Centre',
-            total_etapes: 10,
-            etapes_collectees: 8,
-          },
-          {
-            id_tournee: 11,
-            statut: 'EN_COURS',
-            est_en_retard: false, // 5% mais pas en retard -> on ne doit PAS le marquer
-            agent_prenom: 'Ga',
-            agent_nom: 'Ba',
-            zone_nom: 'Nord',
-            total_etapes: 20,
-            etapes_collectees: 1,
-          },
-        ],
-        pagination: { page: 1, pages: 1, total: 2, limit: 6 },
-      });
-
-      render(<TourneesActivesPanel pageSize={6} />);
-
-      await waitFor(() => expect(screen.getByTestId('row-T-10')).toBeInTheDocument());
-
-      expect(screen.getByTestId('retard-T-10')).toBeInTheDocument();
-      expect(screen.queryByTestId('retard-T-11')).not.toBeInTheDocument();
-    });
-  });
 });

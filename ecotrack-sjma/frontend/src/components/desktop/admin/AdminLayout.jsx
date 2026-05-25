@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ModalConfirmation } from '../../common';
+import { useNotifications } from '../../../hooks';
 import Sidebar from './Sidebar';
 import './AdminLayout.css';
 
@@ -10,7 +11,8 @@ export default function AdminLayout({ children }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  
+  const { unreadCount: notificationsCount } = useNotifications();
+
   const currentDate = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -18,7 +20,6 @@ export default function AdminLayout({ children }) {
     year: 'numeric'
   });
 
-  const notificationsCount = 5;
   const adminName = user?.prenom || user?.name || 'Admin';
 
   const handleLogout = () => {
@@ -49,7 +50,11 @@ export default function AdminLayout({ children }) {
           
           <div className="topbar-right">
             <span className="topbar-date">{currentDate}</span>
-            <button className="icon-btn">
+            <button
+              className="icon-btn"
+              data-tooltip="Notifications"
+              onClick={() => navigate('/admin/notifications')}
+            >
               <i className="fas fa-bell"></i>
               {notificationsCount > 0 && (
                 <span className="badge-notif">{notificationsCount}</span>

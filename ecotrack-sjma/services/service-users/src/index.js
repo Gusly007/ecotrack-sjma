@@ -1,30 +1,29 @@
-import express from 'express';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger.js';
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
 import cors from 'cors';
-import morgan from 'morgan';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
-import roleRoutes from './routes/roles.js';
-import notificationRoutes from './routes/notifications.js';
-import avatarRoutes from './routes/avatars.js';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import path from 'path';
+import client from 'prom-client';
+import swaggerUi from 'swagger-ui-express';
+import './config/cron-gdpr.js';
+import pool, { ensureAuthTables } from './config/database.js';
+import env, { loadDbConfig, validateEnv } from './config/env.js';
+import { publicLimiter } from './config/rateLimit.js';
+import swaggerSpec from './config/swagger.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
 import adminConfigRoutes from './routes/admin-config.js';
 import adminEnvironmentalConstantsRoutes from './routes/admin-environmental-constants.js';
-import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
+import authRoutes from './routes/auth.js';
+import avatarRoutes from './routes/avatars.js';
 import gdprRoutes from './routes/gdpr.route.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import { publicLimiter } from './config/rateLimit.js';
-import pool, { ensureAuthTables } from './config/database.js';
-import path from 'path';
-import env, { loadDbConfig } from './config/env.js';
-import { validateEnv } from './config/env.js';
-import helmet from 'helmet';
-import logger from './utils/logger.js';
-import client from 'prom-client';
+import notificationRoutes from './routes/notifications.js';
+import roleRoutes from './routes/roles.js';
+import userRoutes from './routes/users.js';
 import cacheService from './services/cacheService.js';
 import kafkaNotificationConsumer from './services/kafkaNotificationConsumer.js';
-import './config/cron-gdpr.js';
+import logger from './utils/logger.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -85,10 +84,30 @@ app.use(helmet({
 
 app.use(cors());
 
+// Rate-limit global sur /auth et /users. Bypass dev / localhost et override
+// par env (SERVICE_USERS_API_LIMIT_MAX / _WINDOW_MS) pour ne pas étouffer
+// le mobile citoyen — la home fait plusieurs appels /api/V1/users/* par mount.
+const apiLimiterLocalhost = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const apiLimiterHasLocalhost = (req) => {
+  const host = (req.headers?.host || '').toLowerCase();
+  const fwd = (req.headers?.['x-forwarded-host'] || '').toLowerCase();
+  return host.includes('localhost') || host.includes('127.0.0.1') || fwd.includes('localhost') || fwd.includes('127.0.0.1');
+};
+const apiLimiterShouldBypass = () => {
+  if (process.env.RATE_LIMIT_BYPASS_LOCAL === 'true') return true;
+  if (process.env.RATE_LIMIT_BYPASS_LOCAL === 'false') return false;
+  return (process.env.NODE_ENV || 'development') === 'development';
+};
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Trop de requêtes, veuillez réessayer plus tard'
+  windowMs: parseInt(process.env.SERVICE_USERS_API_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.SERVICE_USERS_API_LIMIT_MAX, 10) || 1000,
+  message: 'Trop de requêtes, veuillez réessayer plus tard',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    if (!apiLimiterShouldBypass()) return false;
+    return apiLimiterLocalhost.has(req.ip) || apiLimiterHasLocalhost(req);
+  }
 });
 app.use('/auth/', apiLimiter);
 app.use('/users/', apiLimiter);
@@ -146,8 +165,21 @@ app.use('/admin/environmental-constants', adminEnvironmentalConstantsRoutes);
 app.use('/admin/agent-performance', adminAgentPerformanceRoutes);
 app.use('/notifications', notificationRoutes);
 
-// Servir les avatars en tant que fichiers statiques
-app.use('/avatars', express.static(path.join(process.cwd(), 'storage/avatars')));
+// Servir les avatars en tant que fichiers statiques.
+//
+// On force `Cross-Origin-Resource-Policy: cross-origin` sur ce chemin pour
+// que le frontend citoyen (servi sur un port différent de l'API) puisse
+// charger les images via <img src>. Helmet met `same-origin` par défaut
+// et chaque avatar tomberait alors en alt-text. CORP=cross-origin est
+// sans risque ici parce que les URLs portent un nom de fichier basé sur
+// l'id utilisateur (non énumérable en pratique) et que tout le monde
+// ayant l'URL peut déjà voir l'image via la whitelist /avatars de la
+// gateway.
+app.use('/avatars', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(process.cwd(), 'storage/avatars')));
 
 // Route for Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 
 class DashboardController {
   /**
-   * GET /api/analytics/dashboard - AVEC PERFORMANCE AGENTS + CO2
+   * GET /api/V1/analytics/dashboard - AVEC PERFORMANCE AGENTS + CO2
    */
   static async getDashboard(req, res) {
     try {
@@ -72,7 +72,7 @@ class DashboardController {
   }
 
   /**
-   * GET /api/analytics/realtime
+   * GET /api/V1/analytics/realtime
    */
   static async getRealTimeStats(req, res) {
     try {
@@ -112,7 +112,7 @@ class DashboardController {
   }
 
   /**
-   * GET /api/analytics/heatmap
+   * GET /api/V1/analytics/heatmap
    */
   static async getHeatmap(req, res) {
     try {
@@ -159,7 +159,7 @@ class DashboardController {
   }
 
   /**
-   * GET /api/analytics/evolution
+   * GET /api/V1/analytics/evolution
    */
   static async getEvolution(req, res) {
     try {

@@ -1,22 +1,28 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import './NotificationsPage.css';
 
 const TYPE_LABELS = {
-  ALERTE: 'Alerte',
-  ADMIN_ALERTE: 'Alerte admin',
-  ADMIN_SERVICE: 'Service hors ligne',
-  ADMIN_SECURITE: 'Sécurité',
-  ADMIN_IOT: 'IoT',
-  ADMIN_PERFORMANCE: 'Performance',
-  ADMIN_SEUIL: 'Seuil',
-  ADMIN_ML: 'Machine Learning',
+  ALERTE:           'Alerte',
+  TOURNEE:          'Tournée',
+  SYSTEME:          'Système',
+  BADGE:            'Badge',
+  ADMIN_ALERTE:     'Alerte admin',
+  ADMIN_SERVICE:    'Service hors ligne',
+  ADMIN_SECURITE:   'Sécurité',
+  ADMIN_IOT:        'IoT',
+  ADMIN_PERFORMANCE:'Performance',
+  ADMIN_SEUIL:      'Seuil',
+  ADMIN_ML:         'Machine Learning',
 };
 
 const TYPE_COLORS = {
   ALERTE:           { bg: '#fff3e0', color: '#e65100' },
+  TOURNEE:          { bg: '#e8f5e9', color: '#2e7d32' },
+  SYSTEME:          { bg: '#e3f2fd', color: '#1565c0' },
+  BADGE:            { bg: '#fff8e1', color: '#f57f17' },
   ADMIN_ALERTE:     { bg: '#ffebee', color: '#c62828' },
   ADMIN_SERVICE:    { bg: '#fce4ec', color: '#ad1457' },
   ADMIN_SECURITE:   { bg: '#f3e5f5', color: '#6a1b9a' },
@@ -42,14 +48,14 @@ export default function NotificationsPage() {
   const isAdmin = role === 'ADMIN';
 
   const config = useMemo(() => ({
-    listPath:     isAdmin ? '/api/admin/notifications'          : '/api/notifications/list',
+    listPath:     isAdmin ? '/api/V1/admin/notifications'          : '/api/V1/notifications/list',
     markReadPath: (id) => isAdmin
-      ? `/api/admin/notifications/${id}/read`
-      : `/api/notifications/${id}/read`,
-    markAllPath:  isAdmin ? '/api/admin/notifications/read-all' : '/api/notifications/read-all',
+      ? `/api/V1/admin/notifications/${id}/read`
+      : `/api/V1/notifications/${id}/read`,
+    markAllPath:  isAdmin ? '/api/V1/admin/notifications/read-all' : '/api/V1/notifications/read-all',
     deletePath:   (id) => isAdmin
-      ? `/api/admin/notifications/${id}`
-      : `/api/notifications/${id}`,
+      ? `/api/V1/admin/notifications/${id}`
+      : `/api/V1/notifications/${id}`,
     backPath:     isAdmin ? '/admin' : '/gestionnaire',
   }), [isAdmin]);
 
@@ -273,6 +279,13 @@ export default function NotificationsPage() {
             <div
               key={notif.id_notification}
               className={`notif-row ${notif.est_lu ? 'is-read' : 'is-unread'}`}
+              title={[
+                notif.titre,
+                notif.corps,
+                `Type : ${TYPE_LABELS[notif.type] || notif.type}`,
+                notif.priorite != null && PRIORITY_CONFIG[notif.priorite] ? `Priorité : ${PRIORITY_CONFIG[notif.priorite].label}` : null,
+                notif.date_creation ? `Date : ${formatDate(notif.date_creation)}` : null,
+              ].filter(Boolean).join('\n')}
             >
               <span className={`notif-status-dot ${notif.est_lu ? 'read' : 'unread'}`}></span>
 

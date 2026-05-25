@@ -248,6 +248,8 @@ router.delete(
  *                   example: 5
  */
 router.get('/notifications/unread/count', controller.getUnreadCount);
+// Alias pour compatibilité avec les hooks frontend
+router.get('/notifications/unread-count', controller.getUnreadCount);
 
 // ─────────────────────────────────────────────────────────────
 //  GET /notifications/list (AVEC CACHE)

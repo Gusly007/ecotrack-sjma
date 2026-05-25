@@ -7,17 +7,24 @@ const rolePermissions = {
         'badges:read',
         'defis:read',
         'points:read',
-        'classement:read'
+        'classement:read',
+        // `gamification:self_action` lets a citizen trigger an action on their
+        // own id_utilisateur (e.g., after creating a signalement). The handler
+        // double-checks that req.user.id === body.id_utilisateur so a user can
+        // never award points to another account.
+        'gamification:self_action'
     ],
     AGENT: [
         'gamification:read',
         'badges:read',
         'defis:read',
         'points:read',
-        'classement:read'
+        'classement:read',
+        'gamification:self_action'
     ],
     GESTIONNAIRE: [
         'gamification:create',
+        'gamification:self_action',
         'gamification:read',
         'gamification:update',
         'gamification:delete',

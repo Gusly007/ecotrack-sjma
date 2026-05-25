@@ -1,0 +1,48 @@
+/* CitoyenRegister — réutilise les classes auth-*, form-input, btn-primary
+   de index.css. Ce fichier ne contient que les ajustements propres à
+   l'écran d'inscription. */
+
+.citoyen-register-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 6px;
+}
+
+/* Case d'acceptation obligatoire des CGU / politique de confidentialité,
+   placée juste au-dessus du bouton « Créer mon compte ». Hérite du palette
+   sombre auth-* (le formulaire vit dans .auth-box) et utilise accent-color
+   pour teindre la case sans dépendre d'un custom checkbox. */
+.citoyen-register-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 16px;
+}
+
+.citoyen-register-terms input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--primary, #4CAF50);
+  cursor: pointer;
+}
+
+.citoyen-register-terms-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+}
+
+.citoyen-register-terms-label a {
+  color: var(--primary-light);
+  text-decoration: none;
+}
+
+.citoyen-register-terms-label a:hover,
+.citoyen-register-terms-label a:focus {
+  text-decoration: underline;
+}

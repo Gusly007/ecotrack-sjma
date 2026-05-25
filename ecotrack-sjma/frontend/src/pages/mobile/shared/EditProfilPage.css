@@ -1,57 +1,3 @@
-.avatar-edit-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.avatar-preview {
-  position: relative;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: #e8f5e9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  border: 3px solid #4CAF50;
-}
-
-.avatar-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-preview i.fa-user-circle {
-  font-size: 4rem;
-  color: #4CAF50;
-}
-
-.avatar-overlay {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: #4CAF50;
-  color: #fff;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  border: 2px solid #fff;
-}
-
-.avatar-hint {
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: 8px;
-}
-
 .edit-profil-form {
   display: flex;
   flex-direction: column;
@@ -134,4 +80,73 @@
 
 .btn-outline-mobile:active {
   background: #f5f5f5;
+}
+
+.btn-danger-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: none;
+  background: #f44336;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-danger-mobile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Data / Delete sections */
+.edit-section-block {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+}
+
+.edit-section-block.edit-section-danger {
+  border-color: #ffcdd2;
+  background: #fff8f8;
+}
+
+.edit-section-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-section-desc {
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+/* Modal overlay */
+.mobile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-modal-card {
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 480px;
 }

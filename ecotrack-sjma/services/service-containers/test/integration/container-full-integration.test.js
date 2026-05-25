@@ -86,7 +86,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
     await pool.end();
   });
 
-  describe('POST /api/containers', () => {
+  describe('POST /api/V1/containers', () => {
     it('devrait créer un nouveau conteneur en base de données', async () => {
       const newContainer = {
         capacite_l: 1200,
@@ -98,7 +98,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
       };
 
       const response = await request(app)
-        .post('/api/containers')
+        .post('/api/V1/containers')
         .send(newContainer)
         .expect(201);
 
@@ -126,7 +126,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
       };
 
       await request(app)
-        .post('/api/containers')
+        .post('/api/V1/containers')
         .send(invalidContainer)
         .expect(400);
 
@@ -144,12 +144,12 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
       };
 
       const response1 = await request(app)
-        .post('/api/containers')
+        .post('/api/V1/containers')
         .send(container1Data)
         .expect(201);
 
       const response2 = await request(app)
-        .post('/api/containers')
+        .post('/api/V1/containers')
         .send(container1Data)
         .expect(201);
 
@@ -160,7 +160,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
     });
   });
 
-  describe('GET /api/containers/id/:id', () => {
+  describe('GET /api/V1/containers/id/:id', () => {
     let containerId;
 
     beforeEach(async () => {
@@ -176,7 +176,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait récupérer un conteneur par ID', async () => {
       const response = await request(app)
-        .get(`/api/containers/id/${containerId}`)
+        .get(`/api/V1/containers/id/${containerId}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('id_conteneur');
@@ -187,12 +187,12 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait retourner 404 si conteneur non trouvé', async () => {
       await request(app)
-        .get('/api/containers/id/99999')
+        .get('/api/V1/containers/id/99999')
         .expect(404);
     });
   });
 
-  describe('GET /api/containers/uid/:uid', () => {
+  describe('GET /api/V1/containers/uid/:uid', () => {
     let containerUid;
 
     beforeEach(async () => {
@@ -207,7 +207,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait récupérer un conteneur par UID', async () => {
       const response = await request(app)
-        .get(`/api/containers/uid/${containerUid}`);
+        .get(`/api/V1/containers/uid/${containerUid}`);
       
       if (response.status !== 200) {
         console.log('Error response:', response.status, response.body);
@@ -228,14 +228,14 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
       );
 
       const response = await request(app)
-        .get(`/api/containers/uid/${uid11}`)
+        .get(`/api/V1/containers/uid/${uid11}`)
         .expect(200);
 
       expect(response.body.uid).toBe(uid11);
     });
   });
 
-  describe('PATCH /api/containers/:id/status', () => {
+  describe('PATCH /api/V1/containers/:id/status', () => {
     let containerId;
 
     beforeEach(async () => {
@@ -251,7 +251,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait mettre à jour le statut et enregistrer l\'historique', async () => {
       const response = await request(app)
-        .patch(`/api/containers/${containerId}/status`)
+        .patch(`/api/V1/containers/${containerId}/status`)
         .send({ statut: 'EN_MAINTENANCE' })
         .expect(200);
 
@@ -277,7 +277,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('ne devrait pas changer le statut s\'il est déjà le même', async () => {
       const response = await request(app)
-        .patch(`/api/containers/${containerId}/status`)
+        .patch(`/api/V1/containers/${containerId}/status`)
         .send({ statut: 'ACTIF' })
         .expect(200);
 
@@ -296,7 +296,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
       for (const statut of validStatuts) {
         const response = await request(app)
-          .patch(`/api/containers/${containerId}/status`)
+          .patch(`/api/V1/containers/${containerId}/status`)
           .send({ statut })
           .expect(200);
         expect(response.body.statut).toBe(statut);
@@ -304,7 +304,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
     });
   });
 
-  describe('GET /api/containers', () => {
+  describe('GET /api/V1/containers', () => {
     beforeEach(async () => {
       // Créer plusieurs conteneurs de test
       await pool.query(
@@ -323,7 +323,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait récupérer tous les conteneurs avec pagination', async () => {
       const response = await request(app)
-        .get('/api/containers')
+        .get('/api/V1/containers')
         .query({ page: 1, limit: 10 })
         .expect(200);
 
@@ -333,7 +333,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait filtrer par statut', async () => {
       const response = await request(app)
-        .get('/api/containers')
+        .get('/api/V1/containers')
         .query({ statut: 'ACTIF' })
         .expect(200);
 
@@ -345,7 +345,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait filtrer par zone', async () => {
       const response = await request(app)
-        .get('/api/containers')
+        .get('/api/V1/containers')
         .query({ id_zone: testZoneId1 })
         .expect(200);
 
@@ -357,12 +357,12 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait supporter la pagination', async () => {
       const response1 = await request(app)
-        .get('/api/containers')
+        .get('/api/V1/containers')
         .query({ page: 1, limit: 2 })
         .expect(200);
 
       const response2 = await request(app)
-        .get('/api/containers')
+        .get('/api/V1/containers')
         .query({ page: 2, limit: 2 })
         .expect(200);
 
@@ -370,7 +370,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
     });
   });
 
-  describe('DELETE /api/containers/:id', () => {
+  describe('DELETE /api/V1/containers/:id', () => {
     let containerId;
 
     beforeEach(async () => {
@@ -386,7 +386,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait supprimer un conteneur', async () => {
       const response = await request(app)
-        .delete(`/api/containers/${containerId}`)
+        .delete(`/api/V1/containers/${containerId}`)
         .expect(200);
 
       expect(response.body.message).toContain('supprimé');
@@ -401,12 +401,12 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait retourner 404 si conteneur non trouvé', async () => {
       await request(app)
-        .delete('/api/containers/99999')
+        .delete('/api/V1/containers/99999')
         .expect(404);
     });
   });
 
-  describe('GET /api/containers/:id/status/history', () => {
+  describe('GET /api/V1/containers/:id/status/history', () => {
     let containerId;
 
     beforeEach(async () => {
@@ -430,7 +430,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
 
     it('devrait récupérer l\'historique des changements de statut', async () => {
       const response = await request(app)
-        .get(`/api/containers/${containerId}/status/history`)
+        .get(`/api/V1/containers/${containerId}/status/history`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -454,7 +454,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
       const newContainerId = newResult.rows[0].id_conteneur;
 
       const response = await request(app)
-        .get(`/api/containers/${newContainerId}/status/history`)
+        .get(`/api/V1/containers/${newContainerId}/status/history`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -464,7 +464,7 @@ const runIntegration = process.env.RUN_CONTAINER_INTEGRATION === '1';
     it('devrait utiliser la case CONTENEUR (majuscule) dans l\'historique', async () => {
       // Faire un changement de statut
       await request(app)
-        .patch(`/api/containers/${containerId}/status`)
+        .patch(`/api/V1/containers/${containerId}/status`)
         .send({ statut: 'INACTIF' })
         .expect(200);
 

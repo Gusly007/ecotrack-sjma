@@ -138,10 +138,7 @@ export const disableMfa = async (userId) => {
  * @param {string} secret
  */
 export const saveSetupSecret = async (userId, secret) => {
-  await AuthRepository.updateMfaSettings(userId, {
-    mfa_setup_secret: secret,
-    mfa_setup_secret_created_at: new Date()
-  });
+  await AuthRepository.updateUserMfaSetupSecret(userId, secret);
 };
 
 /**

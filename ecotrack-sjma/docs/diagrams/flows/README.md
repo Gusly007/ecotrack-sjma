@@ -16,6 +16,9 @@
 | 08 | Cache Strategy | [08-cache.mmd](./08-cache.mmd) | Redis cache, invalidation |
 | 09 | Logging & Monitoring | [09-logging-monitoring.mmd](./09-logging-monitoring.mmd) | Centralized logging, Grafana |
 | 10 | Request Flow | [10-request-flow.mmd](./10-request-flow.mmd) | API Gateway → Services |
+| 11 | Architecture App Citoyen Mobile | [11-citoyen-mobile-architecture.mmd](./11-citoyen-mobile-architecture.mmd) | Module isolé : pages, composants, `CitoyenAuthContext`, `citoyenApi`, `citoyenService` |
+| 12 | Auth Citoyen | [12-citoyen-auth-flows.mmd](./12-citoyen-auth-flows.mmd) | Inscription, activation par code, connexion, MFA partagé, refresh JWT |
+| 13 | Signalement + Gamification | [13-citoyen-signalement-gamification.mmd](./13-citoyen-signalement-gamification.mmd) | Création signalement, side-effect points/badges/défis |
 
 ## Utilisation
 

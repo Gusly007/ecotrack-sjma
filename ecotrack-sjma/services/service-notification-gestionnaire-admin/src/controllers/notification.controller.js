@@ -1,6 +1,7 @@
 'use strict';
 
 const notificationService = require('../services/notification.service');
+const { getWebSocketNotifService } = require('../services/websocketNotifService');
 
 class NotificationController {
   constructor() {
@@ -37,6 +38,9 @@ class NotificationController {
         corps
       });
 
+      const wsService = getWebSocketNotifService();
+      if (wsService) wsService.emitToUser(id_utilisateur, notification);
+
       return res.status(201).json(notification);
     } catch (err) {
       next(err);
@@ -62,6 +66,13 @@ class NotificationController {
       }
 
       const inserted = await notificationService.createBulkNotifications(notifications);
+
+      const wsService = getWebSocketNotifService();
+      if (wsService) {
+        for (const notif of inserted) {
+          wsService.emitToUser(notif.id_utilisateur, notif);
+        }
+      }
 
       return res.status(201).json({
         count: inserted.length,

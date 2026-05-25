@@ -45,12 +45,12 @@ src/
 │   
 │
 ├── services/                   # NOUVEAU - Services API
-│   ├── tourneeService.js       # /api/routes/*
-│   ├── containerService.js     # /api/containers/*
-│   ├── signalementService.js   # /api/signalements/* (Phase 2)
-│   ├── gamificationService.js  # /api/gamification/* (Phase 2)
+│   ├── tourneeService.js       # /api/V1/routes/*
+│   ├── containerService.js     # /api/V1/containers/*
+│   ├── signalementService.js   # /api/V1/signalements/* (Phase 2)
+│   ├── gamificationService.js  # /api/V1/gamification/* (Phase 2)
 │   ├── notificationService.js  # /notifications/*
-│   └── statsService.js         # /api/routes/stats/*
+│   └── statsService.js         # /api/V1/routes/stats/*
 │
 └── hooks/                      # NOUVEAU - Hooks
     ├── useGeolocation.js
@@ -93,15 +93,15 @@ src/
 
 | Endpoint | Usage |
 |----------|-------|
-| `GET /api/routes/my-tournee` | Tournee du jour |
-| `GET /api/routes/tournees/:id/etapes` | Etapes de la tournee |
-| `GET /api/routes/tournees/:id/progress` | Progression |
-| `PATCH /api/routes/tournees/:id/statut` | Demarrer/Terminer |
-| `POST /api/routes/tournees/:id/collecte` | Enregistrer collecte |
-| `POST /api/routes/tournees/:id/anomalie` | Signaler anomalie |
-| `GET /api/routes/tournees/:id/anomalies` | Lister anomalies |
-| `GET /api/routes/tournees/:id/map` | GeoJSON carte |
-| `GET /api/containers/uid/:uid` | Scan QR code |
-| `GET /api/routes/stats/dashboard` | Stats |
-| `GET /api/routes/stats/kpis` | KPIs |
+| `GET /api/V1/routes/my-tournee` | Tournee du jour |
+| `GET /api/V1/routes/tournees/:id/etapes` | Etapes de la tournee |
+| `GET /api/V1/routes/tournees/:id/progress` | Progression |
+| `PATCH /api/V1/routes/tournees/:id/statut` | Demarrer/Terminer |
+| `POST /api/V1/routes/tournees/:id/collecte` | Enregistrer collecte |
+| `POST /api/V1/routes/tournees/:id/anomalie` | Signaler anomalie |
+| `GET /api/V1/routes/tournees/:id/anomalies` | Lister anomalies |
+| `GET /api/V1/routes/tournees/:id/map` | GeoJSON carte |
+| `GET /api/V1/containers/uid/:uid` | Scan QR code |
+| `GET /api/V1/routes/stats/dashboard` | Stats |
+| `GET /api/V1/routes/stats/kpis` | KPIs |
 

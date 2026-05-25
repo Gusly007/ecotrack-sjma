@@ -20,7 +20,9 @@ class StatsRepository {
             AND heure_debut_prevue IS NOT NULL
             AND duree_prevue_min IS NOT NULL
             AND (date_tournee + heure_debut_prevue + duree_prevue_min * INTERVAL '1 minute') < NOW()
-            THEN 1 END) AS en_retard
+            THEN 1 END) AS en_retard,
+          COUNT(DISTINCT CASE WHEN statut = 'EN_COURS' AND id_agent IS NOT NULL
+            THEN id_agent END) AS agents_terrain
         FROM tournee
       `),
       this.db.query(`
@@ -265,6 +267,106 @@ class StatsRepository {
   }
 
 
+  /**
+   * Stats personnelles d'un agent sur une période + classement
+   * @param {number} agentId
+   * @param {string} period  'jour' | 'semaine' | 'mois'
+   */
+  async getAgentStats(agentId, period = 'semaine') {
+    const intervalMap = { jour: '1 day', semaine: '7 days', mois: '30 days' };
+    const interval = intervalMap[period] || '7 days';
+
+    const [statsResult, rankResult] = await Promise.all([
+      this.db.query(
+        `WITH agent_tournees AS (
+           SELECT id_tournee, statut, distance_reelle_km, distance_prevue_km
+           FROM tournee
+           WHERE id_agent = $1
+             AND date_tournee >= CURRENT_DATE - $2::interval
+         ),
+         etape_progress AS (
+           SELECT e.id_tournee,
+                  COUNT(*)                              AS total_etapes,
+                  COUNT(*) FILTER (WHERE e.collectee)  AS etapes_collectees
+           FROM etape_tournee e
+           WHERE e.id_tournee IN (SELECT id_tournee FROM agent_tournees)
+           GROUP BY e.id_tournee
+         ),
+         collecte_data AS (
+           SELECT t.id_tournee,
+                  COUNT(DISTINCT col.id_collecte) AS nb_collectes,
+                  COALESCE(SUM(col.quantite_kg), 0) AS total_kg
+           FROM agent_tournees t
+           LEFT JOIN collecte col ON col.id_tournee = t.id_tournee
+           GROUP BY t.id_tournee
+         )
+         SELECT
+           COUNT(DISTINCT at.id_tournee)                                     AS total_tournees,
+           COUNT(DISTINCT CASE WHEN at.statut = 'TERMINEE'
+                               THEN at.id_tournee END)                       AS tournees_terminees,
+           COALESCE(SUM(cd.nb_collectes), 0)                                 AS total_collectes,
+           COALESCE(SUM(cd.total_kg), 0)                                     AS total_kg,
+           COALESCE(SUM(
+             COALESCE(
+               at.distance_reelle_km,
+               at.distance_prevue_km
+                 * COALESCE(ep.etapes_collectees, 0)::numeric
+                 / NULLIF(ep.total_etapes, 0)
+             )
+           ), 0)                                                              AS distance_totale_km,
+           ROUND(
+             COALESCE(SUM(ep.etapes_collectees), 0)::numeric
+             / NULLIF(SUM(ep.total_etapes), 0) * 100, 2
+           )                                                                  AS taux_reussite_pct
+         FROM agent_tournees at
+         LEFT JOIN etape_progress ep ON ep.id_tournee = at.id_tournee
+         LEFT JOIN collecte_data  cd ON cd.id_tournee = at.id_tournee`,
+        [agentId, interval]
+      ),
+      this.db.query(
+        `WITH agent_etapes AS (
+           SELECT t.id_agent,
+                  COUNT(*) FILTER (WHERE e.collectee) AS etapes_collectees
+           FROM tournee t
+           JOIN etape_tournee e ON e.id_tournee = t.id_tournee
+           WHERE t.date_tournee >= CURRENT_DATE - $1::interval
+             AND t.id_agent IS NOT NULL
+           GROUP BY t.id_agent
+           HAVING COUNT(*) FILTER (WHERE e.collectee) > 0
+         ),
+         ranked AS (
+           SELECT id_agent, etapes_collectees,
+                  RANK() OVER (ORDER BY etapes_collectees DESC) AS rang
+           FROM agent_etapes
+         )
+         SELECT rang, etapes_collectees,
+                (SELECT COUNT(*) FROM agent_etapes) AS total_agents
+         FROM ranked
+         WHERE id_agent = $2`,
+        [interval, agentId]
+      ),
+    ]);
+
+    const row  = statsResult.rows[0] || {};
+    const rank = rankResult.rows[0]  || {};
+
+    const distanceKm = parseFloat(row.distance_totale_km) || 0;
+
+    return {
+      period,
+      total_tournees:     parseInt(row.total_tournees, 10)     || 0,
+      tournees_terminees: parseInt(row.tournees_terminees, 10) || 0,
+      total_collectes:    parseInt(row.total_collectes, 10)    || 0,
+      total_kg:           parseFloat(row.total_kg)             || 0,
+      distance_totale_km: distanceKm,
+      co2_economise_kg:   parseFloat((distanceKm * 0.27).toFixed(2)),
+      taux_reussite_pct:  parseFloat(row.taux_reussite_pct)    || 0,
+      classement: {
+        rang:         parseInt(rank.rang, 10)         || null,
+        total_agents: parseInt(rank.total_agents, 10) || 0,
+      },
+    };
+  }
 }
 
 module.exports = StatsRepository;

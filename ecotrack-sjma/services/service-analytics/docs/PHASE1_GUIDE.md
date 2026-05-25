@@ -37,7 +37,7 @@ node scripts/refresh-aggregations.js
 
 ##  Endpoints Disponibles
 
-### GET /api/analytics/aggregations
+### GET /api/V1/analytics/aggregations
 Récupère toutes les agrégations
 
 **Query params:**
@@ -57,10 +57,10 @@ Récupère toutes les agrégations
 }
 ```
 
-### GET /api/analytics/aggregations/zones
+### GET /api/V1/analytics/aggregations/zones
 Statistiques par zone
 
-### GET /api/analytics/aggregations/agents
+### GET /api/V1/analytics/aggregations/agents
 Performances des agents
 
 **Query params:**

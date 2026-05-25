@@ -6,51 +6,137 @@
   <title>Générateur QR Code - EcoTrack</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
-    h1 { color: #333; }
-    p { color: #666; margin-bottom: 30px; }
-    .input-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; }
-    input { padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; flex: 1; max-width: 300px; }
-    button { padding: 12px 24px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    button:hover { background: #45a049; }
-    #qrcode { margin: 20px auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px; background: white; display: inline-block; }
-    .info { font-size: 0.9rem; color: #666; margin-top: 20px; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+    .card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 20px; }
+    h1 { color: #1a1a2e; font-size: 1.4rem; margin: 0 0 6px; }
+    .subtitle { color: #666; font-size: 0.9rem; margin: 0 0 24px; }
+    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    input { padding: 11px 14px; font-size: 15px; border: 1.5px solid #ddd; border-radius: 8px; flex: 1; outline: none; transition: border .2s; }
+    input:focus { border-color: #4CAF50; }
+    button { padding: 11px 22px; font-size: 15px; background: #4CAF50; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background .2s; white-space: nowrap; }
+    button:hover { background: #388E3C; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* QR area */
+    #qr-area { display: none; text-align: center; }
+    #qr-area.visible { display: block; }
+    #qrcode { display: inline-block; padding: 20px; border: 1.5px solid #e0e0e0; border-radius: 12px; background: #fff; margin: 0 auto 12px; }
+    .qr-uid-label { font-family: monospace; font-size: 1rem; color: #333; font-weight: 700; margin-bottom: 6px; }
+    .qr-hint { font-size: 0.8rem; color: #888; }
+    .btn-print { background: #2196F3; margin-top: 10px; }
+    .btn-print:hover { background: #1565c0; }
+
+    /* Placeholder */
+    #qr-placeholder { text-align: center; padding: 32px 20px; color: #bbb; border: 2px dashed #e0e0e0; border-radius: 12px; }
+    #qr-placeholder i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+    /* Error */
+    .error-msg { color: #f44336; font-size: 0.85rem; margin-top: -8px; margin-bottom: 8px; display: none; }
+    .error-msg.visible { display: block; }
+
+    /* Conteneurs list */
+    .section-title { font-size: 0.85rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+    #conteneurs-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .cnt-chip { padding: 8px 12px; background: #e8f5e9; border: 1px solid #4CAF50; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #2e7d32; cursor: pointer; text-align: center; transition: background .15s; user-select: none; }
+    .cnt-chip:hover { background: #4CAF50; color: #fff; }
+    .cnt-loading { color: #aaa; font-size: 0.85rem; }
   </style>
 </head>
 <body>
-  <h1>Générateur de QR Code</h1>
-  <p>Entrez l'UID d'un conteneur pour générer son QR code</p>
-  
-  <div class="input-group">
-    <input type="text" id="uidInput" placeholder="Ex: CNT-00001" />
-    <button onclick="generateQR()">Générer</button>
+
+  <div class="card">
+    <h1>🔲 Générateur de QR Code</h1>
+    <p class="subtitle">Entrez l'UID d'un conteneur ou cliquez sur un conteneur ci-dessous</p>
+
+    <div class="input-group">
+      <input type="text" id="uidInput" placeholder="Ex: CNT-00001" oninput="clearError()" onkeydown="if(event.key==='Enter') generateQR()" />
+      <button onclick="generateQR()" id="genBtn">Générer</button>
+    </div>
+    <p class="error-msg" id="errorMsg">Veuillez entrer un UID valide</p>
+
+    <div id="qr-placeholder">
+      <i class="fas fa-qrcode" style="font-size:2.5rem; color:#ddd; display:block; margin-bottom:10px;"></i>
+      Le QR code apparaîtra ici
+    </div>
+
+    <div id="qr-area">
+      <div id="qrcode"></div>
+      <p class="qr-uid-label" id="qr-uid-label"></p>
+      <p class="qr-hint">Scannez ce code avec l'app EcoTrack Agent</p>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
   </div>
-  
-  <div id="qrcode"></div>
-  <p id="info" class="info"></p>
+
+  <div class="card">
+    <p class="section-title">Conteneurs disponibles — cliquez pour générer</p>
+    <div id="conteneurs-list"><span class="cnt-loading">Chargement...</span></div>
+  </div>
+
+  <!-- Font Awesome for placeholder icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
 
   <script>
-    function generateQR() {
-      const uid = document.getElementById('uidInput').value.trim();
-      if (!uid) {
-        alert('Veuillez entrer un UID');
+    function clearError() {
+      document.getElementById('errorMsg').classList.remove('visible');
+    }
+
+    function generateQR(uid) {
+      const input = uid || document.getElementById('uidInput').value.trim();
+      if (!input) {
+        document.getElementById('errorMsg').classList.add('visible');
         return;
       }
-      
+
+      document.getElementById('uidInput').value = input;
       document.getElementById('qrcode').innerHTML = '';
-      document.getElementById('info').textContent = '';
-      
+      document.getElementById('qr-placeholder').style.display = 'none';
+      document.getElementById('qr-area').classList.add('visible');
+      document.getElementById('qr-uid-label').textContent = input;
+
       new QRCode(document.getElementById('qrcode'), {
-        text: uid,
-        width: 256,
-        height: 256,
+        text: input,
+        width: 240,
+        height: 240,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
       });
-      
-      document.getElementById('info').textContent = 'Ce QR code contient uniquement l\'UID: ' + uid;
     }
+
+    // Load containers list from API
+    async function loadConteneurs() {
+      const list = document.getElementById('conteneurs-list');
+      try {
+        const res = await fetch('/api/V1/containers?limit=50', {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (!res.ok) throw new Error('API error');
+        const json = await res.json();
+        const items = Array.isArray(json) ? json : (json.data || json.conteneurs || []);
+
+        if (!items.length) {
+          list.innerHTML = '<span class="cnt-loading">Aucun conteneur trouvé</span>';
+          return;
+        }
+
+        list.innerHTML = '';
+        items.forEach(c => {
+          const uid = c.uid || c.uid_conteneur;
+          if (!uid) return;
+          const chip = document.createElement('div');
+          chip.className = 'cnt-chip';
+          chip.textContent = uid;
+          chip.title = c.adresse || c.zone_nom || uid;
+          chip.onclick = () => generateQR(uid);
+          list.appendChild(chip);
+        });
+      } catch {
+        list.innerHTML = '<span class="cnt-loading">Impossible de charger les conteneurs (non connecté ?)</span>';
+      }
+    }
+
+    loadConteneurs();
   </script>
 </body>
 </html>

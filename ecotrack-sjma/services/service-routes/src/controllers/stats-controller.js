@@ -95,6 +95,17 @@ class StatsController {
       next(err);
     }
   }
+  async getAgentStats(req, res, next) {
+    try {
+      const agentId = parseInt(req.headers['x-user-id'], 10);
+      if (!agentId) return res.status(400).json(ApiResponse.error(400, 'Identifiant agent manquant'));
+      const period = ['jour', 'semaine', 'mois'].includes(req.query.period) ? req.query.period : 'semaine';
+      const data = await this.service.getAgentStats(agentId, period);
+      return res.status(200).json(ApiResponse.success(data, 'Statistiques agent'));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = StatsController;

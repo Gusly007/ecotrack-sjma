@@ -28,7 +28,7 @@ check_service "Service Users" "http://localhost:3010/health" || true
 check_service "Service Containers" "http://localhost:3011/health" || true
 check_service "Service Gamifications" "http://localhost:3014/health" || true
 check_service "Prometheus" "http://localhost:9090/-/healthy" || true
-check_service "Grafana" "http://localhost:3001/api/health" || true
+check_service "Grafana" "http://localhost:3001/api/V1/health" || true
 
 echo ""
 echo "┌──────────────────────────────────────────────────────────────────┐"

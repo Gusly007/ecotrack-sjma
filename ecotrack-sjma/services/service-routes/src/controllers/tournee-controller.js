@@ -20,6 +20,22 @@ class TourneeController {
     this.previewOptimization = this.previewOptimization.bind(this);
     this.getTypeConteneur = this.getTypeConteneur.bind(this);
     this.getActiveMapData = this.getActiveMapData.bind(this);
+    this.getUpcomingPublic = this.getUpcomingPublic.bind(this);
+  }
+
+  /**
+   * GET /api/V1/routes/prochaines-collectes — feed public pour l'app citoyen.
+   * Projection minimale (pas d'info agent/véhicule). Retourne les 3
+   * prochaines tournées PLANIFIEE ou EN_COURS.
+   */
+  async getUpcomingPublic(req, res, next) {
+    try {
+      const limit = parseInt(req.query.limit, 10) || 5;
+      const rows = await this.service.getUpcomingPublic({ limit });
+      return res.status(200).json(ApiResponse.success(rows, 'Prochaines collectes'));
+    } catch (err) {
+      next(err);
+    }
   }
 
   async create(req, res, next) {
@@ -120,6 +136,16 @@ class TourneeController {
       const { id } = req.params;
       const etapes = await this.service.getTourneeEtapes(id);
       return res.status(200).json(ApiResponse.success(etapes));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEtapeById(req, res, next) {
+    try {
+      const { etapeId } = req.params;
+      const etape = await this.service.getEtapeById(etapeId);
+      return res.status(200).json(ApiResponse.success(etape));
     } catch (err) {
       next(err);
     }

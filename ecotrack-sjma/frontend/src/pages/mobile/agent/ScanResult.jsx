@@ -4,7 +4,6 @@ import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
 import { containerService } from '../../../services/containerService';
 import { fetchMyTournee, recordCollecte } from '../../../services/tourneeService';
-import './ScanResult.css';
 
 export default function ScanResult() {
   const { uid } = useParams();
@@ -14,6 +13,7 @@ export default function ScanResult() {
   const [quantite, setQuantite] = useState('45');
   const [collecting, setCollecting] = useState(false);
   const [collected, setCollected] = useState(false);
+  const [tourneeTerminee, setTourneeTerminee] = useState(false);
   const [tourneeId, setTourneeId] = useState(null);
 
   useEffect(() => {
@@ -36,10 +36,11 @@ export default function ScanResult() {
     if (!tourneeId || !container) return;
     setCollecting(true);
     try {
-      await recordCollecte(tourneeId, {
+      const result = await recordCollecte(tourneeId, {
         id_conteneur: container.id_conteneur,
         quantite_kg: parseFloat(quantite) || 0,
       });
+      setTourneeTerminee(result?.tournee_terminee === true);
       setCollected(true);
     } catch (err) {
       console.error('Collecte error:', err);
@@ -72,10 +73,16 @@ export default function ScanResult() {
           <div className="detail-row"><span>Poids</span><strong>{quantite} kg</strong></div>
           <div className="detail-row"><span>Heure</span><strong>{new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</strong></div>
         </MobileCard>
-        <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')}>
-          <i className="fas fa-arrow-right"></i> Conteneur suivant
-        </button>
-        <button className="btn-outline-mobile" onClick={() => navigate('/agent/anomalie/form')} style={{ marginTop: 8 }}>
+        {tourneeTerminee ? (
+          <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee/terminer')} style={{ background: '#4CAF50' }}>
+            <i className="fas fa-flag-checkered"></i> Tous les conteneurs collectés — Terminer la tournée
+          </button>
+        ) : (
+          <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')}>
+            <i className="fas fa-arrow-right"></i> Conteneur suivant
+          </button>
+        )}
+        <button className="btn-outline-mobile" onClick={() => navigate(`/agent/anomalie/form?uid=${encodeURIComponent(container?.uid || uid)}`)} style={{ marginTop: 8 }}>
           <i className="fas fa-exclamation-triangle"></i> Signaler une anomalie
         </button>
       </MobileLayout>
@@ -145,7 +152,7 @@ export default function ScanResult() {
           : <><i className="fas fa-check"></i> Valider la collecte (+10 pts)</>
         }
       </button>
-      <button className="btn-outline-mobile" onClick={() => navigate('/agent/anomalie/form')} style={{ marginTop: 8 }}>
+      <button className="btn-outline-mobile" onClick={() => navigate(`/agent/anomalie/form?uid=${encodeURIComponent(container?.uid || uid)}`)} style={{ marginTop: 8 }}>
         <i className="fas fa-exclamation-triangle"></i> Signaler un probleme
       </button>
     </MobileLayout>

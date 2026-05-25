@@ -154,8 +154,8 @@ export default function CreateUserPage() {
                 >
                   <i className="fas fa-copy"></i> Copier le lien
                 </button>
-                <a 
-                  href={`mailto:${formData.email}?subject=Activation de votre compte EcoTrack&body=Bonjour,%0D%0A%0D%0AVotre compte EcoTrack a été créé.%0D%0A%0D%0AVotre mot de passe temporaire: ${formData.password}%0D%0A%0D%0AClicker sur le lien suivant pour activer votre compte:%0D%0A${encodeURIComponent(activationLink)}%0D%0A%0D%0ACordialement,%0D%0AL'équipe EcoTrack`}
+                <a
+                  href={`mailto:${encodeURIComponent(formData.email)}?subject=${encodeURIComponent('Activation de votre compte EcoTrack')}&body=${encodeURIComponent(`Bonjour,\r\n\r\nVotre compte EcoTrack a été créé.\r\n\r\nVotre mot de passe temporaire: ${formData.password}\r\n\r\nCliquez sur le lien suivant pour activer votre compte:\r\n${activationLink}\r\n\r\nCordialement,\r\nL'équipe EcoTrack`)}`}
                   className="email-btn"
                 >
                   <i className="fas fa-envelope"></i> Envoyer par email

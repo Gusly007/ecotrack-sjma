@@ -20,3 +20,11 @@ export const creerParticipation = async ({ idDefi, idUtilisateur }) => {
 export const mettreAJourProgression = async ({ idDefi, idUtilisateur, progression, statut }) => {
   return await DefisRepository.mettreAJourProgression({ idDefi, idUtilisateur, progression, statut });
 };
+
+// Passe automatiquement +1 à la progression de tous les défis actifs dont
+// type_action correspond à l'action. Retourne la liste des défis complétés
+// durant cet appel (pour que l'orchestrateur attribue la récompense et crée
+// une notification).
+export const progresserDefisActifs = async ({ client, idUtilisateur, typeAction }) => {
+  return await DefisRepository.progresserDefisActifs({ client, idUtilisateur, typeAction });
+};

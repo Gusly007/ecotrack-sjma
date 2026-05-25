@@ -51,7 +51,7 @@ console.log(`\n📋 Instructions:
 1. Le client est maintenant connecté et écoute les changements de la zone ${zoneId}
 2. Pour tester, lancez une requête PATCH:
    
-   curl -X PATCH http://localhost:3011/api/containers/${containerId}/status \\
+   curl -X PATCH http://localhost:3011/api/V1/containers/${containerId}/status \\
      -H "Content-Type: application/json" \\
      -d '{"statut": "EN_MAINTENANCE"}'
    

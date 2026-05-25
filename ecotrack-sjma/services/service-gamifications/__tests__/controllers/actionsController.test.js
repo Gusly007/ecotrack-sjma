@@ -9,7 +9,8 @@ jest.unstable_mockModule('../../src/services/gamificationService.js', () => ({
 const { enregistrerAction } = await import('../../src/controllers/actionsController.js');
 
 const mockRequest = (body = {}) => ({
-  body
+  body,
+  user: { id: body.id_utilisateur, role: 'ADMIN' }
 });
 
 const mockResponse = () => {

@@ -18,62 +18,62 @@ describe('Containers E2E', () => {
   });
 
   it('get all zones', async () => {
-    const res = await request(app).get('/api/zones').query({ limit: 10 });
+    const res = await request(app).get('/api/V1/zones').query({ limit: 10 });
     expect(res.status).toBeDefined();
   });
 
   it('get zone by id', async () => {
-    const res = await request(app).get('/api/zones/1');
+    const res = await request(app).get('/api/V1/zones/1');
     expect(res.status).toBeDefined();
   });
 
   it('filter zones by search', async () => {
-    const res = await request(app).get('/api/zones').query({ search: 'ZONE' });
+    const res = await request(app).get('/api/V1/zones').query({ search: 'ZONE' });
     expect(res.status).toBeDefined();
   });
 
   it('get all containers', async () => {
-    const res = await request(app).get('/api/containers').query({ page: 1, limit: 10 });
+    const res = await request(app).get('/api/V1/containers').query({ page: 1, limit: 10 });
     expect(res.status).toBeDefined();
   });
 
   it('filter containers by zone', async () => {
-    const res = await request(app).get('/api/containers').query({ id_zone: 1 });
+    const res = await request(app).get('/api/V1/containers').query({ id_zone: 1 });
     expect(res.status).toBeDefined();
   });
 
   it('filter containers by type', async () => {
-    const res = await request(app).get('/api/containers').query({ id_type: 1 });
+    const res = await request(app).get('/api/V1/containers').query({ id_type: 1 });
     expect(res.status).toBeDefined();
   });
 
   it('filter containers by status', async () => {
-    const res = await request(app).get('/api/containers').query({ statut: 'ACTIF' });
+    const res = await request(app).get('/api/V1/containers').query({ statut: 'ACTIF' });
     expect(res.status).toBeDefined();
   });
 
   it('search containers', async () => {
-    const res = await request(app).get('/api/containers').query({ search: 'CONT' });
+    const res = await request(app).get('/api/V1/containers').query({ search: 'CONT' });
     expect(res.status).toBeDefined();
   });
 
   it('get container stats', async () => {
-    const res = await request(app).get('/api/stats');
+    const res = await request(app).get('/api/V1/stats');
     expect(res.status).toBeDefined();
   });
 
   it('get zone stats', async () => {
-    const res = await request(app).get('/api/zones/stats');
+    const res = await request(app).get('/api/V1/zones/stats');
     expect(res.status).toBeDefined();
   });
 
   it('container lifecycle', async () => {
-    const res = await request(app).get('/api/containers').query({ limit: 1 });
+    const res = await request(app).get('/api/V1/containers').query({ limit: 1 });
     if (res.body?.data?.length > 0) {
       const id = res.body.data[0].id_conteneur || res.body.data[0].id;
-      const r1 = await request(app).get(`/api/containers/${id}`);
+      const r1 = await request(app).get(`/api/V1/containers/${id}`);
       expect(r1.status).toBeDefined();
-      const r2 = await request(app).put(`/api/containers/${id}/status`).send({ statut: 'EN_MAINTENANCE' });
+      const r2 = await request(app).put(`/api/V1/containers/${id}/status`).send({ statut: 'EN_MAINTENANCE' });
       expect([200, 400]).toContain(r2.status);
     }
   });

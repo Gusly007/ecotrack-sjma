@@ -23,48 +23,16 @@
   justify-content: center;
 }
 
-.mobile-header-titles {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-  line-height: 1.15;
-}
-
-.mobile-header-titles.is-leading {
-  align-items: flex-start;
-  padding-left: 4px;
-}
-
 .mobile-header-title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #333;
   text-align: center;
+  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
-  max-width: 100%;
-}
-
-.mobile-header-titles.is-leading .mobile-header-title {
-  text-align: left;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.mobile-header-subtitle {
-  font-size: 0.7rem;
-  color: #888;
-  margin: 2px 0 0;
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .mobile-back-btn {
@@ -103,6 +71,33 @@
 
 .mobile-header-action:active {
   background: #f0f0f0;
+}
+
+.mobile-header-greeting {
+  height: auto;
+  min-height: var(--mobile-header-height, 56px);
+  padding: 10px 12px;
+}
+
+.mobile-header-greeting-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+.header-greeting-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.header-greeting-date {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 2px;
+  text-transform: capitalize;
 }
 
 .notif-badge {

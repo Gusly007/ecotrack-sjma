@@ -180,16 +180,16 @@ const startServer = () => {
 };
 
 // Routes
-app.use('/api/analytics', aggregationRoutes);
+app.use('/api/V1/analytics', aggregationRoutes);
 
 const dashboardRoutes = require('./routes/dashboardRoutes');
-app.use('/api/analytics', dashboardRoutes);
+app.use('/api/V1/analytics', dashboardRoutes);
 
 const dashboardAnalyticsRoutes = require('./routes/dashboardAnalyticsRoutes');
-app.use('/api/analytics', dashboardAnalyticsRoutes);
+app.use('/api/V1/analytics', dashboardAnalyticsRoutes);
 
 const performanceRoutes = require('./routes/performanceRoutes');
-app.use('/api/analytics', performanceRoutes);
+app.use('/api/V1/analytics', performanceRoutes);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -202,15 +202,15 @@ app.use('/reports', express.static(path.join(__dirname, '../..', process.env.REP
 
 // Report routes
 const reportRoutes = require('./routes/reportRoutes');
-app.use('/api/analytics', reportRoutes);
+app.use('/api/V1/analytics', reportRoutes);
 
 // Monitoring metrics routes
 const metricsRoutes = require('./routes/metrics');
-app.use('/api/metrics', metricsRoutes);
+app.use('/api/V1/metrics', metricsRoutes);
 
 // ML/Prediction routes
 const mlRoutes = require('./routes/mlRoutes');
-app.use('/api/analytics', mlRoutes);
+app.use('/api/V1/analytics', mlRoutes);
 
 const stopServer = async () => {
   await kafkaConsumer.disconnect();

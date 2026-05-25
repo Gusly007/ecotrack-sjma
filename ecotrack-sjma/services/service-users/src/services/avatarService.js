@@ -9,52 +9,77 @@ const AVATARS_DIR = 'storage/avatars';
 const ORIGINAL_DIR = path.join(AVATARS_DIR, 'original');
 const THUMBNAILS_DIR = path.join(AVATARS_DIR, 'thumbnails');
 const MINI_DIR = path.join(AVATARS_DIR, 'mini');
+const TEMP_DIR = path.resolve('storage/temp');
+
+// Map returns a constant value — breaks CodeQL taint chain from user-provided filename
+const EXT_ALLOWLIST = new Map([
+  ['.jpg', '.jpg'],
+  ['.jpeg', '.jpg'],
+  ['.png', '.png'],
+  ['.webp', '.webp'],
+  ['.avif', '.avif'],
+]);
+
+function assertWithinDir(resolvedPath, baseDir) {
+  const base = path.resolve(baseDir);
+  if (!resolvedPath.startsWith(base + path.sep) && resolvedPath !== base) {
+    throw new Error('Path traversal detected');
+  }
+}
 
 /**
  * Traiter et redimensionner l'avatar
  */
 export const processAvatar = async (userId, tempFile) => {
+  // Reconstruct temp path from the known constant TEMP_DIR + basename only.
+  // This ensures the path is always inside TEMP_DIR even if tempFile.filename
+  // contained path separators (path.basename strips them).
+  const safeBasename = path.basename(String(tempFile.filename || ''));
+  const tempPath = path.join(TEMP_DIR, safeBasename);
+
   try {
-    const tempPath = tempFile.path;
-    const fileExt = path.extname(tempFile.filename).toLowerCase();
-    const baseFilename = `${userId}${fileExt}`;
+    const rawExt = path.extname(safeBasename).toLowerCase();
+    // EXT_ALLOWLIST.get() returns a constant value from the map, not the user input,
+    // which breaks CodeQL's taint chain from the uploaded filename.
+    const fileExt = EXT_ALLOWLIST.get(rawExt);
+
+    if (!fileExt) {
+      await fs.unlink(tempPath).catch(() => {});
+      throw new Error('File extension not allowed');
+    }
+
+    const safeUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '');
+    const baseFilename = `${safeUserId}${fileExt}`;
 
     // Créer les répertoires s'ils n'existent pas
     await ensureDirectories();
 
-    // Chemins de stockage
-    const originalPath = path.join(ORIGINAL_DIR, baseFilename);
-    const thumbnailPath = path.join(THUMBNAILS_DIR, baseFilename);
-    const miniPath = path.join(MINI_DIR, baseFilename);
+    // Chemins de stockage (vérification de containment)
+    const originalPath = path.resolve(ORIGINAL_DIR, baseFilename);
+    const thumbnailPath = path.resolve(THUMBNAILS_DIR, baseFilename);
+    const miniPath = path.resolve(MINI_DIR, baseFilename);
+    assertWithinDir(originalPath, ORIGINAL_DIR);
+    assertWithinDir(thumbnailPath, THUMBNAILS_DIR);
+    assertWithinDir(miniPath, MINI_DIR);
 
     // 1. Redimensionner et stocker l'original (1000x1000)
     await sharp(tempPath)
-      .resize(1000, 1000, {
-        fit: 'cover',
-        position: 'center'
-      })
+      .resize(1000, 1000, { fit: 'cover', position: 'center' })
       .toFile(originalPath);
 
     // 2. Créer la thumbnail (200x200)
     await sharp(tempPath)
-      .resize(200, 200, {
-        fit: 'cover',
-        position: 'center'
-      })
+      .resize(200, 200, { fit: 'cover', position: 'center' })
       .toFile(thumbnailPath);
 
     // 3. Créer la mini (64x64)
     await sharp(tempPath)
-      .resize(64, 64, {
-        fit: 'cover',
-        position: 'center'
-      })
+      .resize(64, 64, { fit: 'cover', position: 'center' })
       .toFile(miniPath);
 
     // 4. Supprimer le fichier temporaire
     await fs.unlink(tempPath);
 
-    // 5. Récupérer les URLs
     const urls = {
       original: `/avatars/original/${baseFilename}`,
       thumbnail: `/avatars/thumbnails/${baseFilename}`,
@@ -63,8 +88,7 @@ export const processAvatar = async (userId, tempFile) => {
 
     return urls;
   } catch (error) {
-    // Nettoyer en cas d'erreur
-    await fs.unlink(tempFile.path).catch(() => {});
+    await fs.unlink(tempPath).catch(() => {});
     throw error;
   }
 };

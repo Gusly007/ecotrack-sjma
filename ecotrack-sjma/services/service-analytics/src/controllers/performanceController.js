@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 
 class PerformanceController {
   /**
-   * GET /api/analytics/performance/dashboard
+   * GET /api/V1/analytics/performance/dashboard
    */
   static async getDashboard(req, res) {
     try {
@@ -33,7 +33,7 @@ class PerformanceController {
   }
 
   /**
-   * GET /api/analytics/performance/agents/ranking
+   * GET /api/V1/analytics/performance/agents/ranking
    */
   static async getAgentsRanking(req, res) {
     try {
@@ -67,7 +67,7 @@ class PerformanceController {
   }
 
   /**
-   * GET /api/analytics/performance/agents/:id
+   * GET /api/V1/analytics/performance/agents/:id
    */
   static async getAgentPerformance(req, res) {
     try {
@@ -96,7 +96,7 @@ class PerformanceController {
   }
 
   /**
-   * GET /api/analytics/performance/environmental
+   * GET /api/V1/analytics/performance/environmental
    */
   static async getEnvironmentalImpact(req, res) {
     try {
@@ -129,7 +129,7 @@ class PerformanceController {
   }
 
   /**
-   * GET /api/analytics/performance/environmental/evolution
+   * GET /api/V1/analytics/performance/environmental/evolution
    */
   static async getImpactEvolution(req, res) {
     try {
@@ -156,7 +156,7 @@ class PerformanceController {
   }
 
   /**
-   * GET /api/analytics/performance/environmental/zones
+   * GET /api/V1/analytics/performance/environmental/zones
    */
   static async getImpactByZone(req, res) {
     try {

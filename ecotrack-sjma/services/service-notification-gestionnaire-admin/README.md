@@ -28,8 +28,8 @@ Ce service gère le cycle de vie complet des notifications pour les profils **GE
 
 | Action | Déclencheur |
 |--------|-------------|
-| Création manuelle | ADMIN via `POST /api/notifications` |
-| Création en masse | ADMIN via `POST /api/notifications/bulk` |
+| Création manuelle | ADMIN via `POST /api/V1/notifications` |
+| Création en masse | ADMIN via `POST /api/V1/notifications/bulk` |
 | Création automatique | Kafka — alerte zone saturée (`ecotrack.alerts`) |
 | Création automatique | Kafka — nouveau signalement (`ecotrack.signalements.nouveau`) |
 | Lecture / marquage lu | Propriétaire de la notification |
@@ -49,7 +49,7 @@ index.js
 │   ├── RequestLogger   → Morgan en prod / console en test
 │   └── Prometheus      → métriques par route
 │
-├── /api/notifications  → notification.route.js
+├── /api/V1/notifications  → notification.route.js
 │   ├── auth.js         → vérification JWT Bearer
 │   ├── rbac.js         → contrôle d'accès par rôle
 │   ├── validation.js   → validation des payloads entrants
@@ -133,7 +133,7 @@ Le service démarre sur `http://localhost:3016` et :
 
 > Toutes les routes nécessitent un header `Authorization: Bearer <token>`.
 
-### POST `/api/notifications`
+### POST `/api/V1/notifications`
 
 Crée une notification pour un utilisateur cible. Réservé aux **ADMIN**.
 
@@ -171,7 +171,7 @@ Crée une notification pour un utilisateur cible. Réservé aux **ADMIN**.
 
 ---
 
-### POST `/api/notifications/bulk`
+### POST `/api/V1/notifications/bulk`
 
 Crée plusieurs notifications en une seule transaction atomique. Réservé aux **ADMIN**.
 
@@ -193,7 +193,7 @@ Crée plusieurs notifications en une seule transaction atomique. Réservé aux *
 
 ---
 
-### PATCH `/api/notifications/read-all`
+### PATCH `/api/V1/notifications/read-all`
 
 Marque **toutes** les notifications non lues de l'utilisateur authentifié comme lues.
 
@@ -204,7 +204,7 @@ Marque **toutes** les notifications non lues de l'utilisateur authentifié comme
 
 ---
 
-### PATCH `/api/notifications/:id/read`
+### PATCH `/api/V1/notifications/:id/read`
 
 Marque une notification spécifique comme lue. Seul le propriétaire peut effectuer cette action (sauf ADMIN pour les notifications `SYSTEME`).
 
@@ -218,7 +218,7 @@ Marque une notification spécifique comme lue. Seul le propriétaire peut effect
 
 ---
 
-### DELETE `/api/notifications/:id`
+### DELETE `/api/V1/notifications/:id`
 
 Supprime une notification. Seul le propriétaire peut supprimer (sauf ADMIN pour `SYSTEME`).
 

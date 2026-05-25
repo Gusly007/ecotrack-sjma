@@ -25,3 +25,11 @@
   background: #fef0f0;
   color: #f44336;
 }
+
+/* Allow notification body to wrap fully — no truncation */
+.notif-item .mobile-list-info p {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.4;
+}

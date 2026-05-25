@@ -1,0 +1,195 @@
+.citoyen-scanner-page {
+  min-height: 100vh;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* --- Aperçu caméra --- */
+.scanner-camera-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Viseur — 4 coins verts décoratifs */
+.scanner-viewfinder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.vf-corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #4CAF50;
+  box-sizing: border-box;
+}
+
+.vf-tl {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 6px;
+}
+
+.vf-tr {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 6px;
+}
+
+.vf-bl {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 6px;
+}
+
+.vf-br {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 6px;
+}
+
+.scanner-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* --- Fallback (API non dispo / permission refusée) --- */
+.scanner-fallback {
+  display: flex;
+  gap: 12px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #5d4037;
+  padding: 14px;
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+.scanner-fallback > i {
+  color: #ff9800;
+  font-size: 1.3rem;
+  margin-top: 2px;
+}
+
+.scanner-fallback strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #4a3325;
+}
+
+.scanner-fallback p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* --- Saisie manuelle --- */
+.scanner-manual {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.scanner-manual h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.scanner-manual-hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.scanner-manual form {
+  display: flex;
+  gap: 8px;
+}
+
+.scanner-manual-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: #fafafa;
+}
+
+.scanner-manual-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  background: #fff;
+}
+
+.scanner-manual-btn {
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.scanner-manual-btn:hover {
+  background: #43a047;
+}
+
+.scanner-manual-error {
+  color: #c62828;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -22,7 +22,7 @@ const paginateResponse = (data, page, limit) => {
 
 class MLController {
   /**
-   * POST /api/analytics/ml/predict
+   * POST /api/V1/analytics/ml/predict
    */
   static async predictFillLevel(req, res) {
     try {
@@ -64,7 +64,7 @@ class MLController {
   }
 
   /**
-   * GET /api/analytics/ml/predict-critical
+   * GET /api/V1/analytics/ml/predict-critical
    */
   static async predictCritical(req, res) {
     try {
@@ -101,7 +101,7 @@ class MLController {
   }
 
   /**
-   * GET /api/analytics/ml/anomalies/:containerId
+   * GET /api/V1/analytics/ml/anomalies/:containerId
    */
   static async detectAnomalies(req, res) {
     try {
@@ -132,7 +132,7 @@ class MLController {
   }
 
   /**
-   * GET /api/analytics/ml/defective-sensors
+   * GET /api/V1/analytics/ml/defective-sensors
    */
   static async getDefectiveSensors(req, res) {
     try {
@@ -158,7 +158,7 @@ class MLController {
   }
 
   /**
-   * POST /api/analytics/ml/anomalies/:containerId/alerts
+   * POST /api/V1/analytics/ml/anomalies/:containerId/alerts
    * Detect anomalies and create alerts automatically
    */
   static async detectAnomaliesAndCreateAlerts(req, res) {

@@ -120,7 +120,8 @@ class CacheService {
     
     if (this.fallbackCache) {
       const keys = this.fallbackCache.keys();
-      const matchingKeys = keys.filter(key => key.includes(pattern.replace('*', '')));
+      const stem = pattern.replace(/\*/g, '');
+      const matchingKeys = keys.filter(key => stem === '' || key.includes(stem));
       matchingKeys.forEach(key => this.fallbackCache.del(key));
       logger.info({ pattern, count: matchingKeys.length }, 'In-memory cache invalidated');
       return true;

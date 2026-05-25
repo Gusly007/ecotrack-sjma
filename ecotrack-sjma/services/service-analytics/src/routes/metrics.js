@@ -10,7 +10,7 @@ const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://prometheus:9090';
 
 const queryPrometheus = async (query) => {
   try {
-    const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`${PROMETHEUS_URL}/api/V1/v1/query?query=${encodeURIComponent(query)}`);
     const data = await response.json();
     return data.status === 'success' ? data.data.result : [];
   } catch (err) {
@@ -23,7 +23,7 @@ const queryPrometheusRange = async (query, time) => {
   try {
     const end = Math.floor(Date.now() / 1000);
     const start = end - time;
-    const response = await fetch(`${PROMETHEUS_URL}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=60`);
+    const response = await fetch(`${PROMETHEUS_URL}/api/V1/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=60`);
     const data = await response.json();
     return data.status === 'success' ? data.data.result : [];
   } catch (err) {
@@ -174,7 +174,7 @@ router.get('/database', authMiddleware, requirePermission('analytics:read'), asy
 router.get('/alerts', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
     const { severity, service, status } = req.query;
-    const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
+    const response = await fetch(`${PROMETHEUS_URL}/api/V1/v1/alerts`);
     const data = await response.json();
     
     if (data.status === 'success') {
@@ -241,7 +241,7 @@ router.get('/alerts', authMiddleware, requirePermission('analytics:read'), async
 
 router.get('/alerts/counts', authMiddleware, requirePermission('analytics:read'), async (req, res) => {
   try {
-    const response = await fetch(`${PROMETHEUS_URL}/api/v1/alerts`);
+    const response = await fetch(`${PROMETHEUS_URL}/api/V1/v1/alerts`);
     const data = await response.json();
     
     if (data.status === 'success') {

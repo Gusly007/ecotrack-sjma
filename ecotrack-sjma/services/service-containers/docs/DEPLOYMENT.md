@@ -108,11 +108,11 @@ service-containers/
 ```
 GET    /health                      # Health check
 GET    /api                         # Information service
-GET    /api/containers              # Lister les conteneurs
-POST   /api/containers              # Créer un conteneur
-PATCH  /api/containers/:id/status   # Changer le statut
-GET    /api/containers/:id/status/history  # Historique
-GET    /api/zones                   # Lister les zones
+GET    /api/V1/containers              # Lister les conteneurs
+POST   /api/V1/containers              # Créer un conteneur
+PATCH  /api/V1/containers/:id/status   # Changer le statut
+GET    /api/V1/containers/:id/status/history  # Historique
+GET    /api/V1/zones                   # Lister les zones
 ```
 
 ## 🔒 Sécurité

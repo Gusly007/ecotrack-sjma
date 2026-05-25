@@ -2,16 +2,21 @@
  * Middleware RBAC pour service-routes
  */
 const rolePermissions = {
-    CITOYEN: [],
+    CITOYEN: [
+        // Lecture publique des prochaines collectes (feed home citoyen).
+        'collecte:read'
+    ],
     AGENT: [
         'tournee:read',
-        'tournee:update'
+        'tournee:update',
+        'collecte:read'
     ],
     GESTIONNAIRE: [
         'tournee:create',
         'tournee:read',
         'tournee:update',
-        'tournee:delete'
+        'tournee:delete',
+        'collecte:read'
     ],
     ADMIN: ['*']
 };

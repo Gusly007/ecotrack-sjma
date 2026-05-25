@@ -30,6 +30,7 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile.dev
+    image: ecotrack/api-gateway:${VERSION:-1.0.0}-dev
     environment:
       NODE_ENV: development
     volumes:
@@ -48,8 +49,10 @@ services:
     build:
       context: ./services/service-users
       dockerfile: Dockerfile.dev
+    image: ecotrack/service-users:${VERSION:-1.0.0}-dev
     environment:
       NODE_ENV: development
+      RATE_LIMIT_BYPASS_LOCAL: 'true'
     volumes:
       - ./services/service-users/src:/app/src:ro
       - ./services/service-users/package.json:/app/package.json:ro
@@ -68,6 +71,7 @@ services:
     build:
       context: ./services/service-containers
       dockerfile: Dockerfile.dev
+    image: ecotrack/service-containers:${VERSION:-1.0.0}-dev
     environment:
       NODE_ENV: development
     volumes:
@@ -87,8 +91,11 @@ services:
     build:
       context: ./services/service-routes
       dockerfile: Dockerfile.dev
+    image: ecotrack/service-routes:${VERSION:-1.0.0}-dev
     environment:
       NODE_ENV: development
+      KAFKA_BROKERS: kafka:29092
+      KAFKAJS_NO_PARTITIONER_WARNING: '1'
     volumes:
       - ./services/service-routes/src:/app/src:ro
       - ./services/service-routes/package.json:/app/package.json:ro
@@ -106,6 +113,7 @@ services:
     build:
       context: ./services/service-iot
       dockerfile: Dockerfile.dev
+    image: ecotrack/service-iot:${VERSION:-1.0.0}-dev
     environment:
       NODE_ENV: development
     volumes:

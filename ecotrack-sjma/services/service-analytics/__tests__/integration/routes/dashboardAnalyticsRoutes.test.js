@@ -55,7 +55,7 @@ const dashboardAnalyticsRouter = require('../../../src/routes/dashboardAnalytics
 
 function buildApp() {
   const app = express();
-  app.use('/api/analytics', dashboardAnalyticsRouter);
+  app.use('/api/V1/analytics', dashboardAnalyticsRouter);
   return app;
 }
 
@@ -75,7 +75,7 @@ describe('dashboardAnalyticsRoutes', () => {
       })
     });
 
-    const successRes = await request(buildApp()).get('/api/analytics/weather-impact');
+    const successRes = await request(buildApp()).get('/api/V1/analytics/weather-impact');
 
     expect(successRes.body).toEqual(
       expect.objectContaining({
@@ -91,7 +91,7 @@ describe('dashboardAnalyticsRoutes', () => {
 
     fetch.mockRejectedValueOnce(new Error('weather down'));
 
-    const fallbackRes = await request(buildApp()).get('/api/analytics/weather-impact');
+    const fallbackRes = await request(buildApp()).get('/api/V1/analytics/weather-impact');
 
     expect(logger.error).toHaveBeenCalledWith('Error fetching weather:', expect.any(Error));
     expect(fallbackRes.body).toEqual(
@@ -122,7 +122,7 @@ describe('dashboardAnalyticsRoutes', () => {
       }
     });
 
-    const successRes = await request(buildApp()).get('/api/analytics/kpis');
+    const successRes = await request(buildApp()).get('/api/V1/analytics/kpis');
 
     expect(successRes.body).toEqual(
       expect.objectContaining({
@@ -140,7 +140,7 @@ describe('dashboardAnalyticsRoutes', () => {
 
     DashboardAnalyticsRepository.getKpiBaseStats.mockRejectedValueOnce(new Error('db fail'));
 
-    const fallbackRes = await request(buildApp()).get('/api/analytics/kpis');
+    const fallbackRes = await request(buildApp()).get('/api/V1/analytics/kpis');
 
     expect(logger.error).toHaveBeenCalledWith('Error fetching KPIs:', 'db fail');
     expect(fallbackRes.status).toBe(200);
@@ -164,8 +164,8 @@ describe('dashboardAnalyticsRoutes', () => {
       { id: '2', name: 'Zone B', code: 'ZB', containercount: '7', fillrate: '61.7', avgbattery: '79.2', measurementcount: '15' }
     ]);
 
-    const fillRes = await request(buildApp()).get('/api/analytics/aggregation/fill-trends?days=14');
-    const zoneRes = await request(buildApp()).get('/api/analytics/aggregation/zone-performance');
+    const fillRes = await request(buildApp()).get('/api/V1/analytics/aggregation/fill-trends?days=14');
+    const zoneRes = await request(buildApp()).get('/api/V1/analytics/aggregation/zone-performance');
 
     expect(DashboardAnalyticsRepository.getFillTrends).toHaveBeenCalledWith(14);
     expect(fillRes.body).toEqual(
@@ -191,8 +191,8 @@ describe('dashboardAnalyticsRoutes', () => {
       { id_type: 9, type: 'Metal', code: 'MT', containercount: '4', avgfillrate: '66.4', avgbattery: '71.2' }
     ]);
 
-    const criticalRes = await request(buildApp()).get('/api/analytics/critical-containers?threshold=80&limit=5');
-    const typeRes = await request(buildApp()).get('/api/analytics/type-distribution');
+    const criticalRes = await request(buildApp()).get('/api/V1/analytics/critical-containers?threshold=80&limit=5');
+    const typeRes = await request(buildApp()).get('/api/V1/analytics/type-distribution');
 
     expect(DashboardAnalyticsRepository.getCriticalContainers).toHaveBeenCalledWith(80, 5);
     expect(criticalRes.body).toEqual(
@@ -239,8 +239,8 @@ describe('dashboardAnalyticsRoutes', () => {
       }))
     );
 
-    const collecteRes = await request(buildApp()).get('/api/analytics/collecte-stats?days=21');
-    const predictionRes = await request(buildApp()).get('/api/analytics/ml/predictions?daysAhead=2&threshold=55');
+    const collecteRes = await request(buildApp()).get('/api/V1/analytics/collecte-stats?days=21');
+    const predictionRes = await request(buildApp()).get('/api/V1/analytics/ml/predictions?daysAhead=2&threshold=55');
 
     expect(DashboardAnalyticsRepository.getCollecteSummary).toHaveBeenCalledWith(21);
     expect(collecteRes.body).toEqual(
@@ -281,9 +281,9 @@ describe('dashboardAnalyticsRoutes', () => {
     });
     EnvironmentalConstantsService.getEnvironmentalConstants.mockResolvedValueOnce({ refreshed: true });
 
-    const defectiveRes = await request(buildApp()).get('/api/analytics/ml/defective-sensors');
-    const performanceRes = await request(buildApp()).get('/api/analytics/performance/environmental?period=month');
-    const refreshRes = await request(buildApp()).post('/api/analytics/cache/refresh');
+    const defectiveRes = await request(buildApp()).get('/api/V1/analytics/ml/defective-sensors');
+    const performanceRes = await request(buildApp()).get('/api/V1/analytics/performance/environmental?period=month');
+    const refreshRes = await request(buildApp()).post('/api/V1/analytics/cache/refresh');
 
     expect(defectiveRes.body).toEqual(
       expect.objectContaining({

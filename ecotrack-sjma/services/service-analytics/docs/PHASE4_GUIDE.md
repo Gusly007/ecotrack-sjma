@@ -38,7 +38,7 @@ npm install simple-statistics
 
 ##  Endpoints
 
-### POST /api/analytics/ml/predict
+### POST /api/V1/analytics/ml/predict
 Prédire le remplissage
 
 **Body:**
@@ -67,12 +67,12 @@ Prédire le remplissage
 }
 ```
 
-### GET /api/analytics/ml/predict-critical
+### GET /api/V1/analytics/ml/predict-critical
 Conteneurs critiques futurs
 
 **Query:** daysAhead (default: 1), threshold (default: 90)
 
-### GET /api/analytics/ml/anomalies/:containerId
+### GET /api/V1/analytics/ml/anomalies/:containerId
 Détecter les anomalies
 
 **Query:** threshold (default: 2)
@@ -96,7 +96,7 @@ Détecter les anomalies
 }
 ```
 
-### GET /api/analytics/ml/defective-sensors
+### GET /api/V1/analytics/ml/defective-sensors
 Capteurs défaillants
 
 **Réponse:**
@@ -118,7 +118,7 @@ Capteurs défaillants
 }
 ```
 
-### POST /api/analytics/ml/anomalies/:containerId/alerts
+### POST /api/V1/analytics/ml/anomalies/:containerId/alerts
 Détecter les anomalies et créer des alertes automatiques
 
 **Query:** threshold (default: 2), autoCreate (default: true)

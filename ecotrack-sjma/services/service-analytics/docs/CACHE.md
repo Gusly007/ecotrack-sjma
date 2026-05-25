@@ -68,7 +68,7 @@ aggregations:zone:week       # Agrégations par zone
 ### 1. DashboardController
 
 ```javascript
-// GET /api/analytics/dashboard
+// GET /api/V1/analytics/dashboard
 static async getDashboard(req, res) {
   const { period = 'week' } = req.query;
   const cacheKey = `dashboard:${period}`;
@@ -88,7 +88,7 @@ static async getDashboard(req, res) {
   res.json({ data, fromCache });
 }
 
-// GET /api/analytics/heatmap
+// GET /api/V1/analytics/heatmap
 static async getHeatmap(req, res) {
   const { data, fromCache } = await cacheService.getOrSet(
     'analytics:heatmap',
@@ -103,7 +103,7 @@ static async getHeatmap(req, res) {
 ### 2. PerformanceController
 
 ```javascript
-// GET /api/analytics/performance/agents
+// GET /api/V1/analytics/performance/agents
 async getAgentPerformance(req, res) {
   const { period = 'week' } = req.query;
   const cacheKey = `performance:agents:${period}`;
@@ -121,7 +121,7 @@ async getAgentPerformance(req, res) {
 ### 3. AggregationController
 
 ```javascript
-// GET /api/analytics/aggregations/:type
+// GET /api/V1/analytics/aggregations/:type
 async getAggregations(req, res) {
   const { type } = req.params;
   const { period = 'week' } = req.query;
@@ -136,7 +136,7 @@ async getAggregations(req, res) {
   res.json({ data, fromCache });
 }
 
-// POST /api/analytics/aggregations (invalidation)
+// POST /api/V1/analytics/aggregations (invalidation)
 async createAggregation(req, res) {
   const result = await AggregationService.createAggregation(req.body);
   // Invalider le cache après création

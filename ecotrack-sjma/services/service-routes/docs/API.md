@@ -1,7 +1,7 @@
 #  API Reference - Service Routes
 
-**Base URL (direct)**  : `http://localhost:3012/api/routes`
-**Base URL (gateway)** : `http://localhost:3000/api/routes`
+**Base URL (direct)**  : `http://localhost:3012/api/V1/routes`
+**Base URL (gateway)** : `http://localhost:3000/api/V1/routes`
 **Swagger UI**         : http://localhost:3012/api-docs
 
 ---

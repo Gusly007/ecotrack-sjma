@@ -1,6 +1,6 @@
 import api from './api';
 
-const SIGNALEMENTS_API = '/api/routes/signalements';
+const SIGNALEMENTS_API = '/api/V1/routes/signalements';
 
 export const signalementService = {
   getAll: async (page = 1, limit = 20, filters = {}) => {

@@ -21,7 +21,7 @@ describe('Auth Middleware', () => {
     mockVerify.mockClear();
     
     req = {
-      path: '/api/users/profile',
+      path: '/api/V1/users/profile',
       method: 'GET',
       headers: {},
       baseUrl: ''
@@ -175,7 +175,7 @@ describe('Auth Middleware', () => {
 
     it('should return 401 if user is not authenticated', () => {
       const reqWithoutUser = {
-        path: '/api/admin',
+        path: '/api/V1/admin',
         method: 'GET',
         headers: {}
       };

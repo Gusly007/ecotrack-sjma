@@ -913,6 +913,20 @@ jobs:
         run: npm ci
         working-directory: ecotrack-sjma/frontend
 
+      # Lint ciblé sur le périmètre Citoyen Mobile (pages, composants,
+      # services, utils) : garde notre scope propre sans dépendre du lint
+      # global du frontend (qui peut être bloqué par des règles upstream).
+      - name: 'Lint Citoyen Mobile scope'
+        run: |
+          npx eslint --max-warnings 0 \
+            src/pages/mobile/citoyen/ \
+            src/components/mobile/citoyen/ \
+            src/services/citoyenService.js \
+            src/utils/security.js \
+            src/utils/impactEstimation.js \
+            src/utils/avatar.js
+        working-directory: ecotrack-sjma/frontend
+
       - name: 'Run Vitest coverage'
         run: npm run test:coverage
         working-directory: ecotrack-sjma/frontend
@@ -2049,7 +2063,7 @@ jobs:
         run: |
           nohup npm run preview -- --port 4173 > preview.log 2>&1 &
           for i in {1..30}; do
-            curl -sf http://localhost:4173 && break
+            curl -sf http://localhost:4173/ecotrack-sjma/ && break
             sleep 2
           done
 
@@ -2061,7 +2075,7 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         run: |
           mkdir -p reports/performance
-          npx lighthouse http://localhost:4173 \
+          npx lighthouse http://localhost:4173/ecotrack-sjma/ \
             --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
             --output json \
             --output html \
@@ -2118,7 +2132,7 @@ jobs:
       run: |
         nohup npm run preview -- --port 4173 > preview.log 2>&1 &
         for i in {1..30}; do
-          curl -sf http://localhost:4173 && break
+          curl -sf http://localhost:4173/ecotrack-sjma/ && break
           sleep 2
         done
 
@@ -2130,7 +2144,7 @@ jobs:
       working-directory: ecotrack-sjma/frontend
       run: |
         mkdir -p reports/accessibility
-        npx lighthouse http://localhost:4173 \
+        npx lighthouse http://localhost:4173/ecotrack-sjma/ \
           --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
           --output json \
           --output html \
@@ -2186,7 +2200,7 @@ jobs:
       run: |
         nohup npm run preview -- --port 4173 > preview.log 2>&1 &
         for i in {1..30}; do
-          curl -sf http://localhost:4173 && break
+          curl -sf http://localhost:4173/ecotrack-sjma/ && break
           sleep 2
         done
 
@@ -2198,7 +2212,7 @@ jobs:
       working-directory: ecotrack-sjma/frontend
       run: |
         mkdir -p reports/seo
-        npx lighthouse http://localhost:4173 \
+        npx lighthouse http://localhost:4173/ecotrack-sjma/ \
           --chrome-flags="--headless --no-sandbox --disable-gpu --disable-dev-shm-usage" \
           --output json \
           --output html \

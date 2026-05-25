@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import api from '../services/api';
 import {
-  fetchAgentsForAssignment,
-  fetchTourneeCreationOptions,
-  optimizeTournee,
-  previewOptimizeTournee,
+    fetchAgentsForAssignment,
+    fetchTourneeCreationOptions,
+    optimizeTournee,
+    previewOptimizeTournee,
 } from '../services/tourneeService';
 
 vi.mock('../services/api', () => ({
@@ -23,32 +23,37 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     api.get
       .mockResolvedValueOnce({ data: { data: [{ id_zone: 1, nom: 'Centre' }], pagination: { total: 1 } } })
       .mockResolvedValueOnce({ data: { data: [{ id_utilisateur: 5, role: 'AGENT' }], pagination: { total: 1 } } })
-      .mockResolvedValueOnce({ data: { data: [{ id_vehicule: 3, numero_immatriculation: 'AB-123-CD' }], pagination: { total: 1 } } });
+      .mockResolvedValueOnce({ data: { data: [{ id_vehicule: 3, numero_immatriculation: 'AB-123-CD' }], pagination: { total: 1 } } })
+      .mockResolvedValueOnce({ data: { data: [{ id_type_conteneur: 1, code: 'ORD' }], pagination: { total: 1 } } });
 
     const result = await fetchTourneeCreationOptions();
 
-    expect(api.get).toHaveBeenCalledWith('/api/zones', expect.any(Object));
+    expect(api.get).toHaveBeenCalledWith('/api/V1/zones', expect.any(Object));
     expect(api.get).toHaveBeenCalledWith('/users/agents', expect.objectContaining({
       params: expect.objectContaining({ page: 1, limit: 100 })
     }));
-    expect(api.get).toHaveBeenCalledWith('/api/routes/vehicules', expect.any(Object));
+    expect(api.get).toHaveBeenCalledWith('/api/V1/routes/vehicules', expect.any(Object));
+    expect(api.get).toHaveBeenCalledWith('/api/V1/routes/types-conteneurs');
 
     expect(result.zones).toEqual([{ id_zone: 1, nom: 'Centre' }]);
     expect(result.agents).toEqual([{ id_utilisateur: 5, role: 'AGENT' }]);
     expect(result.vehicles).toEqual([{ id_vehicule: 3, numero_immatriculation: 'AB-123-CD' }]);
+    expect(result.types).toEqual([{ id_type_conteneur: 1, code: 'ORD' }]);
   });
 
   it('fetchTourneeCreationOptions tolère un échec partiel et renvoie des listes vides', async () => {
     api.get
       .mockResolvedValueOnce({ data: { data: [{ id_zone: 1 }] } })
       .mockRejectedValueOnce(new Error('agents fail'))
-      .mockResolvedValueOnce({ data: { data: [{ id_vehicule: 3 }] } });
+      .mockResolvedValueOnce({ data: { data: [{ id_vehicule: 3 }] } })
+      .mockResolvedValueOnce({ data: { data: [{ id_type_conteneur: 2, code: 'REC' }] } });
 
     const result = await fetchTourneeCreationOptions();
 
     expect(result.zones).toEqual([{ id_zone: 1 }]);
     expect(result.agents).toEqual([]);
     expect(result.vehicles).toEqual([{ id_vehicule: 3 }]);
+    expect(result.types).toEqual([{ id_type_conteneur: 2, code: 'REC' }]);
   });
 
   it('fetchTourneeCreationOptions lance une erreur si tout échoue', async () => {
@@ -74,7 +79,7 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     expect(result).toEqual([{ id_utilisateur: 7, role: 'AGENT', prenom: 'Ana' }]);
   });
 
-  it('optimizeTournee POST /api/routes/optimize et dé-enveloppe la réponse', async () => {
+  it('optimizeTournee POST /api/V1/routes/optimize et dé-enveloppe la réponse', async () => {
     const payload = {
       id_zone: 1,
       date_tournee: '2026-04-20',
@@ -94,7 +99,7 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     const result = await optimizeTournee(payload);
 
     expect(api.post).toHaveBeenCalledWith(
-      '/api/routes/optimize',
+      '/api/V1/routes/optimize',
       payload,
       expect.objectContaining({ timeout: 30000 })
     );
@@ -117,13 +122,13 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     await optimizeTournee(payload);
 
     expect(api.post).toHaveBeenCalledWith(
-      '/api/routes/optimize',
+      '/api/V1/routes/optimize',
       expect.objectContaining({ heure_debut_prevue: '08:15' }),
       expect.any(Object)
     );
   });
 
-  it('previewOptimizeTournee POST /api/routes/optimize/preview et ne persiste pas', async () => {
+  it('previewOptimizeTournee POST /api/V1/routes/optimize/preview et ne persiste pas', async () => {
     const payload = {
       id_zone: 1,
       date_tournee: '2026-04-20',
@@ -141,11 +146,11 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
     const result = await previewOptimizeTournee(payload);
 
     expect(api.post).toHaveBeenCalledWith(
-      '/api/routes/optimize/preview',
+      '/api/V1/routes/optimize/preview',
       payload,
       expect.objectContaining({ timeout: 30000 })
     );
-    expect(api.post).not.toHaveBeenCalledWith('/api/routes/optimize', expect.anything());
+    expect(api.post).not.toHaveBeenCalledWith('/api/V1/routes/optimize', expect.anything());
     expect(result).toEqual(serverPreview);
   });
 });

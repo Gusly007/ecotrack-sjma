@@ -35,7 +35,7 @@ npm install pdfkit exceljs nodemailer node-cron
 
 ##  Endpoints
 
-### POST /api/analytics/reports/generate
+### POST /api/V1/analytics/reports/generate
 Générer un rapport général (quotidien/hebdomadaire/mensuel)
 
 **Body:**
@@ -47,7 +47,7 @@ Générer un rapport général (quotidien/hebdomadaire/mensuel)
 }
 ```
 
-### POST /api/analytics/reports/environmental
+### POST /api/V1/analytics/reports/environmental
 Générer un rapport d'impact environnemental détaillé
 
 **Body:**
@@ -66,7 +66,7 @@ Générer un rapport d'impact environnemental détaillé
 - Distance (prévue, réelle, économisée)
 - Performance par zone
 
-### POST /api/analytics/reports/routes-performance
+### POST /api/V1/analytics/reports/routes-performance
 Générer un rapport de performance des tournées
 
 **Body:**
@@ -84,7 +84,7 @@ Générer un rapport de performance des tournées
 - Top performer
 - Recommandations
 
-### GET /api/analytics/reports/download/:filename
+### GET /api/V1/analytics/reports/download/:filename
 Télécharger un rapport
 
 ##  Configuration Email

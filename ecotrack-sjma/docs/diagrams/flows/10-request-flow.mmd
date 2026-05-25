@@ -26,7 +26,7 @@ flowchart LR
         Cache[Response Cache]
     end
 
-    Browser -->|"POST /api/containers"| Rate
+    Browser -->|"POST /api/V1/containers"| Rate
     Rate -->|"Within limit"| CORS
     Rate -->|"Rate limited"| RateLim[429 Too Many]
 
@@ -34,12 +34,12 @@ flowchart LR
     JWT -->|"Valid"| Router
     JWT -->|"Invalid"| JWTRej[401 Unauthorized]
 
-    Router -->|"GET /api/*"| S1
-    Router -->|"POST /api/containers/*"| S2
-    Router -->|"GET /api/tournees/*"| S3
-    Router -->|"GET /api/iot/*"| S4
-    Router -->|"GET /api/badges/*"| S5
-    Router -->|"GET /api/stats/*"| S6
+    Router -->|"GET /api/V1/*"| S1
+    Router -->|"POST /api/V1/containers/*"| S2
+    Router -->|"GET /api/V1/tournees/*"| S3
+    Router -->|"GET /api/V1/iot/*"| S4
+    Router -->|"GET /api/V1/badges/*"| S5
+    Router -->|"GET /api/V1/stats/*"| S6
     Router -->|"404"| NotFound[404 Not Found]
 
     S1 --> Cache
@@ -56,18 +56,18 @@ flowchart LR
     style NotFound color:#e74c3c
     %% API Routes Mapping
     %% Path | Service | Permission
-    %% /api/auth/* | service-users | None
-    %% /api/containers/* | service-containers | RBAC
-    %% /api/zones/* | service-containers | RBAC
-    %% /api/tournees/* | service-routes | RBAC
-    %% /api/iot/* | service-iot | RBAC
-    %% /api/badges/* | service-gamifications | RBAC
-    %% /api/defis/* | service-gamifications | RBAC
-    %% /api/stats/* | service-analytics | RBAC
-    %% /api/dashboard/* | service-analytics | RBAC
+    %% /api/V1/auth/* | service-users | None
+    %% /api/V1/containers/* | service-containers | RBAC
+    %% /api/V1/zones/* | service-containers | RBAC
+    %% /api/V1/tournees/* | service-routes | RBAC
+    %% /api/V1/iot/* | service-iot | RBAC
+    %% /api/V1/badges/* | service-gamifications | RBAC
+    %% /api/V1/defis/* | service-gamifications | RBAC
+    %% /api/V1/stats/* | service-analytics | RBAC
+    %% /api/V1/dashboard/* | service-analytics | RBAC
 
     %% Rate Limiting
     %% Endpoint | Limit
-    %% /api/auth/* | 10/min
-    %% /api/* | 100/min
-    %% /api/measurements | 1000/min
+    %% /api/V1/auth/* | 10/min
+    %% /api/V1/* | 100/min
+    %% /api/V1/measurements | 1000/min
