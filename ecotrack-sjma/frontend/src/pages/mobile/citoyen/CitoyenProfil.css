@@ -1,5 +1,5 @@
-.profil-page { background: #f8f9fa; min-height: 100vh; }
-.profil-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.profil-page { background: #f8f9fa; min-height: 100dvh; }
+.profil-body { padding: 16px 16px 100px; display: flex; flex-direction: column; gap: 16px; }
 
 .profil-hero {
   background: #fff; border-radius: 16px; padding: 24px 16px;
