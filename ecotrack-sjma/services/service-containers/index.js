@@ -145,10 +145,10 @@ app.get('/api', (req, res) => {
     endpoints: {
       documentation: '/api-docs',
       health: '/health',
-      containers: '/api/containers',
-      zones: '/api/zones',
-      types: '/api/types-conteneurs',
-      stats: '/api/stats' 
+      containers: '/api/V1/containers',
+      zones: '/api/V1/zones',
+      types: '/api/V1/types-conteneurs',
+      stats: '/api/V1/stats' 
     }
   });
 });

@@ -152,8 +152,8 @@ app.get('/api', (_req, res) => {
       documentation: '/api-docs',
       health:        '/health',
       metrics:       '/metrics',
-      notifications: '/api/notifications',
-      adminNotifications: '/api/admin/notifications',
+      notifications: '/api/V1/notifications',
+      adminNotifications: '/api/V1/admin/notifications',
     },
   });
 });

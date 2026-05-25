@@ -21,11 +21,11 @@ describe('Vehicule routes integration', () => {
       req.controllers = { vehicule: controllers };
       next();
     });
-    app.use('/api/routes', vehiculeRoutes);
+    app.use('/api/V1/routes', vehiculeRoutes);
   });
 
   it('routes GET /vehicules to getAll controller', async () => {
-    const res = await request(app).get('/api/routes/vehicules');
+    const res = await request(app).get('/api/V1/routes/vehicules');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getAll' }));
@@ -33,7 +33,7 @@ describe('Vehicule routes integration', () => {
   });
 
   it('routes GET /vehicules with pagination', async () => {
-    const res = await request(app).get('/api/routes/vehicules?page=2&limit=25');
+    const res = await request(app).get('/api/V1/routes/vehicules?page=2&limit=25');
 
     expect(res.status).toBe(200);
     expect(controllers.getAll).toHaveBeenCalledTimes(1);
@@ -41,7 +41,7 @@ describe('Vehicule routes integration', () => {
 
   it('routes POST /vehicules to create controller', async () => {
     const res = await request(app)
-      .post('/api/routes/vehicules')
+      .post('/api/V1/routes/vehicules')
       .send({ numero_immatriculation: 'AB-123-CD', modele: 'Renault Master', capacite_kg: 3500 });
 
     expect(res.status).toBe(201);
@@ -50,7 +50,7 @@ describe('Vehicule routes integration', () => {
   });
 
   it('routes GET /vehicules/:id to getById controller', async () => {
-    const res = await request(app).get('/api/routes/vehicules/5');
+    const res = await request(app).get('/api/V1/routes/vehicules/5');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getById', id: '5' }));
@@ -59,7 +59,7 @@ describe('Vehicule routes integration', () => {
 
   it('routes PATCH /vehicules/:id to update controller', async () => {
     const res = await request(app)
-      .patch('/api/routes/vehicules/3')
+      .patch('/api/V1/routes/vehicules/3')
       .send({ modele: 'Updated Model' });
 
     expect(res.status).toBe(200);
@@ -68,7 +68,7 @@ describe('Vehicule routes integration', () => {
   });
 
   it('routes DELETE /vehicules/:id to delete controller', async () => {
-    const res = await request(app).delete('/api/routes/vehicules/10');
+    const res = await request(app).delete('/api/V1/routes/vehicules/10');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'delete', id: '10' }));

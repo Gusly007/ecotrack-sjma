@@ -108,7 +108,7 @@
     async function loadConteneurs() {
       const list = document.getElementById('conteneurs-list');
       try {
-        const res = await fetch('/api/containers?limit=50', {
+        const res = await fetch('/api/V1/containers?limit=50', {
           headers: { 'Content-Type': 'application/json' }
         });
         if (!res.ok) throw new Error('API error');

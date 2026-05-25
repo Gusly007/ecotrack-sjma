@@ -218,7 +218,7 @@ axios.post(
 
 ```
 1. AGENT
-   POST /api/routes/tournees/18641/anomalie
+   POST /api/V1/routes/tournees/18641/anomalie
    { type_anomalie: "CONTENEUR_INACCESSIBLE", gravite: "Haute", description: "..." }
 
 2. service-routes :3012
@@ -266,7 +266,7 @@ Si le navigateur ne parvient pas à établir la connexion WebSocket, `Notificati
 
 ```
 Toutes les 15 secondes :
-    GET /api/notifications/unread/count
+    GET /api/V1/notifications/unread/count
          │
          ├─ wsAlive = socketRef.current?.connected
          │

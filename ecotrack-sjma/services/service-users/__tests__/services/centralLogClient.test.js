@@ -27,7 +27,7 @@ describe('centralLogClient', () => {
 
     expect(axios.post).toHaveBeenCalledTimes(1);
     const [url, payload] = axios.post.mock.calls[0];
-    expect(url).toContain('/api/logs');
+    expect(url).toContain('/api/V1/logs');
     expect(payload.message).toBe('hello');
     expect(payload.userId).toBe(42);
   });

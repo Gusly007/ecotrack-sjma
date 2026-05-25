@@ -16,7 +16,7 @@ export default function CookieBanner() {
           return;
         }
 
-        const response = await api.get(`/api/cookies/consent/${sessionId}`);
+        const response = await api.get(`/api/V1/cookies/consent/${sessionId}`);
         if (response?.status === 404) {
           setShowBanner(true);
         } else {
@@ -36,7 +36,7 @@ export default function CookieBanner() {
       const sessionId = sessionStorage.getItem('sessionId') || `session_${Date.now()}`;
       sessionStorage.setItem('sessionId', sessionId);
 
-      await api.post('/api/cookies/consent', {
+      await api.post('/api/V1/cookies/consent', {
         session_id: sessionId,
         consent_status: consentStatus,
         cookies_accepted: consentData

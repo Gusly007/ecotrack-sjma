@@ -19,7 +19,7 @@ describe('metrics routes', () => {
 
   test('serves overview, services, iot, kafka and database data', async () => {
     mockFetch.mockImplementation((url) => {
-      if (url.includes('/api/v1/alerts')) {
+      if (url.includes('/api/V1/v1/alerts')) {
         return Promise.resolve({
           json: async () => ({
             status: 'success',
@@ -63,25 +63,25 @@ describe('metrics routes', () => {
 
     const router = loadRouter();
     const app = express();
-    app.use('/api/analytics', router);
+    app.use('/api/V1/analytics', router);
 
-    await request(app).get('/api/analytics/overview').expect(200);
-    await request(app).get('/api/analytics/services').expect(200);
-    await request(app).get('/api/analytics/iot').expect(200);
-    await request(app).get('/api/analytics/kafka').expect(200);
-    await request(app).get('/api/analytics/database').expect(200);
-    await request(app).get('/api/analytics/alerts').expect(200);
-    await request(app).get('/api/analytics/alerts/counts').expect(200);
-    await request(app).get('/api/analytics/history?metric=memory&period=3600').expect(200);
+    await request(app).get('/api/V1/analytics/overview').expect(200);
+    await request(app).get('/api/V1/analytics/services').expect(200);
+    await request(app).get('/api/V1/analytics/iot').expect(200);
+    await request(app).get('/api/V1/analytics/kafka').expect(200);
+    await request(app).get('/api/V1/analytics/database').expect(200);
+    await request(app).get('/api/V1/analytics/alerts').expect(200);
+    await request(app).get('/api/V1/analytics/alerts/counts').expect(200);
+    await request(app).get('/api/V1/analytics/history?metric=memory&period=3600').expect(200);
   });
 
   test('falls back on failed prometheus query', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network down'));
     const router = loadRouter();
     const app = express();
-    app.use('/api/analytics', router);
+    app.use('/api/V1/analytics', router);
 
-    await request(app).get('/api/analytics/overview').expect(200);
+    await request(app).get('/api/V1/analytics/overview').expect(200);
   });
 });
 

@@ -331,7 +331,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-    '/api/containers': {
+    '/api/V1/containers': {
       get: {
         tags: ['Containers'],
         summary: 'Liste paginée des conteneurs',
@@ -416,7 +416,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-    '/api/zones': {
+    '/api/V1/zones': {
       get: {
         tags: ['Zones'],
         summary: 'Liste des zones géographiques',
@@ -452,7 +452,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-    '/api/typecontainers': {
+    '/api/V1/typecontainers': {
       get: {
         tags: ['Types'],
         summary: 'Liste des types de conteneurs',
@@ -487,7 +487,7 @@ Obtenez un token via \`POST /auth/login\`
         }
       }
     },
-    '/api/stats/dashboard': {
+    '/api/V1/stats/dashboard': {
       get: {
         tags: ['Statistics'],
         summary: 'Dashboard de statistiques globales',
@@ -527,7 +527,7 @@ Obtenez un token via \`POST /auth/login\`
     //  SERVICE GAMIFICATION — Endpoints
     // ═══════════════════════════════════════════════════════════════
 
-    '/api/gamification/actions': {
+    '/api/V1/gamification/actions': {
       post: {
         tags: ['Actions'],
         summary: 'Enregistrer une action écoresponsable',
@@ -574,7 +574,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/badges': {
+    '/api/V1/gamification/badges': {
       get: {
         tags: ['Badges'],
         summary: 'Lister tous les badges disponibles',
@@ -608,7 +608,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/badges/utilisateurs/{idUtilisateur}': {
+    '/api/V1/gamification/badges/utilisateurs/{idUtilisateur}': {
       get: {
         tags: ['Badges'],
         summary: 'Badges d\'un utilisateur',
@@ -651,7 +651,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/classement': {
+    '/api/V1/gamification/classement': {
       get: {
         tags: ['Classement'],
         summary: 'Récupérer le classement des utilisateurs',
@@ -704,7 +704,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/defis': {
+    '/api/V1/gamification/defis': {
       get: {
         tags: ['Défis'],
         summary: 'Lister tous les défis',
@@ -772,7 +772,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/defis/{idDefi}/participations': {
+    '/api/V1/gamification/defis/{idDefi}/participations': {
       post: {
         tags: ['Défis'],
         summary: 'Participer à un défi',
@@ -812,7 +812,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/defis/{idDefi}/participations/{idUtilisateur}': {
+    '/api/V1/gamification/defis/{idDefi}/participations/{idUtilisateur}': {
       patch: {
         tags: ['Défis'],
         summary: 'Mettre à jour une participation',
@@ -857,7 +857,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/notifications': {
+    '/api/V1/gamification/notifications': {
       get: {
         tags: ['Notifications Gamification'],
         summary: 'Récupérer les notifications',
@@ -930,7 +930,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/gamification/stats/utilisateurs/{idUtilisateur}/stats': {
+    '/api/V1/gamification/stats/utilisateurs/{idUtilisateur}/stats': {
       get: {
         tags: ['Stats Gamification'],
         summary: 'Statistiques d\'un utilisateur',
@@ -975,7 +975,7 @@ Obtenez un token via \`POST /auth/login\`
     //  SERVICE ANALYTICS — Endpoints
     // ═══════════════════════════════════════════════════════════════
 
-    '/api/analytics/aggregations/dashboard': {
+    '/api/V1/analytics/aggregations/dashboard': {
       get: {
         tags: ['Analytics'],
         summary: 'Dashboard complet d\'analytics',
@@ -1014,7 +1014,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/aggregations/global': {
+    '/api/V1/analytics/aggregations/global': {
       get: {
         tags: ['Analytics'],
         summary: 'Agrégation globale',
@@ -1046,7 +1046,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/aggregations/daily': {
+    '/api/V1/analytics/aggregations/daily': {
       get: {
         tags: ['Analytics'],
         summary: 'Agrégations quotidiennes',
@@ -1087,7 +1087,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/aggregations/zones': {
+    '/api/V1/analytics/aggregations/zones': {
       get: {
         tags: ['Analytics'],
         summary: 'Agrégations par zone',
@@ -1122,7 +1122,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/aggregations/types': {
+    '/api/V1/analytics/aggregations/types': {
       get: {
         tags: ['Analytics'],
         summary: 'Agrégations par type',
@@ -1154,7 +1154,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/aggregations/agents': {
+    '/api/V1/analytics/aggregations/agents': {
       get: {
         tags: ['Analytics'],
         summary: 'Performances des agents',
@@ -1198,7 +1198,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     },
 
-    '/api/analytics/refresh': {
+    '/api/V1/analytics/refresh': {
       post: {
         tags: ['Analytics'],
         summary: 'Rafraîchir les agrégations',
@@ -1228,7 +1228,7 @@ Obtenez un token via \`POST /auth/login\`
   // ========================================================================
   // ROUTES SERVICE - Service de gestion des tournées
   // ========================================================================
-  '/api/routes/tournees': {
+  '/api/V1/routes/tournees': {
     get: {
       tags: ['Routes - Tournées'],
       summary: 'Liste toutes les tournées',
@@ -1273,7 +1273,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/active': {
+  '/api/V1/routes/tournees/active': {
     get: {
       tags: ['Routes - Tournées'],
       summary: 'Liste les tournées actives (EN_COURS)',
@@ -1282,7 +1282,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}': {
+  '/api/V1/routes/tournees/{id}': {
     get: {
       tags: ['Routes - Tournées'],
       summary: 'Récupère une tournée par ID',
@@ -1311,7 +1311,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/statut': {
+  '/api/V1/routes/tournees/{id}/statut': {
     patch: {
       tags: ['Routes - Tournées'],
       summary: 'Change le statut dune tournée',
@@ -1334,7 +1334,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/etapes': {
+  '/api/V1/routes/tournees/{id}/etapes': {
     get: {
       tags: ['Routes - Tournées'],
       summary: 'Récupère les étapes dune tournée',
@@ -1344,7 +1344,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/progress': {
+  '/api/V1/routes/tournees/{id}/progress': {
     get: {
       tags: ['Routes - Tournées'],
       summary: 'Progression dune tournée',
@@ -1354,7 +1354,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/pdf': {
+  '/api/V1/routes/tournees/{id}/pdf': {
     get: {
       tags: ['Routes - Export'],
       summary: 'Génère une feuille de route PDF',
@@ -1368,7 +1368,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/map': {
+  '/api/V1/routes/tournees/{id}/map': {
     get: {
       tags: ['Routes - Export'],
       summary: 'Données cartographiques GeoJSON pour affichage sur carte',
@@ -1379,7 +1379,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/optimize': {
+  '/api/V1/routes/optimize': {
     post: {
       tags: ['Routes - Optimisation'],
       summary: 'Génère une tournée optimisée',
@@ -1408,7 +1408,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/collecte': {
+  '/api/V1/routes/tournees/{id}/collecte': {
     post: {
       tags: ['Routes - Collectes'],
       summary: 'Enregistre une collecte',
@@ -1434,7 +1434,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/tournees/{id}/anomalie': {
+  '/api/V1/routes/tournees/{id}/anomalie': {
     post: {
       tags: ['Routes - Collectes'],
       summary: 'Signale une anomalie sur un conteneur',
@@ -1460,7 +1460,7 @@ Obtenez un token via \`POST /auth/login\`
       }
     }
   },
-  '/api/routes/vehicules': {
+  '/api/V1/routes/vehicules': {
     get: {
       tags: ['Routes - Véhicules'],
       summary: 'Liste des véhicules',
@@ -1488,7 +1488,7 @@ Obtenez un token via \`POST /auth/login\`
       responses: { 201: { description: 'Véhicule créé' } }
     }
   },
-  '/api/routes/vehicules/{id}': {
+  '/api/V1/routes/vehicules/{id}': {
     get: {
       tags: ['Routes - Véhicules'],
       summary: 'Détail dun véhicule',
@@ -1496,14 +1496,14 @@ Obtenez un token via \`POST /auth/login\`
       responses: { 200: { description: 'Véhicule trouvé' } }
     }
   },
-  '/api/routes/stats/dashboard': {
+  '/api/V1/routes/stats/dashboard': {
     get: {
       tags: ['Routes - Statistiques'],
       summary: 'Compteurs globaux',
       responses: { 200: { description: 'Dashboard avec compteurs' } }
     }
   },
-  '/api/routes/stats/kpis': {
+  '/api/V1/routes/stats/kpis': {
     get: {
       tags: ['Routes - Statistiques'],
       summary: 'KPIs de performance',
@@ -1515,7 +1515,7 @@ Obtenez un token via \`POST /auth/login\`
   //  SERVICE IOT — Endpoints
   // ═══════════════════════════════════════════════════════════════
 
-  '/api/iot/measurements': {
+  '/api/V1/iot/measurements': {
     get: {
       tags: ['IoT Mesures'],
       summary: 'Liste des mesures avec filtres',
@@ -1533,7 +1533,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/measurements/latest': {
+  '/api/V1/iot/measurements/latest': {
     get: {
       tags: ['IoT Mesures'],
       summary: 'Dernière mesure de chaque conteneur',
@@ -1545,7 +1545,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/measurements/container/{id}': {
+  '/api/V1/iot/measurements/container/{id}': {
     get: {
       tags: ['IoT Mesures'],
       summary: 'Mesures d\'un conteneur spécifique',
@@ -1561,7 +1561,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/sensors': {
+  '/api/V1/iot/sensors': {
     get: {
       tags: ['IoT Capteurs'],
       summary: 'Liste des capteurs',
@@ -1573,7 +1573,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/sensors/{id}': {
+  '/api/V1/iot/sensors/{id}': {
     get: {
       tags: ['IoT Capteurs'],
       summary: 'Détails d\'un-capteur',
@@ -1589,7 +1589,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/alerts': {
+  '/api/V1/iot/alerts': {
     get: {
       tags: ['IoT Alertes'],
       summary: 'Liste des alertes avec filtres',
@@ -1605,7 +1605,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/alerts/{id}': {
+  '/api/V1/iot/alerts/{id}': {
     patch: {
       tags: ['IoT Alertes'],
       summary: 'Mettre à jour le statut d\'une alerte',
@@ -1635,7 +1635,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/simulate': {
+  '/api/V1/iot/simulate': {
     post: {
       tags: ['IoT Alertes'],
       summary: 'Simuler l\'envoi de données-capteur',
@@ -1664,7 +1664,7 @@ Obtenez un token via \`POST /auth/login\`
     }
   },
 
-  '/api/iot/stats': {
+  '/api/V1/iot/stats': {
     get: {
       tags: ['IoT Alertes'],
       summary: 'Statistiques globales du service IoT',
@@ -1679,7 +1679,7 @@ Obtenez un token via \`POST /auth/login\`
     // ─────────────────────────────────────────────────────────────
     // Service Notifications Gestionnaire (port 3016) — endpoints
     // ─────────────────────────────────────────────────────────────
-    '/api/admin/notifications/types': {
+    '/api/V1/admin/notifications/types': {
       get: {
         tags: ['AdminNotifications'],
         summary: 'Récupère les types de notifications admin disponibles',
@@ -1687,7 +1687,7 @@ Obtenez un token via \`POST /auth/login\`
         responses: { 200: { description: 'Liste des types' } }
       }
     },
-    '/api/admin/notifications/priorities': {
+    '/api/V1/admin/notifications/priorities': {
       get: {
         tags: ['AdminNotifications'],
         summary: 'Récupère la table des priorités disponibles',
@@ -1695,7 +1695,7 @@ Obtenez un token via \`POST /auth/login\`
         responses: { 200: { description: 'Objet map des priorités' } }
       }
     },
-    '/api/admin/notifications': {
+    '/api/V1/admin/notifications': {
       post: {
         tags: ['AdminNotifications'],
         summary: 'Crée une notification admin pour un gestionnaire',
@@ -1710,7 +1710,7 @@ Obtenez un token via \`POST /auth/login\`
         responses: { 200: { description: 'Liste paginée de notifications admin' } }
       }
     },
-    '/api/admin/notifications/bulk': {
+    '/api/V1/admin/notifications/bulk': {
       post: {
         tags: ['AdminNotifications'],
         summary: 'Crée plusieurs notifications admin en masse',
@@ -1719,7 +1719,7 @@ Obtenez un token via \`POST /auth/login\`
         responses: { 201: { description: 'Notifications insérées' } }
       }
     },
-    '/api/admin/notifications/{id}/read': {
+    '/api/V1/admin/notifications/{id}/read': {
       patch: {
         tags: ['AdminNotifications'],
         summary: 'Marque une notification admin comme lue',
@@ -1728,7 +1728,7 @@ Obtenez un token via \`POST /auth/login\`
         responses: { 200: { description: 'Notification mise à jour' } }
       }
     },
-    '/api/admin/notifications/stats': {
+    '/api/V1/admin/notifications/stats': {
       get: {
         tags: ['AdminNotifications'],
         summary: 'Récupère des statistiques basiques sur les notifications admin',

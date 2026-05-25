@@ -85,7 +85,7 @@ async function handleLogin(event) {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div>';
     try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/V1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, role: selectedRole })
@@ -135,7 +135,7 @@ async function handleRegister(event) {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div>';
     try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('/api/V1/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password, role: 'citoyen' })
@@ -166,7 +166,7 @@ async function handleForgotPassword(event) {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Envoi...</span>';
     try {
-        const response = await fetch('/api/auth/forgot-password', {
+        const response = await fetch('/api/V1/auth/forgot-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })

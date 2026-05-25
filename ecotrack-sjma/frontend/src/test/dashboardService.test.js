@@ -19,7 +19,7 @@ describe('dashboardService', () => {
 
     const result = await dashboardService.getStats();
 
-    expect(api.get).toHaveBeenCalledWith('/api/dashboard/stats');
+    expect(api.get).toHaveBeenCalledWith('/api/V1/dashboard/stats');
     expect(result).toEqual({ total: 3 });
   });
 

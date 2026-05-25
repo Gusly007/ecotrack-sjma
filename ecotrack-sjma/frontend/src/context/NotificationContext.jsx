@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
 import api from '../services/api';
+import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext({ unreadCount: 0, refresh: () => {} });
 
@@ -121,7 +121,7 @@ export function NotificationProvider({ children }) {
   const fetchCount = useCallback(async ({ exact = false } = {}) => {
     if (!userId) return;
     try {
-      const res = await api.get('/api/notifications/unread/count');
+      const res = await api.get('/api/V1/notifications/unread/count');
       const count = Number(
         res.data?.unread_count ?? res.data?.count ?? res.data?.unreadCount ?? 0
       );

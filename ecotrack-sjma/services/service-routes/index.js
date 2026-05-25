@@ -80,7 +80,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${config.PORT}/api/routes`,
+        url: `http://localhost:${config.PORT}/api/V1/routes`,
         description: 'Development server'
       }
     ],
@@ -128,14 +128,14 @@ if (!fs.existsSync(reportsDir)) {
 }
 app.use('/reports', express.static(reportsDir));
 
-app.use('/api/routes', publicLimiter, tourneeRoutes);
-app.use('/api/routes', publicLimiter, vehiculeRoutes);
-app.use('/api/routes', publicLimiter, collecteRoutes);
-app.use('/api/routes', publicLimiter, statsRoutes);
-app.use('/api/routes', publicLimiter, signalementRoutes);
+app.use('/api/V1/routes', publicLimiter, tourneeRoutes);
+app.use('/api/V1/routes', publicLimiter, vehiculeRoutes);
+app.use('/api/V1/routes', publicLimiter, collecteRoutes);
+app.use('/api/V1/routes', publicLimiter, statsRoutes);
+app.use('/api/V1/routes', publicLimiter, signalementRoutes);
 
 // Root info
-app.get('/api/routes', (req, res) => {
+app.get('/api/V1/routes', (req, res) => {
   res.json({
     success: true,
     message: 'Bienvenue sur EcoTrack Routes API',
@@ -144,10 +144,10 @@ app.get('/api/routes', (req, res) => {
       documentation: '/api-docs',
       health: '/health',
       metrics: '/metrics',
-      tournees: '/api/routes/tournees',
-      vehicules: '/api/routes/vehicules',
-      optimize: '/api/routes/optimize',
-      stats: '/api/routes/stats/dashboard'
+      tournees: '/api/V1/routes/tournees',
+      vehicules: '/api/V1/routes/vehicules',
+      optimize: '/api/V1/routes/optimize',
+      stats: '/api/V1/routes/stats/dashboard'
     }
   });
 });
@@ -216,7 +216,7 @@ const kafkaProducer = require('./kafkaProducer');
 const port = config.PORT;
 app.listen(port, async () => {
   logger.info({ port }, 'EcoTrack Routes API ready');
-  logger.info({ url: `http://localhost:${port}/api/routes` }, 'API base URL');
+  logger.info({ url: `http://localhost:${port}/api/V1/routes` }, 'API base URL');
   logger.info({ url: `http://localhost:${port}/api-docs` }, 'Swagger docs ready');
   logger.info({ env: config.NODE_ENV }, 'Environment');
   await testConnection();

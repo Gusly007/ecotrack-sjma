@@ -72,7 +72,7 @@ EcoTrack implémente une conformité complète au **Règlement Général sur la 
 
 #### Preuve de consentement
 - **Implémentation:** 
-  - POST `/api/consent` - Enregistrement du consentement
+  - POST `/api/V1/consent` - Enregistrement du consentement
   - Données capturées:
     - **IP address** (via X-Forwarded-For ou socket)
     - **User-agent** (navigateur/device)
@@ -87,7 +87,7 @@ EcoTrack implémente une conformité complète au **Règlement Général sur la 
 - **Implémentation:**
   - Bannière RGPD affichée à la première visite (`CookieBanner.jsx`)
   - Actions disponibles : **Refuser tout** / **Accepter tout**
-  - Consentement enregistré en base via `POST /api/cookies/consent` avec `session_id`, `consent_status` (`ACCEPTED`/`REJECTED`), `cookies_accepted`
+  - Consentement enregistré en base via `POST /api/V1/cookies/consent` avec `session_id`, `consent_status` (`ACCEPTED`/`REJECTED`), `cookies_accepted`
   - Session persistée en `sessionStorage`
   - Conformément à la recommandation CNIL : interface simple, choix binaire clair
 
@@ -101,7 +101,7 @@ EcoTrack implémente une conformité complète au **Règlement Général sur la 
 
 #### Suppression de consentement (Droit à l'oubli)
 - **Implémentation:**
-  - DELETE `/api/cookies/consent` - Suppression immédiate
+  - DELETE `/api/V1/cookies/consent` - Suppression immédiate
   - Suppression complète du consentement
   - Aucune trace persistante
 
@@ -392,7 +392,7 @@ EcoTrack implémente une conformité complète au **Règlement Général sur la 
 └──────┬──────┘
        │
        ├─→ [Profil] ─→ PUT /users/profile (rectification)
-       ├─→ [Consent] ─→ POST /api/consent (Art. 7 preuve)
+       ├─→ [Consent] ─→ POST /api/V1/consent (Art. 7 preuve)
        ├─→ [Export] ─→ GET /users/me/export (Art. 15)
        ├─→ [Delete] ─→ POST /users/me/delete (Art. 17)
        └─→ [History] ─→ GET /users/me/consents (audit)

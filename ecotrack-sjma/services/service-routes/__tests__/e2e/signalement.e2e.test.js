@@ -6,7 +6,7 @@
 const request = require('supertest');
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const API_ROUTES = `${API_URL}/api/routes`;
+const API_ROUTES = `${API_URL}/api/V1/routes`;
 
 describe('Signalement E2E Tests', () => {
   const testSignalement = {

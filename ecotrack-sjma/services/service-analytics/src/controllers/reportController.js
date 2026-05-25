@@ -9,7 +9,7 @@ const fs = require('fs');
 
 class ReportController {
   /**
-   * POST /api/analytics/reports/generate
+   * POST /api/V1/analytics/reports/generate
    */
   static async generateReport(req, res) {
     try {
@@ -125,7 +125,7 @@ class ReportController {
   }
 
   /**
-   * GET /api/analytics/reports/download/:filename
+   * GET /api/V1/analytics/reports/download/:filename
    */
   static async downloadReport(req, res) {
     try {
@@ -150,7 +150,7 @@ class ReportController {
   }
 
   /**
-   * POST /api/analytics/reports/environmental - Rapport d'impact environnemental
+   * POST /api/V1/analytics/reports/environmental - Rapport d'impact environnemental
    */
   static async generateEnvironmentalReport(req, res) {
     try {
@@ -208,7 +208,7 @@ class ReportController {
   }
 
   /**
-   * POST /api/analytics/reports/routes-performance - Rapport performance des tournées
+   * POST /api/V1/analytics/reports/routes-performance - Rapport performance des tournées
    */
   static async generateRoutesPerformanceReport(req, res) {
     try {

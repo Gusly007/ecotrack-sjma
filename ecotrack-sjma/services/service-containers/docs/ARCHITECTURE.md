@@ -199,20 +199,20 @@ npm run test-db
 ### Endpoints principaux
 
 #### Conteneurs
-- `GET /api/containers` - Lister tous les conteneurs
-- `POST /api/containers` - Créer un conteneur
-- `GET /api/containers/:id` - Récupérer un conteneur
-- `PATCH /api/containers/:id` - Mettre à jour un conteneur
-- `PATCH /api/containers/:id/status` - Changer le statut
-- `GET /api/containers/:id/status/history` - Historique du statut
-- `DELETE /api/containers/:id` - Supprimer un conteneur
+- `GET /api/V1/containers` - Lister tous les conteneurs
+- `POST /api/V1/containers` - Créer un conteneur
+- `GET /api/V1/containers/:id` - Récupérer un conteneur
+- `PATCH /api/V1/containers/:id` - Mettre à jour un conteneur
+- `PATCH /api/V1/containers/:id/status` - Changer le statut
+- `GET /api/V1/containers/:id/status/history` - Historique du statut
+- `DELETE /api/V1/containers/:id` - Supprimer un conteneur
 
 #### Zones
-- `GET /api/zones` - Lister toutes les zones
-- `POST /api/zones` - Créer une zone
-- `GET /api/zones/:id` - Récupérer une zone
-- `PATCH /api/zones/:id` - Mettre à jour une zone
-- `DELETE /api/zones/:id` - Supprimer une zone
+- `GET /api/V1/zones` - Lister toutes les zones
+- `POST /api/V1/zones` - Créer une zone
+- `GET /api/V1/zones/:id` - Récupérer une zone
+- `PATCH /api/V1/zones/:id` - Mettre à jour une zone
+- `DELETE /api/V1/zones/:id` - Supprimer une zone
 
 #### Santé
 - `GET /health` - Vérifier que le serveur est actif
@@ -277,8 +277,8 @@ BEGIN → SELECT → UPDATE → INSERT → COMMIT/ROLLBACK
 
 Les requêtes sont loggées automatiquement :
 ```
- GET /api/containers - 200 [45ms]
-⚠️  POST /api/containers - 400 [12ms]
+ GET /api/V1/containers - 200 [45ms]
+⚠️  POST /api/V1/containers - 400 [12ms]
 ```
 
 ##  Contribution

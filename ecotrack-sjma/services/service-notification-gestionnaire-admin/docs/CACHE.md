@@ -248,7 +248,7 @@ return await fetchFn();
 npm start
 
 # 2. Créer une notification
-curl -X POST http://localhost:3014/api/notifications \
+curl -X POST http://localhost:3014/api/V1/notifications \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -262,12 +262,12 @@ curl -X POST http://localhost:3014/api/notifications \
 redis-cli GET ecotrack:notifications:unread:42
 
 # 4. Appeler l'endpoint de compteur
-curl http://localhost:3014/api/notifications/unread/count \
+curl http://localhost:3014/api/V1/notifications/unread/count \
   -H "Authorization: Bearer {token}"
 # → Cache hit (2ms)
 
 # 5. Appeler à nouveau
-curl http://localhost:3014/api/notifications/unread/count
+curl http://localhost:3014/api/V1/notifications/unread/count
 # → Cache hit (2ms) - même résultat
 
 # 6. Attendre 30s

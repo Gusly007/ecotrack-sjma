@@ -1,5 +1,5 @@
-import api from './api';
 import { analyticsService } from './analyticsService';
+import api from './api';
 
 const RECENT_REPORTS_KEY = 'gestionnaire_recent_reports';
 const MAX_RECENT_REPORTS = 12;
@@ -172,17 +172,17 @@ export const reportService = {
     let response;
 
     if (reportType === 'monthly_complete') {
-      response = await api.post('/api/analytics/reports/generate', {
+      response = await api.post('/api/V1/analytics/reports/generate', {
         format: 'pdf',
         reportType: period === 'month' ? 'monthly' : period === 'day' ? 'daily' : 'weekly'
       });
     } else if (reportType === 'routes_performance') {
-      response = await api.post('/api/analytics/reports/routes-performance', {
+      response = await api.post('/api/V1/analytics/reports/routes-performance', {
         format: 'pdf',
         period
       });
     } else {
-      response = await api.post('/api/analytics/reports/environmental', {
+      response = await api.post('/api/V1/analytics/reports/environmental', {
         format: 'pdf',
         period
       });
@@ -248,7 +248,7 @@ export const reportService = {
     }
 
     if (reportItem.fileName) {
-      const response = await api.get(`/api/analytics/reports/download/${encodeURIComponent(reportItem.fileName)}`, {
+      const response = await api.get(`/api/V1/analytics/reports/download/${encodeURIComponent(reportItem.fileName)}`, {
         responseType: 'blob'
       });
       const blob = new Blob([response.data], { type: 'application/pdf' });

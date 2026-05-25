@@ -218,7 +218,7 @@ COMMIT
 { "level": "info", "time": 1234567890, "service": "service-routes", "msg": "..." }
 
 // Développement : coloré (pino-pretty)
-[INFO] Request completed GET /api/routes/tournees 200 45ms
+[INFO] Request completed GET /api/V1/routes/tournees 200 45ms
 ```
 
 ### Prometheus (prom-client)

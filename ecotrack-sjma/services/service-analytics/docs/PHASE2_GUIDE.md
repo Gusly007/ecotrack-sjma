@@ -30,7 +30,7 @@ npm install chart.js chartjs-node-canvas
 
 ## Endpoints
 
-### GET /api/analytics/dashboard
+### GET /api/V1/analytics/dashboard
 Dashboard complet
 
 **Query params:**
@@ -38,13 +38,13 @@ Dashboard complet
 
 **Response:** Données complètes avec graphiques et insights
 
-### GET /api/analytics/realtime
+### GET /api/V1/analytics/realtime
 Stats en temps réel (pour auto-refresh)
 
-### GET /api/analytics/heatmap
+### GET /api/V1/analytics/heatmap
 Heatmap des zones (GeoJSON)
 
-### GET /api/analytics/evolution
+### GET /api/V1/analytics/evolution
 Évolution temporelle
 
 **Query params:**
@@ -59,7 +59,7 @@ function useDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch('/api/analytics/dashboard');
+      const res = await fetch('/api/V1/analytics/dashboard');
       const json = await res.json();
       setData(json.data);
     };

@@ -13,7 +13,7 @@ export default function QRCodePage() {
 
   const handleDownload = () => {
     if (!submittedUid) return;
-    const url = `/api/containers/qrcode/${encodeURIComponent(submittedUid)}`;
+    const url = `/api/V1/containers/qrcode/${encodeURIComponent(submittedUid)}`;
     const link = document.createElement('a');
     link.href = url;
     link.download = `qr-${submittedUid}.png`;
@@ -44,7 +44,7 @@ export default function QRCodePage() {
         {submittedUid && (
           <div className="qr-result">
             <img
-              src={`/api/containers/qrcode/${encodeURIComponent(submittedUid)}`}
+              src={`/api/V1/containers/qrcode/${encodeURIComponent(submittedUid)}`}
               alt={`QR Code ${submittedUid}`}
               className="qr-image"
             />

@@ -26,7 +26,7 @@ describe('E2E - Analytics Service Workflows', () => {
   describe('Dashboard Workflow (Phase 2)', () => {
     it('should serve dashboard endpoint', async () => {
       const response = await request(app)
-        .get('/api/analytics/dashboard')
+        .get('/api/V1/analytics/dashboard')
         .set('Authorization', authToken)
         .timeout(15000);
 
@@ -36,7 +36,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should serve realtime stats endpoint', async () => {
       const response = await request(app)
-        .get('/api/analytics/dashboard/realtime')
+        .get('/api/V1/analytics/dashboard/realtime')
         .set('Authorization', authToken)
         .timeout(10000);
 
@@ -45,7 +45,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should serve evolution data endpoint', async () => {
       const response = await request(app)
-        .get('/api/analytics/dashboard/evolution')
+        .get('/api/V1/analytics/dashboard/evolution')
         .set('Authorization', authToken)
         .timeout(10000);
 
@@ -56,7 +56,7 @@ describe('E2E - Analytics Service Workflows', () => {
   describe('Aggregation Workflow (Phase 1)', () => {
     it('should handle aggregation requests', async () => {
       const response = await request(app)
-        .get('/api/analytics/aggregations')
+        .get('/api/V1/analytics/aggregations')
         .set('Authorization', authToken)
         .timeout(15000);
 
@@ -65,7 +65,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should handle zone aggregation requests', async () => {
       const response = await request(app)
-        .get('/api/analytics/aggregations/zones')
+        .get('/api/V1/analytics/aggregations/zones')
         .set('Authorization', authToken)
         .timeout(15000);
 
@@ -76,7 +76,7 @@ describe('E2E - Analytics Service Workflows', () => {
   describe('Report Generation (Phase 3)', () => {
     it('should accept report generation request', async () => {
       const response = await request(app)
-        .post('/api/analytics/reports/generate')
+        .post('/api/V1/analytics/reports/generate')
         .set('Authorization', authToken)
         .send({ format: 'pdf', period: 'month' })
         .timeout(15000);
@@ -86,7 +86,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should handle report generation for different formats', async () => {
       const response = await request(app)
-        .post('/api/analytics/reports/generate')
+        .post('/api/V1/analytics/reports/generate')
         .set('Authorization', authToken)
         .send({ format: 'pdf', period: 'week' })
         .timeout(15000);
@@ -98,7 +98,7 @@ describe('E2E - Analytics Service Workflows', () => {
   describe('ML Predictions (Phase 4)', () => {
     it('should handle prediction requests', async () => {
       const response = await request(app)
-        .post('/api/analytics/predictions/fill-level')
+        .post('/api/V1/analytics/predictions/fill-level')
         .set('Authorization', authToken)
         .send({ containerId: 1, weather: 'clear' })
         .timeout(10000);
@@ -108,7 +108,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should handle anomaly detection', async () => {
       const response = await request(app)
-        .get('/api/analytics/anomalies/detect')
+        .get('/api/V1/analytics/anomalies/detect')
         .set('Authorization', authToken)
         .timeout(15000);
 
@@ -119,7 +119,7 @@ describe('E2E - Analytics Service Workflows', () => {
   describe('Error Handling & Security', () => {
     it('should reject unauthenticated mutation requests', async () => {
       const response = await request(app)
-        .post('/api/analytics/reports/generate')
+        .post('/api/V1/analytics/reports/generate')
         .send({ format: 'pdf' })
         .timeout(10000);
 
@@ -128,7 +128,7 @@ describe('E2E - Analytics Service Workflows', () => {
 
     it('should handle 404 errors gracefully', async () => {
       const response = await request(app)
-        .get('/api/analytics/nonexistent-endpoint')
+        .get('/api/V1/analytics/nonexistent-endpoint')
         .set('Authorization', authToken)
         .timeout(5000);
 
@@ -138,7 +138,7 @@ describe('E2E - Analytics Service Workflows', () => {
     it('should not crash on invalid input', async () => {
       try {
         const response = await request(app)
-          .post('/api/analytics/reports/generate')
+          .post('/api/V1/analytics/reports/generate')
           .set('Authorization', authToken)
           .send({ format: 'invalid', period: 'xyz' })
           .timeout(10000);
@@ -174,11 +174,11 @@ describe('E2E - Analytics Service Workflows', () => {
           .get('/health')
           .timeout(5000),
         request(app)
-          .get('/api/analytics/dashboard')
+          .get('/api/V1/analytics/dashboard')
           .set('Authorization', authToken)
           .timeout(10000),
         request(app)
-          .get('/api/analytics/aggregations')
+          .get('/api/V1/analytics/aggregations')
           .set('Authorization', authToken)
           .timeout(10000)
       ];
@@ -202,14 +202,14 @@ describe('E2E - Analytics Service Workflows', () => {
 
       // 2. Access dashboard
       response = await request(app)
-        .get('/api/analytics/dashboard')
+        .get('/api/V1/analytics/dashboard')
         .set('Authorization', authToken)
         .timeout(15000);
       expect([200, 401, 500]).toContain(response.status);
 
       // 3. Request aggregations
       response = await request(app)
-        .get('/api/analytics/aggregations')
+        .get('/api/V1/analytics/aggregations')
         .set('Authorization', authToken)
         .timeout(15000);
       expect([200, 401, 500]).toContain(response.status);

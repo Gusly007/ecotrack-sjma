@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useCitoyenAuth as useAuth } from './auth/CitoyenAuthContext';
-import { citoyenService } from '../../../services/citoyenService';
-import PointsCard from '../../../components/mobile/citoyen/PointsCard';
-import QuickActions from '../../../components/mobile/citoyen/QuickActions';
+import ClassementModal from '../../../components/mobile/citoyen/ClassementModal';
 import CollecteCard from '../../../components/mobile/citoyen/CollecteCard';
 import ImpactStats from '../../../components/mobile/citoyen/ImpactStats';
+import PointsCard from '../../../components/mobile/citoyen/PointsCard';
+import QuickActions from '../../../components/mobile/citoyen/QuickActions';
 import SignalementItem from '../../../components/mobile/citoyen/SignalementItem';
-import ClassementModal from '../../../components/mobile/citoyen/ClassementModal';
-import { aggregateImpact, METHODOLOGY_NOTE } from '../../../utils/impactEstimation';
+import { citoyenService } from '../../../services/citoyenService';
 import { buildAvatarUrl } from '../../../utils/avatar';
+import { aggregateImpact, METHODOLOGY_NOTE } from '../../../utils/impactEstimation';
+import { useCitoyenAuth as useAuth } from './auth/CitoyenAuthContext';
 import './CitoyenHome.css';
 
 // `id` mappe vers QuickActions.actionRoutes (signaler / carte / tri / defis).
@@ -92,7 +92,7 @@ export default function CitoyenHome() {
   // ont un user object incomplet en localStorage (sans avatar). Un refresh
   // silencieux au montage récupère la shape complète sans forcer une
   // déconnexion. Conditionné à l'absence d'avatar pour ne pas brûler une
-  // requête /api/users/profile à chaque mount (apiLimiter service-users).
+  // requête /api/V1/users/profile à chaque mount (apiLimiter service-users).
   const heroSelfHealRef = useRef(false);
   const userHasAvatarShape = !!(user?.avatar_thumbnail || user?.avatar_url) || user?.avatar_thumbnail === null;
   useEffect(() => {

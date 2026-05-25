@@ -17,8 +17,8 @@ describe('Logger Middleware', () => {
 
     req = {
       method: 'GET',
-      url: '/api/users/profile',
-      path: '/api/users/profile',
+      url: '/api/V1/users/profile',
+      path: '/api/V1/users/profile',
       query: { id: '123' },
       get: jest.fn((header) => {
         if (header === 'user-agent') return 'Jest Test Agent';
@@ -153,7 +153,7 @@ describe('Logger Middleware', () => {
       
       securityLogger('rate_limit_exceeded', {
         ip: '192.168.1.1',
-        path: '/api/login',
+        path: '/api/V1/login',
         userId: 123
       });
       

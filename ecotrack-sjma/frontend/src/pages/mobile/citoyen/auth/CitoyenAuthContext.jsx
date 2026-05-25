@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 // citoyenApi : instance axios isolée du scope mobile (retry transitoire,
 // redirection sur 401-refresh-fail vers /citoyen/login).
-import api from './citoyenApi';
 import { authService } from '../../../../services/authService';
+import api from './citoyenApi';
 
 // Contexte d'auth isolé pour l'app citoyen mobile.
 // Vit entièrement dans pages/mobile/citoyen/auth — l'AuthContext upstream
@@ -179,7 +179,7 @@ export const CitoyenAuthProvider = ({ children }) => {
     try {
       // profile-with-stats inclut avatar_url/thumbnail/mini + badge_count.
       // /profile (via authController.getUserById) ne renvoie pas l'avatar.
-      const res = await api.get('/api/users/profile-with-stats');
+      const res = await api.get('/api/V1/users/profile-with-stats');
       const payload = res?.data?.data ?? res?.data ?? null;
       if (payload && typeof payload === 'object') {
         const existing = readUserFromStorage() || {};

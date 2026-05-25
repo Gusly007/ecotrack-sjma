@@ -12,7 +12,7 @@ describe('Request Logger Middleware - Unit Tests', () => {
   beforeEach(() => {
     mockReq = {
       method: 'GET',
-      path: '/api/containers'
+      path: '/api/V1/containers'
     };
     mockRes = {
       statusCode: 200,
@@ -53,7 +53,7 @@ describe('Request Logger Middleware - Unit Tests', () => {
     expect(console.log).toHaveBeenCalled();
     const logMessage = console.log.mock.calls[0][0];
     expect(logMessage).toContain('GET');
-    expect(logMessage).toContain('/api/containers');
+    expect(logMessage).toContain('/api/V1/containers');
     expect(logMessage).toContain('200');
   });
 

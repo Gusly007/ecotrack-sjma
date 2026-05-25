@@ -1,12 +1,12 @@
 import express from 'express';
-import * as consentRepository from '../repositories/consentRepository.js';
 import logger from '../middleware/logger.js';
+import * as consentRepository from '../repositories/consentRepository.js';
 
 const router = express.Router();
 
 /**
  * @swagger
- * /api/consent:
+ * /api/V1/consent:
  *   post:
  *     tags:
  *       - GDPR (Art. 7)
@@ -122,7 +122,7 @@ router.post('/consent', async (req, res) => {
 
 /**
  * @swagger
- * /api/consent/{userId}:
+ * /api/V1/consent/{userId}:
  *   get:
  *     tags:
  *       - GDPR (Art. 7)

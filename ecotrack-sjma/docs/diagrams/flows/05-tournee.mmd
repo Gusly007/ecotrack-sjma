@@ -7,7 +7,7 @@ sequenceDiagram
 
     Note over A,SvcRoutes: Agent creates a new tournee
 
-    A->>G: POST /api/routes/tournees<br/>{date, id_zone, id_agent}
+    A->>G: POST /api/V1/routes/tournees<br/>{date, id_zone, id_agent}
     G->>SvcRoutes: Forward request
     
     SvcRoutes->>PG: Get containers in zone
@@ -26,7 +26,7 @@ sequenceDiagram
 
     Note over A,SvcRoutes: Agent starts tournee
 
-    A->>G: PATCH /api/routes/tournees/:id/statut<br/>{statut: "EN_COURS"}
+    A->>G: PATCH /api/V1/routes/tournees/:id/statut<br/>{statut: "EN_COURS"}
     G->>SvcRoutes: Forward
     
     SvcRoutes->>PG: Update statut
@@ -37,7 +37,7 @@ sequenceDiagram
 
     Note over A,SvcRoutes: Agent completes container
 
-    A->>G: POST /api/routes/tournees/:id/etapes<br/>{id_conteneur, heure_collecte}
+    A->>G: POST /api/V1/routes/tournees/:id/etapes<br/>{id_conteneur, heure_collecte}
     G->>SvcRoutes: Forward
     
     SvcRoutes->>PG: Record step + update container
@@ -51,7 +51,7 @@ sequenceDiagram
 
     Note over A,SvcRoutes: Agent ends tournee
 
-    A->>G: PATCH /api/routes/tournees/:id/statut<br/>{statut: "TERMINEE", distance_reelle, duree_reelle}
+    A->>G: PATCH /api/V1/routes/tournees/:id/statut<br/>{statut: "TERMINEE", distance_reelle, duree_reelle}
     G->>SvcRoutes: Forward
     
     SvcRoutes->>PG: Save final stats

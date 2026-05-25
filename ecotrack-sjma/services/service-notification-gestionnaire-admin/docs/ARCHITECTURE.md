@@ -16,8 +16,8 @@ Ces deux chemins convergent sur le **même serveur HTTP** (`http.createServer(ap
 │  ┌─────────────────────────┐   ┌──────────────────────────────┐  │
 │  │   Express (HTTP/REST)   │   │   Socket.IO (WebSocket)      │  │
 │  │                         │   │                              │  │
-│  │  /api/notifications/*   │   │  /ws/notifications  → notif  │  │
-│  │  /api/admin/notif/*     │   │  /ws/admin          → admin  │  │
+│  │  /api/V1/notifications/*   │   │  /ws/notifications  → notif  │  │
+│  │  /api/V1/admin/notif/*     │   │  /ws/admin          → admin  │  │
 │  │  /internal/emit-ws      │   │                              │  │
 │  │  /health  /metrics      │   │  JWT auth par middleware     │  │
 │  └─────────────────────────┘   └──────────────────────────────┘  │
@@ -27,7 +27,7 @@ Ces deux chemins convergent sur le **même serveur HTTP** (`http.createServer(ap
            └──────────────┬───────────────────┘
                           │
                     api-gateway :3000
-                    /api/* → HTTP
+                    /api/V1/* → HTTP
                     /ws/*  → WS upgrade (server.on 'upgrade')
 ```
 
@@ -40,7 +40,7 @@ Le flux le plus courant dans le système :
 ```
 Agent (mobile)
     │
-    │ POST /api/routes/tournees/:id/anomalie
+    │ POST /api/V1/routes/tournees/:id/anomalie
     ▼
 service-routes :3012
     │
@@ -87,7 +87,7 @@ NotificationContext.jsx
 
 ```
 Toutes les 15 secondes :
-    NotificationContext → GET /api/notifications/unread/count
+    NotificationContext → GET /api/V1/notifications/unread/count
     → count > baseline ET wsAlive=false
     → setUnreadCount(count) + playChime()
 ```
@@ -109,8 +109,8 @@ Client HTTP / Kafka / service-routes (emit-ws)
        │
   ┌────▼───────────────────────────────────────────────────────┐
   │                        ROUTES                              │
-  │  /api/notifications/*      → notification.route.js         │
-  │  /api/admin/notifications/* → adminNotification.route.js   │
+  │  /api/V1/notifications/*      → notification.route.js         │
+  │  /api/V1/admin/notifications/* → adminNotification.route.js   │
   │  /internal/emit-ws         → inline (index.js)             │
   └────┬───────────────────────────────────────────────────────┘
        │
@@ -184,20 +184,20 @@ Ordre de démarrage après `server.listen()` :
 ### Notifications gestionnaire
 
 ```
-GET    /api/notifications/list          auth → own       → controller.list
-GET    /api/notifications/unread/count  auth → own       → controller.unreadCount  (cachée Redis 30s)
-PATCH  /api/notifications/read-all     auth → own        → controller.markAllAsRead
-PATCH  /api/notifications/:id/read     auth → own        → controller.markAsRead
-DELETE /api/notifications/:id          auth → own        → controller.delete
+GET    /api/V1/notifications/list          auth → own       → controller.list
+GET    /api/V1/notifications/unread/count  auth → own       → controller.unreadCount  (cachée Redis 30s)
+PATCH  /api/V1/notifications/read-all     auth → own        → controller.markAllAsRead
+PATCH  /api/V1/notifications/:id/read     auth → own        → controller.markAsRead
+DELETE /api/V1/notifications/:id          auth → own        → controller.delete
 ```
 
 ### Notifications admin
 
 ```
-GET    /api/admin/notifications         auth → ADMIN     → adminController.list
-GET    /api/admin/notifications/stats   auth → ADMIN     → adminController.stats
-PATCH  /api/admin/notifications/:id/read auth → ADMIN   → adminController.markAsRead
-PATCH  /api/admin/notifications/read-all auth → ADMIN   → adminController.markAllAsRead
+GET    /api/V1/admin/notifications         auth → ADMIN     → adminController.list
+GET    /api/V1/admin/notifications/stats   auth → ADMIN     → adminController.stats
+PATCH  /api/V1/admin/notifications/:id/read auth → ADMIN   → adminController.markAsRead
+PATCH  /api/V1/admin/notifications/read-all auth → ADMIN   → adminController.markAllAsRead
 ```
 
 ### Endpoint interne (service-to-service)

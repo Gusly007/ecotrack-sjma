@@ -30,11 +30,11 @@ describe('Tournee routes integration', () => {
       req.controllers = { tournee: controllers };
       next();
     });
-    app.use('/api/routes', tourneeRoutes);
+    app.use('/api/V1/routes', tourneeRoutes);
   });
 
   it('routes GET / to getAll controller', async () => {
-    const res = await request(app).get('/api/routes/tournees');
+    const res = await request(app).get('/api/V1/routes/tournees');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getAll' }));
@@ -42,14 +42,14 @@ describe('Tournee routes integration', () => {
   });
 
   it('routes GET / with pagination', async () => {
-    const res = await request(app).get('/api/routes/tournees?page=1&limit=20');
+    const res = await request(app).get('/api/V1/routes/tournees?page=1&limit=20');
 
     expect(res.status).toBe(200);
     expect(controllers.getAll).toHaveBeenCalledTimes(1);
   });
 
   it('routes GET /active to getActive controller', async () => {
-    const res = await request(app).get('/api/routes/tournees/active');
+    const res = await request(app).get('/api/V1/routes/tournees/active');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getActive' }));
@@ -57,7 +57,7 @@ describe('Tournee routes integration', () => {
   });
 
   it('routes GET /:id to getById controller', async () => {
-    const res = await request(app).get('/api/routes/tournees/5');
+    const res = await request(app).get('/api/V1/routes/tournees/5');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'getById', id: '5' }));
@@ -66,7 +66,7 @@ describe('Tournee routes integration', () => {
 
   it('routes POST / to create controller', async () => {
     const res = await request(app)
-      .post('/api/routes/tournees')
+      .post('/api/V1/routes/tournees')
       .send({ date_tournee: '2026-05-10', duree_prevue_min: 120, id_zone: 1, id_agent: 1 });
 
     expect(res.status).toBe(201);
@@ -76,7 +76,7 @@ describe('Tournee routes integration', () => {
 
   it('routes PATCH /:id to update controller', async () => {
     const res = await request(app)
-      .patch('/api/routes/tournees/3')
+      .patch('/api/V1/routes/tournees/3')
       .send({ statut: 'TERMINEE' });
 
     expect(res.status).toBe(200);
@@ -85,7 +85,7 @@ describe('Tournee routes integration', () => {
   });
 
   it('routes DELETE /:id to delete controller', async () => {
-    const res = await request(app).delete('/api/routes/tournees/10');
+    const res = await request(app).delete('/api/V1/routes/tournees/10');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(expect.objectContaining({ route: 'delete', id: '10' }));

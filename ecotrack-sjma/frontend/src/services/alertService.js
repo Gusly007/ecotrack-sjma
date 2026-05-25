@@ -11,12 +11,12 @@ export const alertService = {
     queryParams.append('limit', limit);
     queryParams.append('offset', offset);
     
-    const response = await api.get(`/api/alerts/unified?${queryParams.toString()}`);
+    const response = await api.get(`/api/V1/alerts/unified?${queryParams.toString()}`);
     return response.data;
   },
 
   async getAlertStats() {
-    const response = await api.get('/api/alerts/stats');
+    const response = await api.get('/api/V1/alerts/stats');
     return response.data;
   }
 };

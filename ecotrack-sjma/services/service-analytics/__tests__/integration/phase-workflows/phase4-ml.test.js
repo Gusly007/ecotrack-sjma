@@ -8,7 +8,7 @@ describe('Phase 4 - ML Tests', () => {
   describe('Predictions', () => {
     it('should respond for predict critical containers', async () => {
       const response = await request(app)
-        .get('/api/analytics/ml/predict-critical?daysAhead=1&threshold=90')
+        .get('/api/V1/analytics/ml/predict-critical?daysAhead=1&threshold=90')
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(response.status);
@@ -18,7 +18,7 @@ describe('Phase 4 - ML Tests', () => {
   describe('Anomaly Detection', () => {
     it('should respond for anomalies', async () => {
       const response = await request(app)
-        .get(`/api/analytics/ml/anomalies/${testContainerId}`)
+        .get(`/api/V1/analytics/ml/anomalies/${testContainerId}`)
         .set('Authorization', authToken);
 
       expect([200, 500, 401]).toContain(response.status);
@@ -26,7 +26,7 @@ describe('Phase 4 - ML Tests', () => {
 
     it('should respond for defective sensors', async () => {
       const response = await request(app)
-        .get('/api/analytics/ml/defective-sensors')
+        .get('/api/V1/analytics/ml/defective-sensors')
         .set('Authorization', authToken);
       
       expect([200, 500, 401]).toContain(response.status);

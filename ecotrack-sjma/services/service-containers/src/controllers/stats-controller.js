@@ -20,7 +20,7 @@ class StatsController {
     this.getMaintenanceStats = this.getMaintenanceStats.bind(this);
   }
 
-  // ── GET /api/stats/dashboard ──
+  // ── GET /api/V1/stats/dashboard ──
   async getDashboard(req, res, next) {
     try {
       const data = await this.service.getDashboard();
@@ -30,7 +30,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats ──
+  // ── GET /api/V1/stats ──
   async getGlobalStats(req, res, next) {
     try {
       const data = await this.service.getGlobalStats();
@@ -40,7 +40,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/fill-levels ──
+  // ── GET /api/V1/stats/fill-levels ──
   async getFillLevelDistribution(req, res, next) {
     try {
       const data = await this.service.getFillLevelDistribution();
@@ -50,7 +50,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/by-zone ──
+  // ── GET /api/V1/stats/by-zone ──
   async getStatsByZone(req, res, next) {
     try {
       const data = await this.service.getStatsByZone();
@@ -60,7 +60,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/by-type ──
+  // ── GET /api/V1/stats/by-type ──
   async getStatsByType(req, res, next) {
     try {
       const data = await this.service.getStatsByType();
@@ -70,7 +70,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/alerts ──
+  // ── GET /api/V1/stats/alerts ──
   async getAlertsSummary(req, res, next) {
     try {
       const data = await this.service.getAlertsSummary();
@@ -80,7 +80,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/critical?seuil=90 ──
+  // ── GET /api/V1/stats/critical?seuil=90 ──
   async getCriticalContainers(req, res, next) {
     try {
       const seuil = Number(req.query.seuil) || 90;
@@ -91,7 +91,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/containers/:id/history?days=30&limit=500 ──
+  // ── GET /api/V1/stats/containers/:id/history?days=30&limit=500 ──
   async getFillHistory(req, res, next) {
     try {
       const { id } = req.params;
@@ -103,7 +103,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/collections?days=30 ──
+  // ── GET /api/V1/stats/collections?days=30 ──
   async getCollectionStats(req, res, next) {
     try {
       const { days } = req.query;
@@ -114,7 +114,7 @@ class StatsController {
     }
   }
 
-  // ── GET /api/stats/maintenance ──
+  // ── GET /api/V1/stats/maintenance ──
   async getMaintenanceStats(req, res, next) {
     try {
       const data = await this.service.getMaintenanceStats();

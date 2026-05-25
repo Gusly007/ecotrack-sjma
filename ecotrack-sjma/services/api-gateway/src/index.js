@@ -95,7 +95,7 @@ const services = {
       { mountPath: '/admin/environmental-constants' },
       { mountPath: '/admin/agent-performance' },
       { mountPath: '/avatars' },
-      { mountPath: '/api/users', rewrite: (path) => path.replace(/^\/api\/users/, '/users') }
+      { mountPath: '/api/V1/users', rewrite: (path) => path.replace(/^\/api\/users/, '/users') }
     ]
   },
   containers: {
@@ -105,10 +105,10 @@ const services = {
     baseUrl: process.env.CONTAINERS_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/containers' },
-      { mountPath: '/api/zones' },
-      { mountPath: '/api/typecontainers' },
-      { mountPath: '/api/stats' }
+      { mountPath: '/api/V1/containers' },
+      { mountPath: '/api/V1/zones' },
+      { mountPath: '/api/V1/typecontainers' },
+      { mountPath: '/api/V1/stats' }
     ]
   },
   routes: {
@@ -117,7 +117,7 @@ const services = {
     port: parseInt(process.env.ROUTES_PORT, 10) || 3012,
     baseUrl: process.env.ROUTES_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/routes' }]
+    routes: [{ mountPath: '/api/V1/routes' }]
   },
   gamification: {
     displayName: 'Gamification Service',
@@ -126,12 +126,12 @@ const services = {
     baseUrl: process.env.GAMIFICATIONS_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/gamification/actions', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/gamification/badges', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/gamification/defis', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/gamification/classement', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/gamification/notifications', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/gamification/stats', rewrite: (path) => path.replace(/^\/api\/gamification\/stats/, '') }
+      { mountPath: '/api/V1/gamification/actions', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/V1/gamification/badges', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/V1/gamification/defis', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/V1/gamification/classement', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/V1/gamification/notifications', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
+      { mountPath: '/api/V1/gamification/stats', rewrite: (path) => path.replace(/^\/api\/gamification\/stats/, '') }
     ]
   },
   analytics: {
@@ -140,7 +140,7 @@ const services = {
     port: parseInt(process.env.ANALYTICS_PORT, 10) || 3015,
     baseUrl: process.env.ANALYTICS_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/analytics' }]
+    routes: [{ mountPath: '/api/V1/analytics' }]
   },
   iot: {
     displayName: 'IoT Service',
@@ -148,7 +148,7 @@ const services = {
     port: parseInt(process.env.IOT_PORT, 10) || 3013,
     baseUrl: process.env.IOT_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/iot' }]
+    routes: [{ mountPath: '/api/V1/iot' }]
   },
   notifications: {
     displayName: 'Notification Manager Service',
@@ -157,8 +157,8 @@ const services = {
     baseUrl: process.env.NOTIFICATION_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/notifications' },
-      { mountPath: '/api/admin/notifications' }
+      { mountPath: '/api/V1/notifications' },
+      { mountPath: '/api/V1/admin/notifications' }
     ]
   }
 };
@@ -361,7 +361,7 @@ app.use(jwtValidationMiddleware);
 // =========================================================================
 // COOKIE CONSENT ROUTES (GDPR Compliance)
 // =========================================================================
-app.use('/api/cookies', express.json(), express.urlencoded({ extended: true }), cookieConsentRoutes);
+app.use('/api/V1/cookies', express.json(), express.urlencoded({ extended: true }), cookieConsentRoutes);
 app.use('/api', express.json(), gdprRoutes);
 
 // =========================================================================
@@ -428,7 +428,7 @@ const LOG_ACTIONS = [
 ];
 
 // Endpoint pour que les services envoient leurs logs
-app.post('/api/logs', express.json(), async (req, res) => {
+app.post('/api/V1/logs', express.json(), async (req, res) => {
   try {
     const { 
       level = 'info', 
@@ -468,7 +468,7 @@ app.post('/api/logs', express.json(), async (req, res) => {
 });
 
 // Query logs with advanced filters
-app.get('/api/logs', async (req, res) => {
+app.get('/api/V1/logs', async (req, res) => {
   try {
     const { 
       service = 'all', 
@@ -507,7 +507,7 @@ app.get('/api/logs', async (req, res) => {
 });
 
 // Get log summary
-app.get('/api/logs/summary', async (req, res) => {
+app.get('/api/V1/logs/summary', async (req, res) => {
   try {
     const { days = 7 } = req.query;
     const summary = await centralizedLogging.getSummary(parseInt(days));
@@ -519,7 +519,7 @@ app.get('/api/logs/summary', async (req, res) => {
 });
 
 // Get log statistics
-app.get('/api/logs/stats', async (req, res) => {
+app.get('/api/V1/logs/stats', async (req, res) => {
   try {
     const { days = 7 } = req.query;
     const stats = await centralizedLogging.getStats(parseInt(days));
@@ -531,7 +531,7 @@ app.get('/api/logs/stats', async (req, res) => {
 });
 
 // Get filter values (services, actions, levels)
-app.get('/api/logs/filters', async (req, res) => {
+app.get('/api/V1/logs/filters', async (req, res) => {
   try {
     const filters = await centralizedLogging.getFilterValues();
     res.json({ filters });
@@ -542,7 +542,7 @@ app.get('/api/logs/filters', async (req, res) => {
 });
 
 // Export logs
-app.get('/api/logs/export', async (req, res) => {
+app.get('/api/V1/logs/export', async (req, res) => {
   try {
     const { 
       service = 'all', 
@@ -580,7 +580,7 @@ app.get('/api/logs/export', async (req, res) => {
 });
 
 // Cleanup old logs (admin only) - seuls les logs archivés peuvent être supprimés
-app.delete('/api/logs/cleanup', async (req, res) => {
+app.delete('/api/V1/logs/cleanup', async (req, res) => {
   try {
     const { days, level, action, service, startDate, endDate } = req.query;
     
@@ -609,7 +609,7 @@ app.delete('/api/logs/cleanup', async (req, res) => {
 // =========================================================================
 // CONSENTEMENT RGPD (Art. 7)
 // =========================================================================
-app.post('/api/consent', express.json(), async (req, res) => {
+app.post('/api/V1/consent', express.json(), async (req, res) => {
   try {
     const { type, action, version, intitule } = req.body;
 
@@ -640,7 +640,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
 });
 
 // Get all alerts
-  app.get('/api/alerts', async (req, res) => {
+  app.get('/api/V1/alerts', async (req, res) => {
     try {
       const { status, limit = 50, offset = 0 } = req.query;
       const axios = (await import('axios')).default;
@@ -648,7 +648,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
       const params = new URLSearchParams({ limit, offset });
       if (status && status !== 'all') params.append('status', status);
 
-      const response = await axios.get(`http://ecotrack-service-iot:3013/api/alerts?${params.toString()}`, {
+      const response = await axios.get(`http://ecotrack-service-iot:3013/api/V1/alerts?${params.toString()}`, {
         timeout: 5000
       });
 
@@ -660,13 +660,13 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
   // Update alert status (resolve/ignore)
-  app.patch('/api/alerts/:id', express.json(), async (req, res) => {
+  app.patch('/api/V1/alerts/:id', express.json(), async (req, res) => {
     try {
       const { id } = req.params;
       const { statut } = req.body;
       const axios = (await import('axios')).default;
 
-      const response = await axios.patch(`http://ecotrack-service-iot:3013/api/iot/alerts/${id}`, {
+      const response = await axios.patch(`http://ecotrack-service-iot:3013/api/V1/iot/alerts/${id}`, {
         statut
       }, {
         timeout: 5000
@@ -680,13 +680,13 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
   // Get unified alerts from all sources
-  app.get('/api/alerts/unified', async (req, res) => {
+  app.get('/api/V1/alerts/unified', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
       const { severity, type, status, limit = 50, offset = 0 } = req.query;
 
       // 1. Get IoT alerts from service-iot (with status filter)
-      const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
+      const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/V1/alerts', {
         params: { status, limit: 1000, offset: 0 }, // Get all to filter properly, then paginate
         timeout: 5000
       }).catch(() => ({ data: { data: [], total: 0 } }));
@@ -694,7 +694,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
       // 2. Get Prometheus alerts (if available) - only if status is 'all' or 'ACTIVE'
       let prometheusAlerts = [];
       if (!status || status === 'all' || status === 'ACTIVE') {
-        const prometheusResponse = await axios.get('http://prometheus:9090/api/v1/alerts', {
+        const prometheusResponse = await axios.get('http://prometheus:9090/api/V1/v1/alerts', {
           timeout: 3000
         }).catch(() => ({ data: { data: { alerts: [] } } }));
         
@@ -776,11 +776,11 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
   // Get alert stats
-  app.get('/api/alerts/stats', async (req, res) => {
+  app.get('/api/V1/alerts/stats', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
       
-      const response = await axios.get('http://ecotrack-service-iot:3013/api/alerts', {
+      const response = await axios.get('http://ecotrack-service-iot:3013/api/V1/alerts', {
         params: { limit: 1000 },
         timeout: 5000
       }).catch(() => ({ data: { data: [] } }));
@@ -803,7 +803,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
 // Get all services health
-  app.get('/api/health/all', async (req, res) => {
+  app.get('/api/V1/health/all', async (req, res) => {
     try {
       const axios = (await import('axios')).default;
 
@@ -824,7 +824,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
         { name: 'kafka', url: null, type: 'messaging' },
         { name: 'mqtt-broker', url: null, type: 'iot' },
         { name: 'prometheus', url: 'http://prometheus:9090/-/healthy', type: 'monitoring' },
-        { name: 'grafana', url: 'http://grafana:3000/api/health', type: 'monitoring' }
+        { name: 'grafana', url: 'http://grafana:3000/api/V1/health', type: 'monitoring' }
       ];
 
       const results = await Promise.allSettled(
@@ -867,7 +867,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
   // Métriques consolidées pour le frontend
-  app.get('/api/metrics/status', async (req, res) => {
+  app.get('/api/V1/metrics/status', async (req, res) => {
     const axios = (await import('axios')).default;
 
   const serviceMetrics = [
@@ -930,7 +930,7 @@ app.post('/api/consent', express.json(), async (req, res) => {
   });
 
 // Dashboard stats endpoint
-  app.get('/api/dashboard/stats', async (req, res) => {
+  app.get('/api/V1/dashboard/stats', async (req, res) => {
     try {
       const stats = await dashboardStatsService.getStats();
       res.json({ success: true, data: stats });
@@ -1004,8 +1004,8 @@ app.get('/health/:service', async (req, res) => {
 const OPTIMIZE_TIMEOUT_MS = 35_000;
 const routesBaseUrl = services.routes?.baseUrl;
 if (routesBaseUrl) {
-  app.use('/api/routes/optimize/preview', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
-  app.use('/api/routes/optimize', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
+  app.use('/api/V1/routes/optimize/preview', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
+  app.use('/api/V1/routes/optimize', createProxy(routesBaseUrl, undefined, OPTIMIZE_TIMEOUT_MS));
 }
 
 Object.entries(services).forEach(([key, svc]) => {
@@ -1049,12 +1049,12 @@ app.get('/api-overview', (req, res) => {
 });
 
 // Cache middleware for public GET requests
-const PUBLIC_CACHE_PATHS = ['/api/zones', '/api/typecontainers'];
+const PUBLIC_CACHE_PATHS = ['/api/V1/zones', '/api/V1/typecontainers'];
 const CACHE_TTL_MAP = {
-  '/api/zones': 1800,
-  '/api/typecontainers': 1800,
-  '/api/containers': 300,
-  '/api/stats': 120
+  '/api/V1/zones': 1800,
+  '/api/V1/typecontainers': 1800,
+  '/api/V1/containers': 300,
+  '/api/V1/stats': 120
 };
 
 app.use(async (req, res, next) => {

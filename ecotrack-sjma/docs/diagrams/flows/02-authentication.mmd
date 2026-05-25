@@ -8,7 +8,7 @@ sequenceDiagram
 
     Note over U,F: User attempts to login
 
-    F->>G: POST /api/auth/login<br/>{email, password}
+    F->>G: POST /api/V1/auth/login<br/>{email, password}
     G->>Svc: Forward request
     Svc->>PG: Verify credentials
     PG-->>Svc: User data (hashed password)
@@ -28,7 +28,7 @@ sequenceDiagram
 
     Note over U,F: Token refresh (before expiry)
 
-    F->>G: POST /api/auth/refresh<br/>{refreshToken}
+    F->>G: POST /api/V1/auth/refresh<br/>{refreshToken}
     G->>Svc: Forward request
     Svc->>Redis: Verify refresh token
     Redis-->>Svc: Token valid
@@ -44,7 +44,7 @@ sequenceDiagram
 
     Note over U,F: Logout
 
-    F->>G: POST /api/auth/logout
+    F->>G: POST /api/V1/auth/logout
     G->>Svc: Forward request
     Svc->>Redis: Delete refresh token
     Redis-->>Svc: OK

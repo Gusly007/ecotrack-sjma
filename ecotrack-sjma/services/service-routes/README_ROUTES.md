@@ -122,8 +122,8 @@ Metrics    : http://localhost:3012/metrics
 
 ## API REST
 
-Base URL (via Gateway) : `http://localhost:3000/api/routes`
-Base URL (direct)      : `http://localhost:3012/api/routes`
+Base URL (via Gateway) : `http://localhost:3000/api/V1/routes`
+Base URL (direct)      : `http://localhost:3012/api/V1/routes`
 
 ### Endpoints principaux
 

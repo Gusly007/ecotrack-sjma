@@ -8,7 +8,7 @@ const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
- * /api/analytics/dashboard:
+ * /api/V1/analytics/dashboard:
  *   get:
  *     summary: Dashboard complet avec KPIs, évolutions et insights
  *     tags: [Dashboard]
@@ -52,7 +52,7 @@ router.get('/dashboard', authMiddleware, requirePermission('analytics:read'), ge
 
 /**
  * @swagger
- * /api/analytics/realtime:
+ * /api/V1/analytics/realtime:
  *   get:
  *     summary: Statistiques temps réel avec KPIs et conteneurs critiques
  *     tags: [Dashboard]
@@ -83,7 +83,7 @@ router.get('/realtime', authMiddleware, requirePermission('analytics:read'), Das
 
 /**
  * @swagger
- * /api/analytics/heatmap:
+ * /api/V1/analytics/heatmap:
  *   get:
  *     summary: Heatmap des zones au format GeoJSON
  *     tags: [Dashboard]
@@ -111,7 +111,7 @@ router.get('/heatmap', authMiddleware, requirePermission('analytics:read'), Dash
 
 /**
  * @swagger
- * /api/analytics/evolution:
+ * /api/V1/analytics/evolution:
  *   get:
  *     summary: Évolution temporelle du niveau de remplissage
  *     tags: [Dashboard]

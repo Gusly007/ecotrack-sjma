@@ -24,7 +24,7 @@ class TourneeController {
   }
 
   /**
-   * GET /api/routes/prochaines-collectes — feed public pour l'app citoyen.
+   * GET /api/V1/routes/prochaines-collectes — feed public pour l'app citoyen.
    * Projection minimale (pas d'info agent/véhicule). Retourne les 3
    * prochaines tournées PLANIFIEE ou EN_COURS.
    */

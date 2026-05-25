@@ -9,7 +9,7 @@ const DashboardAnalyticsRepository = require('../repositories/dashboardAnalytics
 
 /**
  * @swagger
- * /api/analytics/weather-impact:
+ * /api/V1/analytics/weather-impact:
  *   get:
  *     summary: Impact météo actuel sur la collecte
  *     tags: [Analytics]
@@ -82,7 +82,7 @@ router.get('/weather-impact', cacheMiddleware(300), async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/kpis:
+ * /api/V1/analytics/kpis:
  *   get:
  *     summary: KPIs globaux du système
  *     tags: [Analytics]
@@ -179,7 +179,7 @@ router.get('/kpis', cacheMiddleware(60), async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/aggregation/fill-trends:
+ * /api/V1/analytics/aggregation/fill-trends:
  *   get:
  *     summary: Tendances de remplissage sur les derniers jours
  *     tags: [Analytics]
@@ -211,7 +211,7 @@ router.get('/aggregation/fill-trends', cacheMiddleware(120), async (req, res) =>
 
 /**
  * @swagger
- * /api/analytics/aggregation/zone-performance:
+ * /api/V1/analytics/aggregation/zone-performance:
  *   get:
  *     summary: Performance par zone
  *     tags: [Analytics]
@@ -245,7 +245,7 @@ router.get('/aggregation/zone-performance', cacheMiddleware(120), async (req, re
 
 /**
  * @swagger
- * /api/analytics/critical-containers:
+ * /api/V1/analytics/critical-containers:
  *   get:
  *     summary: Conteneurs les plus critiques
  *     tags: [Analytics]
@@ -284,7 +284,7 @@ router.get('/critical-containers', cacheMiddleware(60), async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/type-distribution:
+ * /api/V1/analytics/type-distribution:
  *   get:
  *     summary: Distribution par type de conteneur
  *     tags: [Analytics]
@@ -317,7 +317,7 @@ router.get('/type-distribution', async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/collecte-stats:
+ * /api/V1/analytics/collecte-stats:
  *   get:
  *     summary: Statistiques de collecte
  *     tags: [Analytics]
@@ -358,7 +358,7 @@ router.get('/collecte-stats', async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/ml/predictions:
+ * /api/V1/analytics/ml/predictions:
  *   get:
  *     summary: Prédictions ML pour conteneurs critiques
  *     tags: [ML]
@@ -398,7 +398,7 @@ router.get('/ml/predictions', async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/ml/defective-sensors:
+ * /api/V1/analytics/ml/defective-sensors:
  *   get:
  *     summary: Capteurs défaillants détectés par ML
  *     tags: [ML]
@@ -426,7 +426,7 @@ router.get('/ml/defective-sensors', async (req, res) => {
 
 /**
  * @swagger
- * /api/analytics/performance/environmental:
+ * /api/V1/analytics/performance/environmental:
  *   get:
  *     summary: Métriques environnementales calculées
  *     tags: [Performance]

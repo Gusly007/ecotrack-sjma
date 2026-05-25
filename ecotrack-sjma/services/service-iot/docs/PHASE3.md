@@ -141,7 +141,7 @@ if (existing) return null; // Ne pas créer de doublon
 
 ### Endpoint API
 ```
-PATCH /api/iot/alerts/:id
+PATCH /api/V1/iot/alerts/:id
 ```
 
 ### Corps de la requête
@@ -173,7 +173,7 @@ PATCH /api/iot/alerts/:id
 // Exemple (non implémenté)
 async function notifyUsers(alert) {
   // Appeler service-users pour envoyer notification
-  await fetch('http://service-users:3010/api/notifications', {
+  await fetch('http://service-users:3010/api/V1/notifications', {
     method: 'POST',
     body: {
       type: 'ALERTE',
@@ -191,7 +191,7 @@ async function notifyUsers(alert) {
 
 ### Liste des alertes
 ```
-GET /api/iot/alerts?statut=ACTIVE&type_alerte=DEBORDEMENT
+GET /api/V1/iot/alerts?statut=ACTIVE&type_alerte=DEBORDEMENT
 ```
 
 ### Filtres disponibles
@@ -272,7 +272,7 @@ Alerte créée
 NotificationService.sendAlertNotification()
     │
     ▼
-POST http://service-users:3010/api/notifications
+POST http://service-users:3010/api/V1/notifications
     │
     ▼
 Service-users notifie les gestionnaires (WebSocket/SSE)

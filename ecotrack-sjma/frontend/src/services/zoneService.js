@@ -3,7 +3,7 @@ import api from './api';
 export const zoneService = {
   // Récupérer toutes les zones avec pagination
   getAll: async (page = 1, limit = 10) => {
-    const response = await api.get('/api/zones', {
+    const response = await api.get('/api/V1/zones', {
       params: { page, limit }
     });
     return response.data;
@@ -11,37 +11,37 @@ export const zoneService = {
 
   // Récupérer une zone par ID
   getById: async (id) => {
-    const response = await api.get(`/api/zones/${id}`);
+    const response = await api.get(`/api/V1/zones/${id}`);
     return response.data;
   },
 
   // Récupérer une zone par code
   getByCode: async (code) => {
-    const response = await api.get(`/api/zones/code/${code}`);
+    const response = await api.get(`/api/V1/zones/code/${code}`);
     return response.data;
   },
 
   // Créer une nouvelle zone
   create: async (zoneData) => {
-    const response = await api.post('/api/zones', zoneData);
+    const response = await api.post('/api/V1/zones', zoneData);
     return response.data;
   },
 
   // Mettre à jour une zone
   update: async (id, zoneData) => {
-    const response = await api.patch(`/api/zones/${id}`, zoneData);
+    const response = await api.patch(`/api/V1/zones/${id}`, zoneData);
     return response.data;
   },
 
   // Supprimer une zone
   delete: async (id) => {
-    const response = await api.delete(`/api/zones/${id}`);
+    const response = await api.delete(`/api/V1/zones/${id}`);
     return response.data;
   },
 
   // Rechercher des zones par nom
   searchByName: async (nom) => {
-    const response = await api.get('/api/zones/search', {
+    const response = await api.get('/api/V1/zones/search', {
       params: { nom }
     });
     return response.data;
@@ -49,7 +49,7 @@ export const zoneService = {
 
   // Rechercher des zones dans un rayon
   getInRadius: async (latitude, longitude, rayon) => {
-    const response = await api.get('/api/zones/radius', {
+    const response = await api.get('/api/V1/zones/radius', {
       params: { latitude, longitude, rayon }
     });
     return response.data;
@@ -57,25 +57,25 @@ export const zoneService = {
 
   // Récupérer les statistiques des zones
   getStatistics: async () => {
-    const response = await api.get('/api/zones/stats/global');
+    const response = await api.get('/api/V1/zones/stats/global');
     return response.data;
   },
 
   // Compter les zones
   count: async () => {
-    const response = await api.get('/api/zones/count');
+    const response = await api.get('/api/V1/zones/count');
     return response.data;
   },
 
   // Vérifier si une zone existe
   exists: async (id) => {
-    const response = await api.get(`/api/zones/check/exists/${id}`);
+    const response = await api.get(`/api/V1/zones/check/exists/${id}`);
     return response.data;
   },
 
   // Vérifier si un code existe
   codeExists: async (code) => {
-    const response = await api.get(`/api/zones/check/code/${code}`);
+    const response = await api.get(`/api/V1/zones/check/code/${code}`);
     return response.data;
   }
 };

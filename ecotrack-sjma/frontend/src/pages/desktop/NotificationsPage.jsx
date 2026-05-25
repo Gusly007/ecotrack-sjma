@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -48,14 +48,14 @@ export default function NotificationsPage() {
   const isAdmin = role === 'ADMIN';
 
   const config = useMemo(() => ({
-    listPath:     isAdmin ? '/api/admin/notifications'          : '/api/notifications/list',
+    listPath:     isAdmin ? '/api/V1/admin/notifications'          : '/api/V1/notifications/list',
     markReadPath: (id) => isAdmin
-      ? `/api/admin/notifications/${id}/read`
-      : `/api/notifications/${id}/read`,
-    markAllPath:  isAdmin ? '/api/admin/notifications/read-all' : '/api/notifications/read-all',
+      ? `/api/V1/admin/notifications/${id}/read`
+      : `/api/V1/notifications/${id}/read`,
+    markAllPath:  isAdmin ? '/api/V1/admin/notifications/read-all' : '/api/V1/notifications/read-all',
     deletePath:   (id) => isAdmin
-      ? `/api/admin/notifications/${id}`
-      : `/api/notifications/${id}`,
+      ? `/api/V1/admin/notifications/${id}`
+      : `/api/V1/notifications/${id}`,
     backPath:     isAdmin ? '/admin' : '/gestionnaire',
   }), [isAdmin]);
 

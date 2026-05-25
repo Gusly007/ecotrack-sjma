@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 class AggregationController {
   /**
-   * GET /api/analytics/aggregations
+   * GET /api/V1/analytics/aggregations
    */
   static async getAggregations(req, res) {
     try {
@@ -34,7 +34,7 @@ class AggregationController {
   }
 
   /**
-   * POST /api/analytics/aggregations/refresh
+   * POST /api/V1/analytics/aggregations/refresh
    */
   static async refreshAggregations(req, res) {
     try {
@@ -60,7 +60,7 @@ class AggregationController {
   }
 
   /**
-   * GET /api/analytics/aggregations/zones
+   * GET /api/V1/analytics/aggregations/zones
    */
   static async getZoneAggregations(req, res) {
     try {
@@ -89,7 +89,7 @@ class AggregationController {
   }
 
   /**
-   * GET /api/analytics/aggregations/agents
+   * GET /api/V1/analytics/aggregations/agents
    */
   static async getAgentPerformances(req, res) {
     try {

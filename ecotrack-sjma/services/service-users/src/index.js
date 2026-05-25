@@ -1,30 +1,29 @@
-import express from 'express';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger.js';
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
 import cors from 'cors';
-import morgan from 'morgan';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
-import roleRoutes from './routes/roles.js';
-import notificationRoutes from './routes/notifications.js';
-import avatarRoutes from './routes/avatars.js';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import path from 'path';
+import client from 'prom-client';
+import swaggerUi from 'swagger-ui-express';
+import './config/cron-gdpr.js';
+import pool, { ensureAuthTables } from './config/database.js';
+import env, { loadDbConfig, validateEnv } from './config/env.js';
+import { publicLimiter } from './config/rateLimit.js';
+import swaggerSpec from './config/swagger.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
 import adminConfigRoutes from './routes/admin-config.js';
 import adminEnvironmentalConstantsRoutes from './routes/admin-environmental-constants.js';
-import adminAgentPerformanceRoutes from './routes/admin-agent-performance.js';
+import authRoutes from './routes/auth.js';
+import avatarRoutes from './routes/avatars.js';
 import gdprRoutes from './routes/gdpr.route.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import { publicLimiter } from './config/rateLimit.js';
-import pool, { ensureAuthTables } from './config/database.js';
-import path from 'path';
-import env, { loadDbConfig } from './config/env.js';
-import { validateEnv } from './config/env.js';
-import helmet from 'helmet';
-import logger from './utils/logger.js';
-import client from 'prom-client';
+import notificationRoutes from './routes/notifications.js';
+import roleRoutes from './routes/roles.js';
+import userRoutes from './routes/users.js';
 import cacheService from './services/cacheService.js';
 import kafkaNotificationConsumer from './services/kafkaNotificationConsumer.js';
-import './config/cron-gdpr.js';
+import logger from './utils/logger.js';
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -87,7 +86,7 @@ app.use(cors());
 
 // Rate-limit global sur /auth et /users. Bypass dev / localhost et override
 // par env (SERVICE_USERS_API_LIMIT_MAX / _WINDOW_MS) pour ne pas étouffer
-// le mobile citoyen — la home fait plusieurs appels /api/users/* par mount.
+// le mobile citoyen — la home fait plusieurs appels /api/V1/users/* par mount.
 const apiLimiterLocalhost = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const apiLimiterHasLocalhost = (req) => {
   const host = (req.headers?.host || '').toLowerCase();

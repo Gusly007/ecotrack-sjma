@@ -175,7 +175,7 @@ corps : "Zone : Centre-Ville\nConteneur renversé, déchets éparpillés."
 ### Scénario 2 — Nouveau signalement citoyen
 
 ```
-1. Citoyen soumet POST /api/routes/signalements
+1. Citoyen soumet POST /api/V1/routes/signalements
         │
         ▼
 2. signalement-service.create()

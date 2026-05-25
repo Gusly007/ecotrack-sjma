@@ -13,7 +13,7 @@ sequenceDiagram
     C->>F: Choix conteneur (Scan QR / Carte / UID)<br/>+ type + urgence + description + photo
     F->>F: Compression photo<br/>(800px JPEG 75%)
     F->>F: normalizeText description (max 500)<br/>+ normalizeText UID (max 64)
-    F->>Api: POST /api/routes/signalements
+    F->>Api: POST /api/V1/routes/signalements
     Api->>G: Forward (JWT)
     G->>R: Inject x-user-id + x-user-role depuis JWT
     R->>R: BOLA : id_citoyen = req.headers['x-user-id']

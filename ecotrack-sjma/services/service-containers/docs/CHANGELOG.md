@@ -146,7 +146,7 @@ npm run test:socket:interactive    # CLI interactive
 
 **Avant:**
 ```
-PATCH /api/containers/:id/status
+PATCH /api/V1/containers/:id/status
 → Controller
 → Service
 → Model (UPDATE)
@@ -155,7 +155,7 @@ PATCH /api/containers/:id/status
 
 **Après:**
 ```
-PATCH /api/containers/:id/status
+PATCH /api/V1/containers/:id/status
 → socketMiddleware (injecte SocketService)
 → Controller
 → Service (injecté avec Socket)

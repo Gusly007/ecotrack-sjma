@@ -37,7 +37,7 @@ class NotificationService {
         }
       };
 
-      const response = await this._callServiceUsers('/api/notifications', 'POST', notification);
+      const response = await this._callServiceUsers('/api/V1/notifications', 'POST', notification);
       
       logger.info({
         alertId: alert.id_alerte,
@@ -75,7 +75,7 @@ class NotificationService {
         }
       };
 
-      await this._callServiceUsers('/api/notifications', 'POST', notification);
+      await this._callServiceUsers('/api/V1/notifications', 'POST', notification);
       
       logger.info({ alertId: alert.id_alerte }, 'Resolution notification sent');
       return true;

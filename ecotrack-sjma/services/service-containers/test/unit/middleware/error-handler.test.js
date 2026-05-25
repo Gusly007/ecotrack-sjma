@@ -16,7 +16,7 @@ describe('Error Handler Middleware - Unit Tests', () => {
     jest.clearAllMocks();
     
     mockReq = {
-      path: '/api/test',
+      path: '/api/V1/test',
       method: 'GET'
     };
     mockRes = {
@@ -97,7 +97,7 @@ describe('Error Handler Middleware - Unit Tests', () => {
       expect.objectContaining({
         message: 'Bad request',
         statusCode: 400,
-        path: '/api/test',
+        path: '/api/V1/test',
         method: 'GET'
       })
     );
