@@ -87,7 +87,8 @@ const sendEmail = async (to, subject, templateHtml) => {
       from: env.smtp.from || '"EcoTrack" <noreply@ecotrack.fr>',
       to,
       subject,
-      html: templateHtml // codeql[js/xss] All callers use internal templates (emailTemplates.js) that escape every user-controlled value via escapeHtml() before interpolation
+      // codeql[js/xss]
+      html: templateHtml,
     });
 
     logger.info(`[Email] SUCCES! Envoyé à ${to}`);

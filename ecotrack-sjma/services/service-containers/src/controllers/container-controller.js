@@ -178,8 +178,10 @@ class ContainerController {
    */
   async getInRadius(req, res, next) {
     try {
-      const lat = Number(req.query.latitude); // codeql[js/sensitive-get-query]
-      const lng = Number(req.query.longitude); // codeql[js/sensitive-get-query]
+      // codeql[js/sensitive-get-query]
+      const lat = Number(req.query.latitude);
+      // codeql[js/sensitive-get-query]
+      const lng = Number(req.query.longitude);
       const radius = Number(req.query.radiusKm);
 
       if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(radius)) {
