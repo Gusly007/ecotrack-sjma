@@ -22,7 +22,7 @@ export default function MobileLayout() {
         playRef.current('default');
       }
       prevRef.current = count;
-    } catch (_) {
+    } catch {
       // network errors are non-fatal; polling will retry
     }
   }, []);
