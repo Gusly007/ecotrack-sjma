@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 const root = process.cwd();
 const servicesRoot = join(root, 'services');
+const frontendRoot = join(root, 'frontend');
 const outDir = join(root, 'reports', 'pyramid');
 const outJson = join(outDir, 'report.json');
 const outMd = join(outDir, 'report.md');
@@ -67,6 +68,20 @@ async function main() {
       if (t === 'integration') integration += 1;
       if (t === 'e2e') e2e += 1;
     }
+  }
+
+  // Also scan frontend test files
+  try {
+    const frontendFiles = await walk(frontendRoot);
+    for (const f of frontendFiles) {
+      const t = classify(f);
+      if (!t) continue;
+      if (t === 'unit') unit += 1;
+      if (t === 'integration') integration += 1;
+      if (t === 'e2e') e2e += 1;
+    }
+  } catch {
+    // frontend directory optional
   }
 
   const total = unit + integration + e2e;
