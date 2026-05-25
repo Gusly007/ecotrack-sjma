@@ -4,6 +4,417 @@
 
 ---
 
+### [4.5.0] 2026-05-25 - Interface Citoyen Mobile complète + Corrections flux notifications + CI/CD GitHub Pages
+
+Implémentation de l'interface mobile complète pour le rôle **CITOYEN**, correction du flux de notifications après soumission d'un signalement, persistance du champ `urgence`, headers figés sur toutes les sous-pages, et ajout du workflow de déploiement GitHub Pages.
+
+---
+
+## Interface Citoyen Mobile — Description fonctionnelle complète
+
+### 1. Dashboard (`/citoyen`) — `CitoyenHome.jsx`
+
+Point d'entrée du citoyen après connexion.
+
+**En-tête personnalisé**
+- Salutation "Bonjour, {prénom}" avec date du jour en français
+- Bouton classement (trophée) → `ClassementModal` : top 10 citoyens par points, rang et points du citoyen connecté
+- Bouton cloche avec badge rouge (non-lus en temps réel via WebSocket + polling 30 s)
+- Avatar dynamique (thumbnail ou initiales) → lien vers `/citoyen/profil`
+
+**Widget "Prochaine collecte"**
+- Date et heure de la prochaine collecte depuis l'API
+- Couleur de l'indicateur selon l'urgence : rouge (≤ 1 jour), orange (≤ 3 jours), vert (> 3 jours)
+- Statut `EN_COURS` affiché en bleu
+- Message de repli si aucune collecte planifiée
+
+**Actions rapides** (`QuickActions`)
+- Grille 4 boutons : Signaler / Carte / Guide du tri / Défis
+
+**Mes derniers signalements**
+- 3 signalements les plus récents avec : ID, type, statut coloré (Nouveau/En cours/Résolu/Rejeté), date+heure
+- Bouton "Voir tous mes signalements" → `/citoyen/signalements`
+- Message de repli si aucun signalement
+
+**Impact environnemental** (`ImpactStats`)
+- Calculs ADEME basés sur les signalements résolus : CO₂ économisé (kg), eau économisée (L), déchets collectés (kg)
+- Préfixe `≈` indiquant des estimations
+
+**Système de niveaux**
+- 5 niveaux selon les points : Nouveau → Éco-Starter (100 pts) → Éco-Acteur Argent (500 pts) → Éco-Héros Or (1 000 pts) → Éco-Légende (5 000 pts) → Maître (10 000 pts)
+
+---
+
+### 2. Nouveau signalement (`/citoyen/signaler`) — `CitoyenSignaler.jsx`
+
+**Identification du conteneur**
+- Bouton **Scanner QR** → `/citoyen/scanner`
+- Bouton **Carte** → `/citoyen/carte` (sélection depuis la carte)
+- Champ UID manuel (`CNT-XXXXX`) avec lookup API debounced (300 ms)
+- Confirmation visuelle : zone + type du conteneur si trouvé, UID affiché même si inconnu
+
+**Type de problème** (7 options en grille)
+
+| Code | Libellé | Icône |
+|------|---------|-------|
+| `CONTENEUR_PLEIN` | Conteneur plein | 🗑 |
+| `CONTENEUR_ENDOMMAGE` | Conteneur endommagé | 🔧 |
+| `DEPOT_SAUVAGE` | Dépôt sauvage | 🚫 |
+| `MAUVAISE_ODEUR` | Mauvaise odeur | 💨 |
+| `CONTENEUR_INACCESSIBLE` | Accès bloqué | 🚧 |
+| `CONTENEUR_SALE` | Conteneur sale | 🧹 |
+| `CAPTEUR_DEFAILLANT` | Capteur défectueux | 📡 |
+
+**Niveau d'urgence** — 4 niveaux radio
+- `BASSE` / `NORMALE` (défaut) / `HAUTE` / `CRITIQUE`
+- Persisté correctement en base depuis 2026-05-25 (champ `urgence` manquant dans service)
+
+**Photo** (optionnelle)
+- Sélection fichier image, redimensionnement automatique à 800 px max, JPEG 75% → ~50–150 ko
+- Stockée en base comme Data URL (colonne `url_photo`)
+
+**Description** : champ texte libre
+
+**Soumission** → `POST /api/routes/signalements`
+- En succès : notification temps réel envoyée au **citoyen** (confirmation) + à tous les **GESTIONNAIRE** et **ADMIN** actifs
+- Redirection vers `/citoyen/signaler/success`
+
+---
+
+### 3. Succès du signalement (`/citoyen/signaler/success`) — `CitoyenSignalerSuccess.jsx`
+
+- Numéro de référence du signalement créé
+- Estimation d'impact ADEME associée au type de problème signalé
+- Lien vers la liste des signalements et vers le dashboard
+
+---
+
+### 4. Mes signalements (`/citoyen/signalements`) — `CitoyenMesSignalements.jsx`
+
+**Bandeau récap** (4 chiffres)
+- Total / Nouveaux / En cours / Résolus — cartes colorées (bleu, orange, vert)
+
+**Filtrage par onglet**
+- Tous / En cours / Résolus — compteur affiché dans chaque onglet
+- Bouton rafraîchir (icône rotate)
+
+**Cartes de signalement**
+- ID et type avec icône colorée
+- Badge statut : Nouveau (bleu), En cours (orange), Résolu (vert), Rejeté (rouge)
+- Meta : date+heure, zone si disponible
+- **Timeline visuelle** : 3 points (Nouveau → En cours → Résolu), colorés selon l'avancement
+- Note de l'agent en fond bleu si présente
+- Clic → `/citoyen/signalements/:id`
+
+---
+
+### 5. Détail d'un signalement (`/citoyen/signalements/:id`) — `CitoyenSignalementDetail.jsx`
+
+- Type, description, zone, conteneur UID, date de création
+- Niveau d'urgence affiché (BASSE à CRITIQUE)
+- Photo si présente (image pleine largeur)
+- Timeline statut identique à la liste
+- Note de l'agent si disponible
+- En-tête figé : `MobileScreenHeader` sticky, corps scrollable indépendamment
+
+---
+
+### 6. Notifications (`/citoyen/notifications`) — `CitoyenNotifications.jsx`
+
+- Liste de toutes les notifications du citoyen (INSERT en base par `notifyCitoyen`)
+- Icône colorée par type (SYSTEME, SIGNALEMENT, etc.)
+- Pastille verte + bordure gauche pour les non-lues
+- **Marquer tout comme lu** (bouton check en haut à droite)
+- Clic sur une notification → marque comme lue individuellement
+- Badge temps réel via WebSocket (`emitWsForUser` déclenché à la création d'un signalement)
+
+---
+
+### 7. Mon profil (`/citoyen/profil`) — `CitoyenProfil.jsx`
+
+**Carte héro**
+- Avatar dynamique (photo uploadée ou initiales sur fond vert)
+- Prénom + Nom + email
+- 3 compteurs : Points / Signalements / Badges
+
+**Menu de navigation**
+- Modifier mes informations → `/citoyen/profil/modifier`
+- Mes signalements → `/citoyen/signalements`
+- Historique des points → `/citoyen/points-historique`
+- Défis & badges → `/citoyen/defis`
+- Guide du tri → `/citoyen/tri`
+- Déconnexion (avec `await logout()` + redirection)
+
+**Section RGPD — Vos données personnelles** (Article 15)
+- Téléchargement JSON de toutes les données utilisateur (profil, signalements, tournées, badges, historique)
+- Format conforme RGPD
+
+**Section RGPD — Suppression de compte** (Article 17)
+- Avertissements : action irréversible, délai de 30 jours, anonymisation
+- Modal de confirmation : saisie du mot de passe requise
+- `DELETE /api/gdpr/account` → déconnexion immédiate
+
+**Footer légal**
+- Liens : Politique de confidentialité / CGU / Mentions légales / DPO (email)
+- Mention "Conforme RGPD"
+
+---
+
+### 8. Modifier mon profil (`/citoyen/profil/modifier`) — `CitoyenEditProfil.jsx`
+
+- **Avatar upload** avec recadrage interactif (`react-easy-crop` via `AvatarCropModal`)
+  - Aperçu immédiat, `PUT /api/users/profile/avatar`
+  - Bouton "Retirer l'avatar" → `DELETE /api/users/profile/avatar`
+- Formulaire : Prénom, Nom, Email, Téléphone
+- **Changement de mot de passe** : Ancien / Nouveau / Confirmation avec toggle visibilité
+- `PUT /api/users/profile` en soumission + `avatarVersion` bumpé pour forcer le rechargement de l'image
+
+---
+
+### 9. Historique des points (`/citoyen/points-historique`) — `CitoyenPointsHistorique.jsx`
+
+**Carte récap (gradient vert)**
+- Total de points / Points gagnés / Points dépensés (archivés)
+
+**Onglets de filtrage**
+- Tout / Gains / Dépenses
+
+**Liste chronologique**
+- Icône et libellé par raison :
+
+| Code DB | Libellé | Icône |
+|---------|---------|-------|
+| `SIGNALEMENT_VALIDE` | Signalement validé | 🚩 |
+| `SIGNALEMENT_RESOLU` | Signalement résolu | ✅ |
+| `PARTICIPATION_DEFI` | Participation à un défi | 🏆 |
+| `DEFI_COMPLETE` | Défi complété | 🥇 |
+| `BADGE_GAGNE` | Nouveau badge | 🏅 |
+| `AJUSTEMENT` | Ajustement manuel | ⚙ |
+| `DEPENSE_BOUTIQUE` | Dépense (archivée) | 🛍 |
+
+- Montant coloré : vert (gain) / rouge (dépense)
+
+---
+
+### 10. Défis & Badges (`/citoyen/defis`) — `CitoyenDefis.jsx`
+
+**Onglet Défis**
+- Cartes avec tag de catégorie (ECO / SOCIAL / SANTÉ) coloré
+- Récompense en points 
+- Titre et description
+- Barre de progression : `progress / total` avec `%` calculé
+
+**Onglet Badges**
+- Grille 2 colonnes
+- Cercle d'icône coloré (vert si gagné, gris si verrouillé)
+- Nom du badge + points requis ou description
+- Icône cadenas sur les badges non obtenus
+
+---
+
+### 11. Guide du tri (`/citoyen/tri`) — `CitoyenTri.jsx`
+
+**Barre de recherche**
+- Filtrage en temps réel des matériaux par mot-clé (nom de l'item)
+
+**Catégories dépliables** (5 catégories)
+- Plastiques & Emballages, Verre, Papier & Carton, Déchets non recyclables, DEEE (appareils électroniques)
+- Chaque catégorie : icône colorée, liste d'exemples d'items
+
+**Section pédagogique "Comprendre l'impact environnemental"** (repliée par défaut)
+- Introduction sur le rôle du tri dans l'économie circulaire
+- 4 sous-sections dépliables :
+  - **Impact par matériau** : tableau comparatif (énergie économisée, CO₂ évité, eau économisée) — données ADEME
+  - **Estimations par type de signalement** : tableau de facteurs d'impact par type de problème
+  - **Règles d'attribution** : algorithme de calcul des points et bonus de résolution
+  - **Sources officielles** : liens vers ADEME, économie circulaire, ressourceries
+- Mention méthodologique en pied de section
+
+---
+
+### 12. Carte des conteneurs (`/citoyen/carte`) — `CitoyenMap.jsx`
+
+- Carte Leaflet centrée sur la position GPS de l'utilisateur
+- Marqueurs colorés selon le niveau de remplissage :
+  - Rouge ≥ 80 %, Orange ≥ 50 %, Vert < 50 %
+- Clic sur un marqueur → prérempli l'UID dans le formulaire de signalement
+- Géolocalisation HTML5 avec repli sur coordonnées par défaut
+
+---
+
+### 13. Scanner QR citoyen (`/citoyen/scanner`) — `CitoyenScanner.jsx`
+
+- Activation caméra via `html5-qrcode`
+- Extraction de l'UID depuis l'URL du QR code ou texte brut (format `CNT-XXXXX`)
+- Fallback : saisie manuelle de l'UID
+- Retour automatique vers le formulaire de signalement avec l'UID prérempli
+
+---
+
+## Auth Citoyen — Espace isolé
+
+### Inscription (`/citoyen/inscription`) — `CitoyenRegister.jsx`
+- Formulaire : Prénom, Nom, Email, Mot de passe (+ confirmation), Code postal
+- Validation côté client + messages d'erreur inline
+- Route publique — accès sans token
+
+### Connexion (`/citoyen/login`) — `CitoyenLogin.jsx`
+- Email + mot de passe, toggle visibilité
+- Persistance JWT en `localStorage` (clé `citoyen_token` isolée de la session ADMIN/GESTIONNAIRE)
+- Lien mot de passe oublié
+
+### Mot de passe oublié / Réinitialisation
+- `CitoyenForgotPassword.jsx` → envoi email avec lien de reset
+- `CitoyenResetPassword.jsx` → saisie du nouveau mot de passe via token URL
+
+---
+
+## Navigation & Layout Citoyen
+
+### `CitoyenMobileLayout` (`pages/mobile/citoyen/MobileLayout.jsx`)
+Wrapper de toutes les pages citoyen connectées. Fournit :
+- **Barre de navigation inférieure** (`BottomNav` citoyen — 5 onglets)
+  - Accueil (`/citoyen`)
+  - Carte (`/citoyen/carte`)
+  - Signaler (`/citoyen/signaler`) — bouton FAB central
+  - Défis (`/citoyen/defis`)
+  - Profil (`/citoyen/profil`)
+- Polling notifications toutes les 30 s avec chime audio si augmentation du compteur
+
+### `MobileScreenHeader` (`components/mobile/MobileScreenHeader.jsx`)
+En-tête partagé pour les sous-pages (profil, signalements, tri, etc.).
+- Bouton retour intelligent : `onBack` > historique React Router (`navigate(-1)`) > `backTo` > `/citoyen`
+- Titre de page centré
+- Zone action droite optionnelle (ex. bouton "Marquer tout comme lu")
+- `position: sticky; top: 0; z-index: 50` — figé à l'écran pendant le scroll
+
+---
+
+## Corrections techniques incluses dans cette version
+
+### Flux notifications signalement (gateway + service-routes)
+
+**Problème** : après `POST /api/routes/signalements`, ni le citoyen, ni les gestionnaires, ni les admins ne recevaient de notification.
+
+**Cause racine** : `app.use('/api', express.json(), gdprRoutes)` dans l'API Gateway consommait le body JSON de **toutes** les requêtes `/api/*` avant que le proxy ne le transmette en amont. Le body arrivait vide aux microservices → timeout 30 s.
+
+**Correctif** — `services/api-gateway/src/index.js`
+```js
+// Avant : options.buffer = bodyStream  (ne fonctionne pas en http-proxy-middleware v3)
+// Après :
+const forwardParsedBody = (proxyReq, req) => {
+  if (!req.body || req.method === 'GET' || req.method === 'HEAD') return;
+  const contentType = String(req.headers['content-type'] || '').toLowerCase();
+  if (contentType.includes('multipart/form-data')) return;
+  const bodyBuffer = Buffer.isBuffer(req.body) ? req.body
+    : typeof req.body === 'string' ? Buffer.from(req.body)
+    : contentType.includes('application/x-www-form-urlencoded')
+      ? Buffer.from(new URLSearchParams(req.body).toString())
+      : Buffer.from(JSON.stringify(req.body));
+  proxyReq.setHeader('Content-Length', bodyBuffer.length);
+  proxyReq.write(bodyBuffer);
+};
+// Ajouté dans createProxy : on: { proxyReq: forwardParsedBody }
+```
+
+### Notification citoyen en temps réel — `service-routes/src/utils/notifyStaff.js`
+
+Ajout de `notifyCitoyen(db, idCitoyen, { titre, corps })` :
+- INSERT dans la table `notification` (type `SYSTEME`, priorité 1)
+- Appel `emitWsForUser(idCitoyen)` → le badge du citoyen se met à jour immédiatement
+- Appelé par `signalement-service.js` juste après la création
+
+### Champ `urgence` non persisté — `service-routes/src/services/signalement-service.js`
+
+Le champ `urgence` envoyé par le frontend n'était pas destructuré ni transmis au repository.
+```js
+// Avant :
+async create({ description, url_photo, id_type, id_conteneur, id_citoyen }) { … }
+// Après :
+async create({ description, url_photo, id_type, id_conteneur, id_citoyen, urgence }) {
+  const signalement = await this.repository.create({
+    description, url_photo, id_type, id_conteneur, id_citoyen, urgence
+  });
+}
+```
+
+### Reconnexion consommateur Kafka (`service-notification-gestionnaire-admin`)
+
+Le consommateur Kafka (`kafkaConsumer.js`) échouait silencieusement au démarrage si Kafka n'était pas encore disponible. `isRunning()` restait `false` → `healthMonitorService.js` envoyait des alertes "Kafka hors ligne" toutes les ~60 s en boucle. Correctif : `docker restart ecotrack-service-notification-gestionnaire-admin` après la disponibilité de Kafka.
+
+### Headers figés sur toutes les sous-pages citoyen (CSS)
+
+Approche appliquée pour les pages avec scroll interne :
+
+```css
+/* Page racine — scroll interne uniquement */
+.xxx-page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+/* Corps scrollable */
+.xxx-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 16px 32px; }
+```
+
+Pages corrigées : `CitoyenSignalementDetail`, `CitoyenNotifications`, `CitoyenTri`, `CitoyenDefis`, `CitoyenMesSignalements`, `CitoyenPointsHistorique`, `CitoyenEditProfil`.
+
+`CitoyenProfil` : scroll naturel conservé (`min-height: 100dvh`) — le `MobileScreenHeader` (`position: sticky; top: 0`) assure le header figé via le scroll viewport, sans containment overflow.
+
+---
+
+## Déploiement GitHub Pages — `.github/workflows/deploy-pages.yml`
+
+Workflow CI/CD ajouté pour déployer `frontend/dist/` sur GitHub Pages sans déplacer le dossier `frontend/` à la racine du dépôt.
+
+- Déclencheur : push sur `main` touchant `frontend/**`
+- Build : `npm ci && npm run build` dans `frontend/` avec `VITE_BASE=/ecotrack-sjma/`
+- Upload : `actions/upload-pages-artifact@v3` (ajoute automatiquement `.nojekyll`)
+- Déploiement : `actions/deploy-pages@v4`
+- `vite.config.js` : `base: process.env.VITE_BASE || '/ecotrack-sjma/'` — permet `VITE_BASE=/` pour un domaine personnalisé
+
+**Activation requise** : GitHub → Settings → Pages → Source → **GitHub Actions**
+
+---
+
+#### Fichiers modifiés / créés
+
+| Couche | Fichier | Type | Description |
+|--------|---------|------|-------------|
+| Frontend | `pages/mobile/citoyen/CitoyenHome.jsx` | **NOUVEAU** | Dashboard citoyen complet |
+| Frontend | `pages/mobile/citoyen/CitoyenHome.css` | **NOUVEAU** | Styles dashboard |
+| Frontend | `pages/mobile/citoyen/CitoyenSignaler.jsx` | **NOUVEAU** | Formulaire signalement + photo + urgence |
+| Frontend | `pages/mobile/citoyen/CitoyenSignaler.css` | **NOUVEAU** | Styles formulaire |
+| Frontend | `pages/mobile/citoyen/CitoyenSignalerSuccess.jsx` | **NOUVEAU** | Écran succès + impact ADEME |
+| Frontend | `pages/mobile/citoyen/CitoyenSignalementDetail.jsx` | **NOUVEAU** | Détail signalement + timeline |
+| Frontend | `pages/mobile/citoyen/CitoyenSignalementDetail.css` | MOD | Header figé (height 100dvh + flex) |
+| Frontend | `pages/mobile/citoyen/CitoyenMesSignalements.jsx` | **NOUVEAU** | Liste signalements + bandeau récap + tabs |
+| Frontend | `pages/mobile/citoyen/CitoyenMesSignalements.css` | MOD | Header figé (height 100dvh + flex) |
+| Frontend | `pages/mobile/citoyen/CitoyenNotifications.jsx` | **NOUVEAU** | Notifications citoyen temps réel |
+| Frontend | `pages/mobile/citoyen/CitoyenNotifications.css` | MOD | Header figé |
+| Frontend | `pages/mobile/citoyen/CitoyenProfil.jsx` | **NOUVEAU** | Profil RGPD complet + menu + suppression |
+| Frontend | `pages/mobile/citoyen/CitoyenProfil.css` | MOD | Scroll naturel + padding bottom nav |
+| Frontend | `pages/mobile/citoyen/CitoyenEditProfil.jsx` | **NOUVEAU** | Édition profil + crop avatar |
+| Frontend | `pages/mobile/citoyen/CitoyenEditProfil.css` | MOD | Header figé |
+| Frontend | `pages/mobile/citoyen/CitoyenPointsHistorique.jsx` | **NOUVEAU** | Historique points + filtres |
+| Frontend | `pages/mobile/citoyen/CitoyenPointsHistorique.css` | MOD | Header figé |
+| Frontend | `pages/mobile/citoyen/CitoyenDefis.jsx` | **NOUVEAU** | Défis + badges |
+| Frontend | `pages/mobile/citoyen/CitoyenDefis.css` | MOD | Header figé |
+| Frontend | `pages/mobile/citoyen/CitoyenTri.jsx` | **NOUVEAU** | Guide tri + impact pédagogique ADEME |
+| Frontend | `pages/mobile/citoyen/CitoyenTri.css` | MOD | Header figé |
+| Frontend | `pages/mobile/citoyen/CitoyenMap.jsx` | **NOUVEAU** | Carte Leaflet conteneurs |
+| Frontend | `pages/mobile/citoyen/CitoyenScanner.jsx` | **NOUVEAU** | Scanner QR citoyen |
+| Frontend | `pages/mobile/citoyen/MobileLayout.jsx` | **NOUVEAU** | Layout citoyen + BottomNav + polling |
+| Frontend | `pages/mobile/citoyen/MobileLayout.css` | **NOUVEAU** | Styles layout citoyen |
+| Frontend | `components/mobile/MobileScreenHeader.jsx` | **NOUVEAU** | Header sous-pages avec retour intelligent |
+| Frontend | `components/mobile/MobileScreenHeader.css` | **NOUVEAU** | Sticky header (position: sticky; top: 0) |
+| Frontend | `components/mobile/citoyen/BottomNav.jsx` | **NOUVEAU** | Barre navigation inférieure 5 onglets |
+| Frontend | `components/mobile/citoyen/AvatarCropModal.jsx` | **NOUVEAU** | Crop avatar react-easy-crop |
+| Frontend | `utils/impactEstimation.js` | **NOUVEAU** | Calculs ADEME (CO₂, eau, déchets) |
+| Frontend | `vite.config.js` | MOD | `VITE_BASE` env var pour déploiement multi-cible |
+| Service-routes | `services/signalement-service.js` | MOD | Ajout champ `urgence` + notification citoyen |
+| Service-routes | `utils/notifyStaff.js` | MOD | Ajout `notifyCitoyen` + `emitWsForUser` citoyen |
+| API Gateway | `src/index.js` | MOD | Fix body forwarding proxy (http-proxy-middleware v3) |
+| CI/CD | `.github/workflows/deploy-pages.yml` | **NOUVEAU** | Déploiement frontend sur GitHub Pages |
+
+---
+
 ### [4.4.0] 2026-05-23 - Interface Agent Mobile complète + Notifications temps réel (WebSocket)
 
 Implémentation de l'interface mobile complète pour le rôle **AGENT**, du système de notifications temps réel par WebSocket pour les trois rôles (AGENT, GESTIONNAIRE, ADMIN), et intégration du scan QR universel.
