@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCitoyenAuth as useAuth } from './auth/CitoyenAuthContext';
 import { authService } from '../../../services/authService';
 import { safeErrorMessage } from '../../../utils/security';
+import LogoEcoTrack from '../../../assets/LogoEcoTrack.svg';
 
 // Page de connexion dédiée au flow citoyen mobile (logo feuille, charte
 // EcoTrack mobile). Réutilise les classes auth-* / form-input / btn-primary
@@ -115,7 +116,7 @@ const CitoyenLogin = () => {
           </button>
           <div className="auth-header">
             <div className="auth-logo" aria-hidden="true">
-              <i className="fas fa-leaf"></i>
+              <img src={LogoEcoTrack} alt="Logo EcoTrack" style={{ height: 72, width: 72, display: 'block' }} />
             </div>
             <h1>EcoTrack</h1>
             <p>Plateforme Intelligente de Gestion des Déchets</p>
