@@ -9,7 +9,10 @@ export default function MobileLayout() {
   const { play } = useNotificationSound();
   const prevRef = useRef(null);
   const playRef = useRef(play);
-  playRef.current = play;
+
+  useEffect(() => {
+    playRef.current = play;
+  });
 
   const poll = useCallback(async () => {
     try {
@@ -19,7 +22,9 @@ export default function MobileLayout() {
         playRef.current('default');
       }
       prevRef.current = count;
-    } catch {}
+    } catch (_) {
+      // network errors are non-fatal; polling will retry
+    }
   }, []);
 
   useEffect(() => {
