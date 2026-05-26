@@ -22,8 +22,8 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
-const ENV_FILE = path.join(PROJECT_ROOT, '.env');
+const PROJECT_ROOT = path.resolve(__dirname, '../..');  // ecotrack-sjma/database/scripts → ecotrack-sjma/
+const ENV_FILE = path.join(PROJECT_ROOT, '..', '.env'); // ecotrack-sjma/../.env = ecotrack-sjma/.env
 
 // ── Configuration ────────────────────────────────────────────────────────────
 

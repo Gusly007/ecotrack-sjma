@@ -12,13 +12,7 @@ reports/
 
 
 
-# DB Optimization (local notes)
-database/DB_OPTIMIZATION_PROPOSAL.md
-
 /maquette/
-docs/SECURITY_FIXES.md
-/EcoTrack_Docs
-frontend/public/qrcodes/
 *.png
 
 # OS / Editor
@@ -30,6 +24,9 @@ frontend/dev-dist/
 frontend/public/registerSW.js
 frontend/public/sw.js
 frontend/public/workbox-*.js
+
+# Database backups (generated at runtime)
+backups/
 
 # Archives
 *.zip

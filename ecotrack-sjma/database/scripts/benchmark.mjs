@@ -24,7 +24,7 @@
 
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import {
   createClient,
   createPool,
@@ -505,7 +505,7 @@ async function applyOptimizations(client) {
     return false;
   }
 
-  const migration = await import(migPath);
+  const migration = await import(pathToFileURL(migPath).href);
   const pgm = { sql: (sql) => client.query(sql) };
 
   await client.query('BEGIN');
