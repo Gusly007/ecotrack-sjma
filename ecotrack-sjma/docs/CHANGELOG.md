@@ -4,6 +4,68 @@
 
 ---
 
+### [4.6.0] 2026-05-26 - Optimisation BDD + Stratégie de backup automatique quotidienne
+
+Mise en place d'une campagne de benchmark base de données PostgreSQL (avant/après), 9 index d'optimisation avancés (BRIN, composites, partiels), seeds de montée en charge à 15 000 utilisateurs et 10 000 conteneurs, et stratégie de sauvegarde automatique cross-platform.
+
+---
+
+#### Optimisation des performances BDD — Migration `034_db_optimization_indexes`
+
+**Nouveaux index (tous idempotents via `IF NOT EXISTS`) :**
+
+| Index | Type | Table | Gain |
+|---|---|---|---|
+| `idx_mesure_capteur_date` | Composite | `mesure` | Index Only Scan au lieu de BitmapOr |
+| `idx_mesure_date_brin` | BRIN (pages=128) | `mesure` | 8 Ko vs 240 Ko B-tree (-97 %) |
+| `idx_mesure_conteneur_date_desc` | Composite DESC | `mesure` | Suppression Sort node pour LATERAL |
+| `idx_notification_date_brin` | BRIN (pages=32) | `notification` | Index ultra-compact time-series |
+| `idx_notification_non_lu` | Partiel | `notification` | -70 % taille (seules les non-lues) |
+| `idx_collecte_date_brin` | BRIN (pages=64) | `collecte` | Agrégations temporelles |
+| `idx_tournee_agent_date` | Composite DESC | `tournee` | Suppression Sort planning agent |
+| `idx_conteneur_zone_statut` | Composite | `conteneur` | Filtre zone+statut en 1 index |
+| `idx_conteneur_actif` | Partiel `ACTIF` | `conteneur` | -97.5 % taille (2.5 % inactifs exclus) |
+
+**Résultats mesurés (PostgreSQL 16.4 Docker, 26 mai 2026) :**
+- Cache hit ratio : **99.70 %**
+- BRIN `idx_mesure_date_brin` : **8 Ko** vs 240 Ko B-tree B-tree → voir [docs/RAPPORT_BENCHMARK_PERFORMANCE.md](RAPPORT_BENCHMARK_PERFORMANCE.md) §5.4
+
+---
+
+#### Seeds de montée en charge
+
+- **`027_production_scale_seed.sql`** : 15 000 utilisateurs (10 admins, 20 gestionnaires, 5 agents, 14 965 citoyens), ~45 000 notifications, 500 signalements
+- **`028_future_10k_conteneurs.sql`** : 50 nouvelles zones, 8 000 conteneurs supplémentaires, ~1,5 M mesures IoT
+
+---
+
+#### Migrations GDPR complétées
+
+- **`029_add_gdpr_consent_indexes.sql`** : Index sur `user_consent` et `archived_data` (optimisation des requêtes RGPD)
+- **`035_add_gdpr_retention_cleanup.sql`** : Colonne `expires_at` sur `cookie_consent` + fonction PostgreSQL `purge_expired_gdpr_data()` pour la purge automatique des données expirées (rétention 13 mois Art. 7 RGPD, 12 mois Art. 25/32 RGPD)
+
+---
+
+#### Stratégie de sauvegarde automatique
+
+| Script | Usage |
+|---|---|
+| `database/scripts/backup.sh` | Linux/Docker — `pg_dump \| gzip -9` + SHA-256 + rotation 7 jours, cron-ready |
+| `database/scripts/backup.mjs` | Cross-platform (Windows/Linux) — options `--dry-run`, `--list`, `--verify`, `--retention N` |
+
+**NPM** : `npm run backup`, `backup:dry`, `backup:list`, `backup:verify`, `backup:retention`
+
+**RPO ≤ 24 h** · **RTO < 5 min** (`gunzip | psql`) · SHA-256 vérifié avant restauration
+
+---
+
+#### Documentation
+
+- [docs/RAPPORT_BENCHMARK_PERFORMANCE.md](RAPPORT_BENCHMARK_PERFORMANCE.md) — Rapport complet benchmark avant/après avec résultats réels, plans EXPLAIN ANALYZE, tailles d'index mesurées, procédure d'exécution, stratégie de backup
+- [docs/DB_OPTIMIZATION.md](DB_OPTIMIZATION.md) — Récapitulatif des 9 index avec définitions SQL, étapes complétées
+
+---
+
 ### [4.5.0] 2026-05-25 - Interface Citoyen Mobile complète + Corrections flux notifications + CI/CD GitHub Pages
 
 Implémentation de l'interface mobile complète pour le rôle **CITOYEN**, correction du flux de notifications après soumission d'un signalement, persistance du champ `urgence`, headers figés sur toutes les sous-pages, et ajout du workflow de déploiement GitHub Pages.

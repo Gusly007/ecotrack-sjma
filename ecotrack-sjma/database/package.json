@@ -15,7 +15,19 @@
     "db:reset": "node scripts/reset.mjs",
     "db:status": "node scripts/status.mjs",
     "fresh": "npm run db:fresh && npm run migrate && npm run seed",
-    "reset": "npm run db:reset"
+    "reset": "npm run db:reset",
+    "benchmark": "node scripts/benchmark.mjs",
+    "benchmark:full": "node scripts/benchmark.mjs --full",
+    "benchmark:avant": "node scripts/benchmark.mjs --avant",
+    "benchmark:apres": "node scripts/benchmark.mjs --apres",
+    "benchmark:seed": "node scripts/benchmark.mjs --seed-only",
+    "benchmark:optim": "node scripts/benchmark.mjs --optim-only",
+    "seed:prod": "node scripts/seed.mjs --fresh && node scripts/benchmark.mjs --seed-only",
+    "backup": "node scripts/backup.mjs",
+    "backup:dry": "node scripts/backup.mjs --dry-run",
+    "backup:list": "node scripts/backup.mjs --list",
+    "backup:verify": "node scripts/backup.mjs --verify",
+    "backup:retention": "node scripts/backup.mjs --retention 14"
   },
   "dependencies": {
     "cross-env": "^7.0.3",
