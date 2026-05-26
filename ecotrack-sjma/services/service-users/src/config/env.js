@@ -112,7 +112,7 @@ const env = {
       return process.env.JWT_SECRET;
     },
     get expiresIn() {
-      return getDbConfig('jwt.access_token_expiration', process.env.JWT_EXPIRES_IN || '24h');
+      return getDbConfig('jwt.access_token_expiration', process.env.JWT_EXPIRES_IN || '1h');
     },
     get refreshSecret() {
       return process.env.JWT_REFRESH_SECRET;

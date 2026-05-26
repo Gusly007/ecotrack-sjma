@@ -249,14 +249,15 @@ const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMidd
   }
 });
 
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) {
       callback(null, true);
-    } else if (/^http:\/\/localhost:\d+$/.test(origin)) {
+    } else if (origin === ALLOWED_ORIGIN) {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
     }
   },
   credentials: true,
