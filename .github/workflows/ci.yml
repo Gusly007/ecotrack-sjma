@@ -288,9 +288,30 @@ jobs:
   test-containers-integration:
     name: ' Integration Tests - service-containers'
     runs-on: ubuntu-latest
-
     needs: test-containers
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -300,29 +321,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -352,9 +350,6 @@ jobs:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
 
   # =========================================================================
@@ -366,9 +361,30 @@ jobs:
   test-containers-e2e:
     name: ' E2E Tests - service-containers'
     runs-on: ubuntu-latest
-
     needs: test-containers-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -378,29 +394,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -419,9 +412,6 @@ jobs:
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2C: UNIT TESTS - SERVICE-GAMIFICATIONS
@@ -559,7 +549,29 @@ jobs:
     name: ' Integration Tests  - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot
-    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -569,29 +581,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
       
       - name: 'Install dependencies'
         run: npm ci
@@ -615,9 +604,6 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2D2: E2E TESTS - SERVICE-IOT (Test Pyramid - Level 3)
@@ -629,7 +615,29 @@ jobs:
     name: ' E2E Tests - service-iot'
     runs-on: ubuntu-latest
     needs: test-iot-integration
-    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -639,29 +647,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
       
       - name: 'Install dependencies'
         run: npm ci
@@ -675,9 +660,6 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2E: UNIT TESTS - SERVICE-ANALYTICS
@@ -752,9 +734,30 @@ jobs:
   test-analytics-integration:
     name: ' Integration Tests - service-analytics'
     runs-on: ubuntu-latest
-
     needs: test-analytics
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -767,29 +770,6 @@ jobs:
       - name: 'Install system dependencies for canvas'
         run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -818,9 +798,6 @@ jobs:
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2E2: E2E TESTS - SERVICE-ANALYTICS (Test Pyramid - Level 3 ~11%)
@@ -831,9 +808,30 @@ jobs:
   test-analytics-e2e:
     name: ' E2E Tests - service-analytics'
     runs-on: ubuntu-latest
-
     needs: test-analytics-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -846,29 +844,6 @@ jobs:
       - name: 'Install system dependencies for canvas'
         run: sudo apt-get update && sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -887,9 +862,6 @@ jobs:
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2F: UNIT TESTS - FRONTEND
@@ -1187,9 +1159,30 @@ jobs:
   test-routes-integration:
     name: ' Integration Tests - service-routes'
     runs-on: ubuntu-latest
-    
     needs: test-routes-unit
-    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1199,29 +1192,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
       
       - name: 'Install dependencies'
         run: npm ci
@@ -1251,9 +1221,6 @@ jobs:
           PGDATABASE: ecotrack_test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2F3: E2E TESTS - SERVICE-ROUTES (Test Pyramid - Level 3 ~5%)
@@ -1264,9 +1231,30 @@ jobs:
   test-routes-e2e:
     name: ' E2E Tests  - service-routes'
     runs-on: ubuntu-latest
-    
     needs: test-routes-integration
-    
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1276,29 +1264,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
       
       - name: 'Install dependencies'
         run: npm ci
@@ -1350,9 +1315,6 @@ jobs:
         working-directory: ecotrack-sjma/services/service-routes
         run: tail -100 service-routes.log || true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2G1: INTEGRATION TESTS - SERVICE-USERS (Test Pyramid - Level 2)
@@ -1362,9 +1324,30 @@ jobs:
   test-users-integration:
     name: ' Integration Tests - service-users'
     runs-on: ubuntu-latest
-
     needs: test
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1374,29 +1357,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1421,9 +1381,6 @@ jobs:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2G2: E2E TESTS - SERVICE-USERS (Test Pyramid - Level 3)
@@ -1433,9 +1390,30 @@ jobs:
   test-users-e2e:
     name: ' E2E Tests - service-users'
     runs-on: ubuntu-latest
-
     needs: test-users-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1445,29 +1423,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1481,9 +1436,6 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2H1: UNIT TESTS - API-GATEWAY (NEW!)
@@ -1531,9 +1483,30 @@ jobs:
   test-api-gateway-integration:
     name: ' Integration Tests - api-gateway'
     runs-on: ubuntu-latest
-
     needs: test-api-gateway
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1543,29 +1516,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1589,9 +1539,6 @@ jobs:
           NODE_ENV: test
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2H3: E2E TESTS - API-GATEWAY (Test Pyramid - Level 3)
@@ -1600,9 +1547,30 @@ jobs:
   test-api-gateway-e2e:
     name: ' E2E Tests - api-gateway'
     runs-on: ubuntu-latest
-
     needs: test-api-gateway-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1612,29 +1580,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1647,9 +1592,6 @@ jobs:
         env:
           NODE_ENV: test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2I1: INTEGRATION TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 2)
@@ -1659,9 +1601,30 @@ jobs:
   test-gamifications-integration:
     name: ' Integration Tests - service-gamifications'
     runs-on: ubuntu-latest
-
     needs: test-gamifications
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1671,29 +1634,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1718,9 +1658,6 @@ jobs:
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2I2: E2E TESTS - SERVICE-GAMIFICATIONS (Test Pyramid - Level 3)
@@ -1730,9 +1667,30 @@ jobs:
   test-gamifications-e2e:
     name: ' E2E Tests - service-gamifications'
     runs-on: ubuntu-latest
-
     needs: test-gamifications-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1742,29 +1700,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1778,9 +1713,6 @@ jobs:
           NODE_ENV: test
           GAMIFICATIONS_DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/ecotrack_test
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2J1: INTEGRATION TESTS - FRONTEND (Test Pyramid - Level 2)
@@ -1790,9 +1722,30 @@ jobs:
   test-frontend-integration:
     name: ' Integration Tests - frontend'
     runs-on: ubuntu-latest
-
     needs: test-frontend
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1802,29 +1755,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1835,9 +1765,6 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 2J2: E2E TESTS - FRONTEND (Test Pyramid - Level 3)
@@ -1847,9 +1774,30 @@ jobs:
   test-frontend-e2e:
     name: ' E2E Tests - frontend'
     runs-on: ubuntu-latest
-
     needs: test-frontend-integration
-
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: ecotrack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -1859,29 +1807,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 'Start test services (docker-compose)'
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml up -d
-        timeout-minutes: 3
-
-      - name: 'Wait for PostgreSQL to be ready'
-        run: |
-          echo "Waiting for PostgreSQL..."
-          echo "Docker containers running:"
-          docker ps --format "table {{.Names}}\t{{.Status}}"
-          echo ""
-          sudo apt-get update > /dev/null && sudo apt-get install -y postgresql-client > /dev/null
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U test_user -d ecotrack_test > /dev/null 2>&1; then
-              echo "✓ PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: PostgreSQL not ready yet..."
-            sleep 2
-          done
-          echo "✗ PostgreSQL failed to start"
-          docker ps
-          docker logs $(docker ps -q -f ancestor=postgis/postgis:16-3.4-alpine) 2>&1 | tail -20
-          exit 1
 
       - name: 'Install dependencies'
         run: npm ci
@@ -1892,9 +1817,6 @@ jobs:
         working-directory: ecotrack-sjma/frontend
         continue-on-error: true
 
-      - name: 'Cleanup test services'
-        if: always()
-        run: docker compose -f ecotrack-sjma/docker-compose.test.yml down -v
 
   # =========================================================================
   # JOB 3: SECURITY SCAN - TOUS LES SERVICES
