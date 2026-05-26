@@ -16,6 +16,7 @@
     "lint:lighthouse": "lighthouse http://localhost:4173/ecotrack-sjma/ --output html --output-path ./reports/performance/lighthouse.html --chrome-flags='--headless --no-sandbox'"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "axios": "^1.13.5",
     "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",

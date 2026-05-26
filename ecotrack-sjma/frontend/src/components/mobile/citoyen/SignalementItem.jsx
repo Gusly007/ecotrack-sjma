@@ -18,8 +18,11 @@ const badgeClassMap = {
 };
 
 export default function SignalementItem({ signalement, onClick }) {
+  const handleKey = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+  };
   return (
-    <div className="mobile-sig-item" onClick={onClick} role="button" tabIndex={0}>
+    <div className="mobile-sig-item" onClick={onClick} onKeyDown={handleKey} role="button" tabIndex={0}>
       <div
         className="mobile-sig-bar"
         style={{ background: statusColorMap[signalement.statusColor] || '#ccc' }}

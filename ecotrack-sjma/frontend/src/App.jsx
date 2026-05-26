@@ -16,66 +16,66 @@ import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 import ProfilePage from './pages/auth/ProfilePage';
 
-// Desktop - Admin
-import AdminDashboard from './pages/desktop/admin/Dashboard';
-import RolesPage from './pages/desktop/admin/Roles';
-import MaintenancePage from './pages/desktop/gestionnaire/MaintenancePage';
-import RapportsPage from './pages/desktop/gestionnaire/RapportsPage';
-import SuiviTempsReelPage from './pages/desktop/gestionnaire/SuiviTempsReelPage';
-import UsersPage from './pages/desktop/admin/Users';
-import CreateUserPage from './pages/desktop/admin/CreateUser';
-import UserDetailPage from './pages/desktop/admin/UserDetail';
-import ConteneursPage from './pages/desktop/admin/Conteneurs';
-import ZonesPage from './pages/desktop/admin/Zones';
-import SignalementsPage from './pages/desktop/admin/Signalements';
-import SignalementDetailPage from './pages/desktop/admin/SignalementDetail';
-import AlertsPage from './pages/desktop/admin/Alerts';
-import LogsPage from './pages/desktop/admin/Logs';
-import MonitoringPage from './pages/desktop/admin/Monitoring';
-import ConfigurationPage from './pages/desktop/admin/Configuration';
-import DesktopNotificationsPage from './pages/desktop/NotificationsPage';
+// Desktop - Admin (lazy: pas chargé sur la landing page)
+const AdminDashboard = lazy(() => import('./pages/desktop/admin/Dashboard'));
+const RolesPage = lazy(() => import('./pages/desktop/admin/Roles'));
+const UsersPage = lazy(() => import('./pages/desktop/admin/Users'));
+const CreateUserPage = lazy(() => import('./pages/desktop/admin/CreateUser'));
+const UserDetailPage = lazy(() => import('./pages/desktop/admin/UserDetail'));
+const ConteneursPage = lazy(() => import('./pages/desktop/admin/Conteneurs'));
+const ZonesPage = lazy(() => import('./pages/desktop/admin/Zones'));
+const SignalementsPage = lazy(() => import('./pages/desktop/admin/Signalements'));
+const SignalementDetailPage = lazy(() => import('./pages/desktop/admin/SignalementDetail'));
+const AlertsPage = lazy(() => import('./pages/desktop/admin/Alerts'));
+const LogsPage = lazy(() => import('./pages/desktop/admin/Logs'));
+const MonitoringPage = lazy(() => import('./pages/desktop/admin/Monitoring'));
+const ConfigurationPage = lazy(() => import('./pages/desktop/admin/Configuration'));
+const DesktopNotificationsPage = lazy(() => import('./pages/desktop/NotificationsPage'));
 
-// Desktop - Gestionnaire
-import GestionnaireDashboard from './pages/desktop/gestionnaire/GestionnaireDashboard';
-import GestionnaireTourneePage from './pages/desktop/gestionnaire/tournee';
-import GestionnaireKpisPage from './pages/desktop/gestionnaire/KpiPage';
+// Desktop - Gestionnaire (lazy)
+const GestionnaireDashboard = lazy(() => import('./pages/desktop/gestionnaire/GestionnaireDashboard'));
+const GestionnaireTourneePage = lazy(() => import('./pages/desktop/gestionnaire/tournee'));
+const GestionnaireKpisPage = lazy(() => import('./pages/desktop/gestionnaire/KpiPage'));
+const MaintenancePage = lazy(() => import('./pages/desktop/gestionnaire/MaintenancePage'));
+const RapportsPage = lazy(() => import('./pages/desktop/gestionnaire/RapportsPage'));
+const SuiviTempsReelPage = lazy(() => import('./pages/desktop/gestionnaire/SuiviTempsReelPage'));
 
-// Mobile - Agent
-import AgentDashboard from './pages/mobile/agent/AgentDashboard';
-import AgentTourneePage from './pages/mobile/agent/TourneePage';
-import EtapeDetail from './pages/mobile/agent/EtapeDetail';
-import ScanPage from './pages/mobile/agent/ScanPage';
-import ScanResult from './pages/mobile/agent/ScanResult';
-import AnomaliePage from './pages/mobile/agent/AnomaliePage';
-import AnomalieForm from './pages/mobile/agent/AnomalieForm';
-import TerminerTournee from './pages/mobile/agent/TerminerTournee';
-import AgentHistorique from './pages/mobile/agent/HistoriquePage';
-import AgentStats from './pages/mobile/agent/StatsPage';
+// Mobile - Agent (lazy)
+const AgentDashboard = lazy(() => import('./pages/mobile/agent/AgentDashboard'));
+const AgentTourneePage = lazy(() => import('./pages/mobile/agent/TourneePage'));
+const EtapeDetail = lazy(() => import('./pages/mobile/agent/EtapeDetail'));
+const ScanPage = lazy(() => import('./pages/mobile/agent/ScanPage'));
+const ScanResult = lazy(() => import('./pages/mobile/agent/ScanResult'));
+const AnomaliePage = lazy(() => import('./pages/mobile/agent/AnomaliePage'));
+const AnomalieForm = lazy(() => import('./pages/mobile/agent/AnomalieForm'));
+const TerminerTournee = lazy(() => import('./pages/mobile/agent/TerminerTournee'));
+const AgentHistorique = lazy(() => import('./pages/mobile/agent/HistoriquePage'));
+const AgentStats = lazy(() => import('./pages/mobile/agent/StatsPage'));
 
-// Mobile - Shared
-import ProfilPage from './pages/mobile/shared/ProfilPage';
-import EditProfilPage from './pages/mobile/shared/EditProfilPage';
-import NotificationsPage from './pages/mobile/shared/NotificationsPage';
-import NotificationSettings from './pages/mobile/shared/NotificationSettings';
-import QRCodePage from './pages/QRCodePage';
-import SharedScanPage from './pages/mobile/shared/ScanPage';
-import SharedScanResult from './pages/mobile/shared/ScanResult';
+// Mobile - Shared (lazy)
+const ProfilPage = lazy(() => import('./pages/mobile/shared/ProfilPage'));
+const EditProfilPage = lazy(() => import('./pages/mobile/shared/EditProfilPage'));
+const NotificationsPage = lazy(() => import('./pages/mobile/shared/NotificationsPage'));
+const NotificationSettings = lazy(() => import('./pages/mobile/shared/NotificationSettings'));
+const QRCodePage = lazy(() => import('./pages/QRCodePage'));
+const SharedScanPage = lazy(() => import('./pages/mobile/shared/ScanPage'));
+const SharedScanResult = lazy(() => import('./pages/mobile/shared/ScanResult'));
 
-// Mobile Citoyen App
+// Mobile Citoyen App (lazy pour les vues non-critiques)
 import CitoyenMobileLayout from './pages/mobile/citoyen/MobileLayout';
 import CitoyenHome from './pages/mobile/citoyen/CitoyenHome';
 const CitoyenMap = lazy(() => import('./pages/mobile/citoyen/CitoyenMap'));
-import CitoyenSignaler from './pages/mobile/citoyen/CitoyenSignaler';
-import CitoyenSignalerSuccess from './pages/mobile/citoyen/CitoyenSignalerSuccess';
 const CitoyenScanner = lazy(() => import('./pages/mobile/citoyen/CitoyenScanner'));
-import CitoyenMesSignalements from './pages/mobile/citoyen/CitoyenMesSignalements';
-import CitoyenSignalementDetail from './pages/mobile/citoyen/CitoyenSignalementDetail';
-import CitoyenDefis from './pages/mobile/citoyen/CitoyenDefis';
-import CitoyenProfil from './pages/mobile/citoyen/CitoyenProfil';
-import CitoyenEditProfil from './pages/mobile/citoyen/CitoyenEditProfil';
-import CitoyenNotifications from './pages/mobile/citoyen/CitoyenNotifications';
-import CitoyenTri from './pages/mobile/citoyen/CitoyenTri';
-import CitoyenPointsHistorique from './pages/mobile/citoyen/CitoyenPointsHistorique';
+const CitoyenSignaler = lazy(() => import('./pages/mobile/citoyen/CitoyenSignaler'));
+const CitoyenSignalerSuccess = lazy(() => import('./pages/mobile/citoyen/CitoyenSignalerSuccess'));
+const CitoyenMesSignalements = lazy(() => import('./pages/mobile/citoyen/CitoyenMesSignalements'));
+const CitoyenSignalementDetail = lazy(() => import('./pages/mobile/citoyen/CitoyenSignalementDetail'));
+const CitoyenDefis = lazy(() => import('./pages/mobile/citoyen/CitoyenDefis'));
+const CitoyenProfil = lazy(() => import('./pages/mobile/citoyen/CitoyenProfil'));
+const CitoyenEditProfil = lazy(() => import('./pages/mobile/citoyen/CitoyenEditProfil'));
+const CitoyenNotifications = lazy(() => import('./pages/mobile/citoyen/CitoyenNotifications'));
+const CitoyenTri = lazy(() => import('./pages/mobile/citoyen/CitoyenTri'));
+const CitoyenPointsHistorique = lazy(() => import('./pages/mobile/citoyen/CitoyenPointsHistorique'));
 import CitoyenLogin from './pages/mobile/citoyen/CitoyenLogin';
 import CitoyenRegister from './pages/mobile/citoyen/CitoyenRegister';
 import CitoyenLanding from './pages/mobile/citoyen/CitoyenLanding';
@@ -104,6 +104,7 @@ function App() {
       <NotificationProvider>
       <BrowserRouter basename="/ecotrack-sjma">
         <CookieBanner />
+        <Suspense fallback={<div style={{ display: 'none' }} aria-hidden="true" />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
@@ -370,6 +371,7 @@ function App() {
             </div>
           } />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </NotificationProvider>
     </AuthProvider>
