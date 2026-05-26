@@ -219,11 +219,11 @@ Avant de presenter les resultats, il est essentiel de definir les indicateurs ut
 
 ---
 
-### 4.3.1 Resultats de mesure Lighthouse — Etat initial (avant optimisations)
+### 4.3.1 Resultats de mesure Lighthouse
 
-**Contexte de la mesure** : la mesure a ete realisee par le pipeline CI/CD GitHub Actions (Job `performance-lighthouse-web-vitals`). Lighthouse est execute en mode headless (sans interface graphique) sur un serveur `ubuntu-latest` via Chrome. L'URL mesuree est `http://localhost:4173/ecotrack-sjma/` — le serveur de previsualisation Vite (`npm run preview`) sert le build de production.
+**Contexte de la mesure** : les mesures sont realisees par le pipeline CI/CD GitHub Actions (Jobs `performance-lighthouse-web-vitals`, `accessibility-wcag`, `seo-best-practices`). Lighthouse est execute en mode headless sur un serveur `ubuntu-latest` via Chrome. L'URL mesuree est `http://localhost:4173/ecotrack-sjma/` — le serveur de previsualisation Vite (`npm run preview`) sert le build de production compilé (`npm run build`).
 
-**Scores obtenus :**
+#### Scores Lighthouse — Avant optimisations (branche `main`, mesure initiale)
 
 | Categorie | Score | Interpretation |
 |-----------|-------|----------------|
@@ -232,15 +232,34 @@ Avant de presenter les resultats, il est essentiel de definir les indicateurs ut
 | Bonnes Pratiques | **96 / 100** | Performant — seuil vert |
 | SEO | **90 / 100** | Performant — seuil vert |
 
-**Metriques Core Web Vitals :**
+**Metriques Core Web Vitals — Avant :**
 
-| Metrique | Valeur mesuree | Seuil cible | Statut |
-|----------|---------------|-------------|--------|
+| Metrique | Valeur | Seuil cible | Statut |
+|----------|--------|-------------|--------|
 | FCP — First Contentful Paint | **3.6 s** | < 1.8s | Rouge |
 | LCP — Largest Contentful Paint | **4.5 s** | < 2.5s | Rouge |
 | TBT — Total Blocking Time | **40 ms** | < 200ms | Vert |
 | CLS — Cumulative Layout Shift | **0** | < 0.1 | Vert parfait |
 | SI — Speed Index | **3.6 s** | < 3.4s | Orange |
+
+#### Scores Lighthouse — Apres optimisations (branche `feat/accessibility-performance`, mesure CI reelle)
+
+| Categorie | Score | Evolution | Interpretation |
+|-----------|-------|-----------|----------------|
+| Performance | **93 / 100** | +17 pts | Performant — seuil vert |
+| Accessibilite | **92 / 100** | -4 pts | Performant — seuil vert (regression contraste cookie banner) |
+| Bonnes Pratiques | **96 / 100** | stable | Performant — seuil vert |
+| SEO | **90 / 100** | stable | Performant — seuil vert |
+
+**Metriques Core Web Vitals — Apres :**
+
+| Metrique | Avant | Apres | Gain | Seuil cible | Statut |
+|----------|-------|-------|------|-------------|--------|
+| FCP — First Contentful Paint | 3.6 s | **2.6 s** | -1.0 s | < 1.8s | Orange |
+| LCP — Largest Contentful Paint | 4.5 s | **2.6 s** | -1.9 s | < 2.5s | Orange |
+| TBT — Total Blocking Time | 40 ms | **0 ms** | -40 ms | < 200ms | Vert parfait |
+| CLS — Cumulative Layout Shift | 0 | **0** | inchange | < 0.1 | Vert parfait |
+| SI — Speed Index | 3.6 s | **2.6 s** | -1.0 s | < 3.4s | Vert |
 
 **Analyse detaillee des problèmes identifies par Lighthouse :**
 
@@ -495,48 +514,51 @@ npm run lint:lighthouse
 
 #### Core Web Vitals
 
-| Metrique | Avant optimisations | Apres optimisations | Gain | Seuil cible |
-|----------|--------------------|--------------------|------|-------------|
-| FCP — First Contentful Paint | 3.6 s (rouge) | ~1.6 s (vert estim.) | -2.0 s | < 1.8 s |
-| LCP — Largest Contentful Paint | 4.5 s (rouge) | ~2.2 s (vert estim.) | -2.3 s | < 2.5 s |
-| TBT — Total Blocking Time | 40 ms (vert) | ~30 ms (vert) | stable | < 200 ms |
-| CLS — Cumulative Layout Shift | 0 (vert) | 0 (vert) | inchange | < 0.1 |
-| SI — Speed Index | 3.6 s (orange) | ~2.0 s (vert estim.) | -1.6 s | < 3.4 s |
-| **Score Performance** | **76 / 100** | **~90 / 100 (estim.)** | **+14 pts** | > 90 |
+| Metrique | Avant | Apres (CI reel) | Gain | Seuil cible | Statut final |
+|----------|-------|-----------------|------|-------------|--------------|
+| FCP — First Contentful Paint | 3.6 s | **2.6 s** | -1.0 s | < 1.8 s | Orange |
+| LCP — Largest Contentful Paint | 4.5 s | **2.6 s** | -1.9 s | < 2.5 s | Orange |
+| TBT — Total Blocking Time | 40 ms | **0 ms** | -40 ms | < 200 ms | Vert parfait |
+| CLS — Cumulative Layout Shift | 0 | **0** | inchange | < 0.1 | Vert parfait |
+| SI — Speed Index | 3.6 s | **2.6 s** | -1.0 s | < 3.4 s | Vert |
+| **Score Performance** | **76 / 100** | **93 / 100** | **+17 pts** | > 90 | **Vert** |
 
-> Les valeurs "apres" sont estimees d'apres les economies calculees par Lighthouse (CDN bloquant -950ms, JS inutilise -307 KiB). Le prochain run CI sur la branche `feat/accessibility-performance` produira les mesures reelles.
+> Valeurs issues du pipeline CI/CD GitHub Actions — Job `performance-lighthouse-web-vitals`, branche `feat/accessibility-performance`.
 
 #### Structure du bundle JavaScript
 
-| Indicateur | Avant | Apres | Evolution |
-|-----------|-------|-------|-----------|
-| Bundle initial (fichier unique) | 392 KiB | Disparu | Eclate en chunks |
-| JS charge au premier affichage | 392 KiB | ~130 KiB (react + misc + index core) | -67% |
+| Indicateur | Avant | Apres (CI reel) | Evolution |
+|-----------|-------|-----------------|-----------|
+| Bundle JS principal | 392 KiB (monolithique) | **105.9 KiB** | -73% |
+| JS inutilise au chargement initial | 307 KiB (78%) | **71 KiB** (67%) | -236 KiB |
 | Leaflet (cartographie) | Inclus dans le bundle initial | 216.7 KiB — charge a la demande | Isole |
 | Scanner QR (html5-qrcode) | Inclus dans le bundle initial | 334.6 KiB — charge a la demande | Isole |
-| Pages desktop (admin + gestionnaire) | Inclus dans le bundle initial | 2–35 KiB par page — charge a la demande | 35+ chunks lazys |
-| Pages mobile agent | Inclus dans le bundle initial | 4–6 KiB par page — charge a la demande | 10 chunks lazys |
+| Pages desktop (admin + gestionnaire) | Inclus dans le bundle initial | 2–35 KiB par page — a la demande | 35+ chunks lazys |
+| Pages mobile agent | Inclus dans le bundle initial | 4–6 KiB par page — a la demande | 10 chunks lazys |
 | Chunks totaux generes | 1 | 44 | +43 chunks |
 
 #### Ressources externes et requetes bloquantes
 
-| Ressource | Avant | Apres | Impact |
-|-----------|-------|-------|--------|
-| Font Awesome CSS | CDN Cloudflare — 950ms bloquant | Local (bundle Vite) — 0ms bloquant | -950ms FCP/LCP |
-| Police fa-solid-900.woff2 | CDN Cloudflare — 153.6 KiB externe | Local — servi depuis le même hôte | Mise en cache locale |
-| Total transfert 3e partie | 173 KiB (Cloudflare) | 0 KiB | Elimination |
-| Requetes bloquant le rendu | 2 (CDN CSS + CSS local) | 1 (CSS local uniquement) | -1 requete bloquante |
+| Ressource | Avant | Apres (CI reel) | Impact |
+|-----------|-------|-----------------|--------|
+| Font Awesome CSS | CDN Cloudflare — 950ms bloquant, 19.1 KiB | Local (Vite) — inclus dans CSS bundle | -950ms blocage |
+| Police fa-solid-900.woff2 | CDN Cloudflare — 153.6 KiB externe | Local — 112.3 KiB, servi depuis le même hôte | -41 KiB, 0 latence CDN |
+| Total transfert 3e partie | 173 KiB (Cloudflare) | **0 KiB** | Elimination complete |
+| Requetes bloquant le rendu | 2 (CDN CSS + CSS local) | **1** (CSS local uniquement, 910ms) | -1 requete bloquante |
+| JS inutilise | 307 KiB / 392 KiB totaux | **71 KiB / 105.9 KiB** totaux | -236 KiB inutile |
+| CSS inutilise | 64.7 KiB (CSS local + CDN FA) | **34.3 KiB** (FA local uniquement) | -30 KiB |
 | Favicon | Erreur 404 a chaque chargement | Servi depuis `public/` — 200 OK | Erreur eliminee |
 
 #### Accessibilite et conformite
 
-| Critere | Avant | Apres |
-|---------|-------|-------|
+| Critere | Avant | Apres (CI reel) |
+|---------|-------|-----------------|
+| Score Lighthouse Accessibilite | 96 / 100 | **92 / 100** (-4 : contraste cookie banner) |
 | Langue du document `lang=` | `lang="en"` (incorrect) | `lang="fr"` (correct) |
 | Titre de page `<title>` | `"frontend"` (inutilisable) | `"EcoTrack — Gestion des conteneurs urbains"` |
 | Meta description | Absente | Presente |
-| Keyboard handler `div[role="button"]` | `onClick` seulement (inaccessible clavier) | `onClick` + `onKeyDown` Enter/Espace |
-| Score Lighthouse Accessibilite | 96 / 100 | 96 / 100 (stable — deja excellent) |
+| Keyboard handler `div[role="button"]` | `onClick` seulement | `onClick` + `onKeyDown` Enter/Espace |
+| Contraste boutons cookie banner | `#10b981` / `#ef4444` sur blanc — ratio < 4.5:1 | `#15803d` / `#b91c1c` — ratio > 4.5:1 (corrige) |
 
 ---
 
