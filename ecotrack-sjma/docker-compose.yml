@@ -33,8 +33,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-ecotrack_password}
       POSTGRES_DB: ${DB_NAME:-ecotrack}
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Script d'initialisation (extensions, etc.)
@@ -58,7 +56,7 @@ services:
   # PGADMIN 4 (Interface graphique pour PostgreSQL)
   # =========================================================================
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.5
     container_name: ecotrack-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ecotrack.dev}
@@ -88,8 +86,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: ecotrack-redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -140,7 +136,7 @@ services:
       start_period: 30s
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: ecotrack-kafka-ui
     ports:
       - "8080:8080"
@@ -583,7 +579,7 @@ services:
   # PROMETHEUS (Monitoring & Métriques)
   # =========================================================================
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.51.2
     container_name: ecotrack-prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
@@ -611,7 +607,7 @@ services:
   # GRAFANA (Visualisation des métriques)
   # =========================================================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.2
     container_name: ecotrack-grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
@@ -643,7 +639,7 @@ services:
   # NODE EXPORTER (System metrics: CPU, RAM, Disk, Network)
   # =========================================================================
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.7.0
     container_name: ecotrack-node-exporter
     command:
       - '--path.procfs=/host/proc'
@@ -681,7 +677,7 @@ services:
   # REDIS EXPORTER (Redis cache metrics)
   # =========================================================================
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.61.0
     container_name: ecotrack-redis-exporter
     environment:
       REDIS_ADDR: "redis://redis:6379"
@@ -698,7 +694,7 @@ services:
   # KAFKA EXPORTER (Kafka metrics)
   # =========================================================================
   kafka-exporter:
-    image: danielqsj/kafka-exporter:latest
+    image: danielqsj/kafka-exporter:v1.7.0
     container_name: ecotrack-kafka-exporter
     command:
       - "--kafka.server=kafka:29092"

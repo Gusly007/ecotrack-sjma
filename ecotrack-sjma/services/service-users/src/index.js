@@ -82,7 +82,12 @@ app.use(helmet({
   hsts: env.nodeEnv === 'production' ? undefined : false
 }));
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
+}));
 
 // Rate-limit global sur /auth et /users. Bypass dev / localhost et override
 // par env (SERVICE_USERS_API_LIMIT_MAX / _WINDOW_MS) pour ne pas étouffer
@@ -112,7 +117,8 @@ const apiLimiter = rateLimit({
 app.use('/auth/', apiLimiter);
 app.use('/users/', apiLimiter);
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(morgan('combined', {
   stream: {
     write: (message) => {

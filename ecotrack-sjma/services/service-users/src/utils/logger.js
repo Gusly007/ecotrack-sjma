@@ -9,6 +9,18 @@ const logger = pino(
     base: {
       service: 'service-users',
       environment: process.env.NODE_ENV || 'development'
+    },
+    redact: {
+      paths: [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        'req.body.password',
+        'req.body.token',
+        'req.body.refreshToken',
+        'req.body.newPassword',
+        'req.body.currentPassword',
+      ],
+      censor: '[REDACTED]'
     }
   },
   isProduction || isTest
