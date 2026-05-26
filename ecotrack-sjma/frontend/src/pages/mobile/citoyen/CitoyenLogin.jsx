@@ -115,10 +115,9 @@ const CitoyenLogin = () => {
             <i className="fas fa-arrow-left" style={{ fontSize: '0.78rem' }}></i> Retour
           </button>
           <div className="auth-header">
-            <div className="auth-logo" aria-hidden="true">
-              <img src={LogoEcoTrack} alt="Logo EcoTrack" style={{ height: 72, width: 72, display: 'block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24, justifyContent: 'center', marginBottom: 16 }}>
+              <img src={LogoEcoTrack} alt="Logo EcoTrack" style={{ height: 150, width: 150, display: 'block' }} />
             </div>
-            <h1>EcoTrack</h1>
             <p>Plateforme Intelligente de Gestion des Déchets</p>
           </div>
 
