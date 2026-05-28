@@ -1,12 +1,12 @@
 flowchart TB
-    subgraph Sensors["Capteurs"]
+    subgraph Sensors["Capteurs IoT"]
         C1[Conteneur 1]
         C2[Conteneur 2]
         C3[Conteneur N]
     end
 
-    subgraph MQTT["MQTT Broker"]
-        Topic[Topics: containers/+/data]
+    subgraph MQTT["MQTT Broker :1883"]
+        Topic[Topic: containers/+/data]
     end
 
     subgraph IoT["Service IoT :3013"]
@@ -14,48 +14,50 @@ flowchart TB
         Validator[Validation]
         Cache[Redis Cache]
         DB[(PostgreSQL)]
-        Kafka[Kafka Producer]
-        Alerts[Alert Generator]
+        KafkaProducer[Kafka Producer]
+        AlertGen[Alert Generator]
     end
 
-    subgraph Kafka["Kafka"]
-        Topic1[topic: iot.measurements]
-        Topic2[topic: iot.alerts]
+    subgraph KafkaTopics["Kafka Topics"]
+        Topic1[ecotrack.sensor.data]
+        Topic2[ecotrack.alerts]
     end
 
     subgraph Analytics["Service Analytics :3015"]
-        Consumer[Kafka Consumer]
+        AnalyticsConsumer[Kafka Consumer<br/>ML / Agregations]
     end
 
-    subgraph Notifications["Notifications"]
-        Email[Email Service]
-        Push[Push Notifications]
+    subgraph Notification["Service Notification :3016"]
+        NotifConsumer[Kafka Consumer]
+        NotifService[Notification Service]
+        GESTIONNAIRE[GESTIONNAIRE / ADMIN]
     end
 
-    C1 -->|"MQTT: fill_level=95"| MQTT
-    C2 -->|"MQTT: battery=10"| MQTT
-    C3 -->|"MQTT: temp=45"| MQTT
-    
+    C1 -->|"fill_level=95"| MQTT
+    C2 -->|"battery=10"| MQTT
+    C3 -->|"temp=45"| MQTT
+
     MQTT --> MQTTHandler
     MQTTHandler --> Validator
-    Validator -->|"Valid"| Cache
-    Validator -->|"Invalid"| Discard[Discard]
-    
-    Cache --> DB
-    Cache --> Kafka
-    
-    Kafka -->|"Measurement"| Topic1
-    Kafka -->|"Alert"| Topic2
-    
-    Topic1 --> Consumer
-    Consumer -->|"Aggregation"| Analytics
-    
-    Topic2 --> Alerts
-    Alerts --> Email
-    Alerts --> Push
+    Validator -->|"Valide"| Cache
+    Validator -->|"Invalide"| Discard[Rejete]
 
-    style Alerts color:#ff6b6b
+    Cache --> DB
+    Cache --> KafkaProducer
+
+    KafkaProducer -->|"mesures brutes"| Topic1
+    KafkaProducer -->|"seuil depasse"| Topic2
+    AlertGen -->|"seuil depasse"| Topic2
+
+    Topic1 --> AnalyticsConsumer
+    AnalyticsConsumer -->|"Agregation / Prediction"| Analytics
+
+    Topic2 --> NotifConsumer
+    NotifConsumer --> NotifService
+    NotifService -->|"ALERTE: zone + responsable"| GESTIONNAIRE
+
     style Discard color:#888
+    style GESTIONNAIRE color:#2ecc71
     %% Donnees IoT
     %% Type | Frequence | Taille
     %% Niveau remplissage | 1/min | ~100 bytes

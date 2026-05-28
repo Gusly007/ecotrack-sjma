@@ -1,13 +1,16 @@
 flowchart TD
-    G[Gestionnaire] --> API[API Gateway]
-    API --> R[service-routes]
-    API --> C[service-containers]
-    API --> U[service-users]
-    
+    G[Gestionnaire] --> API[API Gateway :3000]
+    API --> R[service-routes :3012]
+    API --> C[service-containers :3011]
+    API --> U[service-users :3010]
+    API --> SN[service-notification :3016]
+
     G --> D[Dashboard KPIs]
     D --> T[Creer tournee]
     T --> A[Assigner agent]
     A --> S[Suivi temps reel]
-    
+
     S --> I[Intervention]
     I --> R
+
+    SN -->|"ALERTE: zone saturee<br/>nouveau signalement"| G

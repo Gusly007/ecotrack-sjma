@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "docs:swagger": "node scripts/export-all-swagger.mjs"
+  },
   "dependencies": {
     "pg": "^8.20.0",
     "qrcode": "^1.5.4"

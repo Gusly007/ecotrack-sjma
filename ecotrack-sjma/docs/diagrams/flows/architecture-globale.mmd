@@ -1,26 +1,31 @@
 flowchart TD
     U[Utilisateurs] --> FE[Frontend React]
     FE --> API[API Gateway :3000]
-    
+
     API --> S1[service-users :3010]
     API --> S2[service-routes :3012]
     API --> S3[service-containers :3011]
     API --> S4[service-iot :3013]
     API --> S5[service-gamifications :3014]
     API --> S6[service-analytics :3015]
-    
+    API --> S7[service-notification :3016]
+
     S1 --> PG[(PostgreSQL)]
     S2 --> PG
     S3 --> PG
     S4 --> PG
     S5 --> PG
     S6 --> PG
-    
+    S7 --> PG
+
     API --> R[(Redis)]
-    
-    S4 --> K[Kafka]
-    K --> N[Notifications]
-    
+    S7 --> R
+
+    S4 -->|"ecotrack.alerts<br/>ecotrack.sensor.data"| K[Kafka]
+    S2 -->|"ecotrack.signalements.nouveau"| K
+    K -->|"ecotrack.alerts<br/>ecotrack.signalements.nouveau"| S7
+    K -->|"ecotrack.sensor.data"| S6
+
     P[Prometheus] --> API
     P --> S1
     P --> S2
@@ -28,5 +33,6 @@ flowchart TD
     P --> S4
     P --> S5
     P --> S6
-    
+    P --> S7
+
     G[Grafana] --> P

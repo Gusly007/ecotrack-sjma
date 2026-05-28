@@ -860,7 +860,10 @@ curl http://localhost:3013/iot/stats
 |---------|-------------|
 | **API Gateway** (port 3000) | Proxy les requêtes `/iot/*` vers le service IoT |
 | **Service Containers** (port 3011) | Partage les tables `conteneur` et `capteur` |
+| **Service Notification** (port 3016) | Consomme le topic `ecotrack.alerts` — crée automatiquement des notifications pour les gestionnaires et admins de zone |
+| **Service Analytics** (port 3015) | Consomme le topic `ecotrack.sensor.data` — agrégations ML et statistiques |
 | **PostgreSQL** (port 5432) | Base de données partagée `ecotrack` |
+| **Kafka** (port 9092) | Producteur : `ecotrack.alerts` (seuils dépassés) et `ecotrack.sensor.data` (mesures brutes) |
 | **Prometheus** (port 9090) | Scrape les métriques sur `/metrics` |
 | **Grafana** (port 3001) | Visualisation des métriques IoT |
 

@@ -137,6 +137,13 @@
 | Secondaire | transparent | `#fff` | `rgba(255,255,255,0.3)` |
 | Sélecteur rôle actif | `rgba(76,175,80,0.15)` | `#4CAF50` | — |
 
+### Logo auth
+
+| Page | Taille | Disposition |
+|------|--------|-------------|
+| `/login` (Admin/Gestionnaire/Agent) | 150×150px | `flex` centré, gap 24, marginBottom 16 — sans titre h1 |
+| `/citoyen/login` | 150×150px | Identique à `/login` (harmonisé v4.5.0) |
+
 ### Icônes auth
 
 | Champ | Icône |
@@ -149,6 +156,25 @@
 | MFA / Code | `fas fa-shield-alt` |
 | Succès | `fas fa-check-circle` (fond `#e8f5e9`, icône `#4CAF50`) |
 | Erreur | `fas fa-exclamation-circle` |
+
+### Cookie Banner — Bandeau RGPD (position fixed bottom, z-index 9999)
+
+> Composant global visible sur toutes les pages au premier chargement.
+> Couleurs conformes WCAG 2.1 AA depuis v4.5.0 (ratio contraste ≥ 4.5:1 sur fond blanc).
+
+| Élément | Couleur | Ratio contraste |
+|---------|---------|-----------------|
+| Bordure supérieure | `#10b981` (vert) | — |
+| Titre `h3` | `#1f2937` | — |
+| Texte paragraphe | `#4b5563` | — |
+| Bouton "Accepter" | fond `#15803d`, texte `#fff` | 4.84:1 ✓ WCAG AA |
+| Bouton "Accepter" hover | fond `#14532d` | — |
+| Bouton "Refuser" | fond `#b91c1c`, texte `#fff` | 6.36:1 ✓ WCAG AA |
+| Bouton "Refuser" hover | fond `#991b1b` | — |
+| Bouton "Détails" | fond `#e5e7eb`, texte `#1f2937` | — |
+| Lien "En savoir plus" | `#15803d`, souligné | — |
+| Lien hover | `#14532d` | — |
+| Fond overlay | `rgba(0,0,0,0.8)` + `backdrop-filter: blur(5px)` | — |
 
 ---
 

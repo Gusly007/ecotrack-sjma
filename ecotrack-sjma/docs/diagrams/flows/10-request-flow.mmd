@@ -18,6 +18,7 @@ flowchart LR
         S4[service-iot<br/>:3013]
         S5[service-gamifications<br/>:3014]
         S6[service-analytics<br/>:3015]
+        S7[service-notification<br/>:3016]
     end
 
     subgraph Response["Response Flow"]
@@ -34,12 +35,13 @@ flowchart LR
     JWT -->|"Valid"| Router
     JWT -->|"Invalid"| JWTRej[401 Unauthorized]
 
-    Router -->|"GET /api/V1/*"| S1
-    Router -->|"POST /api/V1/containers/*"| S2
-    Router -->|"GET /api/V1/tournees/*"| S3
-    Router -->|"GET /api/V1/iot/*"| S4
-    Router -->|"GET /api/V1/badges/*"| S5
-    Router -->|"GET /api/V1/stats/*"| S6
+    Router -->|"/api/V1/users/*"| S1
+    Router -->|"/api/V1/containers/*<br/>/api/V1/zones/*<br/>/api/V1/stats/*"| S2
+    Router -->|"/api/V1/routes/*"| S3
+    Router -->|"/api/V1/iot/*"| S4
+    Router -->|"/api/V1/gamification/*"| S5
+    Router -->|"/api/V1/analytics/*"| S6
+    Router -->|"/api/V1/notifications/*<br/>/api/V1/admin/notifications/*"| S7
     Router -->|"404"| NotFound[404 Not Found]
 
     S1 --> Cache
@@ -48,6 +50,7 @@ flowchart LR
     S4 --> Cache
     S5 --> Cache
     S6 --> Cache
+    S7 --> Cache
 
     Cache --> Log --> Metric --> Browser
 
@@ -56,18 +59,18 @@ flowchart LR
     style NotFound color:#e74c3c
     %% API Routes Mapping
     %% Path | Service | Permission
-    %% /api/V1/auth/* | service-users | None
+    %% /api/V1/users/* | service-users | RBAC
     %% /api/V1/containers/* | service-containers | RBAC
     %% /api/V1/zones/* | service-containers | RBAC
-    %% /api/V1/tournees/* | service-routes | RBAC
+    %% /api/V1/routes/* | service-routes | RBAC
     %% /api/V1/iot/* | service-iot | RBAC
-    %% /api/V1/badges/* | service-gamifications | RBAC
-    %% /api/V1/defis/* | service-gamifications | RBAC
-    %% /api/V1/stats/* | service-analytics | RBAC
-    %% /api/V1/dashboard/* | service-analytics | RBAC
+    %% /api/V1/gamification/* | service-gamifications | RBAC
+    %% /api/V1/analytics/* | service-analytics | RBAC
+    %% /api/V1/notifications/* | service-notification | RBAC
+    %% /api/V1/admin/notifications/* | service-notification | ADMIN/GESTIONNAIRE
 
     %% Rate Limiting
     %% Endpoint | Limit
-    %% /api/V1/auth/* | 10/min
+    %% /api/V1/users/auth/* | 10/min
     %% /api/V1/* | 100/min
-    %% /api/V1/measurements | 1000/min
+    %% /api/V1/iot/* | 1000/min

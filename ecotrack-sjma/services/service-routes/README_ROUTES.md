@@ -282,6 +282,33 @@ service-routes/
 
 > Architecture détaillée : [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
+## Intégration Kafka
+
+Le service-routes publie sur Kafka lorsqu'un citoyen ou un agent crée un signalement.
+
+### Topic produit : `ecotrack.signalements.nouveau`
+
+Déclenché par `POST /tournees/:id/anomalie` ou `POST /signalements`.
+
+**Format du message**
+```json
+{
+  "timestamp": "2026-05-07T10:00:00.000Z",
+  "signalement": {
+    "id_signalement": 7,
+    "description": "Conteneur renversé, déchets éparpillés.",
+    "id_conteneur": 44,
+    "id_citoyen": 5,
+    "id_type": 2,
+    "statut": "OUVERT"
+  }
+}
+```
+
+**Consumer** : `service-notification-gestionnaire-admin` — crée automatiquement une notification ALERTE pour le gestionnaire de la zone concernée.
+
+---
+
 ## Documentation
 
 | Guide | Description |

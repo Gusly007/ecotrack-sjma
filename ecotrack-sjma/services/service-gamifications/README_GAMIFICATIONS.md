@@ -99,12 +99,19 @@ npm run test:coverage
 
 ---
 
-## Endpoints principaux
+## API REST
+
+Base URL (via Gateway) : `http://localhost:3000/api/V1/gamification`
+Base URL (direct)      : `http://localhost:3014/api/V1/gamification`
 
 ### Points
-- `POST /actions`
 
-Exemple payload:
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `POST` | `/actions` | Enregistrer une action et attribuer des points |
+| `GET` | `/points/historique` | Historique des points de l'utilisateur connecté |
+
+Exemple payload `POST /actions` :
 ```json
 {
   "id_utilisateur": 1,
@@ -114,34 +121,33 @@ Exemple payload:
 ```
 
 ### Badges
-- `GET /badges`
-- `GET /badges/utilisateurs/:idUtilisateur`
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/badges` | Catalogue complet des badges |
+| `GET` | `/badges/utilisateurs/:idUtilisateur` | Badges obtenus par un utilisateur |
 
 ### Défis
-- `GET /defis`
-- `POST /defis`
-- `POST /defis/:idDefi/participations`
-- `PATCH /defis/:idDefi/participations/:idUtilisateur`
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/defis` | Liste des défis actifs |
+| `POST` | `/defis` | Créer un défi (ADMIN) |
+| `POST` | `/defis/:idDefi/participations` | Participer à un défi |
+| `PATCH` | `/defis/:idDefi/participations/:idUtilisateur` | Mettre à jour la progression |
 
 ### Classement
-- `GET /classement?limite=10`
 
-### Notifications
-- `GET /notifications?id_utilisateur=1`
-- `POST /notifications`
-
-Exemple payload:
-```json
-{
-  "id_utilisateur": 1,
-  "type": "BADGE",
-  "titre": "Nouveau badge",
-  "corps": "Bravo, vous avez obtenu un badge."
-}
-```
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/classement` | Classement des utilisateurs (paramètre `limite`) |
 
 ### Statistiques
-- `GET /utilisateurs/:idUtilisateur/stats`
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/stats/:idUtilisateur` | Points totaux, badges, rang du citoyen |
+| `GET` | `/utilisateurs/:idUtilisateur/stats` | Statistiques complètes d'un utilisateur |
 
 ---
 

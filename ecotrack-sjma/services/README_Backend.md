@@ -6,13 +6,14 @@ Ce dossier contient les microservices de l'application EcoTrack.
 
 ```
 services/
-├── api-gateway/           # API Gateway (port 3000)
-├── service-users/         # Authentification et utilisateurs (port 3010)
-├── service-containers/    # Conteneurs et stats (port 3011)
-├── service-routes/       # Tournées et collectes (port 3012)
-├── service-iot/          # Données capteurs IoT (port 3013)
-├── service-gamifications/ # Gamification (port 3014)
-└── service-analytics/     # Analytics et stats (port 3015)
+├── api-gateway/                              # API Gateway (port 3000)
+├── service-users/                            # Authentification et utilisateurs (port 3010)
+├── service-containers/                       # Conteneurs et stats (port 3011)
+├── service-routes/                           # Tournées et collectes (port 3012)
+├── service-iot/                              # Données capteurs IoT (port 3013)
+├── service-gamifications/                    # Gamification (port 3014)
+├── service-analytics/                        # Analytics et stats (port 3015)
+└── service-notification-gestionnaire-admin/ # Notifications gestionnaires/admins (port 3016)
 ```
 
 ## Services Développés
@@ -84,6 +85,21 @@ services/
 
 **Docs:** `service-analytics/docs/`
 
+### Service Notification Gestionnaire-Admin (port 3016)
+- Notifications pour les rôles **GESTIONNAIRE** et **ADMIN**
+- Création manuelle (ADMIN) : `POST /api/V1/notifications`
+- Création en masse (ADMIN) : `POST /api/V1/notifications/bulk`
+- Marquage lu / suppression par le propriétaire
+- **Consumer Kafka** automatique sur deux topics :
+  - `ecotrack.alerts` — alertes IoT (remplissage > 90 %, capteur défaillant) → publiées par service-iot
+  - `ecotrack.signalements.nouveau` — nouveaux signalements → publiés par service-routes
+- Résolution automatique `id_conteneur → zone → gestionnaire / admin`
+- Cache Redis, Prometheus metrics
+- Health check: `GET /health`
+- Swagger docs: `GET /api-docs`
+
+**Docs:** `service-notification-gestionnaire-admin/README.md`
+
 ## Architecture
 
 ### Communication
@@ -91,7 +107,10 @@ services/
 ```
 [Frontend] -> [API Gateway] -> [Microservices]
                               |
-                              +-> Kafka -> Consumers
+                              +-> Kafka topics
+                              |     ecotrack.alerts             (produit: service-iot)
+                              |     ecotrack.signalements.nouveau (produit: service-routes)
+                              |          └─> service-notification-gestionnaire-admin (consumer)
                               |
                               +-> Redis (Cache)
                               |
@@ -109,6 +128,7 @@ services/
 | service-iot | 3013 | IoT/MQTT |
 | service-gamifications | 3014 | Gamification |
 | service-analytics | 3015 | Analytics |
+| service-notification-gestionnaire-admin | 3016 | Notifications Gestionnaire/Admin + Kafka consumer |
 
 ## Démarrage local
 
@@ -124,6 +144,9 @@ cd services/service-users && npm install && npm run dev
 
 # Terminal 2 - Service Analytics
 cd services/service-analytics && npm install && npm run dev
+
+# Terminal 3 - Service Notifications (nécessite Kafka + PostgreSQL)
+cd services/service-notification-gestionnaire-admin && npm install && npm run dev
 ```
 
 ## Tests

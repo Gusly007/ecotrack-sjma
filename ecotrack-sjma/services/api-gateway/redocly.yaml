@@ -1,0 +1,6 @@
+apis:
+  main:
+    root: swagger-spec.json
+
+referenceDocs:
+  disableTryItPanel: true

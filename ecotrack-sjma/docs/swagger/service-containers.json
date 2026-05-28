@@ -1,0 +1,1647 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack Containers API",
+    "version": "1.0.0",
+    "description": "API professionnelle pour la gestion des conteneurs écologiques"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3011/api",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/containers": {
+      "post": {
+        "summary": "Crée un nouveau conteneur",
+        "description": "Crée un nouveau conteneur avec les informations fournies. Les champs capacite_l, statut, latitude et longitude sont obligatoires.",
+        "tags": [
+          "Conteneurs"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "capacite_l",
+                  "statut",
+                  "latitude",
+                  "longitude"
+                ],
+                "properties": {
+                  "capacite_l": {
+                    "type": "integer",
+                    "description": "Capacité du conteneur en litres",
+                    "example": 1200
+                  },
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIF",
+                      "INACTIF",
+                      "EN_MAINTENANCE"
+                    ],
+                    "description": "Statut du conteneur",
+                    "example": "ACTIF"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Latitude de la position du conteneur",
+                    "example": 48.8566
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Longitude de la position du conteneur",
+                    "example": 2.3522
+                  },
+                  "id_zone": {
+                    "type": "integer",
+                    "description": "Identifiant de la zone associée",
+                    "example": 1
+                  },
+                  "id_type": {
+                    "type": "integer",
+                    "description": "Identifiant du type de conteneur",
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conteneur créé avec succès"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "get": {
+        "summary": "Récupère tous les conteneurs",
+        "description": "Récupère la liste de tous les conteneurs avec pagination et filtres",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Numéro de la page"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Nombre de résultats par page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs récupérée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime tous les conteneurs",
+        "description": "Attention - Cette opération supprimera tous les conteneurs de la base de données",
+        "tags": [
+          "Conteneurs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Tous les conteneurs ont été supprimés"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/id/{id}": {
+      "get": {
+        "summary": "Récupère un conteneur par son ID",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conteneur récupéré"
+          },
+          "404": {
+            "description": "Conteneur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/uid/{uid}": {
+      "get": {
+        "summary": "Récupère un conteneur par son UID",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du conteneur (format CNT-XXXXX)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conteneur récupéré"
+          },
+          "404": {
+            "description": "Conteneur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/status/{statut}": {
+      "get": {
+        "summary": "Récupère les conteneurs par statut",
+        "tags": [
+          "Recherche et Filtres"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statut",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIF",
+                "INACTIF",
+                "EN_MAINTENANCE"
+              ]
+            },
+            "description": "Statut à rechercher"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs par statut"
+          },
+          "404": {
+            "description": "Aucun conteneur trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/zone/{id_zone}": {
+      "get": {
+        "summary": "Récupère les conteneurs d'une zone",
+        "tags": [
+          "Recherche et Filtres"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_zone",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs dans la zone"
+          },
+          "404": {
+            "description": "Aucun conteneur trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/fill-levels": {
+      "get": {
+        "summary": "Récupère les conteneurs avec leur niveau de remplissage",
+        "description": "Joint les tables conteneur, capteur et mesure pour retourner le dernier niveau de remplissage",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "min_level",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Niveau de remplissage minimum (0-100)"
+          },
+          {
+            "in": "query",
+            "name": "max_level",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Niveau de remplissage maximum (0-100)"
+          },
+          {
+            "in": "query",
+            "name": "id_zone",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filtrer par zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs avec fill_level"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/{id}/status/history": {
+      "get": {
+        "summary": "Récupère l'historique des changements de statut",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historique récupéré"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/{id}": {
+      "patch": {
+        "summary": "Met à jour un conteneur existant",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur à mettre à jour"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "capacite_l": {
+                    "type": "integer"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "double"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "double"
+                  },
+                  "id_zone": {
+                    "type": "integer"
+                  },
+                  "id_type": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conteneur mis à jour"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "404": {
+            "description": "Conteneur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime un conteneur",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur à supprimer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conteneur supprimé"
+          },
+          "404": {
+            "description": "Conteneur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/containers/{id}/status": {
+      "patch": {
+        "summary": "Met à jour le statut d'un conteneur",
+        "tags": [
+          "Conteneurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "statut"
+                ],
+                "properties": {
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIF",
+                      "INACTIF",
+                      "EN_MAINTENANCE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statut mis à jour"
+          },
+          "400": {
+            "description": "Statut invalide"
+          },
+          "404": {
+            "description": "Conteneur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/search/radius": {
+      "get": {
+        "summary": "Recherche les conteneurs dans un rayon",
+        "description": "Trouve tous les conteneurs à proximité d'une localisation donnée",
+        "tags": [
+          "Recherche et Filtres"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "latitude",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Latitude du point central de recherche"
+          },
+          {
+            "in": "query",
+            "name": "longitude",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Longitude du point central de recherche"
+          },
+          {
+            "in": "query",
+            "name": "rayon",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Rayon de recherche en kilomètres"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs trouvés"
+          },
+          "400": {
+            "description": "Paramètres invalides"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/stats/count": {
+      "get": {
+        "summary": "Compte le nombre total de conteneurs",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Nombre de conteneurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/check/exists/{id}": {
+      "get": {
+        "summary": "Vérifie l'existence d'un conteneur par ID",
+        "tags": [
+          "Vérifications"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du conteneur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultat de la vérification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/check/uid/{uid}": {
+      "get": {
+        "summary": "Vérifie l'existence d'un conteneur par UID",
+        "tags": [
+          "Vérifications"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du conteneur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultat de la vérification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Stats globales des conteneurs",
+        "description": "Retourne les statistiques complètes sur les conteneurs",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Total, actifs, inactifs, en_maintenance, capacité moyenne",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "par_statut": {
+                      "type": "object"
+                    },
+                    "par_zone": {
+                      "type": "object"
+                    },
+                    "capacite_totale": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/stats/dashboard": {
+      "get": {
+        "summary": "Tableau de bord agrégé",
+        "description": "Retourne un résumé global (conteneurs, remplissage, alertes) en un seul appel.",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Tableau de bord"
+          }
+        }
+      }
+    },
+    "/stats/fill-levels": {
+      "get": {
+        "summary": "Distribution des niveaux de remplissage",
+        "description": "Répartition en 4 tranches (0-25%, 25-50%, 50-75%, 75-100%) basée sur la dernière mesure par conteneur.",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Distribution des niveaux"
+          }
+        }
+      }
+    },
+    "/stats/by-zone": {
+      "get": {
+        "summary": "Statistiques par zone",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Nb conteneurs, actifs, capacité et remplissage moyen par zone"
+          }
+        }
+      }
+    },
+    "/stats/by-type": {
+      "get": {
+        "summary": "Statistiques par type de conteneur",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Nb conteneurs et capacité moyenne par type"
+          }
+        }
+      }
+    },
+    "/stats/alerts": {
+      "get": {
+        "summary": "Résumé des alertes actives",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Débordements, batteries faibles, capteurs défaillants"
+          }
+        }
+      }
+    },
+    "/stats/critical": {
+      "get": {
+        "summary": "Conteneurs critiques",
+        "description": "Conteneurs avec remplissage >= seuil OU en maintenance.",
+        "tags": [
+          "Statistiques"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "seuil",
+            "schema": {
+              "type": "integer",
+              "default": 90
+            },
+            "description": "Seuil de remplissage (%) à partir duquel un conteneur est critique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs critiques"
+          }
+        }
+      }
+    },
+    "/stats/containers/{id}/history": {
+      "get": {
+        "summary": "Historique de remplissage d'un conteneur",
+        "description": "Mesures de remplissage, batterie et température sur les N derniers jours.",
+        "tags": [
+          "Statistiques"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID du conteneur"
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            },
+            "description": "Nombre de jours d'historique (1-365)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 500
+            },
+            "description": "Nombre max de mesures (1-5000)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historique des mesures"
+          }
+        }
+      }
+    },
+    "/stats/collections": {
+      "get": {
+        "summary": "Statistiques de collecte",
+        "description": "Total kg, moyenne, détail par zone et par type sur les N derniers jours.",
+        "tags": [
+          "Statistiques"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            },
+            "description": "Période en jours (1-365)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stats de collecte"
+          }
+        }
+      }
+    },
+    "/stats/maintenance": {
+      "get": {
+        "summary": "Statistiques de maintenance",
+        "description": "Conteneurs actuellement en maintenance et durée moyenne sur 90 jours.",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stats de maintenance"
+          }
+        }
+      }
+    },
+    "/typecontainers": {
+      "get": {
+        "summary": "Get all type containers",
+        "tags": [
+          "Type Containers"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all type containers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id_type": {
+                        "type": "integer"
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "nom": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new type container",
+        "tags": [
+          "Type Containers"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "nom"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "nom": {
+                    "type": "string",
+                    "enum": [
+                      "ORDURE",
+                      "RECYCLAGE",
+                      "VERRE",
+                      "COMPOST"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Type container created successfully"
+          }
+        }
+      }
+    },
+    "/typecontainers/stats/all": {
+      "get": {
+        "summary": "Get all type containers with statistics",
+        "tags": [
+          "Type Containers"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all type containers with stats"
+          }
+        }
+      }
+    },
+    "/typecontainers/code/{code}": {
+      "get": {
+        "summary": "Get type container by code",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Type container found"
+          },
+          "404": {
+            "description": "Type container not found"
+          }
+        }
+      }
+    },
+    "/typecontainers/nom/{nom}": {
+      "get": {
+        "summary": "Get type container by nom",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "nom",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Type container found"
+          }
+        }
+      }
+    },
+    "/typecontainers/{id}": {
+      "get": {
+        "summary": "Get type container by ID",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Type container found"
+          },
+          "404": {
+            "description": "Type container not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a type container",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "nom": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Type container updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a type container",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Type container deleted successfully"
+          }
+        }
+      }
+    },
+    "/typecontainers/{id}/stats": {
+      "get": {
+        "summary": "Get type container with statistics",
+        "tags": [
+          "Type Containers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Type container with stats found"
+          }
+        }
+      }
+    },
+    "/zones": {
+      "post": {
+        "summary": "Crée une nouvelle zone",
+        "description": "Crée une nouvelle zone avec les informations fournies. Tous les champs sont obligatoires.",
+        "tags": [
+          "Zones"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "nom",
+                  "population",
+                  "superficie_km2",
+                  "latitude",
+                  "longitude"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Code unique de la zone",
+                    "example": "ZONE001"
+                  },
+                  "nom": {
+                    "type": "string",
+                    "description": "Nom de la zone",
+                    "example": "Paris"
+                  },
+                  "population": {
+                    "type": "integer",
+                    "description": "Population de la zone",
+                    "example": 2161000
+                  },
+                  "superficie_km2": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Superficie de la zone en km²",
+                    "example": 105.4
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Latitude du centre de la zone (entre -90 et 90)",
+                    "example": 48.8566
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Longitude du centre de la zone (entre -180 et 180)",
+                    "example": 2.3522
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Zone créée avec succès"
+          },
+          "400": {
+            "description": "Requête invalide - champs requis manquants ou données invalides"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "get": {
+        "summary": "Récupère toutes les zones",
+        "description": "Récupère la liste de toutes les zones avec support de la pagination",
+        "tags": [
+          "Zones"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Numéro de la page"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Nombre de résultats par page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des zones récupérée avec succès"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime toutes les zones",
+        "description": "Attention - Cette opération supprimera toutes les zones de la base de données",
+        "tags": [
+          "Zones"
+        ],
+        "responses": {
+          "200": {
+            "description": "Toutes les zones ont été supprimées"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/count": {
+      "get": {
+        "summary": "Compte le nombre total de zones",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Nombre de zones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/code/{code}": {
+      "get": {
+        "summary": "Récupère une zone par son code",
+        "tags": [
+          "Zones"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Code unique de la zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zone récupérée avec succès"
+          },
+          "400": {
+            "description": "Code manquant"
+          },
+          "404": {
+            "description": "Zone non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/{id}": {
+      "get": {
+        "summary": "Récupère une zone par son ID",
+        "tags": [
+          "Zones"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zone récupérée avec succès"
+          },
+          "400": {
+            "description": "ID manquant"
+          },
+          "404": {
+            "description": "Zone non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Met à jour une zone",
+        "description": "Met à jour les informations d'une zone. Seuls les champs fournis seront modifiés.",
+        "tags": [
+          "Zones"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la zone à mettre à jour"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Code unique de la zone"
+                  },
+                  "nom": {
+                    "type": "string",
+                    "description": "Nom de la zone"
+                  },
+                  "population": {
+                    "type": "integer",
+                    "description": "Population de la zone"
+                  },
+                  "superficie_km2": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Superficie de la zone en km²"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Latitude du centre de la zone"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Longitude du centre de la zone"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zone mise à jour avec succès"
+          },
+          "400": {
+            "description": "Requête invalide"
+          },
+          "404": {
+            "description": "Zone non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime une zone",
+        "tags": [
+          "Zones"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la zone à supprimer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zone supprimée avec succès"
+          },
+          "400": {
+            "description": "ID manquant"
+          },
+          "404": {
+            "description": "Zone non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/search": {
+      "get": {
+        "summary": "Recherche les zones par nom",
+        "description": "Trouve toutes les zones dont le nom contient la chaîne de recherche (insensible à la casse)",
+        "tags": [
+          "Recherche et Filtres"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nom",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nom ou partie du nom de la zone à rechercher"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des zones trouvées"
+          },
+          "400": {
+            "description": "Paramètre \"nom\" requis"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/radius": {
+      "get": {
+        "summary": "Recherche les zones dans un rayon",
+        "description": "Trouve toutes les zones à proximité d'une localisation donnée",
+        "tags": [
+          "Recherche et Filtres"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "latitude",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Latitude du point central de recherche"
+          },
+          {
+            "in": "query",
+            "name": "longitude",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Longitude du point central de recherche"
+          },
+          {
+            "in": "query",
+            "name": "rayon",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Rayon de recherche en kilomètres"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des zones trouvées dans le rayon avec distances"
+          },
+          "400": {
+            "description": "Paramètres invalides"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/stats/global": {
+      "get": {
+        "summary": "Récupère les statistiques globales des zones",
+        "description": "Retourne les statistiques complètes sur les zones (total, moyenne, min/max de population et superficie)",
+        "tags": [
+          "Statistiques"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques globales récupérées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total_zones": {
+                      "type": "integer"
+                    },
+                    "population_totale": {
+                      "type": "integer"
+                    },
+                    "popolazione_moyenne": {
+                      "type": "number"
+                    },
+                    "population_min": {
+                      "type": "integer"
+                    },
+                    "population_max": {
+                      "type": "integer"
+                    },
+                    "superficie_totale_km2": {
+                      "type": "number"
+                    },
+                    "superficie_moyenne_km2": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/check/exists/{id}": {
+      "get": {
+        "summary": "Vérifie l'existence d'une zone par ID",
+        "tags": [
+          "Vérifications"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultat de la vérification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/zones/check/code/{code}": {
+      "get": {
+        "summary": "Vérifie l'existence d'une zone par code",
+        "tags": [
+          "Vérifications"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Code unique de la zone"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultat de la vérification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Statistiques",
+      "description": "Statistiques & Monitoring"
+    }
+  ]
+}
