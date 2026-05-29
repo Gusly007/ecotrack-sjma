@@ -615,20 +615,20 @@ DÉVELOPPEMENT (local)
 └── Services Node.js en local (npm run dev + nodemon)
     └── Accès via api-gateway :3000
 
-STAGING (Cloud AWS)
-├── 2 EC2 t3.medium
-├── RDS PostgreSQL db.t3.medium (100 GB SSD)
-├── ElastiCache Redis t3.micro
-├── MSK Kafka t3.small × 2 brokers
-└── CI/CD GitHub Actions → push image ECR → déploiement ECS
+STAGING (Google Cloud Platform — région europe-west1)
+├── 2 Compute Engine e2-standard-2 (2 vCPU, 8 GB RAM)
+├── Cloud SQL PostgreSQL 16 (db-g1-small, 100 GB SSD)
+├── Memorystore for Redis (1 GB, zone unique)
+├── Confluent Cloud on GCP — Kafka (2 brokers, cluster Basic)
+└── CI/CD GitHub Actions → build Docker → push Artifact Registry → deploy Cloud Run
 
-PRODUCTION
-├── 4 EC2 t3.large (services applicatifs)
-├── RDS PostgreSQL db.t3.large + 1 replica lecture
-├── ElastiCache Redis r7g.large
-├── MSK Kafka 3 brokers (3 AZ)
-├── CloudFront CDN (assets statiques)
-└── ALB Application Load Balancer (devant API Gateway)
+PRODUCTION (Google Cloud Platform — région europe-west1)
+├── Cloud Run (8 services containerisés — scale 1→N instances, min-instances=1)
+├── Cloud SQL PostgreSQL 16 (db-custom-2-7680) + 1 replica de lecture
+├── Memorystore for Redis (Tier Standard, 5 GB, HA avec failover)
+├── Confluent Cloud on GCP — Kafka (3 brokers, 3 zones, cluster Standard)
+├── Cloud CDN + Cloud Storage GCS (assets statiques, avatars, exports PDF)
+└── Cloud Load Balancing HTTPS (Global LB devant Cloud Run, certificat SSL géré)
 ```
 
 ### 5. Schéma Base de Données (ERD — relations principales)
@@ -688,7 +688,7 @@ COUCHE 4 — Données
 ├── Requêtes paramétrées PostgreSQL (pg driver — 0 concaténation SQL)
 ├── bcryptjs cost 12 (hash mots de passe)
 ├── Secrets .env / Docker secrets (pas de valeurs en dur dans le code)
-└── Chiffrement at-rest : RDS encryption (AES-256, AWS KMS)
+└── Chiffrement at-rest : Cloud SQL encryption (AES-256, Cloud KMS)
 
 COUCHE 5 — Identité
 ├── JWT : Access Token 15 min + Refresh Token 7 jours
@@ -733,9 +733,9 @@ service-iot :              1 instance  → scaling limité (MQTT broker Aedes si
 
 | Composant | Actuel (dev) | Staging | Production | Limite |
 |-----------|:------------:|:-------:|:----------:|--------|
-| Serveurs app | t3.medium (4GB) | t3.medium | t3.large (8GB) | t3.xlarge (16GB) puis horizontal |
-| PostgreSQL | locale Docker | db.t3.medium | db.t3.large (8GB) | db.r6g.xlarge (32GB) puis partitionnement |
-| Redis | t3.micro (1GB) | t3.micro | r7g.large (13GB) | Cluster Redis si > 8GB |
+| Serveurs app | Docker local | Compute Engine e2-standard-2 / Cloud Run | Cloud Run (scale auto 1→N) | Cloud Run max 1 000 instances simultanées |
+| PostgreSQL | Docker postgres:16 | Cloud SQL db-g1-small (1,7 GB) | Cloud SQL db-custom-2-7680 (8 GB) + replica | Cloud Spanner si > 10 TB |
+| Redis | Docker redis:7 | Memorystore Basic 1 GB | Memorystore Standard 5 GB (HA) | Cluster Redis si > 16 GB |
 
 ### B. Objectifs de Performance
 
@@ -823,7 +823,7 @@ POST /auth/refresh  {refreshToken}
 | Codes TOTP | speakeasy | TOTP RFC 6238, HMAC-SHA1, base32 |
 | Codes secours | crypto.randomBytes | 4 octets hex × 10, usage unique |
 | Transport | TLS | TLS 1.3 (HTTPS + WSS) |
-| At-rest (prod) | AWS KMS | AES-256 (RDS encryption) |
+| At-rest (prod) | Cloud KMS (GCP) | AES-256 (Cloud SQL + Cloud Storage encryption) |
 | Secrets applicatifs | .env + Docker secrets | Variables d'environnement, jamais dans le code |
 
 ### C. Conformité RGPD
@@ -849,5 +849,5 @@ POST /auth/refresh  {refreshToken}
 | Journalisation des accès | audit_log : toutes connexions + actions sensibles (suppression, export RGPD) |
 | Mises à jour sécurité | Dependabot + npm audit en CI/CD, patch CVE dans les 72h |
 | Cloisonnement réseau | Réseau Docker interne — seul api-gateway expose un port public |
-| Sauvegardes | pg_dump quotidien + snapshots RDS automatisés (rétention 30j) |
+| Sauvegardes | pg_dump quotidien + snapshots Cloud SQL automatisés (rétention 30j, Cloud Storage GCS) |
 | Scan vulnérabilités | SonarCloud (SAST), npm audit (dépendances), revue OWASP trimestrielle |
