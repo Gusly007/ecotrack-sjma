@@ -62,7 +62,7 @@ La couche données s'appuie sur trois systèmes de persistance complémentaires 
 | **Modularité** | 8 microservices indépendants, chacun avec sa propre base de code, ses tests, son Dockerfile et son `package.json`. Aucun couplage direct entre services (communication via HTTP ou Kafka). |
 | **Scalabilité** | Services stateless (état dans PostgreSQL/Redis), containerisation Docker permettant le scale horizontal par duplication de containers, Kafka partitionné (6 partitions sensor.data, 3 autres topics). |
 | **Résilience** | Dégradation gracieuse : service-notification fonctionne sans Kafka (pas de notifications automatiques, HTTP REST intact). Kafka absorbe les pics IoT sans back-pressure sur les consumers. Redis optionnel avec fallback DB. |
-| **Sécurité** | Defense in depth : JWT à l'API Gateway + RBAC dans chaque service + validation Joi des payloads + Helmet (headers HTTP) + rate limiting + MFA TOTP + audit log. |
+| **Sécurité** | Defense in depth : JWT à l'API Gateway + RBAC dans chaque service + validation Joi des payloads + Helmet (headers HTTP) + rate limiting + MFA TOTP + journal_audit (connexions + actions sensibles). |
 | **Maintenabilité** | Architecture Controller → Service → Repository uniformisée sur les 8 services. Swagger généré depuis les JSDoc routes. Jest >= 70 % de couverture. CI/CD GitHub Actions (lint + tests + build). |
 
 ---
@@ -203,7 +203,7 @@ Sécurité spécifique :
 - bcryptjs cost 12
 - speakeasy TOTP (RFC 6238) + 10 codes secours
 - Rate limiting : 5 tentatives login / 15 min
-- Audit log : toutes tentatives connexion (table audit_log)
+- Audit log : toutes tentatives connexion (table journal_audit — LOGIN_SUCCESS, LOGIN_FAILED, USER_REGISTER, CREATION_TOURNEE, CLOTURE_SIGNALEMENT)
 - Cron RGPD : purge soft-deleted après 90 jours
 ```
 
@@ -389,7 +389,7 @@ UTILISATEURS & AUTH
 ├── utilisateur_role   (id_utilisateur, id_role)
 ├── refresh_token      (id, id_utilisateur, token_hash, expires_at)
 ├── session            (id, id_utilisateur, device_info, created_at)
-└── audit_log          (id, email, success, ip, timestamp)
+└── journal_audit      (id_audit, id_acteur→utilisateur, action, type_entite, id_entite, date_creation)
 
 GÉOGRAPHIE & CONTENEURS
 ├── zone               (id, nom, geom GEOMETRY(Polygon,4326), id_gestionnaire, id_admin)
@@ -846,7 +846,7 @@ POST /auth/refresh  {refreshToken}
 | Chiffrement TLS 1.2 minimum | TLS 1.3 configuré (HTTPS obligatoire, redirection HTTP) |
 | Authentification forte | MFA TOTP activable, obligatoire pour les ADMIN |
 | Gestion des habilitations | RBAC granulaire, principe du moindre privilège |
-| Journalisation des accès | audit_log : toutes connexions + actions sensibles (suppression, export RGPD) |
+| Journalisation des accès | journal_audit : LOGIN_SUCCESS, LOGIN_FAILED, USER_REGISTER, CREATION_TOURNEE, CLOTURE_SIGNALEMENT — actions RGPD (export Art.15, suppression Art.17) tracées via Pino logger structuré (JSON) et incluses dans l'export RGPD (champ auditTrail) |
 | Mises à jour sécurité | Dependabot + npm audit en CI/CD, patch CVE dans les 72h |
 | Cloisonnement réseau | Réseau Docker interne — seul api-gateway expose un port public |
 | Sauvegardes | pg_dump quotidien + snapshots Cloud SQL automatisés (rétention 30j, Cloud Storage GCS) |
