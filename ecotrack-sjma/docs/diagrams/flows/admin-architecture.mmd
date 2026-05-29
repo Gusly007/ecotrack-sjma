@@ -1,13 +1,15 @@
 flowchart TD
-    AD[Administrateur] --> API[API Gateway]
-    API --> S[service-users]
-    API --> P[Prometheus]
-    
-    P --> G[Grafana]
+    AD[Administrateur] --> API[API Gateway :3000]
+    API --> S[service-users :3010]
+    API --> SN[service-notification :3016]
+    API --> P[Prometheus :9090]
+
+    P --> G[Grafana :3001]
     P --> A[Alertmanager]
-    
+
     AD --> PG[(PostgreSQL)]
     AD --> R[(Redis)]
-    
+
     AD --> K[Kafka]
-    K --> L[services]
+    K -->|"ecotrack.alerts<br/>ecotrack.signalements.nouveau"| SN
+    SN -->|"ALERTE / SYSTEME"| AD

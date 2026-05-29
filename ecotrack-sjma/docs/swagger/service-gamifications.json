@@ -1,0 +1,457 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack - Service Gamification",
+    "version": "1.0.0",
+    "description": "Points, badges, défis et notifications de gamification"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3014",
+      "description": "Serveur local"
+    }
+  ],
+  "paths": {
+    "/actions": {
+      "post": {
+        "summary": "Enregistrer une action utilisateur et attribuer des points",
+        "tags": [
+          "Actions"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_utilisateur": {
+                    "type": "integer"
+                  },
+                  "type_action": {
+                    "type": "string"
+                  },
+                  "points": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id_utilisateur",
+                  "type_action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Action enregistrée"
+          }
+        }
+      }
+    },
+    "/badges": {
+      "get": {
+        "summary": "Liste des badges disponibles",
+        "tags": [
+          "Badges"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des badges paginée"
+          }
+        }
+      }
+    },
+    "/badges/utilisateurs/{idUtilisateur}": {
+      "get": {
+        "summary": "Liste des badges d'un utilisateur",
+        "tags": [
+          "Badges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idUtilisateur",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des badges utilisateur paginée"
+          }
+        }
+      }
+    },
+    "/classement": {
+      "get": {
+        "summary": "Classement des utilisateurs",
+        "tags": [
+          "Classement"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limite",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_utilisateur",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classement des utilisateurs"
+          }
+        }
+      }
+    },
+    "/defis": {
+      "get": {
+        "summary": "Liste des défis",
+        "tags": [
+          "Défis"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "statut",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIF",
+                "TERMINE",
+                "TOUS"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "type_defi",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des défis paginée"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un défi",
+        "tags": [
+          "Défis"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "titre": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "objectif": {
+                    "type": "integer"
+                  },
+                  "recompense_points": {
+                    "type": "integer"
+                  },
+                  "date_debut": {
+                    "type": "string"
+                  },
+                  "date_fin": {
+                    "type": "string"
+                  },
+                  "type_defi": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "titre",
+                  "objectif",
+                  "date_debut",
+                  "date_fin"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Défi créé"
+          }
+        }
+      }
+    },
+    "/defis/{idDefi}/participations": {
+      "post": {
+        "summary": "Participer à un défi",
+        "tags": [
+          "Défis"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idDefi",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_utilisateur": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participation créée"
+          }
+        }
+      }
+    },
+    "/defis/{idDefi}/participations/{idUtilisateur}": {
+      "patch": {
+        "summary": "Mettre à jour la progression d'un défi",
+        "tags": [
+          "Défis"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idDefi",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idUtilisateur",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "progression": {
+                    "type": "integer"
+                  },
+                  "statut": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progression mise à jour"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "Lister les notifications d'un utilisateur",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id_utilisateur",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications"
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une notification",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_utilisateur": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "titre": {
+                    "type": "string"
+                  },
+                  "corps": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notification créée"
+          }
+        }
+      }
+    },
+    "/utilisateurs/{idUtilisateur}/stats": {
+      "get": {
+        "summary": "Statistiques de gamification d'un utilisateur",
+        "tags": [
+          "Statistiques"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idUtilisateur",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques utilisateur"
+          }
+        }
+      }
+    },
+    "/utilisateurs/{idUtilisateur}/historique": {
+      "get": {
+        "summary": "Historique brut des points (une ligne par événement)",
+        "tags": [
+          "Statistiques"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idUtilisateur",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste d'événements historique_points"
+          },
+          "403": {
+            "description": "Un citoyen ne peut voir que son propre historique"
+          }
+        }
+      }
+    }
+  },
+  "components": {},
+  "tags": []
+}

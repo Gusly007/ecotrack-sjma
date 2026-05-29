@@ -133,6 +133,63 @@ Le service démarre sur `http://localhost:3016` et :
 
 > Toutes les routes nécessitent un header `Authorization: Bearer <token>`.
 
+### Récapitulatif des endpoints
+
+#### Notifications utilisateurs (`/api/V1/notifications`)
+
+| Méthode | Endpoint | Rôle requis | Description |
+|---------|----------|-------------|-------------|
+| `GET` | `/api/V1/notifications/list` | Tous | Lister mes notifications (paginé, filtrable) |
+| `GET` | `/api/V1/notifications/unread-count` | Tous | Compter les non-lues |
+| `POST` | `/api/V1/notifications` | ADMIN | Créer une notification |
+| `POST` | `/api/V1/notifications/bulk` | ADMIN | Créer en masse (transaction atomique) |
+| `PATCH` | `/api/V1/notifications/read-all` | Tous | Marquer toutes comme lues |
+| `PATCH` | `/api/V1/notifications/:id/read` | Propriétaire / ADMIN | Marquer une notification comme lue |
+| `DELETE` | `/api/V1/notifications/:id` | Propriétaire / ADMIN | Supprimer une notification |
+
+#### Notifications admin (`/api/V1/admin/notifications`)
+
+| Méthode | Endpoint | Rôle requis | Description |
+|---------|----------|-------------|-------------|
+| `GET` | `/api/V1/admin/notifications` | ADMIN / GESTIONNAIRE | Lister les notifications admin (paginé, filtrable) |
+| `GET` | `/api/V1/admin/notifications/stats` | ADMIN / GESTIONNAIRE | Statistiques (total, lues, non-lues) |
+| `GET` | `/api/V1/admin/notifications/types` | ADMIN / GESTIONNAIRE | Types disponibles |
+| `GET` | `/api/V1/admin/notifications/priorities` | ADMIN / GESTIONNAIRE | Niveaux de priorité |
+| `POST` | `/api/V1/admin/notifications` | ADMIN | Créer une notification admin |
+| `POST` | `/api/V1/admin/notifications/bulk` | ADMIN | Créer en masse |
+| `PATCH` | `/api/V1/admin/notifications/read-all` | Propriétaire | Tout marquer lu |
+| `PATCH` | `/api/V1/admin/notifications/:id/read` | Propriétaire | Marquer une notification lue |
+| `DELETE` | `/api/V1/admin/notifications/:id` | Propriétaire | Supprimer |
+
+---
+
+### GET `/api/V1/notifications/list`
+
+Liste les notifications de l'utilisateur authentifié.
+
+**Query params :** `page`, `limit`, `est_lu` (boolean)
+
+**Réponse** `200`
+```json
+{
+  "data": [ { "id_notification": 1, "type": "ALERTE", "titre": "...", "est_lu": false, "date_creation": "..." } ],
+  "total": 12,
+  "page": 1,
+  "limit": 20
+}
+```
+
+---
+
+### GET `/api/V1/notifications/unread-count`
+
+**Réponse** `200`
+```json
+{ "count": 3 }
+```
+
+---
+
 ### POST `/api/V1/notifications`
 
 Crée une notification pour un utilisateur cible. Réservé aux **ADMIN**.
@@ -232,10 +289,10 @@ La compatibilité entre le type de notification et le rôle du destinataire est 
 
 | Type | GESTIONNAIRE | ADMIN | CITOYEN | AGENT |
 |------|:---:|:---:|:---:|:---:|
-| `ALERTE` | ✅ | ✅ | ❌ | ❌ |
-| `TOURNEE` | ✅ | ✅ | ❌ | ❌ |
-| `BADGE` | ❌ | ❌ | ✅ | ✅ |
-| `SYSTEME` | ✅ | ✅ | ✅ | ✅ |
+| `ALERTE` | Oui | Oui | Non | Non |
+| `TOURNEE` | Oui | Oui | Non | Non |
+| `BADGE` | Non | Non | Oui | Oui |
+| `SYSTEME` | Oui | Oui | Oui | Oui |
 
 ---
 
@@ -243,9 +300,9 @@ La compatibilité entre le type de notification et le rôle du destinataire est 
 
 | Permission | GESTIONNAIRE | ADMIN |
 |-----------|:---:|:---:|
-| `notifications:create` — créer une notification | ❌ | ✅ |
-| `notifications:bulk` — créer en masse | ❌ | ✅ |
-| `notifications:own` — lire / marquer / supprimer ses notifs | ✅ | ✅ |
+| `notifications:create` — créer une notification | Non | Oui |
+| `notifications:bulk` — créer en masse | Non | Oui |
+| `notifications:own` — lire / marquer / supprimer ses notifs | Oui | Oui |
 
 ---
 

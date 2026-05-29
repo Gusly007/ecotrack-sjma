@@ -654,6 +654,19 @@ Toutes les entrées utilisateur sont validées avec Joi:
 
 Configuration CORS pour autoriser les origines spécifiques.
 
+## Intégration avec les autres services
+
+| Service | Interaction |
+|---------|-------------|
+| **API Gateway** (port 3000) | Proxy les routes `/containers/*`, `/zones/*`, `/typecontainers/*`, `/stats/*` |
+| **Service IoT** (port 3013) | Partage les tables `conteneur` et `capteur` — les capteurs envoient les mesures de remplissage |
+| **Service Routes** (port 3012) | Accède aux conteneurs pour créer les étapes des tournées de collecte |
+| **Service Notification** (port 3016) | Résout `id_conteneur → zone → gestionnaire/admin` pour créer les notifications Kafka |
+| **Service Analytics** (port 3015) | Lit les données de collecte pour les agrégations et tableaux de bord |
+| **PostgreSQL** (port 5432) | Base de données partagée `ecotrack` |
+
+---
+
 ## Documentation
 
 ### Documentation API

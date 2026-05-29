@@ -95,15 +95,63 @@ Swagger est disponible sur `http://localhost:3010/api-docs` et l'endpoint de san
 - **GESTIONNAIRE** : Superviseur
 - **ADMIN** : Administrateur
 
+## MFA / 2FA (Authentification à deux facteurs)
+
+Le service implémente le TOTP (RFC 6238) via **speakeasy** + **qrcode**. Compatible avec Google Authenticator, Authy et toute application TOTP standard.
+
+### Endpoints MFA
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| `POST` | `/auth/mfa/setup` | JWT requis | Génère un secret TOTP et un QR code (Data URL) |
+| `POST` | `/auth/mfa/verify` | JWT requis | Vérifie le premier code TOTP et active le MFA |
+| `POST` | `/auth/mfa/complete-setup` | Public | Active le MFA et retourne les tokens JWT |
+| `POST` | `/auth/mfa/disable` | JWT requis | Désactive le MFA pour l'utilisateur connecté |
+| `POST` | `/auth/mfa/regenerate` | Public (userId requis) | Régénère le QR code (perte de device) |
+| `POST` | `/auth/login/mfa` | Public (rate-limited) | Valide le code TOTP et retourne les tokens JWT |
+
+### Flux d'activation
+
+```
+1. POST /auth/mfa/setup          → { secret, qrCodeUrl }
+   (scanner le QR code dans l'app TOTP)
+2. POST /auth/mfa/complete-setup → { token, refreshToken, user }
+   body: { userId, code }         (code à 6 chiffres de l'app)
+```
+
+### Flux de connexion avec MFA actif
+
+```
+1. POST /auth/login               → { requiresMfa: true, userId }
+2. POST /auth/login/mfa           → { token, refreshToken, user }
+   body: { userId, code }          (code TOTP ou code de secours)
+```
+
+### Codes de secours
+
+À l'activation, 10 codes de secours (8 caractères hexadécimaux) sont générés et retournés une seule fois. Chaque code ne peut être utilisé qu'une fois. Si le device est perdu, utiliser `POST /auth/mfa/regenerate` pour obtenir un nouveau QR code.
+
+### Stockage
+
+| Colonne | Description |
+|---------|-------------|
+| `mfa_enabled` | Booléen — MFA activé pour cet utilisateur |
+| `totp_secret` | Secret TOTP chiffré (base32) |
+| `backup_codes` | JSON array — codes de secours hachés |
+| `mfa_setup_secret` | Secret temporaire pendant le setup |
+
+---
+
 ## Sécurité
 
--  JWT pour authentification
--  Bcryptjs pour hash des mots de passe
--  Rate limiting (100 req/min global, 5 tentatives login/15 min)
--  Logging des tentatives
--  Refresh tokens
--  Sessions limitées (3 max)
--  RBAC (rôles et permissions)
+- JWT pour authentification
+- Bcryptjs pour hash des mots de passe
+- Rate limiting (100 req/min global, 5 tentatives login/15 min)
+- TOTP 2FA (speakeasy) avec codes de secours
+- Logging des tentatives de connexion
+- Refresh tokens
+- Sessions limitées (3 max)
+- RBAC (rôles et permissions)
 
 ## Tests
 

@@ -34,34 +34,43 @@ Avec le volume prévu :
 ## Architecture Kafka EcoTrack
 
 ```
-┌─────────────────┐     ┌─────────────┐
-│   Capteurs IoT  │────▶│  service-iot │────┐
-│  (MQTT/broker) │     │  (Producer)  │    │
-└─────────────────┘     └─────────────┘    │
-                                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        KAFKA                                │
-│  Topics: ecotrack.sensor.data, ecotrack.alerts, etc.      │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│service-analytics│  │ service-users   │  │ service-routes  │
-│  (Consumer)     │  │  (Consumer)     │  │  (Consumer)     │
-│  - ML/Stats     │  │  - Notifications│  │  - Optimisation │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+┌─────────────────┐     ┌──────────────┐
+│  Capteurs IoT   │────▶│  service-iot │──────────────────────────────────┐
+│  (MQTT/broker)  │     │  (Producer)  │                                  │
+└─────────────────┘     └──────────────┘                                  │
+                                                                           │
+┌─────────────────┐     ┌──────────────┐                                  │
+│  Citoyens /     │────▶│service-routes│──────────────────────────────┐   │
+│  Agents         │     │  (Producer)  │                              │   │
+└─────────────────┘     └──────────────┘                              │   │
+                                                                       ▼   ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                  KAFKA                                       │
+│  ecotrack.sensor.data    ecotrack.alerts    ecotrack.signalements.nouveau    │
+│  ecotrack.container.status                 ecotrack.admin.notifications      │
+└──────────────────────────────────────────────────────────────────────────────┘
+         │                    │                    │                   │
+         ▼                    ▼                    ▼                   ▼
+┌───────────────┐  ┌──────────────────────────────────────┐  ┌─────────────────┐
+│service-        │  │ service-notification-gestionnaire-   │  │ service-routes  │
+│analytics       │  │ admin (Consumer)                     │  │  (Consumer)     │
+│  (Consumer)    │  │  - ecotrack.alerts                   │  │  - Optimisation │
+│  - ML/Stats    │  │  - ecotrack.signalements.nouveau     │  └─────────────────┘
+└───────────────┘  │  - ecotrack.admin.notifications      │
+                    └──────────────────────────────────────┘
 ```
 
 ---
 
 ## Topics Kafka
 
-| Topic | Description | Partitions | Usage |
-|-------|-------------|------------|-------|
-| `ecotrack.sensor.data` | Données brutes capteurs | 6 | Analytics ML, stats |
-| `ecotrack.alerts` | Alertes conteneurs | 3 | Notifications users |
-| `ecotrack.container.status` | Statut conteneurs | 3 | Routes optimisation |
-| `ecotrack.notifications` | Notifications | 3 | Service notifications |
+| Topic | Description | Partitions | Producer | Consumer(s) |
+|-------|-------------|------------|----------|-------------|
+| `ecotrack.sensor.data` | Données brutes capteurs | 6 | service-iot | service-analytics |
+| `ecotrack.alerts` | Alertes IoT (remplissage > 90 %, capteur défaillant) | 3 | service-iot | service-notification-gestionnaire-admin |
+| `ecotrack.signalements.nouveau` | Nouveau signalement citoyen/agent | 3 | service-routes | service-notification-gestionnaire-admin |
+| `ecotrack.container.status` | Statut conteneurs | 3 | service-iot | service-routes |
+| `ecotrack.admin.notifications` | Evenements admin structurés (SERVICE_DOWN, etc.) | 3 | service-notification-gestionnaire-admin | service-notification-gestionnaire-admin |
 
 ---
 
@@ -103,17 +112,7 @@ kafkaConsumer.subscribe('ecotrack.alerts', async (message) => {
 });
 ```
 
-### Service-Users (Consumer)
-```javascript
-// Consomme les alertes pour notifications
-kafkaConsumer.subscribe('ecotrack.alerts', async (message) => {
-  const { alert } = JSON.parse(message.value);
-  await sendPushNotification(alert);
-  await sendEmailAlert(alert);
-});
-```
-
-### Service-Notification-Gestionnaire-Admin (Producer + Consumer)
+### Service-Notification-Gestionnaire-Admin (Consumer + Producer)
 ```javascript
 // Producer : envoie des événements/notifications admin
 // Fichier: kafkaAdminProducer.js
@@ -176,8 +175,9 @@ docker compose up -d zookeeper kafka kafka-ui
 ```
 ecotrack.sensor.data
 ecotrack.alerts
+ecotrack.signalements.nouveau
 ecotrack.container.status
-ecotrack.notifications
+ecotrack.admin.notifications
 ```
 
 ### Commandes utiles

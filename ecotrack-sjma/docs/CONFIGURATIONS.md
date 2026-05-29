@@ -39,7 +39,7 @@ configurations (
 ## Paramètres par défaut
 
 ### JWT
-- `jwt.access_token_expiration`: `24h` (24 heures)
+- `jwt.access_token_expiration`: `1h` (1 heure)
 - `jwt.refresh_token_expiration`: `168h` (7 jours)
 
 ### Security

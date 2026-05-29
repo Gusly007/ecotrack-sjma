@@ -1,0 +1,2440 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack Service Users API",
+    "version": "1.0.0",
+    "description": "API pour authentification et gestion des utilisateurs",
+    "contact": {
+      "name": "Support EcoTrack",
+      "email": "support@ecotrack.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3010",
+      "description": "Serveur de développement"
+    },
+    {
+      "url": "https://api.ecotrack.com",
+      "description": "Serveur de production"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Inscrire un nouvel utilisateur",
+        "description": "Crée un nouveau compte utilisateur et retourne les tokens JWT",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur inscrit avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "example": {
+                  "error": "Password must be at least 6 characters"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email déjà utilisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Email already in use"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Connecter un utilisateur",
+        "description": "Authentifie un utilisateur et retourne les tokens JWT",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Champs manquants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Email ou password incorrect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Invalid email or password"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de tentatives (rate limited)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Too many login attempts, please try again later"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "summary": "Récupérer le profil connecté",
+        "description": "Retourne les informations du profil de l'utilisateur authentifié",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token manquant ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Access token required"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token expiré ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Invalid or expired token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Renouveler l'access token",
+        "description": "Utilise le refresh token pour obtenir un nouvel access token",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token renouvelé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Token refreshed"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refresh token manquant"
+          },
+          "403": {
+            "description": "Refresh token invalide ou expiré"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Déconnecter l'utilisateur",
+        "description": "Invalide le refresh token fourni",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Déconnexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Logged out successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token manquant"
+          }
+        }
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "summary": "Déconnecter l'utilisateur de tous les appareils",
+        "description": "Invalide tous les refresh tokens de l'utilisateur",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Déconnexion complète réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Logged out from all devices"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Demander la réinitialisation du mot de passe",
+        "description": "Envoie un email avec un lien de réinitialisation si le compte existe",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Adresse email de l'utilisateur",
+                    "example": "john.doe@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email envoyé si le compte existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "message": "Si un compte existe avec cet email, vous recevrez un lien de réinitialisation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email invalide"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Réinitialiser le mot de passe",
+        "description": "Utilise le token reçu par email pour réinitialiser le mot de passe",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "newPassword"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Token de réinitialisation reçu par email",
+                    "example": "abc123xyz..."
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Nouveau mot de passe (min 6 caractères)",
+                    "minLength": 6,
+                    "example": "newpassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mot de passe réinitialisé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "message": "Mot de passe réinitialisé avec succès"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token invalide ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "error": "Token invalide ou expiré"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/auth/mfa/setup": {
+      "post": {
+        "summary": "Générer la configuration MFA (QR code)",
+        "description": "Génère un secret TOTP et le QR code pour l'utilisateur",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuration MFA générée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "secret": {
+                      "type": "string"
+                    },
+                    "qrCodeUrl": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié"
+          },
+          "500": {
+            "description": "Erreur serveur"
+          }
+        }
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "summary": "Vérifier et activer le MFA",
+        "description": "Vérifie le premier code TOTP et active le MFA",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "secret",
+                  "token"
+                ],
+                "properties": {
+                  "secret": {
+                    "type": "string",
+                    "description": "Secret TOTP reçu de /mfa/setup"
+                  },
+                  "token": {
+                    "type": "string",
+                    "description": "Code à 6 chiffres de l'app d'authentification"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MFA activé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "backupCodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Code invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        }
+      }
+    },
+    "/auth/mfa/complete-setup": {
+      "post": {
+        "summary": "Compléter le setup MFA et se connecter",
+        "description": "Valide le premier code TOTP et active le MFA",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId",
+                  "code",
+                  "secret"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "integer",
+                    "description": "ID utilisateur"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Code TOTP à 6 chiffres"
+                  },
+                  "secret": {
+                    "type": "string",
+                    "description": "Secret TOTP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MFA activé et connexion réussie"
+          },
+          "400": {
+            "description": "Code invalide"
+          },
+          "401": {
+            "description": "Code invalide"
+          }
+        }
+      }
+    },
+    "/auth/mfa/disable": {
+      "post": {
+        "summary": "Désactiver le MFA",
+        "description": "Désactive le MFA pour l'utilisateur connecté",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MFA désactivé"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        }
+      }
+    },
+    "/auth/mfa/regenerate": {
+      "post": {
+        "summary": "Régénérer le QR code MFA",
+        "description": "Génère un nouveau secret MFA sans authentification (pour recover après perte device)",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nouveau QR code généré"
+          },
+          "400": {
+            "description": "Paramètres invalides"
+          }
+        }
+      }
+    },
+    "/auth/login/mfa": {
+      "post": {
+        "summary": "Connexion avec MFA",
+        "description": "Valide le code MFA et génère les tokens JWT",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId",
+                  "code"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "integer",
+                    "description": "ID utilisateur (reçu de /auth/login)"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Code TOTP ou code de secours"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Code invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        }
+      }
+    },
+    "/users/avatar/upload": {
+      "post": {
+        "summary": "Uploader un nouvel avatar",
+        "description": "Upload une image JPG, PNG ou WebP et crée les miniatures",
+        "tags": [
+          "Avatars"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image JPG, PNG ou WebP (max 5MB, 100x100+ pixels)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avatar uploadé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Avatar uploaded successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id_utilisateur": {
+                          "type": "integer"
+                        },
+                        "avatar_url": {
+                          "type": "string",
+                          "example": "/avatars/original/1-1705305000.jpg"
+                        },
+                        "avatar_thumbnail": {
+                          "type": "string",
+                          "example": "/avatars/thumbnails/1-1705305000.jpg"
+                        },
+                        "avatar_mini": {
+                          "type": "string",
+                          "example": "/avatars/mini/1-1705305000.jpg"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fichier invalide"
+          },
+          "401": {
+            "description": "Non authentifié"
+          }
+        }
+      }
+    },
+    "/users/avatar/{userId}": {
+      "get": {
+        "summary": "Récupérer l'avatar d'un utilisateur",
+        "tags": [
+          "Avatars"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avatar récupéré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/avatar": {
+      "delete": {
+        "summary": "Supprimer mon avatar",
+        "tags": [
+          "Avatars"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avatar supprimé"
+          }
+        }
+      }
+    },
+    "/users/me/export": {
+      "get": {
+        "tags": [
+          "GDPR (Art. 15 - Right of Access)"
+        ],
+        "summary": "Export all personal data",
+        "description": "Download a complete copy of your personal data in JSON format (Art. 15 RGPD)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personal data exported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exportedAt": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object"
+                    },
+                    "signalements": {
+                      "type": "array"
+                    },
+                    "tournees": {
+                      "type": "array"
+                    },
+                    "badges": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Export failed"
+          }
+        }
+      }
+    },
+    "/users/me/delete": {
+      "post": {
+        "tags": [
+          "GDPR (Art. 17 - Right to be Forgotten)"
+        ],
+        "summary": "Request account deletion",
+        "description": "Request permanent deletion of your account (30-day grace period to cancel)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "Password confirmation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deletion requested successfully"
+          },
+          "400": {
+            "description": "Password required"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Request failed"
+          }
+        }
+      }
+    },
+    "/users/me/cancel-deletion": {
+      "post": {
+        "tags": [
+          "GDPR (Art. 17 - Right to be Forgotten)"
+        ],
+        "summary": "Cancel account deletion request",
+        "description": "Cancel pending deletion (within 30-day grace period)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deletion cancelled successfully"
+          },
+          "500": {
+            "description": "Cancellation failed"
+          }
+        }
+      }
+    },
+    "/users/me/consents": {
+      "get": {
+        "tags": [
+          "GDPR (Art. 7 & 32 - Consent & Security)"
+        ],
+        "summary": "Get user's consent history",
+        "description": "View all consent records for audit trail purposes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent records retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "consents": {
+                      "type": "array"
+                    },
+                    "totalRecords": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Fetch failed"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Récupérer les notifications de l'utilisateur connecté",
+        "description": "Retourne la liste des notifications classées par date décroissante.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Nombre maximum de notifications à retourner"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications récupérées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          }
+        }
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Compter les notifications non lues",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compteur retourné",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          }
+        }
+      }
+    },
+    "/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Marquer une notification comme lue",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la notification"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Notification marked as read"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Notification"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification introuvable"
+          }
+        }
+      }
+    },
+    "/notifications/{id}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Supprimer une notification",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification supprimée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Notification deleted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification introuvable"
+          }
+        }
+      }
+    },
+    "/roles/users/{id}": {
+      "get": {
+        "summary": "Récupérer les rôles d'un utilisateur",
+        "description": "Retourne la liste des rôles associés à l'utilisateur ciblé. Accessible uniquement aux admins.",
+        "tags": [
+          "Roles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rôles récupérés",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès réservé aux admins"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        }
+      },
+      "post": {
+        "summary": "Assigner un rôle à un utilisateur",
+        "description": "Ajoute un rôle à l'utilisateur ciblé. Accessible uniquement aux admins.",
+        "tags": [
+          "Roles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleAssignmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rôle assigné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données manquantes ou invalides"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès réservé aux admins"
+          },
+          "404": {
+            "description": "Utilisateur ou rôle non trouvé"
+          }
+        }
+      }
+    },
+    "/roles/users/{id}/{roleId}": {
+      "delete": {
+        "summary": "Retirer un rôle à un utilisateur",
+        "description": "Supprime le rôle spécifié de l'utilisateur ciblé. Accessible uniquement aux admins.",
+        "tags": [
+          "Roles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID du rôle à retirer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rôle retiré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès réservé aux admins"
+          },
+          "404": {
+            "description": "Utilisateur ou rôle non trouvé"
+          }
+        }
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "summary": "Récupérer mon profil",
+        "description": "Retourne les informations du profil de l'utilisateur connecté",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil récupéré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token manquant ou invalide"
+          },
+          "403": {
+            "description": "Token expiré"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour mon profil",
+        "description": "Met à jour les informations du profil (prénom, email)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil mis à jour avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Email must be valid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "409": {
+            "description": "Email déjà utilisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Email already in use"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/change-password": {
+      "post": {
+        "summary": "Changer mon mot de passe",
+        "description": "Change le mot de passe de l'utilisateur connecté",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mot de passe changé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordChangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Données invalides ou mot de passe actuel incorrect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Current password is incorrect"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise (token manquant ou invalide)"
+          }
+        }
+      }
+    },
+    "/users/profile-with-stats": {
+      "get": {
+        "summary": "Récupérer mon profil avec statistiques",
+        "description": "Retourne mon profil avec badges et statistiques",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil avec stats récupéré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileWithStatsResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          }
+        }
+      }
+    },
+    "/users/agents": {
+      "get": {
+        "summary": "Lister uniquement les agents de collecte",
+        "description": "Retourne la liste des utilisateurs ayant le rôle AGENT et actifs.\nEndpoint réservé au gestionnaire (permission 'tournee:create') pour\nl'assignation d'un agent lors de la création d'une tournée optimisée.\nFiltre figé côté serveur : le rôle ne peut pas être surchargé par le client.\n",
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste paginée des agents actifs"
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Permission insuffisante (réservé aux gestionnaires)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filtre textuel sur email ou prénom"
+          }
+        ]
+      }
+    },
+    "/users/me": {
+      "delete": {
+        "summary": "Request account deletion (GDPR Art. 17)",
+        "description": "Request the deletion of the user's account.\nAccessible only by the user themselves.\n",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "User's password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account deletion requested successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Account deletion requested successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Invalid request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Lister tous les utilisateurs",
+        "description": "Liste tous les utilisateurs avec pagination.\nNécessite la permission 'users:read' (typiquement GESTIONNAIRE et ADMIN).\n",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Numéro de la page"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "description": "Nombre d'utilisateurs par page"
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITOYEN",
+                "AGENT",
+                "GESTIONNAIRE",
+                "ADMIN"
+              ]
+            },
+            "description": "Filtrer par rôle"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Rechercher par email ou prénom"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Permission insuffisante"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Récupérer le profil d'un utilisateur",
+        "description": "Récupère le profil d'un utilisateur spécifique.\nL'accès dépend des permissions de l'utilisateur connecté.\n",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil récupéré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileWithStatsResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Accès refusé"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mettre à jour un utilisateur (admin)",
+        "description": "Met à jour les informations d'un utilisateur.\nAccessible uniquement par les admins.\n",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prenom": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "newemail@example.com"
+                  },
+                  "est_active": {
+                    "type": "boolean",
+                    "description": "Activer/Désactiver le compte",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Utilisateur mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Permission insuffisante"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un utilisateur (admin)",
+        "description": "Supprime un utilisateur de la base de données.\nAccessible uniquement par les admins.\n",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de l'utilisateur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Utilisateur supprimé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentification requise"
+          },
+          "403": {
+            "description": "Permission insuffisante"
+          },
+          "404": {
+            "description": "Utilisateur non trouvé"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "nom",
+          "prenom",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "nom": {
+            "type": "string",
+            "description": "Nom de l'utilisateur",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Dupont"
+          },
+          "prenom": {
+            "type": "string",
+            "description": "Prénom de l'utilisateur",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Jean"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email unique",
+            "example": "john.doe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Mot de passe minimum 6 caractères",
+            "minLength": 6,
+            "example": "password123"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "CITOYEN",
+              "AGENT",
+              "GESTIONNAIRE",
+              "ADMIN"
+            ],
+            "default": "CITOYEN",
+            "description": "Rôle de l'utilisateur",
+            "example": "CITOYEN"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email",
+            "example": "john.doe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Mot de passe",
+            "example": "password123"
+          }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": [
+          "refreshToken"
+        ],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token obtenu lors du login",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        }
+      },
+      "ForgotPasswordRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email de l'utilisateur",
+            "example": "john.doe@example.com"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": [
+          "token",
+          "newPassword"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token de réinitialisation reçu par email",
+            "example": "abc123xyz..."
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "Nouveau mot de passe (min 6 caractères)",
+            "minLength": 6,
+            "example": "newpassword123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          },
+          "token": {
+            "type": "string",
+            "description": "Access token JWT (24h)",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token JWT (7 jours)",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id_utilisateur": {
+                "type": "integer",
+                "example": 1
+              },
+              "email": {
+                "type": "string",
+                "example": "john.doe@example.com"
+              },
+              "nom": {
+                "type": "string",
+                "example": "Dupont"
+              },
+              "prenom": {
+                "type": "string",
+                "example": "John"
+              },
+              "role_par_defaut": {
+                "type": "string",
+                "enum": [
+                  "CITOYEN",
+                  "AGENT",
+                  "GESTIONNAIRE",
+                  "ADMIN"
+                ],
+                "example": "CITOYEN"
+              },
+              "points": {
+                "type": "integer",
+                "example": 0
+              }
+            }
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id_utilisateur": {
+            "type": "integer",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          },
+          "nom": {
+            "type": "string",
+            "example": "Dupont"
+          },
+          "prenom": {
+            "type": "string",
+            "example": "John"
+          },
+          "role_par_defaut": {
+            "type": "string",
+            "enum": [
+              "CITOYEN",
+              "AGENT",
+              "GESTIONNAIRE",
+              "ADMIN"
+            ],
+            "example": "CITOYEN"
+          },
+          "points": {
+            "type": "integer",
+            "example": 100
+          },
+          "est_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Invalid credentials"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Missing required fields: email, password"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id_notification": {
+            "type": "integer",
+            "example": 12
+          },
+          "id_utilisateur": {
+            "type": "integer",
+            "example": 5
+          },
+          "type": {
+            "type": "string",
+            "example": "SYSTEME"
+          },
+          "titre": {
+            "type": "string",
+            "example": "Nouvelle mission disponible"
+          },
+          "corps": {
+            "type": "string",
+            "example": "Participez au nettoyage du parc samedi"
+          },
+          "est_lu": {
+            "type": "boolean",
+            "example": false
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-04T10:00:00Z"
+          }
+        }
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 3
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          }
+        }
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "RoleAssignmentRequest": {
+        "type": "object",
+        "required": [
+          "roleId"
+        ],
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "description": "Identifiant du rôle à assigner",
+            "example": 2
+          }
+        }
+      },
+      "RolesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Liste des rôles associés à l'utilisateur",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id_role": {
+                  "type": "integer",
+                  "example": 2
+                },
+                "nom_role": {
+                  "type": "string",
+                  "example": "GESTIONNAIRE"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Role assigné"
+          },
+          "data": {
+            "type": "object",
+            "description": "Objet retourné par le service après assignation"
+          }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "prenom": {
+            "type": "string",
+            "description": "Prénom de l'utilisateur",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email (doit être unique)",
+            "example": "newemail@example.com"
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ],
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "Mot de passe actuel",
+            "minLength": 6,
+            "example": "old_password123"
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "Nouveau mot de passe (minimum 6 caractères)",
+            "minLength": 6,
+            "example": "new_secure_password456"
+          }
+        }
+      },
+      "UserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id_utilisateur": {
+            "type": "integer",
+            "description": "ID unique de l'utilisateur",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email",
+            "example": "john.doe@example.com"
+          },
+          "prenom": {
+            "type": "string",
+            "description": "Prénom",
+            "example": "John"
+          },
+          "role_par_defaut": {
+            "type": "string",
+            "enum": [
+              "CITOYEN",
+              "AGENT",
+              "GESTIONNAIRE",
+              "ADMIN"
+            ],
+            "description": "Rôle par défaut",
+            "example": "CITOYEN"
+          },
+          "points": {
+            "type": "integer",
+            "description": "Points de gamification",
+            "example": 150
+          },
+          "est_active": {
+            "type": "boolean",
+            "description": "Compte actif ou désactivé",
+            "example": true
+          }
+        }
+      },
+      "UserProfileWithStatsResponse": {
+        "type": "object",
+        "properties": {
+          "id_utilisateur": {
+            "type": "integer",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com"
+          },
+          "prenom": {
+            "type": "string",
+            "example": "John"
+          },
+          "role_par_defaut": {
+            "type": "string",
+            "enum": [
+              "CITOYEN",
+              "AGENT",
+              "GESTIONNAIRE",
+              "ADMIN"
+            ],
+            "example": "CITOYEN"
+          },
+          "points": {
+            "type": "integer",
+            "description": "Points totaux accumulés",
+            "example": 150
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création du compte",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "badge_count": {
+            "type": "integer",
+            "description": "Nombre de badges obtenus",
+            "example": 3
+          }
+        }
+      },
+      "UserListResponse": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 150
+              },
+              "page": {
+                "type": "integer",
+                "example": 1
+              },
+              "limit": {
+                "type": "integer",
+                "example": 20
+              },
+              "pages": {
+                "type": "integer",
+                "example": 8
+              }
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserProfileResponse"
+            }
+          }
+        }
+      },
+      "PasswordChangeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Password changed successfully"
+          }
+        }
+      },
+      "UpdateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Profile updated successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfileResponse"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Authorization header with Bearer token"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints pour authentification des utilisateurs"
+    },
+    {
+      "name": "Avatars",
+      "description": "Gestion des avatars utilisateurs"
+    },
+    {
+      "name": "Notifications",
+      "description": "Gestion des notifications utilisateur"
+    },
+    {
+      "name": "Roles",
+      "description": "Gestion des rôles des utilisateurs"
+    },
+    {
+      "name": "Users",
+      "description": "Gestion des profils utilisateurs"
+    }
+  ]
+}

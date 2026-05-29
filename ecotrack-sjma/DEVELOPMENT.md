@@ -26,6 +26,8 @@ Ce guide explique comment lancer le projet en développement, avec ou sans Docke
 ### Sans Docker
 - Node.js 20+
 - PostgreSQL 16+ avec PostGIS
+- Redis 6+
+- Kafka 3+ (optionnel — dégradé sans Kafka)
 - npm ou yarn
 
 ---
@@ -45,7 +47,7 @@ cp .env.example .env
 # 3. Installer les dépendances locales (pour les migrations)
 cd database && npm install && cd ..
 
-# 4. Démarrer TOUS les services (PostgreSQL + PgAdmin + API)
+# 4. Démarrer TOUS les services
 docker compose up -d --build
 
 # 5. Attendre que PostgreSQL soit prêt (~10 secondes)
@@ -92,21 +94,21 @@ make db-reset        # Reset complet de la BDD
 Pour avoir le hot-reload (rechargement automatique du code) :
 
 ```bash
-# 1. Démarrer uniquement PostgreSQL + PgAdmin
-docker compose up -d postgres pgadmin
+# 1. Démarrer les dépendances (BDD, Redis, Kafka, monitoring)
+docker compose up -d postgres pgadmin redis kafka zookeeper kafka-ui
 
-# 2. Dans un terminal : Service Users
-cd services/service-users
-npm install
-npm run dev
-
-# 3. Dans un autre terminal : API Gateway
-cd services/api-gateway
-npm install
-npm run dev
+# 2. Lancer chaque service dans un terminal séparé
+cd services/api-gateway && npm run dev          # Terminal 1
+cd services/service-users && npm run dev        # Terminal 2
+cd services/service-containers && npm run dev   # Terminal 3
+cd services/service-routes && npm run dev       # Terminal 4
+cd services/service-iot && npm run dev          # Terminal 5
+cd services/service-gamifications && npm run dev  # Terminal 6
+cd services/service-analytics && npm run dev    # Terminal 7
+cd services/service-notification-gestionnaire-admin && npm run dev  # Terminal 8
 ```
 
-> **Note** : Le hot-reload fonctionne car `npm run dev` utilise `nodemon` qui surveille les fichiers locaux.
+> Le hot-reload fonctionne car `npm run dev` utilise `nodemon` qui surveille les fichiers locaux.
 
 ---
 
@@ -163,8 +165,8 @@ cp .env.example .env
 
 # 3. Installer les dépendances
 cd database && npm install && cd ..
-cd services/service-users && npm install && cd ..
-cd services/api-gateway && npm install && cd ..
+cd services/service-users && npm install && cd ../..
+cd services/api-gateway && npm install && cd ../..
 
 # 4. Exécuter les migrations
 cd database && npm run migrate && cd ..
@@ -172,7 +174,7 @@ cd database && npm run migrate && cd ..
 # 5. Insérer les données de test
 cd database && npm run seed && cd ..
 
-# 6. Démarrer les services (2 terminaux)
+# 6. Démarrer les services (terminaux séparés)
 # Terminal 1:
 cd services/service-users && npm run dev
 
@@ -225,13 +227,31 @@ make db-status        # npm run db:status
 
 ## Accès aux services
 
+### Microservices
+
+| Service | URL | Swagger |
+|---------|-----|---------|
+| API Gateway | http://localhost:3000 | http://localhost:3000/api-docs |
+| service-users | http://localhost:3010 | http://localhost:3010/api-docs |
+| service-containers | http://localhost:3011 | http://localhost:3011/api-docs |
+| service-routes | http://localhost:3012 | http://localhost:3012/api-docs |
+| service-iot | http://localhost:3013 | http://localhost:3013/api-docs |
+| service-gamifications | http://localhost:3014 | http://localhost:3014/api-docs |
+| service-analytics | http://localhost:3015 | http://localhost:3015/api-docs |
+| service-notification-gestionnaire-admin | http://localhost:3016 | http://localhost:3016/api-docs |
+
+### Infrastructure
+
 | Service | URL | Description |
 |---------|-----|-------------|
-| API Gateway | http://localhost:3000 | Point d'entrée API |
-| Service Users | http://localhost:3010 | Service authentification |
-| Swagger UI | http://localhost:3010/api-docs | Documentation API |
 | PgAdmin | http://localhost:5050 | Interface PostgreSQL |
-| PostgreSQL | localhost:5432 | Base de données |
+| PostgreSQL | localhost:5432 | Base de données principale |
+| PostgreSQL (service-notification) | localhost:5435 | Port local Docker |
+| Redis | localhost:6379 | Cache et sessions |
+| Kafka | localhost:9092 | Message broker |
+| Kafka UI | http://localhost:8080 | Interface web Kafka |
+| Prometheus | http://localhost:9090 | Metriques |
+| Grafana | http://localhost:3001 | Dashboards |
 
 ### Credentials PgAdmin
 
@@ -266,88 +286,11 @@ Après avoir exécuté les seeds, ces utilisateurs sont disponibles :
 
 ```bash
 # Login
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:3000/api/V1/users/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@ecotrack.local", "password": "password123"}'
 
 # Réponse : { "token": "eyJ...", "refreshToken": "eyJ...", "user": {...} }
-```
-
----
-
-## FAQ
-
-### Q: Où s'exécutent les commandes `make` et `npm run migrate` ?
-
-**R:** Sur votre machine hôte (votre ordinateur), pas dans un container Docker. Ces commandes se connectent à PostgreSQL qui tourne dans Docker via le port exposé (5432).
-
-### Q: `docker compose up -d --build` exécute-t-il les migrations ?
-
-**R:** Non. Cette commande :
-- ✅ Construit les images Docker (api-gateway, service-users)
-- ✅ Démarre PostgreSQL (image pré-construite)
-- ✅ Démarre PgAdmin
-- ❌ N'exécute PAS les migrations
-
-Vous devez exécuter les migrations séparément :
-```bash
-cd database && npm run migrate
-```
-
-### Q: Comment avoir le hot-reload avec Docker ?
-
-**R:** Le plus simple est de :
-1. Démarrer uniquement PostgreSQL avec Docker : `docker compose up -d postgres pgadmin`
-2. Lancer les services Node.js localement : `npm run dev`
-
-Sinon, vous pouvez utiliser le fichier `docker-compose.override.yml` qui monte les volumes.
-
-### Q: Comment reset complètement la base de données ?
-
-```bash
-# Option 1 : Garder les volumes, juste reset les données
-cd database && npm run db:reset
-
-# Option 2 : Supprimer aussi les volumes Docker (tout effacer)
-docker compose down -v
-docker compose up -d postgres pgadmin
-cd database && npm run migrate && npm run seed
-```
-
-### Q: Comment créer une nouvelle migration ?
-
-```bash
-cd database
-npm run migrate:create add_new_feature
-# Crée : migrations/xxx_add_new_feature.sql
-# Éditez le fichier, puis :
-npm run migrate
-```
-
-### Q: Comment se connecter à PostgreSQL depuis le terminal ?
-
-```bash
-# Depuis votre machine (PostgreSQL dans Docker)
-psql -h localhost -U ecotrack_user -d ecotrack
-
-# Depuis l'intérieur du container PostgreSQL
-docker exec -it ecotrack-postgres psql -U ecotrack_user -d ecotrack
-```
-
-### Q: Les services Docker ne démarrent pas, que faire ?
-
-```bash
-# Vérifier les logs
-docker compose logs
-
-# Vérifier que les ports ne sont pas utilisés
-lsof -i :5432  # PostgreSQL
-lsof -i :3000  # API Gateway
-lsof -i :3010  # Service Users
-
-# Reconstruire les images
-docker compose down
-docker compose up -d --build
 ```
 
 ---
@@ -367,19 +310,19 @@ docker compose down             # Arrêter
 ### Workflow hybride (recommandé pour le dev)
 
 ```bash
-docker compose up -d postgres pgadmin  # Juste la BDD
+docker compose up -d postgres pgadmin redis kafka zookeeper kafka-ui  # Dépendances
 cd database && npm run migrate         # Migrations
 cd database && npm run seed            # Données de test
-cd services/service-users && npm run dev   # Terminal 1
-cd services/api-gateway && npm run dev     # Terminal 2
-# Développer avec hot-reload...
+cd services/service-users && npm run dev             # Terminal 1
+cd services/api-gateway && npm run dev               # Terminal 2
+# Ajouter d'autres services au besoin...
 docker compose down                    # Arrêter la BDD
 ```
 
 ### Workflow sans Docker
 
 ```bash
-# PostgreSQL installé localement
+# PostgreSQL, Redis, Kafka installés localement
 cd database && npm run migrate
 cd database && npm run seed
 cd services/service-users && npm run dev   # Terminal 1

@@ -4,6 +4,8 @@ sequenceDiagram
     participant Api as citoyenApi
     participant G as API Gateway
     participant R as service-routes<br/>(signalement-controller)
+    participant K as Kafka<br/>(ecotrack.signalements.nouveau)
+    participant SN as service-notification<br/>:3016
     participant Gc as gamificationClient<br/>(interne)
     participant Gm as service-gamifications<br/>(actionsController)
     participant PG as PostgreSQL
@@ -27,6 +29,12 @@ sequenceDiagram
 
     R->>PG: INSERT signalement<br/>(description, id_type, id_conteneur,<br/>id_citoyen, url_photo, urgence,<br/>statut='OUVERT')
     PG-->>R: signalement créé (id, date_creation)
+
+    Note over R,K: Side-effect Kafka (fire-and-forget)
+    R->>K: Publish ecotrack.signalements.nouveau<br/>{id_signalement, id_conteneur, id_citoyen, statut}
+    K->>SN: Consume message
+    SN->>PG: zone = conteneur.id_zone<br/>gestionnaire = zone.id_gestionnaire
+    SN->>PG: INSERT notification ALERTE<br/>pour gestionnaire de zone
 
     Note over R,Gm: Side-effect gamification (fire-and-await, never-throws)
 

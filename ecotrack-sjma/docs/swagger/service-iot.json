@@ -1,0 +1,317 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack IoT Service API",
+    "version": "1.0.0",
+    "description": "API pour la réception et le traitement des données capteurs IoT"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3013/api",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/iot/measurements": {
+      "get": {
+        "summary": "Liste des mesures avec filtres",
+        "tags": [
+          "Mesures"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_conteneur",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_capteur",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_debut",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_fin",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des mesures avec pagination"
+          }
+        }
+      }
+    },
+    "/iot/measurements/latest": {
+      "get": {
+        "summary": "Dernières mesures de chaque conteneur",
+        "tags": [
+          "Mesures"
+        ],
+        "responses": {
+          "200": {
+            "description": "Dernières mesures"
+          }
+        }
+      }
+    },
+    "/iot/measurements/container/{id}": {
+      "get": {
+        "summary": "Mesures d'un conteneur",
+        "tags": [
+          "Mesures"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mesures du conteneur"
+          }
+        }
+      }
+    },
+    "/iot/sensors": {
+      "get": {
+        "summary": "Liste des capteurs",
+        "tags": [
+          "Capteurs"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des capteurs"
+          }
+        }
+      }
+    },
+    "/iot/sensors/status": {
+      "get": {
+        "summary": "Statut des capteurs",
+        "tags": [
+          "Capteurs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut des capteurs (total, actifs, inactifs)"
+          }
+        }
+      }
+    },
+    "/iot/sensors/{id}": {
+      "get": {
+        "summary": "Détails d'un capteur",
+        "tags": [
+          "Capteurs"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails du capteur"
+          },
+          "404": {
+            "description": "Capteur non trouvé"
+          }
+        }
+      }
+    },
+    "/iot/alerts": {
+      "get": {
+        "summary": "Liste des alertes",
+        "tags": [
+          "Alertes"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "in": "query",
+            "name": "statut",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "RESOLUE",
+                "TOUTES"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des alertes"
+          }
+        }
+      }
+    },
+    "/iot/alerts/{id}": {
+      "patch": {
+        "summary": "Mettre à jour le statut d'une alerte",
+        "tags": [
+          "Alertes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "RESOLUE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alerte mise à jour"
+          }
+        }
+      }
+    },
+    "/iot/stats": {
+      "get": {
+        "summary": "Statistiques IoT",
+        "tags": [
+          "IoT"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques globales"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Mesures",
+      "description": "Données des capteurs IoT"
+    },
+    {
+      "name": "Capteurs",
+      "description": "Gestion des capteurs"
+    },
+    {
+      "name": "Alertes",
+      "description": "Alertes automatiques"
+    },
+    {
+      "name": "IoT",
+      "description": "Administration du service IoT"
+    }
+  ]
+}

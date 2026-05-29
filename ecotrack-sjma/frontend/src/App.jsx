@@ -102,7 +102,7 @@ function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-      <BrowserRouter basename="/ecotrack-sjma">
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <CookieBanner />
         <Suspense fallback={<div style={{ display: 'none' }} aria-hidden="true" />}>
         <Routes>

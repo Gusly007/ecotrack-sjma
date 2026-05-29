@@ -30,3 +30,7 @@ backups/
 
 # Archives
 *.zip
+
+# Swagger generated artifacts
+**/swagger-spec.json
+**/api-docs.html

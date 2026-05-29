@@ -121,6 +121,7 @@ VITE_API_URL=http://localhost:3010
 - [x] Réinitialisation du mot de passe
 - [x] Conditions Générales d'Utilisation
 - [x] Politique de Confidentialité
+- [x] Notifications gestionnaire/admin (lecture, marquage lu, suppression)
 
 ## Docker
 
@@ -134,10 +135,36 @@ docker-compose up -d
 
 ## API Reference
 
-Le frontend communique avec les services backend via l'API Gateway:
+Le frontend communique avec les services backend via l'API Gateway (port 3000) :
 
-- `service-users` - Authentification et gestion utilisateurs
-- `service-containers` - Gestion des conteneurs
-- `service-gamifications` - Système de gamification
+| Service | Description |
+|---------|-------------|
+| `service-users` | Authentification, profils, gestion utilisateurs |
+| `service-containers` | Conteneurs, zones, statistiques |
+| `service-routes` | Tournées, collectes, signalements |
+| `service-iot` | Données capteurs, alertes |
+| `service-gamifications` | Points, badges, défis, classement |
+| `service-analytics` | Dashboards, rapports, ML prédictions |
+| `service-notification-gestionnaire-admin` | Notifications pour GESTIONNAIRE et ADMIN |
 
-Voir la documentation API Gateway pour plus de détails.
+### Notifications (port 3016)
+
+Le service de notifications est consommé par le frontend pour les rôles **GESTIONNAIRE** et **ADMIN** :
+
+```js
+// Récupérer les notifications non lues
+GET /api/V1/notifications
+
+// Marquer une notification comme lue
+PATCH /api/V1/notifications/:id/read
+
+// Marquer toutes comme lues
+PATCH /api/V1/notifications/read-all
+
+// Supprimer une notification
+DELETE /api/V1/notifications/:id
+```
+
+Les notifications sont créées automatiquement via Kafka (alertes IoT, signalements) ou manuellement par un ADMIN.
+
+Voir la [documentation API statique](../docs/swagger/service-notifications.html) pour la liste complète des endpoints.

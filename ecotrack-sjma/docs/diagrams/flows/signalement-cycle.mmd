@@ -1,7 +1,10 @@
 flowchart LR
     C[Citoyen signale] --> API[API Gateway]
     API --> R[service-routes]
-    R --> G[Gestionnaire assigne]
-    G --> A[Agent traite]
+    R -->|"ecotrack.signalements.nouveau"| K[Kafka]
+    K --> SN[service-notification :3016]
+    SN -->|"ALERTE notification"| G[Gestionnaire de zone]
+    G --> A[Agent assigne]
     A --> T[Traite ou Rejete]
-    T --> N[Notification citoyen]
+    T -->|"statut mis a jour"| R
+    R -->|"notification citoyen"| C

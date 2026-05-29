@@ -1,4 +1,4 @@
-# EcoTrack Analytics Service
+# EcoTrack Analytics Service (port 3015)
 
 Microservice de collecte, traitement et analyse des données de gestion des déchets.
 
@@ -67,39 +67,55 @@ docker-compose up -d
 - Analytics:   localhost:3015
 ```
 
-## API Endpoints
+## API REST
+
+Base URL (via Gateway) : `http://localhost:3000/api/V1/analytics`
+Base URL (direct)      : `http://localhost:3015/api/V1/analytics`
 
 ### Agrégations
+
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/V1/analytics/aggregations` | Toutes agrégations |
-| GET | `/api/V1/analytics/aggregations/zones` | Par zone |
-| GET | `/api/V1/analytics/aggregations/agents` | Performance agents |
+| `GET` | `/aggregations` | Toutes les agrégations avec filtres de période |
+| `GET` | `/aggregations/zones` | Agrégations par zone géographique |
+| `GET` | `/aggregations/agents` | Performance des agents de collecte |
 
 ### Dashboard
+
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/V1/analytics/dashboard` | Dashboard complet |
-| GET | `/api/V1/analytics/realtime` | Stats temps réel |
-| GET | `/api/V1/analytics/heatmap` | Heatmap GeoJSON |
-| GET | `/api/V1/analytics/evolution` | Évolutions |
+| `GET` | `/dashboard` | Dashboard complet (KPIs, alertes, conteneurs critiques) |
+| `GET` | `/realtime` | Statistiques en temps réel |
+| `GET` | `/heatmap` | Heatmap GeoJSON des niveaux de remplissage |
+| `GET` | `/evolution` | Évolutions temporelles |
 
 ### Rapports
+
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/api/V1/analytics/reports/generate` | Générer rapport |
-| GET | `/api/V1/analytics/reports/download/:file` | Télécharger |
-| POST | `/api/V1/analytics/reports/environmental` | Impact environnemental |
-| POST | `/api/V1/analytics/reports/routes-performance` | Performance tournées |
+| `POST` | `/reports/generate` | Générer un rapport PDF ou Excel |
+| `GET` | `/reports/download/:file` | Télécharger un rapport généré |
+| `POST` | `/reports/environmental` | Rapport d'impact environnemental |
+| `POST` | `/reports/routes-performance` | Rapport performance des tournées |
 
 ### ML Predictions
+
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/api/V1/analytics/ml/predict` | Prédire remplissage |
-| GET | `/api/V1/analytics/ml/predict-critical` | Conteneurs critiques |
-| GET | `/api/V1/analytics/ml/anomalies/:id` | Détecter anomalies |
-| GET | `/api/V1/analytics/ml/defective-sensors` | Capteurs défaillants |
-| POST | `/api/V1/analytics/ml/anomalies/:id/alerts` | Créer alertes |
+| `POST` | `/ml/predict` | Prédire le remplissage (régression linéaire) |
+| `GET` | `/ml/predict-critical` | Identifier les conteneurs critiques |
+| `GET` | `/ml/anomalies/:id` | Détecter les anomalies d'un conteneur (Z-score) |
+| `GET` | `/ml/defective-sensors` | Capteurs défaillants détectés |
+| `POST` | `/ml/anomalies/:id/alerts` | Créer des alertes à partir des anomalies |
+
+## Intégration Kafka
+
+Le service-analytics consomme les topics Kafka produits par service-iot.
+
+| Topic | Rôle |
+|-------|------|
+| `ecotrack.sensor.data` | Données brutes capteurs — calculs ML et agrégations statistiques |
+| `ecotrack.alerts` | Alertes IoT — stockage pour rapports et historique |
 
 ## WebSocket
 

@@ -21,7 +21,7 @@ export default defineConfig({
           // React runtime — petit chunk critique, chargé en premier
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // Leaflet — 140 KiB, chargé uniquement sur les vues cartographiques
-          'vendor-leaflet': ['leaflet', 'leaflet-draw'],
+          'vendor-leaflet': ['leaflet'],
           // QR scanner — 200 KiB, chargé uniquement sur la vue scanner
           'vendor-qr': ['html5-qrcode'],
           // Charting et utilitaires

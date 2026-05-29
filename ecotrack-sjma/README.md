@@ -9,13 +9,18 @@ Plateforme microservices complète pour la gestion des services urbains - collec
 │                        API Gateway (3000)                        │
 └─────────────────────────────────────────────────────────────────┘
                                 │
-    ┌─────────────┬──────────────┼──────────────┬─────────────┐
-    ▼             ▼              ▼              ▼             ▼
- Users(3010)  Containers(3011) Routes(3012)    IoT(3013)  Analytics(3015)
-    │             │              │              │             │
-    └─────────────┴──────────────┴──────────────┴─────────────┘
-                                │
-                    Gamifications (3014)
+    ┌──────────┬──────────┬─────┴──────┬──────────┬──────────┐
+    ▼          ▼          ▼            ▼          ▼          ▼
+Users(3010) Containers  Routes(3012) IoT(3013) Analytics Notifications
+            (3011)                             (3015)     (3016)
+               │           │            │
+               └───────────┴────────────┘
+                            │                  ▲
+                     Kafka topics ─────────────┘
+                   ecotrack.alerts
+              ecotrack.signalements.nouveau
+                            │
+                   Gamifications (3014)
 ```
 
 ## Services
@@ -26,14 +31,16 @@ Plateforme microservices complète pour la gestion des services urbains - collec
 | service-users | 3010 | Auth, RBAC, sessions, gestion utilisateurs |
 | service-containers | 3011 | CRUD conteneurs, zones, stats |
 | service-routes | 3012 | Optimisation tournées, véhicules |
-| service-iot | 3013 | CapteursMQTT, alertes, Kafka producer |
-| service-analytics | 3015 | Agrégations, ML, dashboards |
+| service-iot | 3013 | Capteurs MQTT, alertes, Kafka producer |
 | service-gamifications | 3014 | Défis, badges, classements |
+| service-analytics | 3015 | Agrégations, ML, dashboards |
+| service-notification-gestionnaire-admin | 3016 | Notifications gestionnaires/admins, consumer Kafka |
 
 ## Fonctionnalités
 
 - **Authentication & RBAC** - JWT, permissions par rôle (Admin, Gestionnaire, Agent, Citoyen)
 - **IoT & temps réel** - MQTT, Kafka, seuils d'alerte
+- **Notifications automatiques** - Alertes IoT et signalements routés via Kafka vers gestionnaires/admins
 - **Cache Redis** - Réduction latence sur endpoints fréquents
 - **Logging centralisé** - Pino, agrégation logs via API Gateway
 - **Monitoring** - Prometheus + Grafana dashboards
@@ -73,6 +80,7 @@ cd services/service-gamifications && npm test
 cd services/service-iot && npm test
 cd services/service-analytics && npm test
 cd services/service-routes && npm test
+cd services/service-notification-gestionnaire-admin && npm test
 
 # Couverture
 npm run test:coverage
@@ -83,6 +91,8 @@ npm run test:coverage
 - **Grafana**: http://localhost:3001 (admin/admin)
 - **Prometheus**: http://localhost:9090
 - **API Gateway docs**: http://localhost:3000/api-docs
+- **Notifications docs**: http://localhost:3016/api-docs
+- **Documentation statique**: `npm run docs:swagger` → `docs/swagger/index.html`
 
 ## Documentation
 

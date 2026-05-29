@@ -1,10 +1,47 @@
 flowchart TD
-    E[Evenement] --> K[Kafka]
-    K --> C[notifications]
-    C --> P[Push Notification]
-    C --> E2[Email]
-    C --> S[SMS]
-    
-    U[Utilisateur] --> P
-    U --> E2
-    U --> S
+    subgraph Producers["Producteurs"]
+        IoT[service-iot :3013<br/>capteur depasse seuil]
+        Routes[service-routes :3012<br/>nouveau signalement]
+        Admin[ADMIN<br/>POST /api/V1/notifications]
+    end
+
+    subgraph Kafka["Kafka"]
+        T1[ecotrack.alerts]
+        T2[ecotrack.signalements.nouveau]
+    end
+
+    subgraph NotifService["service-notification :3016"]
+        Consumer[Kafka Consumer<br/>groupId: notification-gestionnaire-group]
+        ZoneRepo[zone.repository<br/>id_conteneur → zone → responsables]
+        NotifRepo[notification.repository<br/>INSERT notifications]
+        HTTP[API REST<br/>GET / PATCH / DELETE]
+    end
+
+    subgraph Destinataires["Destinataires"]
+        GEST[GESTIONNAIRE de zone]
+        ADMIN2[ADMIN]
+    end
+
+    IoT -->|"alert: type, conteneur, valeur"| T1
+    Routes -->|"signalement: id, conteneur, citoyen"| T2
+
+    T1 --> Consumer
+    T2 --> Consumer
+
+    Consumer --> ZoneRepo
+    ZoneRepo -->|"id_gestionnaire + id_admin"| NotifRepo
+
+    Admin -->|"HTTP POST direct"| HTTP
+    HTTP --> NotifRepo
+
+    NotifRepo -->|"ALERTE / SYSTEME"| GEST
+    NotifRepo -->|"ALERTE / SYSTEME"| ADMIN2
+
+    GEST -->|"GET /api/V1/notifications/list"| HTTP
+    ADMIN2 -->|"GET /api/V1/admin/notifications"| HTTP
+
+    style IoT color:#e67e22
+    style Routes color:#3498db
+    style Consumer color:#9b59b6
+    style GEST color:#2ecc71
+    style ADMIN2 color:#2ecc71

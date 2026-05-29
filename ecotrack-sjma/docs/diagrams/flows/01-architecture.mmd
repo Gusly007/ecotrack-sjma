@@ -23,6 +23,7 @@ flowchart TB
         S4[service-iot<br/>:3013]
         S5[service-gamifications<br/>:3014]
         S6[service-analytics<br/>:3015]
+        S7[service-notification<br/>:3016]
     end
 
     subgraph Data["Data Layer"]
@@ -40,13 +41,14 @@ flowchart TB
     DNS --> LoadBalancer
     LoadBalancer --> Gateway
     Gateway --> RateLimiter --> JWTMiddleware --> Proxy
-    
+
     Proxy --> S1
     Proxy --> S2
     Proxy --> S3
     Proxy --> S4
     Proxy --> S5
     Proxy --> S6
+    Proxy --> S7
 
     S1 --> Redis
     S2 --> Redis
@@ -54,6 +56,7 @@ flowchart TB
     S4 --> Redis
     S5 --> Redis
     S6 --> Redis
+    S7 --> Redis
 
     S1 --> PG
     S2 --> PG
@@ -61,9 +64,12 @@ flowchart TB
     S4 --> PG
     S5 --> PG
     S6 --> PG
+    S7 --> PG
 
-    S4 --> Kafka
-    Kafka --> S6
+    S4 -->|"ecotrack.alerts<br/>ecotrack.sensor.data"| Kafka
+    S3 -->|"ecotrack.signalements.nouveau"| Kafka
+    Kafka -->|"ecotrack.sensor.data<br/>ecotrack.alerts"| S6
+    Kafka -->|"ecotrack.alerts<br/>ecotrack.signalements.nouveau"| S7
     S4 --> MQTT
     %% Ports
     %% api-gateway: 3000 (Entrypoint)
@@ -73,6 +79,7 @@ flowchart TB
     %% service-iot: 3013 (IoT)
     %% service-gamifications: 3014 (Gamification)
     %% service-analytics: 3015 (Analytics)
+    %% service-notification: 3016 (Notifications)
     %% PostgreSQL: 5432 (DB)
     %% Redis: 6379 (Cache)
     %% Kafka: 9092 (Events)

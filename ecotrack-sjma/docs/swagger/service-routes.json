@@ -1,0 +1,1002 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack Routes API",
+    "version": "1.0.0",
+    "description": "API de gestion des tournées de collecte"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3012/api/V1/routes",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/routes/tournees": {
+      "get": {
+        "summary": "Liste toutes les tournées",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "statut",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLANIFIEE",
+                "EN_COURS",
+                "TERMINEE",
+                "ANNULEE"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_zone",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id_agent",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_debut",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_fin",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des tournées"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crée une nouvelle tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "date_tournee",
+                  "duree_prevue_min",
+                  "id_zone",
+                  "id_agent"
+                ],
+                "properties": {
+                  "date_tournee": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "PLANIFIEE",
+                      "EN_COURS",
+                      "TERMINEE",
+                      "ANNULEE"
+                    ]
+                  },
+                  "distance_prevue_km": {
+                    "type": "number"
+                  },
+                  "duree_prevue_min": {
+                    "type": "integer"
+                  },
+                  "id_vehicule": {
+                    "type": "integer"
+                  },
+                  "id_zone": {
+                    "type": "integer"
+                  },
+                  "id_agent": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tournée créée"
+          }
+        }
+      }
+    },
+    "/routes/tournees/active": {
+      "get": {
+        "summary": "Liste des tournées actives",
+        "tags": [
+          "Tournées"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des tournées en cours"
+          }
+        }
+      }
+    },
+    "/routes/my-tournee": {
+      "get": {
+        "summary": "Tournée du jour de l'agent connecté",
+        "tags": [
+          "Agent"
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournée avec ses étapes"
+          },
+          "404": {
+            "description": "Aucune tournée assignée aujourd'hui"
+          }
+        }
+      }
+    },
+    "/routes/etapes/{etapeId}": {
+      "get": {
+        "summary": "Détail d'une étape par son ID",
+        "tags": [
+          "Agent"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "etapeId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Étape avec infos conteneur, coordonnées et remplissage"
+          },
+          "404": {
+            "description": "Étape introuvable"
+          }
+        }
+      }
+    },
+    "/routes/optimize": {
+      "post": {
+        "summary": "Génère une tournée optimisée",
+        "tags": [
+          "Optimisation"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id_zone",
+                  "date_tournee",
+                  "id_agent"
+                ],
+                "properties": {
+                  "id_zone": {
+                    "type": "integer"
+                  },
+                  "date_tournee": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "seuil_remplissage": {
+                    "type": "number",
+                    "default": 70
+                  },
+                  "id_agent": {
+                    "type": "integer"
+                  },
+                  "id_vehicule": {
+                    "type": "integer"
+                  },
+                  "algorithme": {
+                    "type": "string",
+                    "enum": [
+                      "nearest_neighbor",
+                      "2opt"
+                    ],
+                    "default": "2opt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tournée optimisée créée"
+          }
+        }
+      }
+    },
+    "/routes/optimize/preview": {
+      "post": {
+        "summary": "Prévisualise une tournée optimisée (sans persistance)",
+        "description": "Calcule l'itinéraire optimisé, la distance, la durée et le gain estimé\npour une zone donnée sans créer la tournée en base. Utilisé par le\nformulaire gestionnaire pour afficher l'aperçu en temps réel.\n",
+        "tags": [
+          "Optimisation"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id_zone",
+                  "date_tournee",
+                  "id_agent"
+                ],
+                "properties": {
+                  "id_zone": {
+                    "type": "integer"
+                  },
+                  "date_tournee": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "seuil_remplissage": {
+                    "type": "number",
+                    "default": 70
+                  },
+                  "id_agent": {
+                    "type": "integer"
+                  },
+                  "id_vehicule": {
+                    "type": "integer"
+                  },
+                  "algorithme": {
+                    "type": "string",
+                    "enum": [
+                      "nearest_neighbor",
+                      "2opt"
+                    ],
+                    "default": "2opt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prévisualisation générée (sans persistance)"
+          },
+          "400": {
+            "description": "Paramètres invalides ou aucun conteneur éligible"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}": {
+      "get": {
+        "summary": "Récupère une tournée par ID",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournée trouvée"
+          },
+          "404": {
+            "description": "Tournée introuvable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Met à jour une tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date_tournee": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "distance_prevue_km": {
+                    "type": "number"
+                  },
+                  "duree_prevue_min": {
+                    "type": "integer"
+                  },
+                  "duree_reelle_min": {
+                    "type": "integer"
+                  },
+                  "distance_reelle_km": {
+                    "type": "number"
+                  },
+                  "id_vehicule": {
+                    "type": "integer"
+                  },
+                  "id_zone": {
+                    "type": "integer"
+                  },
+                  "id_agent": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tournée mise à jour"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime une tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournée supprimée"
+          },
+          "400": {
+            "description": "Impossible de supprimer une tournée EN_COURS"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/statut": {
+      "patch": {
+        "summary": "Change le statut d'une tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "statut"
+                ],
+                "properties": {
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "PLANIFIEE",
+                      "EN_COURS",
+                      "TERMINEE",
+                      "ANNULEE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Statut mis à jour"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/etapes": {
+      "get": {
+        "summary": "Récupère les étapes d'une tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des étapes avec coordonnées conteneurs"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/progress": {
+      "get": {
+        "summary": "Progression d'une tournée",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails de progression"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/pdf": {
+      "get": {
+        "summary": "Génère une feuille de route PDF",
+        "tags": [
+          "Tournées"
+        ],
+        "produces": [
+          "application/pdf"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF de la feuille de route",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/map": {
+      "get": {
+        "summary": "Données cartographiques GeoJSON",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données GeoJSON avec les points des conteneurs"
+          }
+        }
+      }
+    },
+    "/routes/types-conteneurs": {
+      "get": {
+        "summary": "Liste les types de conteneurs disponibles",
+        "tags": [
+          "Tournées"
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des types (id, nom, description)"
+          }
+        }
+      }
+    },
+    "/routes/tournees/active/map": {
+      "get": {
+        "summary": "Données cartographiques de toutes les tournées actives",
+        "tags": [
+          "Tournées"
+        ],
+        "responses": {
+          "200": {
+            "description": "Points des conteneurs des tournées EN_COURS pour la carte"
+          }
+        }
+      }
+    },
+    "/routes/prochaines-collectes": {
+      "get": {
+        "summary": "Prochaines collectes (feed public app citoyen)",
+        "tags": [
+          "Tournées"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Nombre maximum de tournées à retourner"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des prochaines tournées PLANIFIEE ou EN_COURS (projection minimale)"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/collecte": {
+      "post": {
+        "summary": "Enregistre une collecte (conteneur vidé)",
+        "tags": [
+          "Agent",
+          "Collectes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de la tournée"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id_conteneur",
+                  "quantite_kg"
+                ],
+                "properties": {
+                  "id_conteneur": {
+                    "type": "integer",
+                    "description": "Conteneur collecté"
+                  },
+                  "quantite_kg": {
+                    "type": "number",
+                    "description": "Quantité collectée en kg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Collecte enregistrée"
+          },
+          "400": {
+            "description": "Tournée non EN_COURS ou conteneur absent de la tournée"
+          },
+          "404": {
+            "description": "Tournée introuvable"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/anomalie": {
+      "post": {
+        "summary": "Signale une anomalie sur un conteneur pendant la tournée",
+        "tags": [
+          "Agent",
+          "Collectes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de la tournée"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id_conteneur",
+                  "type_anomalie",
+                  "description"
+                ],
+                "properties": {
+                  "id_conteneur": {
+                    "type": "integer"
+                  },
+                  "type_anomalie": {
+                    "type": "string",
+                    "enum": [
+                      "CONTENEUR_INACCESSIBLE",
+                      "CONTENEUR_ENDOMMAGE",
+                      "CAPTEUR_DEFAILLANT"
+                    ]
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Anomalie signalée"
+          },
+          "400": {
+            "description": "Données invalides"
+          },
+          "404": {
+            "description": "Tournée introuvable"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/collectes": {
+      "get": {
+        "summary": "Récupère les collectes d'une tournée",
+        "tags": [
+          "Collectes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des collectes"
+          },
+          "404": {
+            "description": "Tournée introuvable"
+          }
+        }
+      }
+    },
+    "/routes/tournees/{id}/anomalies": {
+      "get": {
+        "summary": "Récupère les anomalies signalées pour une tournée",
+        "tags": [
+          "Collectes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des anomalies"
+          }
+        }
+      }
+    },
+    "/routes/vehicules": {
+      "get": {
+        "summary": "Liste tous les véhicules",
+        "tags": [
+          "Véhicules"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des véhicules avec nombre de tournées actives"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crée un nouveau véhicule",
+        "tags": [
+          "Véhicules"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "numero_immatriculation",
+                  "modele",
+                  "capacite_kg"
+                ],
+                "properties": {
+                  "numero_immatriculation": {
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "AB-123-CD"
+                  },
+                  "modele": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "Renault Master"
+                  },
+                  "capacite_kg": {
+                    "type": "integer",
+                    "example": 3500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Véhicule créé"
+          },
+          "409": {
+            "description": "Immatriculation déjà existante"
+          }
+        }
+      }
+    },
+    "/routes/vehicules/{id}": {
+      "get": {
+        "summary": "Récupère un véhicule par ID",
+        "tags": [
+          "Véhicules"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Véhicule trouvé"
+          },
+          "404": {
+            "description": "Véhicule introuvable"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Met à jour un véhicule",
+        "tags": [
+          "Véhicules"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "numero_immatriculation": {
+                    "type": "string"
+                  },
+                  "modele": {
+                    "type": "string"
+                  },
+                  "capacite_kg": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Véhicule mis à jour"
+          },
+          "404": {
+            "description": "Véhicule introuvable"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprime un véhicule",
+        "tags": [
+          "Véhicules"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Véhicule supprimé"
+          },
+          "404": {
+            "description": "Véhicule introuvable"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Tournées",
+      "description": "Gestion des tournées de collecte"
+    },
+    {
+      "name": "Agent",
+      "description": "Actions de l'agent sur le terrain"
+    },
+    {
+      "name": "Optimisation",
+      "description": "Optimisation des routes de collecte"
+    },
+    {
+      "name": "Collectes",
+      "description": "Enregistrement des collectes et anomalies"
+    },
+    {
+      "name": "Véhicules",
+      "description": "Gestion de la flotte de véhicules"
+    }
+  ]
+}

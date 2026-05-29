@@ -1,0 +1,1080 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EcoTrack Analytics API",
+    "version": "1.0.0",
+    "description": "Service Analytics — Données agrégées et statistiques"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3015",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Prediction": {
+        "type": "object",
+        "properties": {
+          "containerId": {
+            "type": "integer"
+          },
+          "currentFillLevel": {
+            "type": "number"
+          },
+          "predictedFillLevel": {
+            "type": "number"
+          },
+          "daysAhead": {
+            "type": "integer"
+          },
+          "confidence": {
+            "type": "integer"
+          },
+          "weatherImpact": {
+            "type": "number"
+          }
+        }
+      },
+      "Anomaly": {
+        "type": "object",
+        "properties": {
+          "containerId": {
+            "type": "integer"
+          },
+          "anomaliesCount": {
+            "type": "integer"
+          },
+          "anomaliesRate": {
+            "type": "string"
+          },
+          "statistics": {
+            "type": "object"
+          }
+        }
+      },
+      "DefectiveSensor": {
+        "type": "object",
+        "properties": {
+          "containerId": {
+            "type": "integer"
+          },
+          "containerUid": {
+            "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "Prediction": {
+      "type": "object",
+      "properties": {
+        "containerId": {
+          "type": "integer"
+        },
+        "currentFillLevel": {
+          "type": "number"
+        },
+        "predictedFillLevel": {
+          "type": "number"
+        },
+        "daysAhead": {
+          "type": "integer"
+        },
+        "confidence": {
+          "type": "integer"
+        },
+        "weatherImpact": {
+          "type": "number"
+        },
+        "weatherAdjusted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Anomaly": {
+      "type": "object",
+      "properties": {
+        "containerId": {
+          "type": "integer"
+        },
+        "anomaliesCount": {
+          "type": "integer"
+        },
+        "anomaliesRate": {
+          "type": "string"
+        },
+        "statistics": {
+          "type": "object"
+        }
+      }
+    },
+    "DefectiveSensor": {
+      "type": "object",
+      "properties": {
+        "containerId": {
+          "type": "integer"
+        },
+        "containerUid": {
+          "type": "string"
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/V1/analytics/aggregations": {
+      "get": {
+        "summary": "Récupérer toutes les agrégations",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "default": "month"
+            },
+            "description": "Période d'agrégation"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données agrégées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/aggregations/refresh": {
+      "post": {
+        "summary": "Rafraîchir les vues matérialisées",
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "Vues rafraîchies"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/aggregations/zones": {
+      "get": {
+        "summary": "Statistiques par zone",
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques par zone"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/aggregations/agents": {
+      "get": {
+        "summary": "Performances des agents",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Date de début (YYYY-MM-DD)"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Date de fin (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Performances des agents"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/weather-impact": {
+      "get": {
+        "summary": "Impact météo actuel sur la collecte",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/kpis": {
+      "get": {
+        "summary": "KPIs globaux du système",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/aggregation/fill-trends": {
+      "get": {
+        "summary": "Tendances de remplissage sur les derniers jours",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/aggregation/zone-performance": {
+      "get": {
+        "summary": "Performance par zone",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/critical-containers": {
+      "get": {
+        "summary": "Conteneurs les plus critiques",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/type-distribution": {
+      "get": {
+        "summary": "Distribution par type de conteneur",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/collecte-stats": {
+      "get": {
+        "summary": "Statistiques de collecte",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/V1/analytics/ml/predictions": {
+      "get": {
+        "summary": "Prédictions ML pour conteneurs critiques",
+        "tags": [
+          "ML"
+        ]
+      }
+    },
+    "/api/V1/analytics/ml/defective-sensors": {
+      "get": {
+        "summary": "Détecter les capteurs défaillants",
+        "tags": [
+          "ML Anomalies"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capteurs défaillants détectés",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "sensors": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DefectiveSensor"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/performance/environmental": {
+      "get": {
+        "summary": "Métriques environnementales calculées",
+        "tags": [
+          "Performance"
+        ]
+      }
+    },
+    "/api/V1/analytics/dashboard": {
+      "get": {
+        "summary": "Dashboard complet avec KPIs, évolutions et insights",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "default": "week"
+            },
+            "description": "Période pour les données (day, week, month)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données du dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "realTime": {
+                          "type": "object"
+                        },
+                        "evolution": {
+                          "type": "object"
+                        },
+                        "heatmap": {
+                          "type": "object"
+                        },
+                        "insights": {
+                          "type": "array"
+                        },
+                        "chartData": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/realtime": {
+      "get": {
+        "summary": "Statistiques temps réel avec KPIs et conteneurs critiques",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données temps réel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "kpis": {
+                          "type": "object"
+                        },
+                        "criticalContainers": {
+                          "type": "array"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/heatmap": {
+      "get": {
+        "summary": "Heatmap des zones au format GeoJSON",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données heatmap GeoJSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "features": {
+                          "type": "array"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/evolution": {
+      "get": {
+        "summary": "Évolution temporelle du niveau de remplissage",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "schema": {
+              "type": "integer",
+              "default": 7
+            },
+            "description": "Nombre de jours d'historique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données d'évolution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "evolution": {
+                          "type": "array"
+                        },
+                        "chartData": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/ml/predict": {
+      "post": {
+        "summary": "Prédire le niveau de remplissage d'un conteneur",
+        "tags": [
+          "ML Predictions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "containerId"
+                ],
+                "properties": {
+                  "containerId": {
+                    "type": "integer",
+                    "description": "ID du conteneur"
+                  },
+                  "daysAhead": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Nombre de jours pour la prédiction"
+                  },
+                  "includeWeather": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Intégrer les données météo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prédiction réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Prediction"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erreur de validation"
+          },
+          "404": {
+            "description": "Données insuffisantes"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/ml/predict-critical": {
+      "get": {
+        "summary": "Prédire les conteneurs qui seront critiques",
+        "tags": [
+          "ML Predictions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "daysAhead",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "threshold",
+            "schema": {
+              "type": "integer",
+              "default": 90
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des conteneurs critiques prédits"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/ml/anomalies/{containerId}": {
+      "get": {
+        "summary": "Détecter les anomalies pour un conteneur",
+        "tags": [
+          "ML Anomalies"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "containerId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "threshold",
+            "schema": {
+              "type": "number",
+              "default": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anomalies détectées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Anomaly"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/ml/anomalies/global": {
+      "get": {
+        "summary": "Détection globale d'anomalies pour tous les conteneurs (auto-scan)",
+        "tags": [
+          "ML Anomalies"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "threshold",
+            "schema": {
+              "type": "number",
+              "default": 2
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résumé des anomalies globales"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/ml/anomalies/{containerId}/alerts": {
+      "post": {
+        "summary": "Détecter les anomalies et créer des alertes automatiques",
+        "tags": [
+          "ML Anomalies"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "containerId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "threshold",
+            "schema": {
+              "type": "number",
+              "default": 2
+            }
+          },
+          {
+            "in": "query",
+            "name": "autoCreate",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anomalies détectées et alertes créées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "anomaliesCount": {
+                          "type": "integer"
+                        },
+                        "alertsCreated": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/reports/generate": {
+      "post": {
+        "summary": "Générer un rapport PDF ou Excel",
+        "tags": [
+          "Reports"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "excel"
+                    ],
+                    "default": "pdf"
+                  },
+                  "reportType": {
+                    "type": "string",
+                    "enum": [
+                      "daily",
+                      "weekly",
+                      "monthly"
+                    ],
+                    "default": "weekly"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Email optionnel pour envoyer le rapport"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rapport généré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "format": {
+                          "type": "string"
+                        },
+                        "reportType": {
+                          "type": "string"
+                        },
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "number"
+                        },
+                        "emailSent": {
+                          "type": "boolean"
+                        },
+                        "generatedAt": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/reports/download/{filename}": {
+      "get": {
+        "summary": "Télécharger un rapport",
+        "tags": [
+          "Reports"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nom du fichier à télécharger"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fichier PDF ou Excel",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non autorisé"
+          },
+          "404": {
+            "description": "Rapport non trouvé"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/reports/environmental": {
+      "post": {
+        "summary": "Générer un rapport d'impact environnemental",
+        "tags": [
+          "Reports"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "excel"
+                    ],
+                    "default": "pdf"
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "day",
+                      "week",
+                      "month"
+                    ],
+                    "default": "week"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rapport généré"
+          }
+        }
+      }
+    },
+    "/api/V1/analytics/reports/routes-performance": {
+      "post": {
+        "summary": "Générer un rapport de performance des tournées",
+        "tags": [
+          "Reports"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "excel"
+                    ],
+                    "default": "pdf"
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "day",
+                      "week",
+                      "month"
+                    ],
+                    "default": "week"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rapport généré"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

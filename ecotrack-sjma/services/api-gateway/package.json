@@ -10,7 +10,9 @@
         "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/integration --runInBand --passWithNoTests --forceExit",
         "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/e2e --runInBand --passWithNoTests --forceExit",
         "dev": "node src/index.js",
-        "start": "node src/index.js"
+        "start": "node src/index.js",
+        "docs:export": "node export-swagger.mjs",
+        "docs:build": "node export-swagger.mjs && npx @redocly/cli build-docs swagger-spec.json -o api-docs.html --title \"EcoTrack API Unifiee\" --disableGoogleFont"
     },
     "keywords": [
         "api-gateway",

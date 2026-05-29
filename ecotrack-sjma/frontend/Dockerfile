@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+RUN VITE_BASE=/ npm run build
 
 # Stage 2: Production
 FROM nginx:alpine
