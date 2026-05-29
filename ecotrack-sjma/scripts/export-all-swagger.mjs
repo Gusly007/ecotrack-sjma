@@ -149,7 +149,8 @@ const services = [
 function generateCjsSpec(svc) {
   const opts = JSON.stringify(svc.swaggerOptions);
   const code = `const s=require('swagger-jsdoc')(${opts});process.stdout.write(JSON.stringify(s));`;
-  const result = execSync(`node -e "${code.replace(/"/g, '\\"')}"`, { cwd: svc.dir });
+  const escaped = code.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const result = execSync(`node -e "${escaped}"`, { cwd: svc.dir });
   return JSON.parse(result.toString());
 }
 
@@ -160,7 +161,8 @@ function generateEsmSpec(svc) {
   } else {
     code = `import('${svc.specFile}').then(m=>process.stdout.write(JSON.stringify(m.${svc.exportName})));`;
   }
-  const result = execSync(`node --input-type=module -e "${code}"`, { cwd: svc.dir });
+  const escaped = code.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const result = execSync(`node --input-type=module -e "${escaped}"`, { cwd: svc.dir });
   return JSON.parse(result.toString());
 }
 
