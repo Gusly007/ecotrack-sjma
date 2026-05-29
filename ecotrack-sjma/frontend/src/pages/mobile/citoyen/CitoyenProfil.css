@@ -1,5 +1,5 @@
-.profil-page { background: #f8f9fa; min-height: 100dvh; }
-.profil-body { padding: 16px 16px 100px; display: flex; flex-direction: column; gap: 16px; }
+.profil-page { background: #f8f9fa; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.profil-body { padding: 16px 16px 100px; display: flex; flex-direction: column; gap: 16px; flex: 1; min-height: 0; overflow-y: auto; }
 
 .profil-hero {
   background: #fff; border-radius: 16px; padding: 24px 16px;
@@ -23,7 +23,7 @@
 .profil-stat-divider { width: 1px; height: 30px; background: #eee; }
 
 .profil-menu {
-  background: #fff; border-radius: 16px; overflow: hidden;
+  background: #fff; border-radius: 16px; overflow: hidden; flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 .profil-menu-item {
@@ -47,7 +47,7 @@
 
 /* ---- RGPD Sections ---- */
 .profil-section {
-  background: #fff; border-radius: 16px; overflow: hidden;
+  background: #fff; border-radius: 16px; overflow: hidden; flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 .profil-section-header {

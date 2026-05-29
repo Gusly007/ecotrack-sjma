@@ -1,21 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw';
-import 'leaflet-draw/dist/leaflet.draw.css';
 import './ZoneMap.css';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+// Expose L globally before leaflet-draw dynamic import
+if (typeof window !== 'undefined') window.L = L;
 
 export default function ZoneMap({ 
   zones = [], 
@@ -33,15 +25,32 @@ export default function ZoneMap({
   const zonesLayerRef = useRef(null);
   const onZoneCreatedRef = useRef(onZoneCreated);
   const [mapReady, setMapReady] = useState(false);
+  const [drawReady, setDrawReady] = useState(false);
 
   // Garder la ref à jour sans déclencher de re-render ni de reset du dessin
   useEffect(() => {
     onZoneCreatedRef.current = onZoneCreated;
   });
 
+  // Charger leaflet-draw dynamiquement pour éviter le ReferenceError L is not defined
+  useEffect(() => {
+    Promise.all([
+      import('leaflet-draw'),
+      import('leaflet-draw/dist/leaflet.draw.css'),
+    ]).then(() => setDrawReady(true)).catch(() => setDrawReady(true));
+  }, []);
+
   // Initialiser la carte
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (!mapRef.current || mapInstanceRef.current || !drawReady) return;
+
+    const DefaultIcon = L.icon({
+      iconUrl: icon,
+      shadowUrl: iconShadow,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+    });
+    L.Marker.prototype.options.icon = DefaultIcon;
 
     const map = L.map(mapRef.current, {
       center: [48.8566, 2.3522],
@@ -69,11 +78,11 @@ export default function ZoneMap({
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [drawReady]);
 
   // Gérer le mode dessin
   useEffect(() => {
-    if (!mapReady || !mapInstanceRef.current || !drawnLayerRef.current) return;
+    if (!mapReady || !drawReady || !mapInstanceRef.current || !drawnLayerRef.current) return;
 
     const map = mapInstanceRef.current;
     
@@ -201,7 +210,7 @@ export default function ZoneMap({
         map.off(L.Draw.Event.CREATED, onDrawCreated);
       };
     }
-  }, [isDrawing, mapReady, readOnly, drawingColor]);
+  }, [isDrawing, mapReady, drawReady, readOnly, drawingColor]);
 
   // Afficher les zones sur la carte
   useEffect(() => {
