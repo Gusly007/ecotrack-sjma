@@ -297,30 +297,29 @@ Chaque Pull Request nécessite : CI/CD vert + 2 approbations + review Swagger si
 
 ```mermaid
 gantt
-    dateFormat  YYYY-MM-DD
-    title       EcoTrack — Planning 8 Sprints / 16 Semaines
-    excludes    weekends
+    title EcoTrack Planning 8 Sprints
+    dateFormat YYYY-MM-DD
 
-    section Phase 1 — Socle et IoT
-    Sprint 1 : Socle technique, Auth JWT, CI/CD     :s1, 2025-01-06, 14d
-    Sprint 2 : IoT MQTT, Alertes Kafka, Conteneurs  :s2, after s1, 14d
+    section Phase 1
+    Sprint 1 Socle Auth JWT     :s1, 2025-01-06, 14d
+    Sprint 2 IoT MQTT Alertes   :s2, after s1, 14d
 
-    section Phase 2 — Optimisation et Visualisation
-    Sprint 3 : Tournées, NN+2-opt, service-routes   :s3, after s2, 14d
-    Sprint 4 : Carte Leaflet, Socket.IO, Dashboard  :s4, after s3, 14d
+    section Phase 2
+    Sprint 3 Tournees Algo      :s3, after s2, 14d
+    Sprint 4 Carte Dashboard    :s4, after s3, 14d
 
-    section Phase 3 — Citoyens et Analytics
-    Sprint 5 : Gamification, App mobile citoyen     :s5, after s4, 14d
-    Sprint 6 : Analytics ML, Rapports PDF/Excel     :s6, after s5, 14d
+    section Phase 3
+    Sprint 5 Gamification       :s5, after s4, 14d
+    Sprint 6 Analytics ML       :s6, after s5, 14d
 
-    section Phase 4 — Securite et Production
-    Sprint 7 : Notifications Kafka, MFA, RGPD       :s7, after s6, 14d
-    Sprint 8 : Tests E2E, Performance, Deploiement  :s8, after s7, 14d
+    section Phase 4
+    Sprint 7 Securite RGPD      :s7, after s6, 14d
+    Sprint 8 Tests Deploiement  :s8, after s7, 14d
 
     section Jalons
-    MVP fonctionnel (fin Sprint 4)                  :milestone, after s4, 0d
-    Recette staging (fin Sprint 7)                  :milestone, after s7, 0d
-    Livraison production                            :milestone, after s8, 0d
+    MVP Sprint 4                :milestone, mi1, 2025-03-03, 0d
+    Recette Sprint 7            :milestone, mi2, 2025-04-14, 0d
+    Production Sprint 8         :milestone, mi3, 2025-04-28, 0d
 ```
 
 ### Représentation textuelle (référence rapide)
