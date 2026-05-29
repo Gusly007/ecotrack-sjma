@@ -212,3 +212,53 @@ La faisabilité opérationnelle d'EcoTrack est établie sur les bases suivantes 
 4. **Risques maîtrisés** : Les 9 risques identifiés ont tous une mitigation définie. Aucun risque ne présente un profil Probabilité Haute × Impact Critique simultanement.
 
 Le principal facteur de succès opérationnel reste l'implication active du Product Owner issu de la collectivité pour valider les user stories et assurer l'adoption des utilisateurs finaux (agents, gestionnaires, citoyens).
+
+---
+
+## V. Conclusion et Recommandations Stratégiques
+
+### A. Synthèse de la Faisabilité
+
+**DÉCISION GLOBALE : GO CONDITIONNEL**
+
+| Axe | Verdict | Synthèse |
+|-----|:-------:|---------|
+| Faisabilité Technique | FAVORABLE | Stack Node.js 20 + PostgreSQL/PostGIS + Kafka + React 18 éprouvée en production pour des architectures similaires. Algorithme NN+2-opt mesuré à <500 ms (objectif 30 s). Risques techniques identifiés et tous couverts par une mitigation concrète. Principal point de vigilance : réplication PostgreSQL obligatoire avant la mise en production. |
+| Faisabilité Économique | MODEREE | TCO 3 ans à 232 427 € soit 2,91 €/habitant — 38 % à 175 % moins cher que les solutions SaaS équivalentes (Cyclope, ReachMe). Gains annuels en régime de croisière estimés à 113 675 €. Le seuil de rentabilité n'est atteint qu'en année 4, ce qui est représentatif des projets de digitalisation dans le secteur public. Le ROI à 5 ans est positif à +38 %. |
+| Faisabilité Opérationnelle | FAVORABLE | Équipe de 7 personnes couvrant tous les profils requis. Scrum en 8 sprints structuré avec Definition of Done stricte et métriques CI/CD automatisées. Les 9 risques identifiés ont tous une mitigation définie ; aucun ne présente simultanément une probabilité haute et un impact critique. |
+
+**Conclusion Globale** :
+
+EcoTrack est un projet techniquement réalisable, économiquement justifiable sur 5 ans et organisationnellement structuré. La décision est **GO CONDITIONNEL** : le lancement est recommandé sous réserve de la mise en place de quatre conditions préalables listées ci-dessous dans les recommandations. L'absence de l'une de ces conditions ne bloque pas le démarrage, mais augmente sensiblement la probabilité de matérialisation des risques R2 (retard), R5 (budget) et R6 (sécurité).
+
+---
+
+### B. Recommandations Stratégiques
+
+**R1 — Sécuriser l'engagement du Product Owner dès le Sprint 0**
+
+Le PO issu de la collectivité doit être disponible à 25 % ETP dès le kickoff, avec pouvoir de décision sur le backlog et accès direct aux agents de collecte pour les tests utilisateur. Un PO absent ou non décisionnaire est le premier facteur d'échec dans les projets Scrum en secteur public. Formaliser cet engagement contractuellement dans la convention de projet.
+
+**R2 — Activer la réplication PostgreSQL avant la mise en production**
+
+La base de données est actuellement en configuration single-node (SPOF). Avant le Sprint 8, déployer un replica de lecture PostgreSQL en streaming (primary + 1 replica) sur RDS. Cette action est chiffrée à 1 080 €/an et réduit le RTO de 4h à moins de 30 minutes en cas de panne primaire.
+
+**R3 — Mener un beta test terrain avec 5 agents pilotes dès le Sprint 5**
+
+L'adoption mobile par les agents de collecte (risque R3, score 6) est le facteur d'usage le plus incertain. Sélectionner 5 agents volontaires en Sprint 5 pour tester l'interface mobile (scan QR, signalement, consultation tournée) sur des tournées réelles. Recueillir les retours dans un rapport UX intégré au Sprint 6. Ajuster l'UX avant le déploiement général.
+
+**R4 — Externaliser le broker MQTT si la flotte de capteurs dépasse 3 000 unités**
+
+Le broker Aedes embarqué dans service-iot est dimensionné pour 2 000 capteurs à 1 mesure/min (pic 250 msg/s mesuré). Au-delà de 3 000 capteurs, prévoir la migration vers EMQX ou HiveMQ Cloud. Cette décision de montée en charge doit être formalisée dans la roadmap technique avant la fin du Sprint 8 pour éviter une refonte en urgence.
+
+**R5 — Planifier un audit de sécurité OWASP en fin de Sprint 7**
+
+Avant tout déploiement en production exposé à des citoyens (données personnelles, RGPD), réaliser un audit outillé (OWASP ZAP ou Burp Suite Community) sur l'environnement staging. Les points de contrôle prioritaires : injection SQL sur les endpoints paramétrés, BOLA sur les ressources citoyen, exposition des headers de réponse, et rotation des secrets .env entre staging et production.
+
+**R6 — Constituer un comité de gouvernance technologique trimestriel**
+
+À partir de la mise en production (fin Sprint 8), organiser un comité de 45 minutes par trimestre réunissant le PO, l'architecte et un représentant DSI de la collectivité. Ordre du jour type : (1) CVE critiques des dépendances npm, (2) évolutions Kafka/PostgreSQL impactantes, (3) décision d'adoption ou de rejet d'une technologie identifiée par la veille (cf. VEILLE_TECHNOLOGIQUE_COMPARAISONS.md section IV). Ce comité alimente directement la roadmap de la v2.
+
+**R7 — Anticiper le budget v2 pour l'intégration IA Générative dès l'année 4**
+
+Les tendances identifiées en veille (cf. VEILLE_TECHNOLOGIQUE_COMPARAISONS.md — IA Générative et LLMs) ouvrent 4 cas d'usage concrets pour EcoTrack v2 : classification automatique des signalements citoyens, génération narrative des rapports PDF analytics, chatbot agent de collecte, et détection d'anomalies sémantiques. Ces fonctionnalités valorisent les données collectées dès la v1 et constituent le levier principal d'amélioration du ROI au-delà de l'année 4. Une enveloppe budgétaire prévisionnelle doit être présentée au commanditaire en Sprint 8 pour validation pluriannuelle.
