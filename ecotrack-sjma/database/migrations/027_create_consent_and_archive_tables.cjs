@@ -58,10 +58,17 @@ exports.up = (pgm) => {
     CREATE INDEX IF NOT EXISTS idx_archived_logs_action ON ecotrack_archive.archived_logs(action);
   `);
 
-  // Grant permissions to application user if needed
+  // Grant permissions to application user if the role exists
+  const dbUser = process.env.DB_USER || 'ecotrack_user';
   pgm.sql(`
-    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ecotrack_archive TO ${process.env.DB_USER || 'ecotrack_user'};
-    GRANT USAGE, CREATE ON SCHEMA ecotrack_archive TO ${process.env.DB_USER || 'ecotrack_user'};
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${dbUser}') THEN
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ecotrack_archive TO ${dbUser};
+        GRANT USAGE, CREATE ON SCHEMA ecotrack_archive TO ${dbUser};
+      END IF;
+    END
+    $$;
   `);
 };
 

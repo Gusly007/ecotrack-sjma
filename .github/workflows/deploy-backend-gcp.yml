@@ -1,0 +1,285 @@
+name: Deploy Backend to Google Cloud
+
+on:
+  push:
+    branches: [main, deployement]
+    paths:
+      - 'ecotrack-sjma/services/**'
+      - 'ecotrack-sjma/database/**'
+      - '.github/workflows/deploy-backend-gcp.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION:    europe-west1
+  REPO:      ecotrack-sjma
+  REGISTRY:  europe-west1-docker.pkg.dev/ecotrack-498118-i5/ecotrack-sjma
+
+jobs:
+  # =========================================================
+  # JOB 1 - AUTH & ARTIFACT REGISTRY
+  # =========================================================
+  setup:
+    name: Setup GCP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker pour Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Creer le depot Artifact Registry si inexistant
+        run: |
+          gcloud artifacts repositories describe ${{ env.REPO }} \
+            --location=${{ env.REGION }} \
+            --project=ecotrack-498118-i5 2>/dev/null \
+          || gcloud artifacts repositories create ${{ env.REPO }} \
+               --repository-format=docker \
+               --location=${{ env.REGION }} \
+               --project=ecotrack-498118-i5
+
+  # =========================================================
+  # JOB 2 - MIGRATIONS NEON
+  # =========================================================
+  migrate:
+    name: Migrations Neon
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        working-directory: ecotrack-sjma/database
+        run: npm ci
+
+      - name: Run migrations
+        working-directory: ecotrack-sjma/database
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npx node-pg-migrate up -f migrate.config.cjs --no-lock
+
+  # =========================================================
+  # JOB 3 - BUILD & PUSH IMAGES DOCKER
+  # =========================================================
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [setup]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api-gateway
+            dir: services/api-gateway
+          - service: service-users
+            dir: services/service-users
+          - service: service-containers
+            dir: services/service-containers
+          - service: service-routes
+            dir: services/service-routes
+          - service: service-iot
+            dir: services/service-iot
+          - service: service-gamifications
+            dir: services/service-gamifications
+          - service: service-analytics
+            dir: services/service-analytics
+          - service: service-notification
+            dir: services/service-notification-gestionnaire-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build et Push ${{ matrix.service }}
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}"
+          docker build -t "$IMAGE" ecotrack-sjma/${{ matrix.dir }}
+          docker push "$IMAGE"
+
+  # =========================================================
+  # JOB 4 - DEPLOY SERVICES METIER
+  # =========================================================
+  deploy-services:
+    name: Deploy ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [migrate, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: service-users
+            port: "3010"
+            memory: 512Mi
+          - service: service-containers
+            port: "3011"
+            memory: 512Mi
+          - service: service-routes
+            port: "3012"
+            memory: 512Mi
+          - service: service-iot
+            port: "3013"
+            memory: 512Mi
+          - service: service-gamifications
+            port: "3014"
+            memory: 256Mi
+          - service: service-analytics
+            port: "3015"
+            memory: 1Gi
+          - service: service-notification
+            port: "3016"
+            memory: 256Mi
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy ${{ matrix.service }}
+        env:
+          DATABASE_URL:  ${{ secrets.NEON_DATABASE_URL }}
+          REDIS_URL:     ${{ secrets.UPSTASH_REDIS_URL }}
+          JWT_ACCESS:    ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH:   ${{ secrets.JWT_REFRESH_SECRET }}
+          KAFKA_BROKERS: ${{ secrets.KAFKA_BROKERS }}
+          KAFKA_KEY:     ${{ secrets.KAFKA_API_KEY }}
+          KAFKA_SECRET:  ${{ secrets.KAFKA_API_SECRET }}
+          BREVO_USER:    ${{ secrets.BREVO_SMTP_USER }}
+          BREVO_PASS:    ${{ secrets.BREVO_SMTP_PASS }}
+          BREVO_KEY:     ${{ secrets.BREVO_API_KEY }}
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}"
+
+          gcloud run deploy ${{ matrix.service }} \
+            --image="$IMAGE" \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --port=${{ matrix.port }} \
+            --memory=${{ matrix.memory }} \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=3 \
+            --no-allow-unauthenticated \
+            --project=ecotrack-498118-i5 \
+            --set-env-vars="\
+          NODE_ENV=production,\
+          DATABASE_URL=${DATABASE_URL},\
+          JWT_SECRET=${JWT_ACCESS},\
+          JWT_ACCESS_SECRET=${JWT_ACCESS},\
+          JWT_REFRESH_SECRET=${JWT_REFRESH},\
+          SMTP_HOST=smtp-relay.brevo.com,\
+          SMTP_PORT=587,\
+          SMTP_USER=${BREVO_USER},\
+          SMTP_PASS=${BREVO_PASS},\
+          KAFKA_BROKERS=${KAFKA_BROKERS}"
+
+  # =========================================================
+  # JOB 5 - DEPLOY API GATEWAY
+  # =========================================================
+  deploy-gateway:
+    name: Deploy api-gateway
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Recuperer les URLs des services
+        id: urls
+        run: |
+          for svc in service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
+            URL=$(gcloud run services describe "$svc" \
+              --region=${{ env.REGION }} \
+              --project=ecotrack-498118-i5 \
+              --format='value(status.url)' 2>/dev/null || echo "")
+            VAR=$(echo "$svc" | tr '[:lower:]-' '[:upper:]_')_URL
+            echo "${VAR}=${URL}" >> $GITHUB_OUTPUT
+          done
+
+      - name: Deploy api-gateway
+        env:
+          REDIS_URL:  ${{ secrets.UPSTASH_REDIS_URL }}
+          JWT_ACCESS: ${{ secrets.JWT_ACCESS_SECRET }}
+        run: |
+          IMAGE="${{ env.REGISTRY }}/api-gateway:${{ github.sha }}"
+
+          gcloud run deploy api-gateway \
+            --image="$IMAGE" \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --port=3000 \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=1 \
+            --max-instances=5 \
+            --allow-unauthenticated \
+            --project=ecotrack-498118-i5 \
+            --set-env-vars="\
+          NODE_ENV=production,\
+          FRONTEND_URL=https://gusly007.github.io,\
+          CORS_ORIGINS=https://gusly007.github.io,\
+          REDIS_URL=${REDIS_URL},\
+          JWT_ACCESS_SECRET=${JWT_ACCESS},\
+          SERVICE_USERS_URL=${{ steps.urls.outputs.SERVICE_USERS_URL }},\
+          SERVICE_CONTAINERS_URL=${{ steps.urls.outputs.SERVICE_CONTAINERS_URL }},\
+          SERVICE_ROUTES_URL=${{ steps.urls.outputs.SERVICE_ROUTES_URL }},\
+          SERVICE_IOT_URL=${{ steps.urls.outputs.SERVICE_IOT_URL }},\
+          SERVICE_GAMIFICATIONS_URL=${{ steps.urls.outputs.SERVICE_GAMIFICATIONS_URL }},\
+          SERVICE_ANALYTICS_URL=${{ steps.urls.outputs.SERVICE_ANALYTICS_URL }},\
+          SERVICE_NOTIFICATION_URL=${{ steps.urls.outputs.SERVICE_NOTIFICATION_URL }}"
+
+  # =========================================================
+  # JOB 6 - RESUME DEPLOIEMENT
+  # =========================================================
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-gateway]
+    if: always()
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Afficher les URLs
+        run: |
+          echo "================================================"
+          echo "  ECOTRACK SJMA - DEPLOIEMENT TERMINE"
+          echo "================================================"
+          for svc in api-gateway service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
+            URL=$(gcloud run services describe $svc \
+              --region=${{ env.REGION }} \
+              --project=ecotrack-498118-i5 \
+              --format='value(status.url)' 2>/dev/null || echo "non deploye")
+            printf "  %-30s %s\n" "$svc" "$URL"
+          done
+          echo "================================================"
