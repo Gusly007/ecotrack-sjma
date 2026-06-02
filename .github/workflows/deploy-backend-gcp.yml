@@ -9,6 +9,10 @@ on:
       - '.github/workflows/deploy-backend-gcp.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 # SECRETS GITHUB requis (Settings > Secrets > Actions) :
 #   GCP_PROJECT_ID                  : ecotrack-498118-i5
 #   GCP_REGION                      : europe-west1
