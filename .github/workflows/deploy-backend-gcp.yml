@@ -13,36 +13,17 @@ permissions:
   contents: read
   id-token: write
 
-# SECRETS GITHUB requis (Settings > Secrets > Actions) :
-#   GCP_PROJECT_ID                  : ecotrack-498118-i5
-#   GCP_REGION                      : europe-west1
-#   GCP_WORKLOAD_IDENTITY_PROVIDER  : projects/585762542834/locations/global/...
-#   GCP_SERVICE_ACCOUNT             : ecotrack-deploy@ecotrack-498118-i5.iam.gserviceaccount.com
-#   NEON_DATABASE_URL               : postgresql://...@neon.tech/db?sslmode=require
-#   UPSTASH_REDIS_URL               : rediss://:token@xxx.upstash.io:6379
-#   JWT_ACCESS_SECRET               : chaine aleatoire
-#   JWT_REFRESH_SECRET              : chaine aleatoire differente
-#   KAFKA_BROKERS                   : pkc-xxx.confluent.cloud:9092
-#   KAFKA_API_KEY                   : cle Confluent
-#   KAFKA_API_SECRET                : secret Confluent
-#   BREVO_SMTP_USER                 : votre email Brevo
-#   BREVO_SMTP_PASS                 : mot de passe SMTP Brevo
-#   BREVO_API_KEY                   : cle API Brevo
-
 env:
-  REGION:     europe-west1
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REPO:       ecotrack-sjma
+  REGION: europe-west1
+  REPO:   ecotrack-sjma
 
 jobs:
   # =========================================================
-  # JOB 1 - AUTH & REGISTRY
+  # JOB 1 - AUTH & ARTIFACT REGISTRY
   # =========================================================
   setup:
     name: Setup GCP
     runs-on: ubuntu-latest
-    outputs:
-      registry: ${{ steps.out.outputs.registry }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,19 +37,15 @@ jobs:
       - name: Configure Docker pour Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      - name: Creer le depot si inexistant
+      - name: Creer le depot Artifact Registry si inexistant
         run: |
           gcloud artifacts repositories describe ${{ env.REPO }} \
-            --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} 2>/dev/null \
+            --location=${{ env.REGION }} \
+            --project=${{ secrets.GCP_PROJECT_ID }} 2>/dev/null \
           || gcloud artifacts repositories create ${{ env.REPO }} \
                --repository-format=docker \
                --location=${{ env.REGION }} \
-               --project=${{ env.PROJECT_ID }}
-
-      - id: out
-        run: |
-          echo "registry=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}" \
-            >> $GITHUB_OUTPUT
+               --project=${{ secrets.GCP_PROJECT_ID }}
 
   # =========================================================
   # JOB 2 - MIGRATIONS NEON
@@ -134,7 +111,8 @@ jobs:
 
       - name: Build et Push ${{ matrix.service }}
         run: |
-          IMAGE="${{ needs.setup.outputs.registry }}/${{ matrix.service }}:${{ github.sha }}"
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
+          IMAGE="${REGISTRY}/${{ matrix.service }}:${{ github.sha }}"
           docker build -t "$IMAGE" ecotrack-sjma/${{ matrix.dir }}
           docker push "$IMAGE"
 
@@ -144,7 +122,7 @@ jobs:
   deploy-services:
     name: Deploy ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: [setup, migrate, build]
+    needs: [migrate, build]
     strategy:
       fail-fast: false
       matrix:
@@ -180,19 +158,22 @@ jobs:
 
       - name: Deploy ${{ matrix.service }}
         env:
-          DATABASE_URL:    ${{ secrets.NEON_DATABASE_URL }}
-          REDIS_URL:       ${{ secrets.UPSTASH_REDIS_URL }}
-          JWT_ACCESS:      ${{ secrets.JWT_ACCESS_SECRET }}
-          JWT_REFRESH:     ${{ secrets.JWT_REFRESH_SECRET }}
-          KAFKA_BROKERS:   ${{ secrets.KAFKA_BROKERS }}
-          KAFKA_KEY:       ${{ secrets.KAFKA_API_KEY }}
-          KAFKA_SECRET:    ${{ secrets.KAFKA_API_SECRET }}
-          BREVO_USER:      ${{ secrets.BREVO_SMTP_USER }}
-          BREVO_PASS:      ${{ secrets.BREVO_SMTP_PASS }}
-          BREVO_KEY:       ${{ secrets.BREVO_API_KEY }}
+          DATABASE_URL:  ${{ secrets.NEON_DATABASE_URL }}
+          REDIS_URL:     ${{ secrets.UPSTASH_REDIS_URL }}
+          JWT_ACCESS:    ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH:   ${{ secrets.JWT_REFRESH_SECRET }}
+          KAFKA_BROKERS: ${{ secrets.KAFKA_BROKERS }}
+          KAFKA_KEY:     ${{ secrets.KAFKA_API_KEY }}
+          KAFKA_SECRET:  ${{ secrets.KAFKA_API_SECRET }}
+          BREVO_USER:    ${{ secrets.BREVO_SMTP_USER }}
+          BREVO_PASS:    ${{ secrets.BREVO_SMTP_PASS }}
+          BREVO_KEY:     ${{ secrets.BREVO_API_KEY }}
         run: |
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
+          IMAGE="${REGISTRY}/${{ matrix.service }}:${{ github.sha }}"
+
           gcloud run deploy ${{ matrix.service }} \
-            --image="${{ needs.setup.outputs.registry }}/${{ matrix.service }}:${{ github.sha }}" \
+            --image="$IMAGE" \
             --region=${{ env.REGION }} \
             --platform=managed \
             --port=${{ matrix.port }} \
@@ -201,6 +182,7 @@ jobs:
             --min-instances=0 \
             --max-instances=3 \
             --no-allow-unauthenticated \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
             --set-env-vars="\
           NODE_ENV=production,\
           PORT=${{ matrix.port }},\
@@ -218,12 +200,12 @@ jobs:
           BREVO_API_KEY=${BREVO_KEY}"
 
   # =========================================================
-  # JOB 5 - DEPLOY API GATEWAY (point d entree public)
+  # JOB 5 - DEPLOY API GATEWAY
   # =========================================================
   deploy-gateway:
     name: Deploy api-gateway
     runs-on: ubuntu-latest
-    needs: [setup, deploy-services]
+    needs: [deploy-services]
     steps:
       - uses: google-github-actions/auth@v2
         with:
@@ -238,6 +220,7 @@ jobs:
           for svc in service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
             URL=$(gcloud run services describe "$svc" \
               --region=${{ env.REGION }} \
+              --project=${{ secrets.GCP_PROJECT_ID }} \
               --format='value(status.url)' 2>/dev/null || echo "")
             VAR=$(echo "$svc" | tr '[:lower:]-' '[:upper:]_')_URL
             echo "${VAR}=${URL}" >> $GITHUB_OUTPUT
@@ -245,11 +228,14 @@ jobs:
 
       - name: Deploy api-gateway
         env:
-          REDIS_URL:   ${{ secrets.UPSTASH_REDIS_URL }}
-          JWT_ACCESS:  ${{ secrets.JWT_ACCESS_SECRET }}
+          REDIS_URL:  ${{ secrets.UPSTASH_REDIS_URL }}
+          JWT_ACCESS: ${{ secrets.JWT_ACCESS_SECRET }}
         run: |
+          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
+          IMAGE="${REGISTRY}/api-gateway:${{ github.sha }}"
+
           gcloud run deploy api-gateway \
-            --image="${{ needs.setup.outputs.registry }}/api-gateway:${{ github.sha }}" \
+            --image="$IMAGE" \
             --region=${{ env.REGION }} \
             --platform=managed \
             --port=3000 \
@@ -258,6 +244,7 @@ jobs:
             --min-instances=1 \
             --max-instances=5 \
             --allow-unauthenticated \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
             --set-env-vars="\
           NODE_ENV=production,\
           PORT=3000,\
@@ -272,7 +259,7 @@ jobs:
           SERVICE_NOTIFICATION_URL=${{ steps.urls.outputs.SERVICE_NOTIFICATION_URL }}"
 
   # =========================================================
-  # JOB 6 - RESUME
+  # JOB 6 - RESUME DEPLOIEMENT
   # =========================================================
   summary:
     name: Deployment Summary
@@ -287,21 +274,16 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Afficher les URLs deployees
+      - name: Afficher les URLs
         run: |
-          echo ""
           echo "================================================"
           echo "  ECOTRACK SJMA - DEPLOIEMENT TERMINE"
           echo "================================================"
           for svc in api-gateway service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
             URL=$(gcloud run services describe $svc \
               --region=${{ env.REGION }} \
+              --project=${{ secrets.GCP_PROJECT_ID }} \
               --format='value(status.url)' 2>/dev/null || echo "non deploye")
             printf "  %-30s %s\n" "$svc" "$URL"
           done
-          GATEWAY=$(gcloud run services describe api-gateway \
-            --region=${{ env.REGION }} --format='value(status.url)' 2>/dev/null)
-          echo "------------------------------------------------"
-          echo "  API Docs : ${GATEWAY}/api-docs"
-          echo "  Health   : ${GATEWAY}/health"
           echo "================================================"
