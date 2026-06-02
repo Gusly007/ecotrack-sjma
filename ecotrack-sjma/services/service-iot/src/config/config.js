@@ -1,21 +1,41 @@
 /**
  * Configuration globale du service IoT
  */
+
+// Support DATABASE_URL (Neon, Cloud Run) en plus des vars PG individuelles
+const parseDbUrl = (url) => {
+  if (!url) return {};
+  try {
+    const u = new URL(url);
+    return {
+      host: u.hostname,
+      port: parseInt(u.port) || 5432,
+      user: decodeURIComponent(u.username),
+      password: decodeURIComponent(u.password),
+      database: u.pathname.replace('/', '').split('?')[0],
+      ssl: u.searchParams.get('sslmode') ? { rejectUnauthorized: false } : false
+    };
+  } catch (_) { return {}; }
+};
+
+const dbFromUrl = parseDbUrl(process.env.DATABASE_URL);
+
 module.exports = {
-  // Ports et serveur
-  PORT: process.env.APP_PORT || 3013,
+  // Cloud Run injecte PORT automatiquement — APP_PORT en fallback local
+  PORT: process.env.PORT || process.env.APP_PORT || 3013,
   NODE_ENV: process.env.NODE_ENV || 'development',
 
-  // Base de données
+  // Base de données — supporte DATABASE_URL (Neon) et vars PG individuelles
   DB: {
-    host: process.env.PGHOST || 'ecotrack-postgres',
-    port: process.env.PGPORT || 5432,
-    user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || '',
-    database: process.env.PGDATABASE || 'ecotrack',
+    host: process.env.PGHOST || dbFromUrl.host || 'ecotrack-postgres',
+    port: parseInt(process.env.PGPORT) || dbFromUrl.port || 5432,
+    user: process.env.PGUSER || dbFromUrl.user || 'postgres',
+    password: process.env.PGPASSWORD || dbFromUrl.password || '',
+    database: process.env.PGDATABASE || dbFromUrl.database || 'ecotrack',
+    ssl: dbFromUrl.ssl || false,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
+    connectionTimeoutMillis: 5000
   },
 
   // MQTT Broker
