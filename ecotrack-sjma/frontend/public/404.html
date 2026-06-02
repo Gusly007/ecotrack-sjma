@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script>
+    var base = '/ecotrack-sjma';
+    var path = window.location.pathname.replace(base, '') || '/';
+    var search = window.location.search;
+    var hash = window.location.hash;
+    sessionStorage.redirect = base + path + search + hash;
+    window.location.replace(base + '/');
+  </script>
+</head>
+<body></body>
+</html>
