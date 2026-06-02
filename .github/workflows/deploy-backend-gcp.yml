@@ -70,7 +70,6 @@ jobs:
         working-directory: ecotrack-sjma/database
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-          DB_USER: ${{ secrets.NEON_DB_USER }}
         run: npx node-pg-migrate up -f migrate.config.cjs --no-lock
 
   # =========================================================
