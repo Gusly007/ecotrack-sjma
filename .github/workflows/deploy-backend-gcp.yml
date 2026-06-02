@@ -185,17 +185,14 @@ jobs:
             --set-env-vars="\
           NODE_ENV=production,\
           DATABASE_URL=${DATABASE_URL},\
-          REDIS_URL=${REDIS_URL},\
+          JWT_SECRET=${JWT_ACCESS},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
           JWT_REFRESH_SECRET=${JWT_REFRESH},\
-          KAFKA_BROKERS=${KAFKA_BROKERS},\
-          KAFKA_SASL_USERNAME=${KAFKA_KEY},\
-          KAFKA_SASL_PASSWORD=${KAFKA_SECRET},\
-          BREVO_SMTP_HOST=smtp-relay.brevo.com,\
-          BREVO_SMTP_PORT=587,\
-          BREVO_SMTP_USER=${BREVO_USER},\
-          BREVO_SMTP_PASS=${BREVO_PASS},\
-          BREVO_API_KEY=${BREVO_KEY}"
+          SMTP_HOST=smtp-relay.brevo.com,\
+          SMTP_PORT=587,\
+          SMTP_USER=${BREVO_USER},\
+          SMTP_PASS=${BREVO_PASS},\
+          KAFKA_BROKERS=${KAFKA_BROKERS}"
 
   # =========================================================
   # JOB 5 - DEPLOY API GATEWAY
