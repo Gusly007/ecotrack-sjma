@@ -41,6 +41,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_URL: /ecotrack-sjma/
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
