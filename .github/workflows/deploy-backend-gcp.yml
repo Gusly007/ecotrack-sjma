@@ -70,7 +70,7 @@ jobs:
         working-directory: ecotrack-sjma/database
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-        run: npm run migrate
+        run: npx node-pg-migrate up -f migrate.config.cjs --no-lock
 
   # =========================================================
   # JOB 3 - BUILD & PUSH IMAGES DOCKER
