@@ -242,6 +242,8 @@ jobs:
             --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
+          FRONTEND_URL=https://gusly007.github.io,\
+          CORS_ORIGINS=https://gusly007.github.io,\
           REDIS_URL=${REDIS_URL},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
           SERVICE_USERS_URL=${{ steps.urls.outputs.SERVICE_USERS_URL }},\
