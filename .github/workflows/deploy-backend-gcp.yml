@@ -200,7 +200,8 @@ jobs:
   deploy-gateway:
     name: Deploy api-gateway
     runs-on: ubuntu-latest
-    needs: [deploy-services]
+    needs: [build]
+    if: always()
     steps:
       - uses: google-github-actions/auth@v2
         with:
