@@ -14,8 +14,9 @@ permissions:
   id-token: write
 
 env:
-  REGION: europe-west1
-  REPO:   ecotrack-sjma
+  REGION:    europe-west1
+  REPO:      ecotrack-sjma
+  REGISTRY:  europe-west1-docker.pkg.dev/ecotrack-498118-i5/ecotrack-sjma
 
 jobs:
   # =========================================================
@@ -41,11 +42,11 @@ jobs:
         run: |
           gcloud artifacts repositories describe ${{ env.REPO }} \
             --location=${{ env.REGION }} \
-            --project=${{ secrets.GCP_PROJECT_ID }} 2>/dev/null \
+            --project=ecotrack-498118-i5 2>/dev/null \
           || gcloud artifacts repositories create ${{ env.REPO }} \
                --repository-format=docker \
                --location=${{ env.REGION }} \
-               --project=${{ secrets.GCP_PROJECT_ID }}
+               --project=ecotrack-498118-i5
 
   # =========================================================
   # JOB 2 - MIGRATIONS NEON
@@ -111,8 +112,7 @@ jobs:
 
       - name: Build et Push ${{ matrix.service }}
         run: |
-          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
-          IMAGE="${REGISTRY}/${{ matrix.service }}:${{ github.sha }}"
+          IMAGE="${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}"
           docker build -t "$IMAGE" ecotrack-sjma/${{ matrix.dir }}
           docker push "$IMAGE"
 
@@ -169,8 +169,7 @@ jobs:
           BREVO_PASS:    ${{ secrets.BREVO_SMTP_PASS }}
           BREVO_KEY:     ${{ secrets.BREVO_API_KEY }}
         run: |
-          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
-          IMAGE="${REGISTRY}/${{ matrix.service }}:${{ github.sha }}"
+          IMAGE="${{ env.REGISTRY }}/${{ matrix.service }}:${{ github.sha }}"
 
           gcloud run deploy ${{ matrix.service }} \
             --image="$IMAGE" \
@@ -182,7 +181,7 @@ jobs:
             --min-instances=0 \
             --max-instances=3 \
             --no-allow-unauthenticated \
-            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
           PORT=${{ matrix.port }},\
@@ -220,7 +219,7 @@ jobs:
           for svc in service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
             URL=$(gcloud run services describe "$svc" \
               --region=${{ env.REGION }} \
-              --project=${{ secrets.GCP_PROJECT_ID }} \
+              --project=ecotrack-498118-i5 \
               --format='value(status.url)' 2>/dev/null || echo "")
             VAR=$(echo "$svc" | tr '[:lower:]-' '[:upper:]_')_URL
             echo "${VAR}=${URL}" >> $GITHUB_OUTPUT
@@ -231,8 +230,7 @@ jobs:
           REDIS_URL:  ${{ secrets.UPSTASH_REDIS_URL }}
           JWT_ACCESS: ${{ secrets.JWT_ACCESS_SECRET }}
         run: |
-          REGISTRY="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}"
-          IMAGE="${REGISTRY}/api-gateway:${{ github.sha }}"
+          IMAGE="${{ env.REGISTRY }}/api-gateway:${{ github.sha }}"
 
           gcloud run deploy api-gateway \
             --image="$IMAGE" \
@@ -244,7 +242,7 @@ jobs:
             --min-instances=1 \
             --max-instances=5 \
             --allow-unauthenticated \
-            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
           PORT=3000,\
@@ -282,7 +280,7 @@ jobs:
           for svc in api-gateway service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
             URL=$(gcloud run services describe $svc \
               --region=${{ env.REGION }} \
-              --project=${{ secrets.GCP_PROJECT_ID }} \
+              --project=ecotrack-498118-i5 \
               --format='value(status.url)' 2>/dev/null || echo "non deploye")
             printf "  %-30s %s\n" "$svc" "$URL"
           done
