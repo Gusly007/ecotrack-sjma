@@ -2,7 +2,7 @@ name: Deploy Backend to Google Cloud
 
 on:
   push:
-    branches: [main]
+    branches: [main, deployement]
     paths:
       - 'ecotrack-sjma/services/**'
       - 'ecotrack-sjma/database/**'
