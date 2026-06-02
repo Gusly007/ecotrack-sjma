@@ -7,6 +7,16 @@
     <meta name="description" content="EcoTrack — Plateforme de gestion intelligente des conteneurs de collecte urbaine" />
     <meta name="theme-color" content="#2e7d32" />
     <title>EcoTrack — Gestion des conteneurs urbains</title>
+    <script>
+      // GitHub Pages SPA redirect
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== window.location.href) {
+          window.history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
