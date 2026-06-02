@@ -184,7 +184,6 @@ jobs:
             --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
-          PORT=${{ matrix.port }},\
           DATABASE_URL=${DATABASE_URL},\
           REDIS_URL=${REDIS_URL},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
@@ -245,7 +244,6 @@ jobs:
             --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
-          PORT=3000,\
           REDIS_URL=${REDIS_URL},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
           SERVICE_USERS_URL=${{ steps.urls.outputs.SERVICE_USERS_URL }},\
