@@ -252,6 +252,7 @@ jobs:
           CORS_ORIGINS=https://gusly007.github.io,\
           DATABASE_URL=${DATABASE_URL},\
           REDIS_URL=${REDIS_URL},\
+          JWT_SECRET=${JWT_ACCESS},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
           USERS_SERVICE_URL=${{ steps.urls.outputs.USERS_SERVICE_URL }},\
           CONTAINERS_SERVICE_URL=${{ steps.urls.outputs.CONTAINERS_SERVICE_URL }},\
