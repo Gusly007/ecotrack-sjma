@@ -229,6 +229,15 @@ const forwardParsedBody = (proxyReq, req) => {
   proxyReq.write(bodyBuffer);
 };
 
+const CORS_HEADERS = [
+  'access-control-allow-origin',
+  'access-control-allow-credentials',
+  'access-control-allow-methods',
+  'access-control-allow-headers',
+  'access-control-expose-headers',
+  'access-control-max-age',
+];
+
 const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMiddleware({
   target,
   changeOrigin: true,
@@ -240,7 +249,13 @@ const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMidd
     }
     return fullPath;
   },
-  on: { proxyReq: forwardParsedBody },
+  on: {
+    proxyReq: forwardParsedBody,
+    proxyRes: (proxyRes) => {
+      // Strip CORS headers from upstream services — the gateway owns CORS.
+      CORS_HEADERS.forEach(h => delete proxyRes.headers[h]);
+    }
+  },
   onError: (err, req, res) => {
     logger.error({ error: err.message }, 'Proxy error');
     if (!res.headersSent) {
