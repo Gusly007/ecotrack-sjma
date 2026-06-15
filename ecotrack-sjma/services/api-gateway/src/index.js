@@ -671,7 +671,8 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
       if (status) params.append('status', status);
 
-      const response = await axios.get(`http://ecotrack-service-iot:3013/api/V1/alerts?${params.toString()}`, {
+      const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
+      const response = await axios.get(`${iotBase}/api/V1/alerts?${params.toString()}`, {
         timeout: 5000
       });
 
@@ -696,7 +697,8 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       }
       const axios = (await import('axios')).default;
 
-      const response = await axios.patch(`http://ecotrack-service-iot:3013/api/V1/iot/alerts/${id}`, {
+      const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
+      const response = await axios.patch(`${iotBase}/api/V1/iot/alerts/${id}`, {
         statut
       }, {
         timeout: 5000
@@ -716,8 +718,9 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       const { severity, type, status, limit = 50, offset = 0 } = req.query;
 
       // 1. Get IoT alerts from service-iot (with status filter)
-      const iotResponse = await axios.get('http://ecotrack-service-iot:3013/api/V1/alerts', {
-        params: { status, limit: 1000, offset: 0 }, // Get all to filter properly, then paginate
+      const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
+      const iotResponse = await axios.get(`${iotBase}/api/V1/alerts`, {
+        params: { status, limit: 1000, offset: 0 },
         timeout: 5000
       }).catch(() => ({ data: { data: [], total: 0 } }));
 
@@ -810,7 +813,8 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
     try {
       const axios = (await import('axios')).default;
       
-      const response = await axios.get('http://ecotrack-service-iot:3013/api/V1/alerts', {
+      const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
+      const response = await axios.get(`${iotBase}/api/V1/alerts`, {
         params: { limit: 1000 },
         timeout: 5000
       }).catch(() => ({ data: { data: [] } }));
@@ -839,13 +843,13 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
 
       const microservices = [
         { name: 'api-gateway', url: 'http://localhost:3000/health' },
-        { name: 'service-users', url: 'http://ecotrack-service-users:3010/health' },
-        { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/health' },
-        { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/health' },
-        { name: 'service-notification-gestionnaire-admin', url: 'http://ecotrack-service-notification-gestionnaire-admin:3016/health' },
-        { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/health' },
-        { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/health' },
-        { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/health' }
+        { name: 'service-users', url: `${process.env.USERS_SERVICE_URL || 'http://localhost:3010'}/health` },
+        { name: 'service-containers', url: `${process.env.CONTAINERS_SERVICE_URL || 'http://localhost:3011'}/health` },
+        { name: 'service-routes', url: `${process.env.ROUTES_SERVICE_URL || 'http://localhost:3012'}/health` },
+        { name: 'service-notification-gestionnaire-admin', url: `${process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3016'}/health` },
+        { name: 'service-iot', url: `${process.env.IOT_SERVICE_URL || 'http://localhost:3013'}/health` },
+        { name: 'service-gamifications', url: `${process.env.GAMIFICATIONS_SERVICE_URL || 'http://localhost:3014'}/health` },
+        { name: 'service-analytics', url: `${process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3015'}/health` }
       ];
 
       const infrastructure = [
@@ -901,14 +905,14 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
     const axios = (await import('axios')).default;
 
   const serviceMetrics = [
-    { name: 'api-gateway', url: 'http://ecotrack-api-gateway:3000/metrics' },
-    { name: 'service-users', url: 'http://ecotrack-service-users:3010/metrics' },
-    { name: 'service-containers', url: 'http://ecotrack-service-containers:3011/metrics' },
-    { name: 'service-routes', url: 'http://ecotrack-service-routes:3012/metrics' },
-    { name: 'service-notification-gestionnaire-admin', url: 'http://ecotrack-service-notification-gestionnaire-admin:3016/metrics' },
-    { name: 'service-iot', url: 'http://ecotrack-service-iot:3013/metrics' },
-    { name: 'service-gamifications', url: 'http://ecotrack-service-gamifications:3014/metrics' },
-    { name: 'service-analytics', url: 'http://ecotrack-service-analytics:3015/metrics' }
+    { name: 'api-gateway', url: 'http://localhost:3000/metrics' },
+    { name: 'service-users', url: `${process.env.USERS_SERVICE_URL || 'http://localhost:3010'}/metrics` },
+    { name: 'service-containers', url: `${process.env.CONTAINERS_SERVICE_URL || 'http://localhost:3011'}/metrics` },
+    { name: 'service-routes', url: `${process.env.ROUTES_SERVICE_URL || 'http://localhost:3012'}/metrics` },
+    { name: 'service-notification-gestionnaire-admin', url: `${process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3016'}/metrics` },
+    { name: 'service-iot', url: `${process.env.IOT_SERVICE_URL || 'http://localhost:3013'}/metrics` },
+    { name: 'service-gamifications', url: `${process.env.GAMIFICATIONS_SERVICE_URL || 'http://localhost:3014'}/metrics` },
+    { name: 'service-analytics', url: `${process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3015'}/metrics` }
   ];
 
     try {
