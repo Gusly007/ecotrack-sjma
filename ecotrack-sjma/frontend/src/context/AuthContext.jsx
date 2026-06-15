@@ -39,6 +39,16 @@ export const AuthProvider = ({ children }) => {
     return result;
   };
 
+  // Sync auth state from localStorage without making an API call.
+  // Call this after authService.login() has already stored the tokens.
+  const syncAuth = () => {
+    const currentUser = authService.getCurrentUser();
+    const authenticated = Boolean(currentUser && authService.isAuthenticated());
+    setUser(currentUser);
+    setIsAuthenticated(authenticated);
+    return currentUser;
+  };
+
   // Inscription désactivée - only ADMIN can create users via API.
   // See LoginPage / RegisterPage: there is no public /register entry point.
 
@@ -73,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
+    syncAuth,
     logout,
     forgotPassword,
     resetPassword,

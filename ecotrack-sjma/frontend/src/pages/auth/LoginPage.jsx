@@ -14,7 +14,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login } = useAuth();
+  const { syncAuth } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -83,19 +83,16 @@ const LoginPage = () => {
         return;
       }
 
-      console.log('Login successful, user:', result);
+      // Tokens already stored by authService.login — sync React state without a second API call.
+      const currentUser = syncAuth();
+      const role = currentUser?.role || currentUser?.role_par_defaut;
 
-      // Si pas de MFA, on peut appeler la fonction login du context pour finaliser
-      const user = await login(formData.email, formData.password);
-      
-      if (user?.role === 'ADMIN') {
+      if (role === 'ADMIN') {
         navigate('/admin');
-      } else if (user?.role === 'GESTIONNAIRE') {
+      } else if (role === 'GESTIONNAIRE') {
         navigate('/gestionnaire');
-      } else if (user?.role === 'AGENT') {
+      } else if (role === 'AGENT') {
         navigate('/agent');
-      } else if (user?.role === 'CITOYEN') {
-        navigate('/citoyen');
       } else {
         navigate('/');
       }
