@@ -213,19 +213,25 @@ jobs:
       - name: Recuperer les URLs des services
         id: urls
         run: |
-          for svc in service-users service-containers service-routes service-iot service-gamifications service-analytics service-notification; do
-            URL=$(gcloud run services describe "$svc" \
+          get_url() {
+            gcloud run services describe "$1" \
               --region=${{ env.REGION }} \
               --project=ecotrack-498118-i5 \
-              --format='value(status.url)' 2>/dev/null || echo "")
-            VAR=$(echo "$svc" | tr '[:lower:]-' '[:upper:]_')_URL
-            echo "${VAR}=${URL}" >> $GITHUB_OUTPUT
-          done
+              --format='value(status.url)' 2>/dev/null || echo ""
+          }
+          echo "USERS_SERVICE_URL=$(get_url service-users)"             >> $GITHUB_OUTPUT
+          echo "CONTAINERS_SERVICE_URL=$(get_url service-containers)"   >> $GITHUB_OUTPUT
+          echo "ROUTES_SERVICE_URL=$(get_url service-routes)"           >> $GITHUB_OUTPUT
+          echo "IOT_SERVICE_URL=$(get_url service-iot)"                 >> $GITHUB_OUTPUT
+          echo "GAMIFICATIONS_SERVICE_URL=$(get_url service-gamifications)" >> $GITHUB_OUTPUT
+          echo "ANALYTICS_SERVICE_URL=$(get_url service-analytics)"     >> $GITHUB_OUTPUT
+          echo "NOTIFICATION_SERVICE_URL=$(get_url service-notification)" >> $GITHUB_OUTPUT
 
       - name: Deploy api-gateway
         env:
-          REDIS_URL:  ${{ secrets.UPSTASH_REDIS_URL }}
-          JWT_ACCESS: ${{ secrets.JWT_ACCESS_SECRET }}
+          REDIS_URL:    ${{ secrets.UPSTASH_REDIS_URL }}
+          JWT_ACCESS:   ${{ secrets.JWT_ACCESS_SECRET }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
         run: |
           IMAGE="${{ env.REGISTRY }}/api-gateway:${{ github.sha }}"
 
@@ -244,15 +250,16 @@ jobs:
           NODE_ENV=production,\
           FRONTEND_URL=https://gusly007.github.io,\
           CORS_ORIGINS=https://gusly007.github.io,\
+          DATABASE_URL=${DATABASE_URL},\
           REDIS_URL=${REDIS_URL},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
-          SERVICE_USERS_URL=${{ steps.urls.outputs.SERVICE_USERS_URL }},\
-          SERVICE_CONTAINERS_URL=${{ steps.urls.outputs.SERVICE_CONTAINERS_URL }},\
-          SERVICE_ROUTES_URL=${{ steps.urls.outputs.SERVICE_ROUTES_URL }},\
-          SERVICE_IOT_URL=${{ steps.urls.outputs.SERVICE_IOT_URL }},\
-          SERVICE_GAMIFICATIONS_URL=${{ steps.urls.outputs.SERVICE_GAMIFICATIONS_URL }},\
-          SERVICE_ANALYTICS_URL=${{ steps.urls.outputs.SERVICE_ANALYTICS_URL }},\
-          SERVICE_NOTIFICATION_URL=${{ steps.urls.outputs.SERVICE_NOTIFICATION_URL }}"
+          USERS_SERVICE_URL=${{ steps.urls.outputs.USERS_SERVICE_URL }},\
+          CONTAINERS_SERVICE_URL=${{ steps.urls.outputs.CONTAINERS_SERVICE_URL }},\
+          ROUTES_SERVICE_URL=${{ steps.urls.outputs.ROUTES_SERVICE_URL }},\
+          IOT_SERVICE_URL=${{ steps.urls.outputs.IOT_SERVICE_URL }},\
+          GAMIFICATIONS_SERVICE_URL=${{ steps.urls.outputs.GAMIFICATIONS_SERVICE_URL }},\
+          ANALYTICS_SERVICE_URL=${{ steps.urls.outputs.ANALYTICS_SERVICE_URL }},\
+          NOTIFICATION_SERVICE_URL=${{ steps.urls.outputs.NOTIFICATION_SERVICE_URL }}"
 
   # =========================================================
   # JOB 6 - RESUME DEPLOIEMENT
