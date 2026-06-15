@@ -229,58 +229,25 @@ const forwardParsedBody = (proxyReq, req) => {
   proxyReq.write(bodyBuffer);
 };
 
-// Fetch a Google Cloud IAM identity token for service-to-service calls on Cloud Run.
-// Returns null outside GCP (local dev) so no auth header is added.
-const gcpIdTokenCache = new Map();
-const getGcpIdToken = async (audience) => {
-  if (process.env.NODE_ENV !== 'production') return null;
-  const cached = gcpIdTokenCache.get(audience);
-  if (cached && cached.expiresAt > Date.now() + 60_000) return cached.token;
-  try {
-    const metaUrl = `http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=${encodeURIComponent(audience)}`;
-    const resp = await fetch(metaUrl, { headers: { 'Metadata-Flavor': 'Google' } });
-    if (!resp.ok) return null;
-    const token = await resp.text();
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    gcpIdTokenCache.set(audience, { token, expiresAt: payload.exp * 1000 });
-    return token;
-  } catch {
-    return null;
-  }
-};
-
-const createProxy = (target, pathRewrite, timeoutMs = 30_000) => {
-  const proxy = createProxyMiddleware({
-    target,
-    changeOrigin: true,
-    proxyTimeout: timeoutMs,
-    pathRewrite: (path, req) => {
-      const fullPath = `${req.baseUrl || ''}${path}`;
-      if (typeof pathRewrite === 'function') {
-        return pathRewrite.length >= 2 ? pathRewrite(fullPath, req) : pathRewrite(fullPath);
-      }
-      return fullPath;
-    },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        if (req._gcpIdToken) proxyReq.setHeader('Authorization', `Bearer ${req._gcpIdToken}`);
-        forwardParsedBody(proxyReq, req);
-      }
-    },
-    onError: (err, req, res) => {
-      logger.error({ error: err.message }, 'Proxy error');
-      if (!res.headersSent) {
-        res.status(502).json({ error: 'Upstream service unavailable' });
-      }
+const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMiddleware({
+  target,
+  changeOrigin: true,
+  proxyTimeout: timeoutMs,
+  pathRewrite: (path, req) => {
+    const fullPath = `${req.baseUrl || ''}${path}`;
+    if (typeof pathRewrite === 'function') {
+      return pathRewrite.length >= 2 ? pathRewrite(fullPath, req) : pathRewrite(fullPath);
     }
-  });
-
-  // Wrap so we can async-fetch the GCP identity token before the proxy fires.
-  return async (req, res, next) => {
-    req._gcpIdToken = await getGcpIdToken(target);
-    proxy(req, res, next);
-  };
-};
+    return fullPath;
+  },
+  on: { proxyReq: forwardParsedBody },
+  onError: (err, req, res) => {
+    logger.error({ error: err.message }, 'Proxy error');
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Upstream service unavailable' });
+    }
+  }
+});
 
 const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
 app.use(cors({

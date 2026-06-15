@@ -180,7 +180,7 @@ jobs:
             --cpu=1 \
             --min-instances=0 \
             --max-instances=3 \
-            --no-allow-unauthenticated \
+            --allow-unauthenticated \
             --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\

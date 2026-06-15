@@ -9,9 +9,12 @@ const publicPaths = [
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/activate',
-  '/auth/mfa/complete-setup',  // Setup MFA sans JWT
+  '/auth/register',
+  '/auth/citoyen/register',
+  '/auth/citoyen/verify-code',
+  '/auth/mfa/complete-setup',
   '/health',
-  '/avatars'                   // Images avatars publiques
+  '/avatars'
 ];
 
 /**
