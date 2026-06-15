@@ -17,7 +17,8 @@ const publicRoutes = [
   { path: '/auth/forgot-password', methods: ['POST'] },
   { path: '/auth/reset-password', methods: ['POST'] },
   { path: '/auth/activate', methods: ['POST'] },
-  // Register désactivé - inscription uniquement par ADMIN
+  { path: '/auth/citoyen/register', methods: ['POST'] },
+  { path: '/auth/register', methods: ['POST'] },
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
   { path: '/api-docs', methods: ['GET'] },
