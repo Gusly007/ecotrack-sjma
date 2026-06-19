@@ -80,10 +80,11 @@ router.post('/consent', async (req, res) => {
     }
 
     // Extract IP address (for CNIL requirement)
-    const ipAddress = req.headers['x-forwarded-for'] || 
+    // Handle X-Forwarded-For which may contain multiple IPs separated by commas
+    const ipAddress = (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
                      req.socket.remoteAddress || 
                      req.connection.remoteAddress ||
-                     'unknown';
+                     'unknown');
 
     // Get user agent
     const userAgent = req.headers['user-agent'] || 'unknown';

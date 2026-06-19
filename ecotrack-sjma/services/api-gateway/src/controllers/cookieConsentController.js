@@ -22,8 +22,9 @@ class CookieConsentController {
         });
       }
 
-      const ip_address = req.headers['x-forwarded-for'] || req.ip;
-      const user_agent = req.headers['user-agent'];
+      // Extract first IP from X-Forwarded-For (may contain multiple IPs separated by comma)
+      let ip_address = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+      const user_agent = req.headers['user-agent'] || 'unknown';
       const action = consent_status === 'REJECTED' ? 'REJECTED' : 'ACCEPTED';
 
       const result = await consentRepository.logConsent({
@@ -108,6 +109,8 @@ class CookieConsentController {
       }
 
       await consentRepository.deleteConsentBySession(sessionId, 'cookies');
+      const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
       const result = await consentRepository.logConsent({
         userId: req.user?.id || null,
         sessionId,
@@ -115,8 +118,8 @@ class CookieConsentController {
         action: 'ACCEPTED',
         version: '1.0',
         intitule: 'Consentement cookies mis à jour',
-        ipAddress: req.headers['x-forwarded-for'] || req.ip,
-        userAgent: req.headers['user-agent']
+        ipAddress,
+        userAgent
       });
 
       return res.status(200).json({
