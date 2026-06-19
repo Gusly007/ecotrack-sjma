@@ -81,12 +81,21 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   hsts: env.nodeEnv === 'production' ? undefined : false
 }));
-
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://gusly007.github.io'
+];
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://gusly007.github.io',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // mobile / curl / server-to-server
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
 }));
 
 // Rate-limit global sur /auth et /users. Bypass dev / localhost et override
