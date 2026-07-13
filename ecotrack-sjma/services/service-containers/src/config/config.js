@@ -1,3 +1,5 @@
+const { createDatabaseConfig } = require('../db/database-config');
+
 /**
  * Configuration globale du projet
  */
@@ -7,16 +9,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
 
   // Base de données
-  DB: {
-    host: process.env.PGHOST || 'localhost',
-    port: process.env.PGPORT || 5432,
-    user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || '',
-    database: process.env.PGDATABASE || 'ecotrack',
-    max: 20, // pool size
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
-  },
+  DB: createDatabaseConfig({ max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000 }),
 
   // Pagination par défaut
   PAGINATION: {

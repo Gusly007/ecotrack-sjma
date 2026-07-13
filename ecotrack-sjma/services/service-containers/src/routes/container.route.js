@@ -4,15 +4,9 @@ const { requirePermission } = require('../middleware/rbac');
 const { authenticateToken } = require('../middleware/auth');
 const QRCode = require('qrcode');
 const Pool = require('pg').Pool;
+const { createDatabaseConfig } = require('../db/database-config');
 
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: process.env.POSTGRES_PORT || 5432,
-  user: process.env.POSTGRES_USER || 'ecotrack_user',
-  password: process.env.POSTGRES_PASSWORD || 'ecotrack_password',
-  database: process.env.POSTGRES_DB || 'ecotrack',
-  ssl: false
-});
+const pool = new Pool(createDatabaseConfig({ max: 10, idleTimeoutMillis: 30000 }));
 
 // QR Code - PUBLIC (no auth, placed BEFORE auth middleware)
 router.get('/qrcode/:uid', async (req, res, next) => {

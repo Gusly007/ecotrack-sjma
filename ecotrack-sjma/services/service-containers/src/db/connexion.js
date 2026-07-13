@@ -7,17 +7,9 @@ const path = require('path');
 const envPath = path.resolve(__dirname, '..', '..', '.env');
 require('dotenv').config({ path: envPath });
 const logger = require('../utils/logger');
+const { createDatabaseConfig } = require('./database-config');
 
-const password = process.env.PGPASSWORD !== undefined ? String(process.env.PGPASSWORD) : '';
-const pool = new Pool({
-  host: process.env.PGHOST || 'localhost',
-  port: Number(process.env.PGPORT) || 5432,
-  user: process.env.PGUSER || 'postgres',
-  password,
-  database: process.env.PGDATABASE || 'ecotrack',
-  max: 10,
-  idleTimeoutMillis: 30000,
-});
+const pool = new Pool(createDatabaseConfig({ max: 10, idleTimeoutMillis: 30000 }));
 // Gérer les erreurs inattendues sur les clients inactifs
 pool.on('error', (err) => {
   logger.error({ error: err }, 'Unexpected error on idle PostgreSQL client');

@@ -66,6 +66,25 @@ describe('db/connexion', () => {
     expect(poolInstance.query).toHaveBeenCalledWith('SELECT 1', ['a']);
   });
 
+  test('builds pool from DATABASE_URL for Neon with SSL enabled', async () => {
+    process.env.DATABASE_URL = 'postgresql://neon_user:neon_pass@ep-test.neon.tech/neondb?sslmode=require';
+
+    const { pg } = loadConnexion();
+
+    expect(pg.Pool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionString: process.env.DATABASE_URL,
+        host: 'ep-test.neon.tech',
+        port: 5432,
+        user: 'neon_user',
+        database: 'neondb',
+        ssl: { rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30000
+      })
+    );
+  });
+
   test('testConnection returns true and logs info on success', async () => {
     const { module, logger } = loadConnexion({
       queryImpl: async () => ({ rows: [{ now: '2025-01-01T10:00:00.000Z' }] })
