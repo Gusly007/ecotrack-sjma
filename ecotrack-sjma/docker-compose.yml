@@ -102,6 +102,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
     networks:
       - ecotrack
     restart: unless-stopped
@@ -124,7 +127,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_NUM_PARTITIONS: 3
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - kafka_data_v2:/var/lib/kafka/data
     networks:
       - ecotrack
     restart: unless-stopped
@@ -719,7 +722,11 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  kafka_data:
+  kafka_data_v2:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
     driver: local
   grafana_data:
     driver: local

@@ -26,7 +26,7 @@ describe('dashboardService', () => {
   it('fetchDashboardData merges fulfilled payloads and unwraps data', async () => {
     api.get
       .mockResolvedValueOnce({ data: { data: { count: 2 } } })
-      .mockResolvedValueOnce({ data: { data: [{ id: 1 }], pagination: { page: 2, limit: 6, total: 7, pages: 2, hasMore: true } } })
+      .mockResolvedValueOnce({ data: { success: true, data: { data: [{ id: 1 }], pagination: { page: 2, limit: 6, total: 7, pages: 2, hasMore: true } } } })
       .mockResolvedValueOnce({ data: { data: [{ id: 'n1' }] } });
 
     const result = await fetchDashboardData({ activePage: 2, activeLimit: 6 });

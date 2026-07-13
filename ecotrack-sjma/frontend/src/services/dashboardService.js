@@ -20,13 +20,17 @@ function unwrap(payload) {
 }
 
 function extractPaginated(payload) {
-  const data = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload)
-      ? payload
+  const normalized = Array.isArray(payload?.data)
+    ? payload
+    : unwrap(payload) || payload || {};
+
+  const data = Array.isArray(normalized?.data)
+    ? normalized.data
+    : Array.isArray(normalized)
+      ? normalized
       : [];
 
-  const pagination = payload?.pagination || {
+  const pagination = normalized?.pagination || {
     page: 1,
     limit: data.length || 0,
     total: data.length || 0,
