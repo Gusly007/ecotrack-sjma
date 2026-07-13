@@ -157,8 +157,8 @@ const services = {
     baseUrl: process.env.NOTIFICATION_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/V1/notifications' },
-      { mountPath: '/api/V1/admin/notifications' }
+      { mountPath: '/api/V1/notifications', rewrite: (path) => path.replace(/^\/api\/V1\/notifications/, '/api/notifications') },
+      { mountPath: '/api/V1/admin/notifications', rewrite: (path) => path.replace(/^\/api\/V1\/admin\/notifications/, '/api/admin/notifications') }
     ]
   }
 };
