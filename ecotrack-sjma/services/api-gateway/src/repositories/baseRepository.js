@@ -12,21 +12,26 @@ class BaseRepository {
   async connect() {
     if (this.pool) return;
 
-    const dbHost = process.env.DB_HOST || 'ecotrack-postgres';
-    const dbPort = process.env.DB_PORT || 5432;
-    const dbName = process.env.DB_NAME || 'ecotrack';
-    const dbUser = process.env.DB_USER || 'ecotrack_user';
-    const dbPassword = process.env.DB_PASSWORD || 'ecotrack_password';
+    const connectionString = process.env.DATABASE_URL;
 
-    this.pool = new Pool({
-      host: dbHost,
-      port: dbPort,
-      database: dbName,
-      user: dbUser,
-      password: dbPassword,
-      max: 10,
-      idleTimeoutMillis: 30000
-    });
+    const poolConfig = connectionString
+      ? {
+          connectionString,
+          ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+          max: 10,
+          idleTimeoutMillis: 30000
+        }
+      : {
+          host: process.env.DB_HOST || 'ecotrack-postgres',
+          port: process.env.DB_PORT || 5432,
+          database: process.env.DB_NAME || 'ecotrack',
+          user: process.env.DB_USER || 'ecotrack_user',
+          password: process.env.DB_PASSWORD || 'ecotrack_password',
+          max: 10,
+          idleTimeoutMillis: 30000
+        };
+
+    this.pool = new Pool(poolConfig);
 
     try {
       await this.pool.query('SELECT 1');

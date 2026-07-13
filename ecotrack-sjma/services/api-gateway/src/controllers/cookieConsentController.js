@@ -23,7 +23,11 @@ class CookieConsentController {
       }
 
       // Extract first IP from X-Forwarded-For (may contain multiple IPs separated by comma)
-      let ip_address = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+      let ip_address = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '0.0.0.0';
+      // Nettoyer le préfixe ::ffff: pour IPv4-mapped IPv6
+      if (ip_address.startsWith('::ffff:')) {
+        ip_address = ip_address.replace('::ffff:', '');
+      }
       const user_agent = req.headers['user-agent'] || 'unknown';
       const action = consent_status === 'REJECTED' ? 'REJECTED' : 'ACCEPTED';
 
