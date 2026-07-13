@@ -184,6 +184,8 @@ jobs:
             --project=ecotrack-498118-i5 \
             --set-env-vars="\
           NODE_ENV=production,\
+          FRONTEND_URL=https://gusly007.github.io,\
+          ALLOWED_ORIGINS=https://gusly007.github.io,\
           DATABASE_URL=${DATABASE_URL},\
           JWT_SECRET=${JWT_ACCESS},\
           JWT_ACCESS_SECRET=${JWT_ACCESS},\
