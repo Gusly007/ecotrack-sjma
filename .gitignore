@@ -1,2 +1,9 @@
 # Claude Code local settings (user-specific permissions, not shared)
 .claude/settings.local.json
+
+# graphify generated artifacts (knowledge graph, HTML, cache, reports)
+graphify-out/
+
+# graphify agent integration (machine-specific: absolute hook paths)
+AGENTS.md
+.codex/
