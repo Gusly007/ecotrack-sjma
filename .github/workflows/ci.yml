@@ -2553,7 +2553,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   # =========================================================================
   # JOB 5: TEST DOCKER IMAGE - TOUS LES SERVICES
