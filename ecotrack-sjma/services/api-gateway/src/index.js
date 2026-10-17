@@ -148,7 +148,7 @@ const services = {
     port: parseInt(process.env.IOT_PORT, 10) || 3013,
     baseUrl: process.env.IOT_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/V1/iot' }]
+    routes: [{ mountPath: '/api/V1/iot', rewrite: (path) => path.replace(/^\/api\/V1\/iot/, '/api/iot') }]
   },
   notifications: {
     displayName: 'Notification Manager Service',
@@ -672,7 +672,7 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       if (status) params.append('status', status);
 
       const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
-      const response = await axios.get(`${iotBase}/api/V1/alerts?${params.toString()}`, {
+      const response = await axios.get(`${iotBase}/api/alerts?${params.toString()}`, {
         timeout: 5000
       });
 
@@ -698,7 +698,7 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       const axios = (await import('axios')).default;
 
       const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
-      const response = await axios.patch(`${iotBase}/api/V1/iot/alerts/${id}`, {
+      const response = await axios.patch(`${iotBase}/api/iot/alerts/${id}`, {
         statut
       }, {
         timeout: 5000
@@ -719,7 +719,7 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
 
       // 1. Get IoT alerts from service-iot (with status filter)
       const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
-      const iotResponse = await axios.get(`${iotBase}/api/V1/alerts`, {
+      const iotResponse = await axios.get(`${iotBase}/api/alerts`, {
         params: { status, limit: 1000, offset: 0 },
         timeout: 5000
       }).catch(() => ({ data: { data: [], total: 0 } }));
@@ -814,7 +814,7 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
       const axios = (await import('axios')).default;
       
       const iotBase = process.env.IOT_SERVICE_URL || 'http://localhost:3013';
-      const response = await axios.get(`${iotBase}/api/V1/alerts`, {
+      const response = await axios.get(`${iotBase}/api/alerts`, {
         params: { limit: 1000 },
         timeout: 5000
       }).catch(() => ({ data: { data: [] } }));
@@ -858,7 +858,7 @@ app.post('/api/V1/consent', express.json(), async (req, res) => {
         { name: 'kafka', url: null, type: 'messaging' },
         { name: 'mqtt-broker', url: null, type: 'iot' },
         { name: 'prometheus', url: 'http://prometheus:9090/-/healthy', type: 'monitoring' },
-        { name: 'grafana', url: 'http://grafana:3000/api/V1/health', type: 'monitoring' }
+        { name: 'grafana', url: 'http://grafana:3000/api/health', type: 'monitoring' }
       ];
 
       const results = await Promise.allSettled(

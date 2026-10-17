@@ -70,6 +70,24 @@ describe('Auth Middleware', () => {
       });
     });
 
+    it('should require auth for /api/V1/iot/sensors/status and forward the user', () => {
+      req.path = '/api/V1/iot/sensors/status';
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+
+      // service-iot lit x-user-role : le gateway doit le renseigner sur cette route
+      req.headers.authorization = 'Bearer valid_token';
+      mockVerify.mockReturnValue({ userId: 7, role: 'GESTIONNAIRE' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.headers['x-user-role']).toBe('GESTIONNAIRE');
+    });
+
     it('should return 401 if authorization header is missing', () => {
       jwtValidationMiddleware(req, res, next);
       

@@ -27,7 +27,6 @@ const publicRoutes = [
   { path: '/api/V1/metrics/status', methods: ['GET'] }, // Frontend metrics
   { path: '/api/V1/analytics', methods: ['GET'] }, // Analytics (public for now)
   { path: '/api/V1/health/all', methods: ['GET'] }, // All services health
-  { path: '/api/V1/iot/sensors/status', methods: ['GET'] }, // Sensors status
   { path: '/api/V1/alerts', methods: ['GET'] }, // Alerts for monitoring
   { path: '/api/V1/dashboard/stats', methods: ['GET'] }, // Dashboard stats
   { path: '/api/V1/consent', methods: ['POST'] }, // Consentement RGPD
