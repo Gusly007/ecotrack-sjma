@@ -29,16 +29,19 @@ function parseDatabaseUrl(databaseUrl) {
 function createDatabaseConfig(defaults = {}) {
   const databaseUrl = process.env.DATABASE_URL || null;
   const parsedUrl = parseDatabaseUrl(databaseUrl);
+  const usingUrl = !!databaseUrl;
 
   return {
     connectionString: databaseUrl || undefined,
-    host: process.env.PGHOST || parsedUrl.host || defaults.host || 'localhost',
-    port: Number(process.env.PGPORT) || parsedUrl.port || defaults.port || 5432,
-    user: process.env.PGUSER || parsedUrl.user || defaults.user || 'postgres',
-    password: process.env.PGPASSWORD !== undefined
-      ? String(process.env.PGPASSWORD)
-      : (parsedUrl.password || defaults.password || ''),
-    database: process.env.PGDATABASE || parsedUrl.database || defaults.database || 'ecotrack',
+    host: (usingUrl ? parsedUrl.host : (process.env.PGHOST || parsedUrl.host)) || defaults.host || 'localhost',
+    port: (usingUrl ? parsedUrl.port : (Number(process.env.PGPORT) || parsedUrl.port)) || defaults.port || 5432,
+    user: (usingUrl ? parsedUrl.user : (process.env.PGUSER || parsedUrl.user)) || defaults.user || 'postgres',
+    password: usingUrl
+      ? (parsedUrl.password || defaults.password || '')
+      : (process.env.PGPASSWORD !== undefined
+          ? String(process.env.PGPASSWORD)
+          : (parsedUrl.password || defaults.password || '')),
+    database: (usingUrl ? parsedUrl.database : (process.env.PGDATABASE || parsedUrl.database)) || defaults.database || 'ecotrack',
     ssl: databaseUrl ? { rejectUnauthorized: false } : false,
     max: defaults.max || 10,
     idleTimeoutMillis: defaults.idleTimeoutMillis || 30000,

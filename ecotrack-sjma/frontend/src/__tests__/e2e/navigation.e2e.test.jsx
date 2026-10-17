@@ -11,7 +11,7 @@ describe('E2E — BottomNav navigation', () => {
     renderWithRouter(<BottomNav />);
     expect(screen.getByText('Accueil')).toBeInTheDocument();
     expect(screen.getByText('Carte')).toBeInTheDocument();
-    expect(screen.getByText('Defis')).toBeInTheDocument();
+    expect(screen.getByText('Défis')).toBeInTheDocument();
     expect(screen.getByText('Profil')).toBeInTheDocument();
     // FAB button has no label
     expect(document.querySelector('.mobile-nav-fab')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('E2E — BottomNav navigation', () => {
 
   it('marks /citoyen/defis route as active on defis path', () => {
     renderWithRouter(<BottomNav />, { initialEntries: ['/citoyen/defis'] });
-    const defis = screen.getByText('Defis').closest('button');
+    const defis = screen.getByText('Défis').closest('button');
     expect(defis).toHaveClass('active');
   });
 });
