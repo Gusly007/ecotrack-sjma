@@ -232,6 +232,38 @@ describe('RBAC Middleware - Service IoT', () => {
     });
   });
 
+  describe('En-têtes transmis par l\'API Gateway', () => {
+    it('devrait construire req.user depuis x-user-id / x-user-role', () => {
+      mockReq = { headers: { 'x-user-id': '7', 'x-user-role': 'GESTIONNAIRE' } };
+
+      const middleware = requirePermission('iot:read');
+      middleware(mockReq, mockRes, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockReq.user).toEqual({ id: 7, role: 'GESTIONNAIRE' });
+    });
+
+    it('devrait retourner 403 si le rôle transmis n\'a pas la permission', () => {
+      mockReq = { headers: { 'x-user-id': '7', 'x-user-role': 'CITOYEN' } };
+
+      const middleware = requirePermissions(['iot:update']);
+      middleware(mockReq, mockRes, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(403);
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it('devrait retourner 401 sans x-user-role', () => {
+      mockReq = { headers: { 'x-user-id': '7' } };
+
+      const middleware = requirePermission('iot:read');
+      middleware(mockReq, mockRes, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Tableau de bord des permissions IoT', () => {
     const endpointsIoT = [
       { method: 'GET', path: '/iot/measurements', permission: 'iot:read', rolesAutorises: ['CITOYEN', 'AGENT', 'GESTIONNAIRE', 'ADMIN'] },

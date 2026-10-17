@@ -22,16 +22,40 @@ const hasPermission = (role, permission) => {
     return perms.includes(permission);
 };
 
+// L'API Gateway valide le JWT puis transmet l'utilisateur via x-user-id / x-user-role
+const resolveRequestUser = (req) => {
+    if (req.user?.role) {
+        return req.user;
+    }
+
+    const headers = req.headers || {};
+    const forwardedRole = headers['x-user-role'];
+    const forwardedId = headers['x-user-id'];
+
+    if (!forwardedRole) {
+        return null;
+    }
+
+    req.user = {
+        id: forwardedId ? parseInt(forwardedId, 10) : undefined,
+        role: forwardedRole
+    };
+
+    return req.user;
+};
+
 const requirePermission = (permission) => {
     return (req, res, next) => {
-        if (!req.user) {
+        const user = resolveRequestUser(req);
+
+        if (!user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
-        if (!hasPermission(req.user.role, permission)) {
-            return res.status(403).json({ 
+        if (!hasPermission(user.role, permission)) {
+            return res.status(403).json({
                 error: 'Insufficient permissions',
                 required: permission,
-                role: req.user.role
+                role: user.role
             });
         }
         next();
@@ -40,15 +64,17 @@ const requirePermission = (permission) => {
 
 const requirePermissions = (permissions) => {
     return (req, res, next) => {
-        if (!req.user) {
+        const user = resolveRequestUser(req);
+
+        if (!user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
-        const hasAny = permissions.some(p => hasPermission(req.user.role, p));
+        const hasAny = permissions.some(p => hasPermission(user.role, p));
         if (!hasAny) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 error: 'Insufficient permissions',
                 required: permissions,
-                role: req.user.role
+                role: user.role
             });
         }
         next();
