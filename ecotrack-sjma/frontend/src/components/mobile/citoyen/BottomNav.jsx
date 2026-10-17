@@ -5,7 +5,7 @@ const navItems = [
   { path: '/citoyen', icon: 'fa-home', label: 'Accueil', exact: true },
   { path: '/citoyen/carte', icon: 'fa-map', label: 'Carte' },
   { path: '/citoyen/signaler', icon: 'fa-plus', label: 'Signaler', fab: true },
-  { path: '/citoyen/defis', icon: 'fa-trophy', label: 'Defis' },
+  { path: '/citoyen/defis', icon: 'fa-trophy', label: 'Défis' },
   { path: '/citoyen/profil', icon: 'fa-user', label: 'Profil' },
 ];
 
