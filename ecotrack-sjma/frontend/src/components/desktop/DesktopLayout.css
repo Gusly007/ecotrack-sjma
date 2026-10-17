@@ -288,6 +288,7 @@
   top: 0;
   bottom: 0;
   width: 250px;
+  padding: 20px 0;
   background: #1a1a2e;
   color: #fff;
   display: flex;
@@ -330,6 +331,13 @@
 
 .sidebar-logo i {
   color: #4CAF50;
+}
+
+/* Évite que les libellés passent à la ligne pendant l'animation d'ouverture */
+.sidebar-logo span,
+.sidebar-menu li a span {
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sidebar-menu {
