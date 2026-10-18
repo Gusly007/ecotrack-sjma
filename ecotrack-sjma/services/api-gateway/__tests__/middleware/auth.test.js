@@ -56,18 +56,13 @@ describe('Auth Middleware', () => {
       expect(next).toHaveBeenCalledTimes(3);
     });
 
-    it('should require auth for /auth/register', () => {
+    it('should skip validation for /auth/register (public route)', () => {
       req.path = '/auth/register';
       req.method = 'POST';
-
       jwtValidationMiddleware(req, res, next);
 
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({
-        error: 'Unauthorized',
-        message: 'Token JWT manquant'
-      });
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should require auth for /api/V1/iot/sensors/status and forward the user', () => {

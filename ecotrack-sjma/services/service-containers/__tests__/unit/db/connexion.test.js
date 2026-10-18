@@ -67,6 +67,11 @@ describe('db/connexion', () => {
   });
 
   test('builds pool from DATABASE_URL for Neon with SSL enabled', async () => {
+    delete process.env.PGHOST;
+    delete process.env.PGPORT;
+    delete process.env.PGUSER;
+    delete process.env.PGPASSWORD;
+    delete process.env.PGDATABASE;
     process.env.DATABASE_URL = 'postgresql://neon_user:neon_pass@ep-test.neon.tech/neondb?sslmode=require';
 
     const { pg } = loadConnexion();
