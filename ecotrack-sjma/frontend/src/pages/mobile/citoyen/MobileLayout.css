@@ -9,10 +9,20 @@
   position: relative;
 }
 
-.mobile-content {
-  padding-bottom: 72px; /* space for bottom nav */
-  min-height: 100vh;
-  min-height: 100dvh;
+/* Contenu du layout citoyen : propre à ce layout, ne PAS réutiliser
+   `.mobile-content` (layout agent/personnel) dont le padding-top de 72 px
+   est réservé à son en-tête fixe — absent ici, il laissait 72 px de vide
+   en tête de chaque écran citoyen (V2-080). */
+.citoyen-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  padding-bottom: calc(72px + var(--mobile-safe-bottom, 0px));
+}
+
+.citoyen-content::-webkit-scrollbar {
+  display: none;
 }
 
 /* On wider screens, add a subtle frame effect */
