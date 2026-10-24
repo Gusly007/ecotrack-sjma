@@ -95,7 +95,7 @@ const services = {
       { mountPath: '/admin/environmental-constants' },
       { mountPath: '/admin/agent-performance' },
       { mountPath: '/avatars' },
-      { mountPath: '/api/V1/users', rewrite: (path) => path.replace(/^\/api\/users/, '/users') }
+      { mountPath: '/api/V1/users', upstreamPath: '/users' }
     ]
   },
   containers: {
@@ -126,12 +126,13 @@ const services = {
     baseUrl: process.env.GAMIFICATIONS_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/V1/gamification/actions', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/V1/gamification/badges', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/V1/gamification/defis', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/V1/gamification/classement', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/V1/gamification/notifications', rewrite: (path) => path.replace(/^\/api\/gamification/, '') },
-      { mountPath: '/api/V1/gamification/stats', rewrite: (path) => path.replace(/^\/api\/gamification\/stats/, '') }
+      { mountPath: '/api/V1/gamification/actions', upstreamPath: '/actions' },
+      { mountPath: '/api/V1/gamification/badges', upstreamPath: '/badges' },
+      { mountPath: '/api/V1/gamification/defis', upstreamPath: '/defis' },
+      { mountPath: '/api/V1/gamification/classement', upstreamPath: '/classement' },
+      { mountPath: '/api/V1/gamification/notifications', upstreamPath: '/notifications' },
+      // Les routes de stats sont montées à la racine du service
+      { mountPath: '/api/V1/gamification/stats', upstreamPath: '' }
     ]
   },
   analytics: {
@@ -148,7 +149,7 @@ const services = {
     port: parseInt(process.env.IOT_PORT, 10) || 3013,
     baseUrl: process.env.IOT_SERVICE_URL,
     swaggerPath: '/api-docs',
-    routes: [{ mountPath: '/api/V1/iot', rewrite: (path) => path.replace(/^\/api\/V1\/iot/, '/api/iot') }]
+    routes: [{ mountPath: '/api/V1/iot', upstreamPath: '/api/iot' }]
   },
   notifications: {
     displayName: 'Notification Manager Service',
@@ -157,8 +158,8 @@ const services = {
     baseUrl: process.env.NOTIFICATION_SERVICE_URL,
     swaggerPath: '/api-docs',
     routes: [
-      { mountPath: '/api/V1/notifications', rewrite: (path) => path.replace(/^\/api\/V1\/notifications/, '/api/notifications') },
-      { mountPath: '/api/V1/admin/notifications', rewrite: (path) => path.replace(/^\/api\/V1\/admin\/notifications/, '/api/admin/notifications') }
+      { mountPath: '/api/V1/notifications', upstreamPath: '/api/notifications' },
+      { mountPath: '/api/V1/admin/notifications', upstreamPath: '/api/admin/notifications' }
     ]
   }
 };
@@ -238,11 +239,20 @@ const CORS_HEADERS = [
   'access-control-max-age',
 ];
 
+// pathRewrite :
+// - chaîne : chemin côté service qui remplace le mountPath
+//   ('/defis' monté sur /api/V1/gamification/defis : /api/V1/gamification/defis/3 -> /defis/3)
+// - fonction : reçoit le chemin complet (mountPath inclus) et renvoie le chemin à transmettre
+// - absent : le chemin complet est transmis tel quel
 const createProxy = (target, pathRewrite, timeoutMs = 30_000) => createProxyMiddleware({
   target,
   changeOrigin: true,
   proxyTimeout: timeoutMs,
   pathRewrite: (path, req) => {
+    // path est relatif au mountPath (Express le retire avant d'appeler le proxy)
+    if (typeof pathRewrite === 'string') {
+      return `${pathRewrite}${path}`;
+    }
     const fullPath = `${req.baseUrl || ''}${path}`;
     if (typeof pathRewrite === 'function') {
       return pathRewrite.length >= 2 ? pathRewrite(fullPath, req) : pathRewrite(fullPath);
@@ -1048,8 +1058,8 @@ Object.entries(services).forEach(([key, svc]) => {
   }
 
   if (svc.status === 'ready' && svc.baseUrl) {
-    svc.routes.forEach(({ mountPath, rewrite }) => {
-      app.use(mountPath, createProxy(svc.baseUrl, rewrite));
+    svc.routes.forEach(({ mountPath, upstreamPath }) => {
+      app.use(mountPath, createProxy(svc.baseUrl, upstreamPath));
     });
   } else {
     svc.routes.forEach(({ mountPath }) => {
