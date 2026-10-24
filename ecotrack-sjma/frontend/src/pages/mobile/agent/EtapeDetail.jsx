@@ -29,7 +29,7 @@ export default function EtapeDetail() {
 
   if (loading) {
     return (
-      <MobileLayout title="Detail de l'etape" showBack>
+      <MobileLayout title="Détail de l'étape" showBack>
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#4CAF50' }}></i>
         </div>
@@ -39,9 +39,9 @@ export default function EtapeDetail() {
 
   if (!etape) {
     return (
-      <MobileLayout title="Detail de l'etape" showBack>
+      <MobileLayout title="Détail de l'étape" showBack>
         <div style={{ textAlign: 'center', padding: '48px' }}>
-          <p style={{ color: '#888' }}>Etape introuvable</p>
+          <p style={{ color: '#888' }}>Étape introuvable</p>
         </div>
       </MobileLayout>
     );
@@ -57,7 +57,7 @@ export default function EtapeDetail() {
   }] : [];
 
   return (
-    <MobileLayout title="Detail de l'etape" showBack>
+    <MobileLayout title="Détail de l'étape" showBack>
       <div className="etape-center">
         <div className="etape-number-lg">{etape.sequence}</div>
         <h3>{etape.uid || etape.conteneur_uid || `Conteneur #${etape.id_conteneur}`}</h3>
@@ -67,7 +67,7 @@ export default function EtapeDetail() {
       <MobileCard>
         <h4 className="detail-section-title"><i className="fas fa-info-circle" style={{ color: '#2196F3' }}></i> Informations conteneur</h4>
         <div className="detail-row"><span>Type</span><strong>{etape.type_nom || '—'}</strong></div>
-        <div className="detail-row"><span>Capacite</span><strong>{etape.capacite_l ? `${etape.capacite_l} L` : '—'}</strong></div>
+        <div className="detail-row"><span>Capacité</span><strong>{etape.capacite_l ? `${etape.capacite_l} L` : '—'}</strong></div>
         <div className="detail-row">
           <span>Remplissage</span>
           <strong style={{ color: (etape.fill_level || 0) >= 80 ? '#f44336' : '#333' }}>
@@ -78,8 +78,8 @@ export default function EtapeDetail() {
       </MobileCard>
 
       <MobileCard>
-        <h4 className="detail-section-title"><i className="fas fa-history" style={{ color: '#FF9800' }}></i> Horaire prevu</h4>
-        <div className="detail-row"><span>Heure estimee</span><strong>{etape.heure_estimee || '—'}</strong></div>
+        <h4 className="detail-section-title"><i className="fas fa-history" style={{ color: '#FF9800' }}></i> Horaire prévu</h4>
+        <div className="detail-row"><span>Heure estimée</span><strong>{etape.heure_estimee || '—'}</strong></div>
         <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? 'Collecte' : 'En attente'}</strong></div>
       </MobileCard>
 

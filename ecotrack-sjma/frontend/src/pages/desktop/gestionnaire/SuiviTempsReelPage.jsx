@@ -89,28 +89,28 @@ export default function SuiviTempsReelPage() {
       {
         icon: "fa-truck",
         iconColor: "blue",
-        label: "Tournees actives",
+        label: "Tournées actives",
         value: `${tourneesEnCours}/${totalTournees}`,
-        change: "Mise a jour temps reel",
+        change: "Mise à jour temps réel",
       },
       {
         icon: "fa-tasks",
         iconColor: "green",
         label: "Progression moyenne",
         value: avgProgression === null ? "-" : `${avgProgression} %`,
-        change: "Tournees EN_COURS",
+        change: "Tournées en cours",
       },
       {
         icon: "fa-flag-checkered",
         iconColor: "orange",
-        label: "Tournees > 80%",
+        label: "Tournées > 80%",
         value: nearlyDoneCount === null ? "-" : String(nearlyDoneCount),
-        change: "Presque terminees",
+        change: "Presque terminées",
       },
       {
         icon: "fa-recycle",
         iconColor: "green",
-        label: "Etapes collectees",
+        label: "Étapes collectées",
         value: String(conteneursCollectes),
         change: `${totalCollectes} collectes (30j)`,
       },
@@ -120,7 +120,7 @@ export default function SuiviTempsReelPage() {
   if (loading) {
     return (
       <div className="suivi-page">
-        <i className="fas fa-spinner fa-spin" /> Chargement du suivi en temps reel...
+        <i className="fas fa-spinner fa-spin" /> Chargement du suivi en temps réel...
       </div>
     );
   }
@@ -129,8 +129,8 @@ export default function SuiviTempsReelPage() {
     <div className="suivi-page">
       <div className="suivi-header">
         <div className="suivi-title-wrap">
-          <h2>Suivi en temps reel des tournees</h2>
-          <p>Visualisez les tournees actives et leur progression en direct.</p>
+          <h2>Suivi en temps réel des tournées</h2>
+          <p>Visualisez les tournées actives et leur progression en direct.</p>
         </div>
 
         <div className="suivi-toolbar">
@@ -150,7 +150,7 @@ export default function SuiviTempsReelPage() {
             disabled={refreshing || loading}
           >
             <i className={`fas fa-sync-alt ${refreshing ? "fa-spin" : ""}`} />
-            {refreshing ? "Actualisation..." : "Rafraichir"}
+            {refreshing ? "Actualisation..." : "Rafraîchir"}
           </button>
 
           {lastUpdated && (

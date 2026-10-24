@@ -40,7 +40,7 @@ export default function TerminerTournee() {
     try {
       await changeStatut(tournee.id_tournee, 'TERMINEE');
       setFinished(true);
-      showSuccess('Tournee terminee avec succes !');
+      showSuccess('Tournée terminée avec succès !');
     } catch (err) {
       showError(err.response?.data?.message || 'Erreur lors de la finalisation');
     } finally {
@@ -50,7 +50,7 @@ export default function TerminerTournee() {
 
   if (loading) {
     return (
-      <MobileLayout title="Terminer la tournee" showBack>
+      <MobileLayout title="Terminer la tournée" showBack>
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#4CAF50' }}></i>
         </div>
@@ -60,14 +60,14 @@ export default function TerminerTournee() {
 
   if (finished) {
     return (
-      <MobileLayout title="Tournee terminee" showBack>
+      <MobileLayout title="Tournée terminée" showBack>
         <div className="success-screen">
           <div className="success-icon"><i className="fas fa-flag-checkered"></i></div>
-          <h3>Tournee terminee !</h3>
-          <p style={{ color: '#888', fontSize: '0.85rem' }}>Excellent travail. Vos donnees ont ete enregistrees.</p>
+          <h3>Tournée terminée !</h3>
+          <p style={{ color: '#888', fontSize: '0.85rem' }}>Excellent travail. Vos données ont été enregistrées.</p>
         </div>
         <button className="btn-primary-mobile" onClick={() => navigate('/agent')}>
-          <i className="fas fa-home"></i> Retour a l'accueil
+          <i className="fas fa-home"></i> Retour à l'accueil
         </button>
       </MobileLayout>
     );
@@ -78,9 +78,9 @@ export default function TerminerTournee() {
   const anomalies = progress?.anomalies || 0;
 
   return (
-    <MobileLayout title="Terminer la tournee" showBack>
+    <MobileLayout title="Terminer la tournée" showBack>
       <MobileCard gradient>
-        <h3 style={{ marginBottom: 16 }}><i className="fas fa-flag-checkered"></i> Resume de la tournee</h3>
+        <h3 style={{ marginBottom: 16 }}><i className="fas fa-flag-checkered"></i> Résumé de la tournée</h3>
         <div className="terminer-stats-grid">
           <div className="terminer-stat">
             <strong>{collected}/{total}</strong>
@@ -96,7 +96,7 @@ export default function TerminerTournee() {
           </div>
           <div className="terminer-stat">
             <strong>{tournee?.duree_reelle_min ? `${Math.floor(tournee.duree_reelle_min / 60)}h${String(tournee.duree_reelle_min % 60).padStart(2, '0')}` : '—'}</strong>
-            <span>Duree</span>
+            <span>Durée</span>
           </div>
         </div>
       </MobileCard>
@@ -115,7 +115,7 @@ export default function TerminerTournee() {
         <h4 style={{ marginBottom: 8 }}>Informations</h4>
         <div className="detail-row"><span>Code</span><strong>{tournee?.code || '—'}</strong></div>
         <div className="detail-row"><span>Zone</span><strong>{tournee?.zone_nom || '—'}</strong></div>
-        <div className="detail-row"><span>Vehicule</span><strong>{tournee?.vehicule || '—'}</strong></div>
+        <div className="detail-row"><span>Véhicule</span><strong>{tournee?.vehicule || '—'}</strong></div>
         <div className="detail-row"><span>Statut</span><strong>{tournee?.statut || '—'}</strong></div>
       </MobileCard>
 

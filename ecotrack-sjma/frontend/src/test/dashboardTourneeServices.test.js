@@ -57,7 +57,7 @@ describe('dashboardService + tourneeService', () => {
       .mockRejectedValueOnce(new Error('tournees fail'))
       .mockRejectedValueOnce(new Error('notif fail'));
 
-    await expect(fetchDashboardData()).rejects.toThrow('Impossible de charger les donnees de routes');
+    await expect(fetchDashboardData()).rejects.toThrow('Impossible de charger les données de routes');
   });
 
   it('fetchTourneesStats and fetchActiveTournees unwrap and paginate payloads', async () => {
@@ -105,6 +105,6 @@ describe('dashboardService + tourneeService', () => {
       .mockRejectedValueOnce(new Error('all'))
       .mockRejectedValueOnce(new Error('active'));
 
-    await expect(fetchTourneesPageData()).rejects.toThrow('Impossible de charger les donnees des tournees');
+    await expect(fetchTourneesPageData()).rejects.toThrow('Impossible de charger les données des tournées');
   });
 });

@@ -21,9 +21,9 @@ INSERT INTO notification (type, titre, corps, est_lu, date_creation, id_utilisat
 SELECT v.type, v.titre, v.corps, v.est_lu, v.date_creation, u.id_utilisateur
 FROM (
   VALUES
-    ('ALERTE', 'Alerte conteneur', 'Un conteneur signale un depassement de seuil.', FALSE, NOW() - INTERVAL '4 hours', 'citoyen1@ecotrack.local'),
-    ('BADGE', 'Nouveau badge', 'Vous avez gagne le badge ECO_STARTER.', TRUE, NOW() - INTERVAL '1 day', 'citoyen2@ecotrack.local'),
-    ('SYSTEME', 'Maintenance planifiee', 'Une maintenance est prevue demain.', FALSE, NOW() - INTERVAL '2 days', 'citoyen3@ecotrack.local')
+    ('ALERTE', 'Alerte conteneur', 'Un conteneur signale un dépassement de seuil.', FALSE, NOW() - INTERVAL '4 hours', 'citoyen1@ecotrack.local'),
+    ('BADGE', 'Nouveau badge', 'Vous avez gagné le badge ECO_STARTER.', TRUE, NOW() - INTERVAL '1 day', 'citoyen2@ecotrack.local'),
+    ('SYSTEME', 'Maintenance planifiée', 'Une maintenance est prévue demain.', FALSE, NOW() - INTERVAL '2 days', 'citoyen3@ecotrack.local')
 ) AS v(type, titre, corps, est_lu, date_creation, user_email)
 JOIN utilisateur u ON u.email = v.user_email
 WHERE NOT EXISTS (

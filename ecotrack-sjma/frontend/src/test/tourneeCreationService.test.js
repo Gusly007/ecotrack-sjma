@@ -63,7 +63,7 @@ describe('tourneeService - creation optimisee (gestionnaire)', () => {
       .mockRejectedValueOnce(new Error('vehicules fail'));
 
     await expect(fetchTourneeCreationOptions())
-      .rejects.toThrow('Impossible de charger les references de creation');
+      .rejects.toThrow('Impossible de charger les références de création');
   });
 
   it('fetchAgentsForAssignment utilise /users/agents avec pagination par défaut', async () => {

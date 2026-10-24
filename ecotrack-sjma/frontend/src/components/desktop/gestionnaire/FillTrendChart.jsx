@@ -68,7 +68,7 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refres
     return (
       <div className="ftc-wrap">
         <div className="ftc-header">
-          <h3>Evolution du taux de remplissage ({days} jours)</h3>
+          <h3>Évolution du taux de remplissage ({days} jours)</h3>
         </div>
         <div className="ftc-empty"><i className="fas fa-spinner fa-spin" /> Chargement...</div>
       </div>
@@ -79,7 +79,7 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refres
     return (
       <div className="ftc-wrap">
         <div className="ftc-header">
-          <h3>Evolution du taux de remplissage ({days} jours)</h3>
+          <h3>Évolution du taux de remplissage ({days} jours)</h3>
           <button type="button" className="ftc-retry-btn" onClick={load}>
             <i className="fas fa-redo" /> Réessayer
           </button>
@@ -92,7 +92,7 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refres
   return (
     <div className="ftc-wrap">
       <div className="ftc-header">
-        <h3>Evolution du taux de remplissage ({days} jours)</h3>
+        <h3>Évolution du taux de remplissage ({days} jours)</h3>
         <span className="ftc-count">{points.length} point{points.length !== 1 ? 's' : ''}</span>
       </div>
 
@@ -136,7 +136,7 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refres
             showingFrom={(page - 1) * pageSize + 1}
             showingTo={Math.min(page * pageSize, points.length)}
             totalItems={points.length}
-            label="jour"
+            label="jours"
           />
         </>
       )}

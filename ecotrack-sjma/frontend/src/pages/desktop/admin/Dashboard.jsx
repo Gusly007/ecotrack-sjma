@@ -17,15 +17,15 @@ const severityConfig = {
 };
 
 const issueLabels = {
-  no_data: 'Aucune donnee',
-  no_recent_data: 'Pas de donnees recentes',
+  no_data: 'Aucune donnée',
+  no_recent_data: 'Pas de données récentes',
   critical_battery: 'Batterie critique',
   low_battery: 'Batterie faible',
-  sensor_stuck: 'Capteur potentiellement bloque',
-  insufficient_data: 'Donnees insuffisantes',
+  sensor_stuck: 'Capteur potentiellement bloqué',
+  insufficient_data: 'Données insuffisantes',
   sudden_fill: 'Variation brutale de remplissage',
   sudden_empty: 'Vidage anormal',
-  temperature_extreme: 'Temperature extreme',
+  temperature_extreme: 'Température extrême',
   statistical_outlier: 'Outlier statistique'
 };
 
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
         sensorUid: container.sensorUid,
         containerId: container.containerId,
         containerUid: container.containerUid,
-        issues: anomalyTypes.length > 0 ? anomalyTypes : ['Anomalies repetitives detectees'],
+        issues: anomalyTypes.length > 0 ? anomalyTypes : ['Anomalies repetitives détectées'],
         source: 'predicted',
         score: Number(container.anomaliesRate || 0),
         anomalyCount: container.anomaliesCount,
@@ -649,10 +649,10 @@ Conf: score de confiance de la prédiction ML pour ce conteneur">
             <div className="panel-header">
               <h3><i className="fas fa-search" style={{ color: '#FF5722' }}></i> Anomalies Globales (Z-Score &gt; 2)</h3>
               <span className="info-badge" title="Definition des chiffres:
-Badge rouge (en haut a droite): nombre de conteneurs avec au moins une anomalie.
+Badge rouge (en haut à droite): nombre de conteneurs avec au moins une anomalie.
 Scannes: nombre total de conteneurs analyses.
-Anomalies: nombre total d'anomalies detectees sur tous les conteneurs analyses.
-Taux global: (Anomalies / Total des mesures analysees) x 100.
+Anomalies: nombre total d'anomalies détectées sur tous les conteneurs analyses.
+Taux global: (Anomalies / Total des mesures analysées) x 100.
 La liste en dessous affiche seulement les conteneurs les plus anormaux (top), pas tous les conteneurs scannes.">
                 <i className="fas fa-info-circle"></i>
               </span>
@@ -733,11 +733,11 @@ La liste en dessous affiche seulement les conteneurs les plus anormaux (top), pa
         <div className="analytics-grid">
           <div className="panel analytics-panel">
             <div className="panel-header">
-              <h3><i className="fas fa-microchip" style={{ color: '#f44336' }}></i> Capteurs defaillants (detectes + predits)</h3>
+              <h3><i className="fas fa-microchip" style={{ color: '#f44336' }}></i> Capteurs défaillants (détectés + prédits)</h3>
               <span className="badge danger">{sensorHealthSignals.length}</span>
             </div>
             <p style={{ fontSize: '0.75rem', color: '#666', marginBottom: '12px' }}>
-              Detection basee sur le backend analytics (AnomalyService): incidents reels + risque predit par anomalies.
+              Détection basée sur le backend analytics (AnomalyService): incidents réels + risque prédit par anomalies.
             </p>
             {sensorHealthSignals.length === 0 ? (
               <div className="no-data-message">
@@ -752,10 +752,10 @@ La liste en dessous affiche seulement les conteneurs les plus anormaux (top), pa
                         <span className="sensor-id">
                           Capteur: {sensor.sensorUid || (sensor.sensorId ? `#${sensor.sensorId}` : 'inconnu')} {'->'} Conteneur #{sensor.containerId || 'N/A'}
                         </span>
-                        <span className="sensor-issues">{sensor.issues?.join(', ') || 'Probleme capteur'}</span>
+                        <span className="sensor-issues">{sensor.issues?.join(', ') || 'Problème capteur'}</span>
                       </div>
                       <span className="sensor-status error">
-                        {sensor.source === 'detected+predicted' ? 'Detecte + predit' : sensor.source === 'detected' ? 'Detecte' : 'Predit'}
+                        {sensor.source === 'detected+predicted' ? 'Détecté + prédit' : sensor.source === 'detected' ? 'Détecté' : 'Prédit'}
                       </span>
                     </div>
                   ))}

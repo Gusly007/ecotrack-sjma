@@ -61,7 +61,7 @@ export default function StatsPage() {
           <div className="stats-summary-item">
             <i className="fas fa-route" style={{ fontSize: '1.5rem' }}></i>
             <strong>{stats?.total_tournees ?? '—'}</strong>
-            <span>Tournees</span>
+            <span>Tournées</span>
           </div>
           <div className="stats-summary-item">
             <i className="fas fa-weight-hanging" style={{ fontSize: '1.5rem' }}></i>
@@ -74,7 +74,7 @@ export default function StatsPage() {
       <MobileCard>
         <h4 className="detail-section-title"><i className="fas fa-chart-bar" style={{ color: '#2196F3' }}></i> Performance</h4>
         <div className="detail-row">
-          <span>Taux de reussite</span>
+          <span>Taux de réussite</span>
           <strong style={{ color: '#4CAF50' }}>
             {stats?.taux_reussite_pct != null ? `${stats.taux_reussite_pct}%` : '—'}
           </strong>
@@ -98,7 +98,7 @@ export default function StatsPage() {
           <h4 className="detail-section-title"><i className="fas fa-leaf" style={{ color: '#4CAF50' }}></i> Impact environnemental</h4>
           <div className="eco-impact">
             <div className="eco-value">{stats.co2_economise_kg}</div>
-            <div className="eco-label">kg CO2 economises</div>
+            <div className="eco-label">kg CO2 économisés</div>
           </div>
         </MobileCard>
       )}

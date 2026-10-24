@@ -24,13 +24,16 @@ export default function Pagination({
 
   const safeTotalPages = Math.max(1, totalPages || 1);
   const safeTotalItems = totalItems || 0;
-  
+  // `label` est au pluriel ; au singulier on retire le « s » de chaque mot
+  // (« tournées actives » -> « tournée active »).
+  const itemsLabel = safeTotalItems === 1 ? label.replace(/s(?=\s|$)/g, '') : label;
+
   return (
     <div className="table-footer" style={{ display: 'flex !important', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e0e0e0', backgroundColor: '#fafafa' }}>
       <span className="results-count">
         {safeTotalPages > 1 
           ? `Affichage ${showingFrom || 1}-${showingTo || safeTotalItems} sur ${safeTotalItems} ${label}`
-          : `${safeTotalItems} ${label}${safeTotalItems !== 1 ? 's' : ''}`
+          : `${safeTotalItems} ${itemsLabel}`
         }
       </span>
       <div className="pagination">

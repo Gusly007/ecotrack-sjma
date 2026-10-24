@@ -205,7 +205,7 @@ export async function fetchTourneesPageData({
     allTourneesResult.status === "rejected" &&
     activeTourneesResult.status === "rejected"
   ) {
-    throw new Error("Impossible de charger les donnees des tournees");
+    throw new Error("Impossible de charger les données des tournées");
   }
 
   return {
@@ -230,7 +230,7 @@ export async function fetchTourneeCreationOptions() {
     && agentsResult.status === "rejected"
     && vehiclesResult.status === "rejected"
   ) {
-    throw new Error("Impossible de charger les references de creation");
+    throw new Error("Impossible de charger les références de création");
   }
 
   const zones = zonesResult.status === "fulfilled"

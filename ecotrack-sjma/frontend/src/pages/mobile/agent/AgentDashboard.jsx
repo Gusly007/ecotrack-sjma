@@ -60,7 +60,7 @@ export default function AgentDashboard() {
       ) : tournee ? (
         <>
           <MobileCard gradient>
-            <h3><i className="fas fa-route"></i> Tournee du jour</h3>
+            <h3><i className="fas fa-route"></i> Tournée du jour</h3>
             <p style={{ fontSize: '0.85rem', marginTop: -4, marginBottom: 12 }}>
               <i className="fas fa-map-marker-alt"></i> Zone : {tournee.zone_nom || tournee.zone || '—'}
             </p>
@@ -79,7 +79,7 @@ export default function AgentDashboard() {
               </div>
               <div className="summary-item">
                 <strong>{tournee.duree_prevue_min ? `~${Math.floor(tournee.duree_prevue_min / 60)}h${String(tournee.duree_prevue_min % 60).padStart(2, '0')}` : '—'}</strong>
-                <span>Duree est.</span>
+                <span>Durée est.</span>
               </div>
             </div>
           </MobileCard>
@@ -87,11 +87,11 @@ export default function AgentDashboard() {
           <MobileCard>
             <div className="route-header">
               <div>
-                <strong>Tournee #{tournee.code || tournee.id_tournee}</strong>
+                <strong>Tournée #{tournee.code || tournee.id_tournee}</strong>
                 <p style={{ fontSize: '0.8rem', color: '#888' }}>{tournee.zone_nom || ''} — {tournee.type_conteneur || ''}</p>
               </div>
               <span className={`route-badge ${tournee.statut === 'EN_COURS' ? 'active' : ''}`}>
-                {tournee.statut === 'EN_COURS' ? 'En cours' : tournee.statut === 'PLANIFIEE' ? 'Planifiee' : tournee.statut}
+                {tournee.statut === 'EN_COURS' ? 'En cours' : tournee.statut === 'PLANIFIEE' ? 'Planifiée' : tournee.statut}
               </span>
             </div>
             <div className="route-stats">
@@ -105,21 +105,21 @@ export default function AgentDashboard() {
               </div>
               <div className="route-stat">
                 <strong>{tournee.vehicule || '—'}</strong>
-                <span>Vehicule</span>
+                <span>Véhicule</span>
               </div>
             </div>
           </MobileCard>
 
           <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')} style={{ marginBottom: 16 }}>
-            <i className="fas fa-play"></i> {tournee.statut === 'EN_COURS' ? 'Continuer la tournee' : 'Voir la tournee'}
+            <i className="fas fa-play"></i> {tournee.statut === 'EN_COURS' ? 'Continuer la tournée' : 'Voir la tournée'}
           </button>
         </>
       ) : (
         <MobileCard>
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <i className="fas fa-calendar-check" style={{ fontSize: '2rem', color: '#ccc', marginBottom: 12 }}></i>
-            <h3 style={{ color: '#888' }}>Pas de tournee aujourd'hui</h3>
-            <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Aucune tournee ne vous est assignee pour le moment.</p>
+            <h3 style={{ color: '#888' }}>Pas de tournée aujourd'hui</h3>
+            <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Aucune tournée ne vous est assignée pour le moment.</p>
           </div>
         </MobileCard>
       )}
@@ -138,7 +138,7 @@ export default function AgentDashboard() {
           <span className="impact-value">
             {weekStats?.taux_reussite_pct != null ? `${weekStats.taux_reussite_pct}%` : '—'}
           </span>
-          <span className="impact-label">Reussite</span>
+          <span className="impact-label">Réussite</span>
         </MobileCard>
         <MobileCard className="impact-card">
           <i className="fas fa-trophy" style={{ color: '#9c27b0', fontSize: '1.5rem' }}></i>

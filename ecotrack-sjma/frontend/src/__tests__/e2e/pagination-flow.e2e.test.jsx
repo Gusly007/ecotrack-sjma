@@ -22,6 +22,24 @@ describe('E2E — Pagination navigation flows', () => {
     expect(screen.getByText(/Affichage 11-20 sur 50 éléments/i)).toBeInTheDocument();
   });
 
+  // Accords (SCRUM-39) : `label` est au pluriel, le singulier est déduit pour 1 élément.
+  it('does not add an extra "s" to a plural label on a single page', () => {
+    render(<Pagination currentPage={1} totalPages={1} totalItems={5} label="conteneurs" />);
+    expect(screen.getByText('5 conteneurs')).toBeInTheDocument();
+  });
+
+  it('uses the singular of every word for exactly one item', () => {
+    render(<Pagination currentPage={1} totalPages={1} totalItems={1} label="tournées actives" />);
+    expect(screen.getByText('1 tournée active')).toBeInTheDocument();
+  });
+
+  it('keeps the plural label in the multi-page range summary', () => {
+    render(
+      <Pagination currentPage={1} totalPages={56} totalItems={333} showingFrom={1} showingTo={6} label="tournées actives" />
+    );
+    expect(screen.getByText('Affichage 1-6 sur 333 tournées actives')).toBeInTheDocument();
+  });
+
   it('previous button is disabled on first page', () => {
     render(<Pagination currentPage={1} totalPages={3} onPageChange={vi.fn()} />);
     const buttons = screen.getAllByRole('button');

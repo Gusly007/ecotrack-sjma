@@ -122,7 +122,7 @@ if (loading) {
             onClick={() => loadKpis(true)}
             disabled={refreshing}
           >
-            {refreshing ? 'Actualisation...' : 'Rafraichir'}
+            {refreshing ? 'Actualisation...' : 'Rafraîchir'}
           </Button>
         </div>
       </div>
@@ -135,7 +135,7 @@ if (loading) {
         <StatCard
           icon="fa-exclamation-triangle"
           iconColor="red"
-          label="Taux de debordement"
+          label="Taux de débordement"
           value={`${overview.overflowRate.toFixed(1)}%`}
           change={`${toNumber(kpis?.criticalContainers)} conteneurs critiques`}
         />
@@ -149,16 +149,16 @@ if (loading) {
         <StatCard
           icon="fa-gas-pump"
           iconColor="green"
-          label="Carburant economise ce mois"
+          label="Carburant économisé ce mois"
           value={`${overview.fuelSavedMonth.toFixed(1)} L`}
-          change="Optimisation des tournees"
+          change="Optimisation des tournées"
         />
         <StatCard
           icon="fa-leaf"
           iconColor="green"
-          label="CO2 reduit"
+          label="CO2 réduit"
           value={`${overview.co2Reduced.toFixed(1)} kg`}
-          change={`${overview.co2ReductionPct.toFixed(1)}% de reduction`}
+          change={`${overview.co2ReductionPct.toFixed(1)}% de réduction`}
         />
       </StatsGrid>
 

@@ -69,7 +69,7 @@ export async function fetchDashboardData({ activePage = 1, activeLimit = 6 } = {
     : notificationsPayload.data || [];
 
   if (statsResult.status === "rejected" && tourneesResult.status === "rejected") {
-    throw new Error("Impossible de charger les donnees de routes");
+    throw new Error("Impossible de charger les données de routes");
   }
 
   return {

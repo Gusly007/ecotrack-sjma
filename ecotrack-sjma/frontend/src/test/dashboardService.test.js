@@ -52,6 +52,6 @@ describe('dashboardService', () => {
       .mockRejectedValueOnce(new Error('tournees fail'))
       .mockRejectedValueOnce(new Error('notif fail'));
 
-    await expect(fetchDashboardData()).rejects.toThrow('Impossible de charger les donnees de routes');
+    await expect(fetchDashboardData()).rejects.toThrow('Impossible de charger les données de routes');
   });
 });
