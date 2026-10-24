@@ -10,6 +10,15 @@ export default defineConfig({
     port: parseInt(process.env.VITE_PORT || '5173'),
     strictPort: false,
     cors: true,
+    // Dev only : le proxy évite les blocages CORS entre le serveur Vite (5174)
+    // et la gateway (3000). Ignoré par `vite build`.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   optimizeDeps: {
     include: ['leaflet', 'leaflet-draw', 'html5-qrcode', 'react-easy-crop', 'axios', 'jwt-decode'],

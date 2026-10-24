@@ -64,6 +64,8 @@ export default function CitoyenSignaler() {
   // État UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // 'idle' | 'checking' | 'found' | 'not_found' — statut de résolution de l'UID saisi.
+  const [uidStatus, setUidStatus] = useState('idle');
 
   // Charge les types de signalement une fois.
   useEffect(() => {
@@ -77,10 +79,14 @@ export default function CitoyenSignaler() {
 
   // Lookup conteneur débouncé pour pré-remplir zone + type.
   useEffect(() => {
-    if (!conteneurUid || idConteneur) return;
+    if (!conteneurUid || idConteneur) {
+      setUidStatus(idConteneur ? 'found' : 'idle');
+      return;
+    }
     const uid = conteneurUid.trim().toUpperCase();
-    if (!uid) return;
+    if (!uid) { setUidStatus('idle'); return; }
     let alive = true;
+    setUidStatus('checking');
     const t = setTimeout(async () => {
       try {
         const found = await citoyenService.getContainerByUid(uid);
@@ -91,18 +97,20 @@ export default function CitoyenSignaler() {
           typeLabel: CONTAINER_TYPE_LABEL[found.id_type] || 'Conteneur',
           zone: found.id_zone ? `Zone ${found.id_zone}` : null,
         });
+        setUidStatus('found');
       } catch {
-        // UID inconnu — on affiche quand même ce que le citoyen a tapé.
+        // UID inconnu → carte rouge « Conteneur introuvable », envoi bloqué.
         if (!alive) return;
-        setConteneurInfo({ uid, typeLabel: null, zone: null });
+        setConteneurInfo(null);
+        setUidStatus('not_found');
       }
     }, 400);
     return () => { alive = false; clearTimeout(t); };
   }, [conteneurUid, idConteneur]);
 
   const canSubmit = useMemo(() => {
-    return (conteneurUid.trim().length > 0 || idConteneur) && idType != null && !loading;
-  }, [conteneurUid, idConteneur, idType, loading]);
+    return idConteneur != null && idType != null && !loading;
+  }, [idConteneur, idType, loading]);
 
   // Redimensionne à 800px max + JPEG 75% → data URL ~50-150 ko stocké dans
   // signalement.url_photo (TEXT).
@@ -205,11 +213,29 @@ export default function CitoyenSignaler() {
             className="sig-input sig-uid-input"
             placeholder="Ou saisir l'identifiant (ex: CNT-00012)"
             value={conteneurUid}
-            onChange={e => { setConteneurUid(e.target.value); setIdConteneur(null); setConteneurInfo(null); }}
+            onChange={e => { setConteneurUid(e.target.value); setIdConteneur(null); setConteneurInfo(null); setUidStatus('idle'); }}
             maxLength={64}
           />
 
-          {conteneurInfo && (
+          {uidStatus === 'not_found' && (
+            <div className="sig-container-card sig-container-card--error" role="alert">
+              <i className="fas fa-times-circle"></i>
+              <div>
+                <strong>{conteneurUid.trim().toUpperCase()}</strong>
+                <span>Conteneur introuvable — vérifiez l'identifiant ou scannez le QR code.</span>
+              </div>
+            </div>
+          )}
+          {uidStatus === 'checking' && (
+            <div className="sig-container-card sig-container-card--pending">
+              <span className="sig-uid-spinner" aria-hidden="true"></span>
+              <div>
+                <strong>{conteneurUid.trim().toUpperCase()}</strong>
+                <span>Vérification de l'identifiant…</span>
+              </div>
+            </div>
+          )}
+          {conteneurInfo && uidStatus !== 'not_found' && (
             <div className="sig-container-card">
               <i className="fas fa-check-circle"></i>
               <div>
@@ -294,7 +320,9 @@ export default function CitoyenSignaler() {
         <button type="submit" className="sig-submit-btn" disabled={!canSubmit}>
           {loading
             ? <><span className="spinner" /> Envoi…</>
-            : <><i className="fas fa-paper-plane"></i> Envoyer le signalement (+10 pts)</>}
+            : idConteneur == null && conteneurUid.trim()
+              ? <><i className="fas fa-paper-plane"></i> Conteneur à vérifier avant l'envoi</>
+              : <><i className="fas fa-paper-plane"></i> Envoyer le signalement (+10 pts)</>}
         </button>
       </form>
     </div>

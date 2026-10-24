@@ -7,27 +7,49 @@ class SignalementService {
     this.repository = new SignalementRepository(db);
   }
 
-  async create({ description, url_photo, id_type, id_conteneur, id_citoyen, urgence }) {
-    if (!description || !id_type || !id_conteneur || !id_citoyen) {
+  async create({ description, url_photo, id_type, conteneur_uid, id_conteneur, id_citoyen, urgence }) {
+    // Un conteneur peut être apporté par son id direct ou par son UID texte
+    // (ex. CNT-00012). On résout l'UID en id_conteneur quand il n'est pas fourni
+    // directement, afin de ne pas exiger l'identifiant interne côté citoyen.
+    let resolvedIdConteneur = id_conteneur;
+    if (!resolvedIdConteneur && conteneur_uid) {
+      const found = await this.repository.findConteneurByUidOrId(String(conteneur_uid).trim());
+      if (!found) {
+        const ApiError = require('../utils/api-error');
+        throw ApiError.badRequest('Conteneur introuvable — vérifiez l’identifiant saisi ou scannez le QR code.');
+      }
+      resolvedIdConteneur = found.id_conteneur;
+    }
+
+    const missing = [
+      ['description', description],
+      ['id_type', id_type],
+      ['id_conteneur', resolvedIdConteneur],
+      ['id_citoyen', id_citoyen],
+    ]
+      .filter(([, v]) => v == null || (typeof v === 'string' && v.trim() === ''))
+      .map(([k]) => k);
+
+    if (missing.length > 0) {
       const ApiError = require('../utils/api-error');
-      throw ApiError.badRequest('Champs requis manquants : description, id_type, id_conteneur, id_citoyen');
+      throw ApiError.badRequest(`Champs requis manquants : ${missing.join(', ')}`);
     }
 
     const signalement = await this.repository.create({
       description,
       url_photo,
       id_type,
-      id_conteneur,
+      id_conteneur: resolvedIdConteneur,
       id_citoyen,
       urgence
     });
 
     // Notifier gestionnaires + admins directement en DB
-    let conteneurUid = `#${id_conteneur}`;
+    let conteneurUid = `#${resolvedIdConteneur}`;
     let typeLibelle = '';
     try {
       const [uidRow, typeRow] = await Promise.all([
-        this.db.query('SELECT uid FROM conteneur WHERE id_conteneur = $1', [id_conteneur]),
+        this.db.query('SELECT uid FROM conteneur WHERE id_conteneur = $1', [resolvedIdConteneur]),
         this.db.query('SELECT libelle FROM type_signalement WHERE id_type = $1', [id_type]),
       ]);
       if (uidRow.rows[0]?.uid) conteneurUid = uidRow.rows[0].uid;
