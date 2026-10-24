@@ -15,6 +15,7 @@ import PrivacyPage from './pages/auth/PrivacyPage';
 import LegalPage from './pages/auth/LegalPage';
 import ActivateAccountPage from './pages/auth/ActivateAccountPage';
 import ProfilePage from './pages/auth/ProfilePage';
+import { NotFoundPage, UnauthorizedPage } from './pages/errors/ErrorPages';
 
 // Desktop - Admin (lazy: pas chargé sur la landing page)
 const AdminDashboard = lazy(() => import('./pages/desktop/admin/Dashboard'));
@@ -304,7 +305,7 @@ function App() {
           <Route path="/gestionnaire/*" element={
             <ProtectedRoute>
               <RoleBasedLayout>
-                <GestionnaireDashboard />
+                <NotFoundPage homePath="/gestionnaire" inLayout />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
@@ -353,7 +354,7 @@ function App() {
               <Route path="tri" element={<CitoyenTri />} />
               <Route path="boutique" element={<Navigate to="/citoyen/defis" replace />} />
               <Route path="points-historique" element={<CitoyenPointsHistorique />} />
-              <Route path="*" element={<CitoyenHome />} />
+              <Route path="*" element={<NotFoundPage homePath="/citoyen" inLayout />} />
             </Route>
           </Route>
 
@@ -362,15 +363,10 @@ function App() {
 
           <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
 
-          <Route path="/unauthorized" element={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-red-600 mb-4">403</h1>
-                <p className="text-gray-600">Vous n'avez pas accÃ¨s Ã  cette page</p>
-                <a href="/login" className="text-green-600 hover:underline">Retour Ã  la connexion</a>
-              </div>
-            </div>
-          } />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+          {/* Toute URL inconnue (hors /gestionnaire et /citoyen, qui ont leur propre 404 dans leur layout) */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </Suspense>
       </BrowserRouter>
