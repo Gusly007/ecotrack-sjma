@@ -1,0 +1,62 @@
+.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  background: var(--bg-light);
+}
+
+.error-page--in-layout {
+  min-height: 60vh;
+  background: transparent;
+}
+
+.error-page-box {
+  max-width: 420px;
+  text-align: center;
+}
+
+.error-page-icon {
+  font-size: 48px;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.error-page-code {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.error-page-title {
+  margin: 8px 0 12px;
+  font-size: 28px;
+  color: var(--text-dark);
+}
+
+.error-page-message {
+  margin: 0 0 24px;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+/* Vert plus foncé que --primary : texte blanc lisible (contraste AA) */
+.error-page-link {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.error-page-link:hover,
+.error-page-link:focus-visible {
+  background: #1b5e20;
+}
