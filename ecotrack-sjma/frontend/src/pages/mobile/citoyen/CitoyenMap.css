@@ -1,9 +1,16 @@
 .citoyen-map-page {
-  height: 100vh;
-  height: 100dvh;
+  /* Hauteur exacte de la zone disponible sous la bottom-nav (72px + safe-area)
+     et le padding du layout (16px) : la carte ne déborde plus derrière la
+     barre et la page ne scroll pas (SCRUM-32). */
+  height: calc(100vh - 88px - var(--mobile-safe-bottom, 0px));
+  height: calc(100dvh - 88px - var(--mobile-safe-bottom, 0px));
   display: flex;
   flex-direction: column;
   position: relative;
+  /* Contexte de pile sous la bottom-nav (z-index 100) : les tuiles Leaflet
+     (z-index 200 en interne) ne la recouvrent plus. */
+  z-index: 1;
+  overflow: hidden;
 }
 
 .map-top-bar {
