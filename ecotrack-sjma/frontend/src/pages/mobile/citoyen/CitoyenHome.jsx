@@ -10,6 +10,7 @@ import { citoyenService } from '../../../services/citoyenService';
 import { buildAvatarUrl } from '../../../utils/avatar';
 import { aggregateImpact, METHODOLOGY_NOTE } from '../../../utils/impactEstimation';
 import { useCitoyenAuth as useAuth } from './auth/CitoyenAuthContext';
+import { useUnreadCount } from './UnreadCountContext';
 import './CitoyenHome.css';
 
 // `id` mappe vers QuickActions.actionRoutes (signaler / carte / tri / defis).
@@ -84,33 +85,21 @@ const computeLevel = (points) => {
 };
 
 export default function CitoyenHome() {
-  const { user, refreshUser, avatarVersion } = useAuth();
+  const { user, avatarVersion } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Self-heal : les sessions antérieures à l'enrichissement du payload login
-  // ont un user object incomplet en localStorage (sans avatar). Un refresh
-  // silencieux au montage récupère la shape complète sans forcer une
-  // déconnexion. Conditionné à l'absence d'avatar pour ne pas brûler une
-  // requête /api/V1/users/profile à chaque mount (apiLimiter service-users).
-  const heroSelfHealRef = useRef(false);
-  const userHasAvatarShape = !!(user?.avatar_thumbnail || user?.avatar_url) || user?.avatar_thumbnail === null;
-  useEffect(() => {
-    if (heroSelfHealRef.current) return;
-    if (userHasAvatarShape) return;
-    heroSelfHealRef.current = true;
-    refreshUser?.().catch(() => { /* non bloquant */ });
-  }, [refreshUser, userHasAvatarShape]);
 
   const [points, setPoints] = useState(user?.points ?? 0);
   const [recentSignalements, setRecentSignalements] = useState([]);
   const [impactAgg, setImpactAgg] = useState({ kgTries: 0, kgCO2: 0, countValide: 0, countResolu: 0, count: 0 });
-  const [unreadCount, setUnreadCount] = useState(0);
   const [collectes, setCollectes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [classementOpen, setClassementOpen] = useState(false);
   // Bumped au focus fenêtre pour forcer un refetch sans démonter.
   const [refreshToken, setRefreshToken] = useState(0);
+  // Compteur de notifications non lues : source unique UnreadCountProvider
+  // (endpoint /notifications/unread-count), partagé avec MobileLayout.
+  const { unreadCount } = useUnreadCount();
 
   const userId = user?.id || user?.id_utilisateur;
   const displayName = user?.prenom || user?.nom || 'Citoyen';
@@ -121,7 +110,18 @@ export default function CitoyenHome() {
   const [brokenAvatarPath, setBrokenAvatarPath] = useState(null);
   const avatarBroken = avatarPath != null && brokenAvatarPath === avatarPath;
 
+  // Garde anti-double-appel : StrictMode (dev) monte/démonte/remonte les
+  // composants et rejouait tout le batch API (profile-with-stats,
+  // signalements, prochaines-collectes ×2 dans le journal réseau). On
+  // mémorise la clé de la dernière exécution ; un remount strict avec la
+  // même clé (userId + location.key + refreshToken) ne refait pas les
+  // requêtes, mais un vrai changement de clé (nav, focus, user) oui.
+  const lastFetchKeyRef = useRef(null);
   useEffect(() => {
+    const fetchKey = `${userId ?? 'anon'}|${location.key}|${refreshToken}`;
+    if (lastFetchKeyRef.current === fetchKey) return;
+    lastFetchKeyRef.current = fetchKey;
+
     let alive = true;
     (async () => {
       try {
@@ -129,12 +129,12 @@ export default function CitoyenHome() {
           citoyenService.getProfileWithStats(),
           userId ? citoyenService.getMyStats(userId) : Promise.resolve(null),
           citoyenService.getMySignalements({ limit: 100 }),
-          citoyenService.getNotifications().catch(() => ({ data: [] })),
           citoyenService.getProchainesCollectes({ limit: 3 }).catch(() => []),
         ]);
+
         if (!alive) return;
 
-        const [profileR, statsR, signalR, notifR, collecteR] = results;
+        const [profileR, statsR, signalR, collecteR] = results;
         // Updates défensifs : on ne remplace l'état existant que si la
         // réponse est exploitable. Évite un "flash vide" lors d'un refetch
         // partiellement raté (réseau, rate-limit transitoire).
@@ -157,10 +157,6 @@ export default function CitoyenHome() {
           // Agrégat impact calculé sur la liste complète, pas les 3 derniers.
           setImpactAgg(aggregateImpact(sorted));
         }
-        if (notifR.status === 'fulfilled' && notifR.value != null) {
-          const arr = Array.isArray(notifR.value) ? notifR.value : (notifR.value?.data || []);
-          if (Array.isArray(arr)) setUnreadCount(arr.filter((n) => !n.est_lu).length);
-        }
         if (collecteR.status === 'fulfilled' && collecteR.value != null) {
           const arr = Array.isArray(collecteR.value) ? collecteR.value : (collecteR.value?.data || []);
           if (Array.isArray(arr)) setCollectes(arr);
@@ -170,17 +166,17 @@ export default function CitoyenHome() {
       }
     })();
     return () => { alive = false; };
-    // location.key déclenche un refetch à chaque nav vers cette route.
   }, [userId, location.key, refreshToken]);
-
-  // Refetch quand l'onglet reprend le focus.
+  // Refetch quand l'onglet reprend le focus. Uniquement sur focus réel :
+  // visibilitychange couvre aussi le passage en arrière-plan (hide), qui
+  // déclenchait un refetch inutile au retour — le focus suffit.
   useEffect(() => {
-    const onFocus = () => setRefreshToken(t => t + 1);
+    const onFocus = () => {
+      if (document.visibilityState === 'visible') setRefreshToken(t => t + 1);
+    };
     window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onFocus);
     return () => {
       window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onFocus);
     };
   }, []);
 

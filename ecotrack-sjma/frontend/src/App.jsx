@@ -82,6 +82,7 @@ import CitoyenLanding from './pages/mobile/citoyen/CitoyenLanding';
 import CitoyenForgotPassword from './pages/mobile/citoyen/CitoyenForgotPassword';
 import CitoyenResetPassword from './pages/mobile/citoyen/CitoyenResetPassword';
 import { CitoyenAuthProvider } from './pages/mobile/citoyen/auth/CitoyenAuthContext';
+import { UnreadCountProvider } from './pages/mobile/citoyen/UnreadCountContext';
 import { CitoyenProtectedRoute } from './components/mobile/citoyen/CitoyenProtectedRoute';
 function RootRedirect() {
   const { user, isAuthenticated } = useAuth();
@@ -337,7 +338,7 @@ function App() {
             <Route path="/citoyen/inscription" element={<CitoyenRegister />} />
             <Route path="/citoyen/mot-de-passe-oublie" element={<CitoyenForgotPassword />} />
             <Route path="/citoyen/reset-password" element={<CitoyenResetPassword />} />
-            <Route path="/citoyen" element={<CitoyenProtectedRoute><CitoyenMobileLayout /></CitoyenProtectedRoute>}>
+            <Route path="/citoyen" element={<CitoyenProtectedRoute><UnreadCountProvider><CitoyenMobileLayout /></UnreadCountProvider></CitoyenProtectedRoute>}>
               <Route index element={<CitoyenHome />} />
               <Route path="carte" element={<Suspense fallback={null}><CitoyenMap /></Suspense>} />
               <Route path="signaler" element={<CitoyenSignaler />} />
