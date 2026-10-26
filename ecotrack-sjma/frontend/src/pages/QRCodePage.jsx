@@ -26,7 +26,7 @@ export default function QRCodePage() {
     <div className="qr-page">
       <div className="qr-card">
         <h1>Generateur QR Code Conteneur</h1>
-        <p className="qr-help">Saisissez l'UID du conteneur (ex: CNT-00001) pour generer son QR code.</p>
+        <p className="qr-help">Saisissez l'UID du conteneur (ex: CNT-00001) pour générer son QR code.</p>
 
         <form onSubmit={handleGenerate} className="qr-form">
           <input
@@ -37,7 +37,7 @@ export default function QRCodePage() {
             className="qr-input"
           />
           <button type="submit" className="qr-btn-primary" disabled={!uid.trim()}>
-            Generer
+            Générer
           </button>
         </form>
 
@@ -50,7 +50,7 @@ export default function QRCodePage() {
             />
             <p className="qr-result-uid">{submittedUid}</p>
             <button onClick={handleDownload} className="qr-btn-secondary">
-              Telecharger PNG
+              Télécharger PNG
             </button>
           </div>
         )}

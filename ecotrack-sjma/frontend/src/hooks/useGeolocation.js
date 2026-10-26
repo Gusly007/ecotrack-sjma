@@ -7,7 +7,7 @@ export function useGeolocation() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError('Geolocalisation non supportee');
+      setError('Géolocalisation non supportée');
       setLoading(false);
       return;
     }

@@ -142,9 +142,9 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
       <div className="chart-container">
         <h3>Toutes les tournées</h3>
         {loading && rows.length === 0 ? (
-          <div className="empty-state">Chargement des tournees...</div>
+          <div className="empty-state">Chargement des tournées...</div>
         ) : filteredRows.length === 0 ? (
-          <div className="empty-state">Aucune tournee ne correspond aux filtres.</div>
+          <div className="empty-state">Aucune tournée ne correspond aux filtres.</div>
         ) : (
           <table className="bo-table">
             <thead>
@@ -153,7 +153,7 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
                 <th>Date</th>
                 <th>Agent</th>
                 <th>Zone</th>
-                <th>Vehicule</th>
+                <th>Véhicule</th>
                 <th>Progression</th>
                 <th>Statut</th>
                 <th></th>

@@ -47,7 +47,7 @@ export default function TourneePage() {
 
   if (loading) {
     return (
-      <MobileLayout title="Tournee en cours" showBack>
+      <MobileLayout title="Tournée en cours" showBack>
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#4CAF50' }}></i>
         </div>
@@ -57,8 +57,8 @@ export default function TourneePage() {
 
   if (!tournee) {
     return (
-      <MobileLayout title="Tournee en cours" showBack>
-        <EmptyState icon="fa-route" title="Pas de tournee" message="Aucune tournee active pour le moment." />
+      <MobileLayout title="Tournée en cours" showBack>
+        <EmptyState icon="fa-route" title="Pas de tournée" message="Aucune tournée active pour le moment." />
       </MobileLayout>
     );
   }
@@ -80,7 +80,7 @@ export default function TourneePage() {
 
   return (
     <MobileLayout
-      title="Tournee en cours"
+      title="Tournée en cours"
       showBack
       rightAction={
         <button className="mobile-header-action" onClick={() => navigate('/agent/tournee/terminer')}>

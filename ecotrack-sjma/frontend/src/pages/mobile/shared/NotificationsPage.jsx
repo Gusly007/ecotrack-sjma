@@ -57,7 +57,7 @@ export default function NotificationsPage() {
   return (
     <MobileLayout title="Notifications" showBack>
       {notifications.length === 0 ? (
-        <EmptyState icon="fa-bell-slash" title="Aucune notification" message="Vous etes a jour !" />
+        <EmptyState icon="fa-bell-slash" title="Aucune notification" message="Vous êtes à jour !" />
       ) : (
         notifications.map((notif) => {
           const style = NOTIF_ICONS[notif.type] || NOTIF_ICONS.SYSTEME;

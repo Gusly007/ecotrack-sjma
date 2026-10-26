@@ -32,17 +32,17 @@ function getPeriodMeta(period) {
 function buildMonthlyCsv(data) {
   const rows = [];
   rows.push(['Rapport', 'Mensuel complet']);
-  rows.push(['Genere le', new Date().toLocaleString('fr-FR')]);
+  rows.push(['Généré le', new Date().toLocaleString('fr-FR')]);
   rows.push([]);
 
   rows.push(['KPIs']);
-  rows.push(['Taux debordement (%)', data.overflowRate.toFixed(2)]);
+  rows.push(['Taux débordement (%)', data.overflowRate.toFixed(2)]);
   rows.push(['Distance moyenne / jour (km)', data.avgDistancePerDay.toFixed(2)]);
-  rows.push(['Carburant economise (L)', data.fuelSaved.toFixed(2)]);
-  rows.push(['CO2 reduit (kg)', data.co2Saved.toFixed(2)]);
+  rows.push(['Carburant économisé (L)', data.fuelSaved.toFixed(2)]);
+  rows.push(['CO2 réduit (kg)', data.co2Saved.toFixed(2)]);
   rows.push([]);
 
-  rows.push(['Evolution taux remplissage']);
+  rows.push(['Évolution taux remplissage']);
   rows.push(['Date', 'Taux moyen (%)', 'Mesures']);
   data.fillTrends.forEach((item) => {
     rows.push([item.date, item.avgFillLevel, item.measurementCount]);
@@ -60,33 +60,33 @@ function buildMonthlyCsv(data) {
 
 function buildRoutesPerfCsv(data) {
   const rows = [];
-  rows.push(['Rapport', 'Performance de tournee']);
-  rows.push(['Genere le', new Date().toLocaleString('fr-FR')]);
+  rows.push(['Rapport', 'Performance de tournée']);
+  rows.push(['Généré le', new Date().toLocaleString('fr-FR')]);
   rows.push([]);
   rows.push(['KPI', 'Valeur']);
-  rows.push(['Distance planifiee (km)', data.environmental?.distance?.planned || 0]);
-  rows.push(['Distance reelle (km)', data.environmental?.distance?.actual || 0]);
-  rows.push(['Distance economisee (km)', data.environmental?.distance?.saved || 0]);
-  rows.push(['Reduction distance (%)', data.environmental?.distance?.reductionPct || 0]);
-  rows.push(['Routes terminees', data.environmental?.routes?.completed || 0]);
+  rows.push(['Distance planifiée (km)', data.environmental?.distance?.planned || 0]);
+  rows.push(['Distance réelle (km)', data.environmental?.distance?.actual || 0]);
+  rows.push(['Distance économisée (km)', data.environmental?.distance?.saved || 0]);
+  rows.push(['Réduction distance (%)', data.environmental?.distance?.reductionPct || 0]);
+  rows.push(['Routes terminées', data.environmental?.routes?.completed || 0]);
   rows.push(['Routes totales', data.environmental?.routes?.total || 0]);
   rows.push(['Conteneurs collectes', data.environmental?.containers?.collected || 0]);
-  rows.push(['Total collectes (periode)', data.collecteSummary?.totalCollections || 0]);
+  rows.push(['Total collectes (période)', data.collecteSummary?.totalCollections || 0]);
   return rowsToCsv(rows);
 }
 
 function buildEnvironmentalCsv(data) {
   const rows = [];
   rows.push(['Rapport', 'Analyse impact environnemental']);
-  rows.push(['Genere le', new Date().toLocaleString('fr-FR')]);
+  rows.push(['Généré le', new Date().toLocaleString('fr-FR')]);
   rows.push([]);
   rows.push(['KPI', 'Valeur']);
-  rows.push(['CO2 economise (kg)', data.environmental?.co2?.saved || 0]);
-  rows.push(['Reduction CO2 (%)', data.environmental?.co2?.reductionPct || 0]);
-  rows.push(['Carburant economise (L)', data.environmental?.fuel?.saved || 0]);
-  rows.push(['Equivalent arbres', data.environmental?.co2?.equivalents?.trees || 0]);
-  rows.push(['Equivalent km voiture', data.environmental?.co2?.equivalents?.carKm || 0]);
-  rows.push(['Cout economise total', data.environmental?.costs?.total || 0]);
+  rows.push(['CO2 économisé (kg)', data.environmental?.co2?.saved || 0]);
+  rows.push(['Réduction CO2 (%)', data.environmental?.co2?.reductionPct || 0]);
+  rows.push(['Carburant économisé (L)', data.environmental?.fuel?.saved || 0]);
+  rows.push(['Équivalent arbres', data.environmental?.co2?.equivalents?.trees || 0]);
+  rows.push(['Équivalent km voiture', data.environmental?.co2?.equivalents?.carKm || 0]);
+  rows.push(['Coût économisé total', data.environmental?.costs?.total || 0]);
   rows.push([]);
   rows.push(['Zones']);
   rows.push(['Zone', 'Code', 'Conteneurs', 'Taux remplissage (%)']);

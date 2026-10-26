@@ -19,13 +19,13 @@ function normalizeIntervention(item) {
   return {
     id: item.id_signalement,
     titre: item.type_signalement || "Signalement",
-    zone: item.zone_nom || item.zone_code || "Zone non definie",
+    zone: item.zone_nom || item.zone_code || "Zone non définie",
     urgence: urgenceRaw,
     statut: statutRaw,
     date: item.created_at || item.date_creation,
-    description: item.description || item.commentaire || "Aucun detail",
+    description: item.description || item.commentaire || "Aucun détail",
     conteneur: item.id_conteneur ? `CONT-${item.id_conteneur}` : "-",
-    assigneA: item.assigne_a || item.technicien || "Non assigne",
+    assigneA: item.assigne_a || item.technicien || "Non assigné",
   };
 }
 
@@ -163,7 +163,7 @@ export default function MaintenancePage() {
       const agentInfo = agents.find((a) => String(a.id_utilisateur) === String(planning.id_agent));
       const agentLabel = agentInfo
         ? `${agentInfo.prenom} ${agentInfo.nom || ""}`.trim()
-        : "Agent assigne";
+        : "Agent assigné";
 
       setInterventions((prev) => prev.map((item) =>
         item.id === selected.id
@@ -204,11 +204,11 @@ export default function MaintenancePage() {
           <strong>{metrics.inProgress}</strong>
         </article>
         <article className="maintenance-kpi-card">
-          <span>Resolus</span>
+          <span>Résolus</span>
           <strong>{metrics.resolved}</strong>
         </article>
         <article className="maintenance-kpi-card critical">
-          <span>Priorite critique</span>
+          <span>Priorité critique</span>
           <strong>{metrics.critical}</strong>
         </article>
       </section>
@@ -225,13 +225,13 @@ export default function MaintenancePage() {
           <option value="TOUS">Tous statuts</option>
           <option value="NOUVEAU">Nouveau</option>
           <option value="EN_COURS">En cours</option>
-          <option value="RESOLU">Resolu</option>
+          <option value="RESOLU">Résolu</option>
         </select>
 
         <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
-          <option value="TOUS">Toutes priorites</option>
+          <option value="TOUS">Toutes priorités</option>
           <option value="CRITIQUE">Critique</option>
-          <option value="ELEVEE">Elevee</option>
+          <option value="ELEVEE">Élevée</option>
           <option value="MOYENNE">Moyenne</option>
           <option value="FAIBLE">Faible</option>
         </select>
@@ -240,8 +240,8 @@ export default function MaintenancePage() {
       <section className="maintenance-layout">
         <article className="maintenance-table-wrap">
           <div className="maintenance-table-head">
-            <h3>Interventions a traiter</h3>
-            <span>{filteredInterventions.length} resultats</span>
+            <h3>Interventions à traiter</h3>
+            <span>{filteredInterventions.length} résultats</span>
           </div>
 
           {loading ? (
@@ -260,7 +260,7 @@ export default function MaintenancePage() {
                     <th>ID</th>
                     <th>Intervention</th>
                     <th>Zone</th>
-                    <th>Priorite</th>
+                    <th>Priorité</th>
                     <th>Statut</th>
                     <th>Date</th>
                   </tr>
@@ -295,11 +295,11 @@ export default function MaintenancePage() {
 
         <aside className="maintenance-side-panel">
           {!selected ? (
-            <div className="maintenance-empty">Selectionnez une intervention pour afficher les details.</div>
+            <div className="maintenance-empty">Sélectionnez une intervention pour afficher les détails.</div>
           ) : (
             <>
               <div className="maintenance-detail-card">
-                <h3>Detail intervention</h3>
+                <h3>Détail intervention</h3>
                 <p className="maintenance-title">{selected.titre}</p>
                 <p>{selected.description}</p>
                 <div className="maintenance-meta">
@@ -312,11 +312,11 @@ export default function MaintenancePage() {
                     <strong>{selected.conteneur}</strong>
                   </div>
                   <div>
-                    <span>Assigne a</span>
+                    <span>Assigné à</span>
                     <strong>{selected.assigneA}</strong>
                   </div>
                   <div>
-                    <span>Date creation</span>
+                    <span>Date création</span>
                     <strong>{formatDate(selected.date)}</strong>
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function MaintenancePage() {
                   ))}
                 </select>
 
-                <label htmlFor="datePrevue">Date prevue</label>
+                <label htmlFor="datePrevue">Date prévue</label>
                 <input
                   id="datePrevue"
                   name="datePrevue"
@@ -365,14 +365,14 @@ export default function MaintenancePage() {
                   rows={3}
                   value={planning.commentaire}
                   onChange={handlePlanningChange}
-                  placeholder="Instructions pour l'equipe terrain"
+                  placeholder="Instructions pour l'équipe terrain"
                   disabled={submitting}
                 />
 
                 <button type="submit" disabled={submitting}>
                   {submitting
                     ? <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
-                    : "Demarrer l'intervention"}
+                    : "Démarrer l'intervention"}
                 </button>
               </form>
             </>

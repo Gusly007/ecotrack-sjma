@@ -63,11 +63,11 @@ export default function AnomaliePage() {
         <EmptyState
           icon="fa-check-circle"
           title="Aucune anomalie"
-          message="Aucune anomalie signalee durant cette tournee."
+          message="Aucune anomalie signalée durant cette tournée."
         />
       ) : (
         <>
-          <div className="section-title">Anomalies signalees ({anomalies.length})</div>
+          <div className="section-title">Anomalies signalées ({anomalies.length})</div>
           {anomalies.map((a, i) => {
             const style = ANOMALIE_ICONS[a.type] || { icon: 'fa-exclamation-triangle', color: '#FF9800' };
             return (

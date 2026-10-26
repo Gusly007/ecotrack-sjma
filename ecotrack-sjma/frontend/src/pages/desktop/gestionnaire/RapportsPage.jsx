@@ -5,7 +5,7 @@ import './RapportsPage.css';
 
 const REPORT_TYPES = [
   { value: 'monthly_complete', label: 'Mensuel complet' },
-  { value: 'routes_performance', label: 'Performance de tournee' },
+  { value: 'routes_performance', label: 'Performance de tournée' },
   { value: 'environmental_impact', label: 'Analyse impact environnemental' }
 ];
 
@@ -51,7 +51,7 @@ export default function RapportsPage() {
       setGenerating(true);
 
       if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-        showError('La date de debut doit etre inferieure a la date de fin.');
+        showError('La date de début doit être inférieure à la date de fin.');
         return;
       }
 
@@ -63,13 +63,13 @@ export default function RapportsPage() {
       }
 
       setRecentReports(reportService.getRecentReports());
-      showSuccess(`Rapport ${format.toUpperCase()} genere avec succes.`);
+      showSuccess(`Rapport ${format.toUpperCase()} généré avec succès.`);
 
       if (generated) {
         await reportService.downloadRecentReport(generated);
       }
     } catch (error) {
-      showError(error?.response?.data?.message || error?.message || 'Erreur lors de la generation du rapport.');
+      showError(error?.response?.data?.message || error?.message || 'Erreur lors de la génération du rapport.');
     } finally {
       setGenerating(false);
     }
@@ -79,7 +79,7 @@ export default function RapportsPage() {
     try {
       await reportService.downloadRecentReport(reportItem);
     } catch (error) {
-      showError(error?.response?.data?.message || error?.message || 'Impossible de telecharger ce rapport.');
+      showError(error?.response?.data?.message || error?.message || 'Impossible de télécharger ce rapport.');
     }
   };
 
@@ -94,14 +94,14 @@ export default function RapportsPage() {
       <div className="rapports-header">
         <div>
           <h2>Rapports Gestionnaire</h2>
-          <p>Generez vos rapports en PDF ou CSV et retrouvez les derniers exports.</p>
+          <p>Générez vos rapports en PDF ou CSV et retrouvez les derniers exports.</p>
         </div>
       </div>
 
       {alert && <Alert type={alert.type} message={alert.message} onClose={clearAlert} />}
 
       <section className="rapports-generator panel">
-        <h3>Generer un rapport</h3>
+        <h3>Générer un rapport</h3>
 
         <div className="rapports-form-grid">
           <label>
@@ -123,7 +123,7 @@ export default function RapportsPage() {
           </label>
 
           <label>
-            Periode
+            Période
             <select value={period} onChange={(event) => setPeriod(event.target.value)}>
               {PERIODS.map((item) => (
                 <option key={item.value} value={item.value}>{item.label}</option>
@@ -132,7 +132,7 @@ export default function RapportsPage() {
           </label>
 
           <label>
-            Date debut (optionnel)
+            Date début (optionnel)
             <input
               type="date"
               value={startDate}
@@ -157,14 +157,14 @@ export default function RapportsPage() {
             onClick={handleGenerate}
             disabled={generating}
           >
-            {generating ? <><i className="fas fa-spinner fa-spin"></i> Generation...</> : `Generer ${format.toUpperCase()}`}
+            {generating ? <><i className="fas fa-spinner fa-spin"></i> Génération...</> : `Générer ${format.toUpperCase()}`}
           </Button>
         </div>
       </section>
 
       <section className="rapports-recent panel">
         <div className="rapports-recent-head">
-          <h3>Rapports recents</h3>
+          <h3>Rapports récents</h3>
           {!!sortedRecent.length && (
             <button type="button" className="btn-link" onClick={handleClearRecent}>
               Vider
@@ -173,7 +173,7 @@ export default function RapportsPage() {
         </div>
 
         {!sortedRecent.length ? (
-          <div className="rapports-empty">Aucun rapport recent.</div>
+          <div className="rapports-empty">Aucun rapport récent.</div>
         ) : (
           <div className="rapports-table-wrap">
             <table className="rapports-table">
@@ -182,8 +182,8 @@ export default function RapportsPage() {
                   <th>Nom</th>
                   <th>Type</th>
                   <th>Format</th>
-                  <th>Periode</th>
-                  <th>Genere le</th>
+                  <th>Période</th>
+                  <th>Généré le</th>
                   <th></th>
                 </tr>
               </thead>
@@ -202,7 +202,7 @@ export default function RapportsPage() {
                         onClick={() => handleDownload(report)}
                       >
                         <i className="fas fa-download"></i>
-                        Telecharger
+                        Télécharger
                       </button>
                     </td>
                   </tr>

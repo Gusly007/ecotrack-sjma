@@ -112,7 +112,7 @@ export default function AgentsActifsPanel({ tournees = [], onFocusTournee, focus
             showingFrom={(page - 1) * pageSize + 1}
             showingTo={Math.min(page * pageSize, agents.length)}
             totalItems={agents.length}
-            label="agent actif"
+            label="agents actifs"
           />
         </>
       )}

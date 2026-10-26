@@ -9,9 +9,9 @@ import { containerService } from '../../../services/containerService';
 import './AnomalieForm.css';
 
 const ANOMALIE_TYPES = [
-  { value: 'CONTENEUR_INACCESSIBLE', label: 'Acces bloque',        icon: 'fa-car' },
-  { value: 'CONTENEUR_ENDOMMAGE',    label: 'Conteneur endommage', icon: 'fa-tools' },
-  { value: 'CAPTEUR_DEFAILLANT',     label: 'Capteur defectueux',  icon: 'fa-microchip' },
+  { value: 'CONTENEUR_INACCESSIBLE', label: 'Accès bloqué',        icon: 'fa-car' },
+  { value: 'CONTENEUR_ENDOMMAGE',    label: 'Conteneur endommagé', icon: 'fa-tools' },
+  { value: 'CAPTEUR_DEFAILLANT',     label: 'Capteur défectueux',  icon: 'fa-microchip' },
 ];
 
 const GRAVITE_LEVELS = ['Basse', 'Moyenne', 'Haute', 'Critique'];
@@ -64,9 +64,9 @@ export default function AnomalieForm() {
   const handleUidBlur = () => lookupContainer(uidInput);
 
   const handleSubmit = async () => {
-    if (!tourneeId) { showError('Aucune tournee active'); return; }
+    if (!tourneeId) { showError('Aucune tournée active'); return; }
     if (!container)  { showError('Veuillez saisir un UID de conteneur valide'); return; }
-    if (!form.description.trim()) { showError('Veuillez decrire le probleme'); return; }
+    if (!form.description.trim()) { showError('Veuillez décrire le problème'); return; }
 
     setSubmitting(true);
     try {
@@ -76,7 +76,7 @@ export default function AnomalieForm() {
         id_conteneur:  container.id_conteneur,
         gravite:       form.gravite,
       });
-      showSuccess('Anomalie signalee avec succes !');
+      showSuccess('Anomalie signalée avec succès !');
       navigate('/agent/tournee');
     } catch (err) {
       showError(err.response?.data?.message || "Erreur lors de l'envoi");
@@ -152,7 +152,7 @@ export default function AnomalieForm() {
       <h3 className="form-section-title">Description</h3>
       <textarea
         className="form-textarea-mobile"
-        placeholder="Decrivez le probleme en detail..."
+        placeholder="Décrivez le problème en détail..."
         value={form.description}
         onChange={(e) => setForm({ ...form, description: e.target.value })}
         rows={4}
@@ -163,7 +163,7 @@ export default function AnomalieForm() {
         <div className="geo-info" style={{ marginTop: 12 }}>
           <i className="fas fa-map-marker-alt" style={{ color: '#2196F3', fontSize: '1.1rem' }}></i>
           <div>
-            <strong>Position detectee</strong>
+            <strong>Position détectée</strong>
             <p style={{ margin: 0, fontSize: '0.78rem', color: '#666' }}>
               {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
             </p>

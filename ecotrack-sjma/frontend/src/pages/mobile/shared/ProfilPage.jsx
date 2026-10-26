@@ -108,12 +108,12 @@ export default function ProfilPage({ basePath = '/agent' }) {
         icon="fa-cog"
         iconColor="#9c27b0"
         iconBg="#f3e5f5"
-        title="Parametres notifications"
+        title="Paramètres notifications"
         onClick={() => navigate(`${basePath}/notifications/settings`)}
       />
 
       <button className="profil-logout-btn" onClick={handleLogout}>
-        <i className="fas fa-sign-out-alt"></i> Se deconnecter
+        <i className="fas fa-sign-out-alt"></i> Se déconnecter
       </button>
 
       {/* Footer mobile */}

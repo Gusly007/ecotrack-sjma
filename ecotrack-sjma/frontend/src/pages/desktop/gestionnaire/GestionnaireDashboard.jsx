@@ -69,16 +69,16 @@ export default function GestionnaireDashboard() {
 			{
 				icon: "fa-route",
 				iconColor: "green",
-				label: "Tournees actives",
+				label: "Tournées actives",
 				value: `${tourneesEnCours}/${totalTournees}`,
-				change: "Mise a jour temps reel",
+				change: "Mise à jour temps réel",
 			},
 			{
 				icon: "fa-users",
 				iconColor: "blue",
 				label: "Agents terrain",
 				value: `${agentsTerrain}`,
-				change: `${tourneesEnCours} tournees en cours`,
+				change: `${tourneesEnCours} tournées en cours`,
 			},
 			{
 				icon: "fa-trash-alt",
@@ -92,7 +92,7 @@ export default function GestionnaireDashboard() {
 				iconColor: "red",
 				label: "Alertes en attente",
 				value: `${alertesCount}`,
-				change: alertesCount > 0 ? "A traiter" : "Aucune alerte",
+				change: alertesCount > 0 ? "À traiter" : "Aucune alerte",
 				changeType: alertesCount > 0 ? "down" : "",
 			},
 		];
@@ -104,7 +104,7 @@ export default function GestionnaireDashboard() {
 		}
 
 		return dashboardData.notifications.slice(0, 5).map((notification) => ({
-			text: notification.titre || notification.corps || "Alerte systeme",
+			text: notification.titre || notification.corps || "Alerte système",
 			level: notification.est_lu ? "info" : "warning",
 			icon: notification.est_lu ? "fa-info-circle" : "fa-exclamation-circle",
 			color: notification.est_lu ? "#2196F3" : "#FF9800",
@@ -165,7 +165,7 @@ export default function GestionnaireDashboard() {
 					disabled={refreshing || loading}
 				>
 					<i className={`fas fa-sync-alt ${refreshing ? "fa-spin" : ""}`}></i>
-					{refreshing ? "Actualisation..." : "Rafraichir"}
+					{refreshing ? "Actualisation..." : "Rafraîchir"}
 				</button>
 				{lastUpdated && (
 					<span className="last-updated">

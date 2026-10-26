@@ -61,10 +61,10 @@ export default function ScanResult() {
 
   if (collected) {
     return (
-      <MobileLayout title="Collecte validee" showBack>
+      <MobileLayout title="Collecte validée" showBack>
         <div className="success-screen">
           <div className="success-icon"><i className="fas fa-check"></i></div>
-          <h3>Collecte enregistree !</h3>
+          <h3>Collecte enregistrée !</h3>
           <p style={{ color: '#4CAF50', fontWeight: 600 }}>+10 points</p>
         </div>
         <MobileCard>
@@ -97,7 +97,7 @@ export default function ScanResult() {
           <h3>Conteneur non trouve</h3>
           <p style={{ color: '#888', fontSize: '0.85rem' }}>UID: {decodeURIComponent(uid)}</p>
           <button className="btn-outline-mobile" onClick={() => navigate('/agent/scan')} style={{ marginTop: 16 }}>
-            <i className="fas fa-redo"></i> Scanner a nouveau
+            <i className="fas fa-redo"></i> Scanner à nouveau
           </button>
         </div>
       </MobileLayout>
@@ -123,7 +123,7 @@ export default function ScanResult() {
           </div>
           <div className="scan-stat">
             <strong>{container.capacite_l || '—'}L</strong>
-            <span>Capacite</span>
+            <span>Capacité</span>
           </div>
           <div className="scan-stat">
             <strong>{container.zone_nom || '—'}</strong>
@@ -153,7 +153,7 @@ export default function ScanResult() {
         }
       </button>
       <button className="btn-outline-mobile" onClick={() => navigate(`/agent/anomalie/form?uid=${encodeURIComponent(container?.uid || uid)}`)} style={{ marginTop: 8 }}>
-        <i className="fas fa-exclamation-triangle"></i> Signaler un probleme
+        <i className="fas fa-exclamation-triangle"></i> Signaler un problème
       </button>
     </MobileLayout>
   );

@@ -46,7 +46,7 @@ export default function HistoriquePage() {
   return (
     <MobileLayout title="Historique" showBack>
       {tournees.length === 0 ? (
-        <EmptyState icon="fa-history" title="Aucun historique" message="Vos tournees passees apparaitront ici." />
+        <EmptyState icon="fa-history" title="Aucun historique" message="Vos tournées passées apparaîtront ici." />
       ) : (
         tournees.map((t, i) => {
           const style = STATUT_COLORS[t.statut] || STATUT_COLORS.PLANIFIEE;
@@ -56,7 +56,7 @@ export default function HistoriquePage() {
               icon="fa-route"
               iconColor={style.color}
               iconBg={style.bg}
-              title={`${t.code || `Tournee #${t.id_tournee}`}`}
+              title={`${t.code || `Tournée #${t.id_tournee}`}`}
               subtitle={`${t.date_tournee ? new Date(t.date_tournee).toLocaleDateString('fr-FR') : ''} — ${t.zone_nom || ''}`}
               right={
                 <span className="historique-badge" style={{ background: style.bg, color: style.color }}>

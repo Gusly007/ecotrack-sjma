@@ -68,10 +68,10 @@ export default function EditProfilPage({ basePath = '/agent' }) {
     setLoading(true);
     try {
       await api.put('/users/profile', { prenom: form.prenom, email: form.email });
-      showSuccess('Profil mis a jour');
+      showSuccess('Profil mis à jour');
       navigate(`${basePath}/profil`);
     } catch (err) {
-      showError(err.response?.data?.message || 'Erreur lors de la mise a jour');
+      showError(err.response?.data?.message || 'Erreur lors de la mise à jour');
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export default function EditProfilPage({ basePath = '/agent' }) {
     <MobileLayout title="Modifier le profil" showBack>
       <form className="edit-profil-form" onSubmit={handleSubmit}>
         <div className="form-group-mobile">
-          <label>Prenom</label>
+          <label>Prénom</label>
           <input
             type="text"
             value={form.prenom}

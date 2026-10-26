@@ -229,7 +229,7 @@ export default function ZoneRepartitionTable({ pageSize = PAGE_SIZE, refreshKey 
             showingFrom={(page - 1) * pageSize + 1}
             showingTo={Math.min(page * pageSize, zones.length)}
             totalItems={zones.length}
-            label="zone"
+            label="zones"
           />
         </>
       )}

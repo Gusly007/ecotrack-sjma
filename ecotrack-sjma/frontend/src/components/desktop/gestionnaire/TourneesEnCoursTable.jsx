@@ -150,7 +150,7 @@ export default function TourneesEnCoursTable({ pageSize = 6, refreshNonce = 0 })
           showingFrom={(pagination.page - 1) * pageSize + 1}
           showingTo={Math.min(pagination.page * pageSize, pagination.total || 0)}
           totalItems={pagination.total || 0}
-          label="tournée active"
+          label="tournées actives"
         />
       </div>
     </>

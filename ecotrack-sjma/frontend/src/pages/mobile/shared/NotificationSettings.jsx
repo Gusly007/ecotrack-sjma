@@ -22,7 +22,7 @@ export default function NotificationSettings() {
   };
 
   return (
-    <MobileLayout title="Parametres notifications" showBack>
+    <MobileLayout title="Paramètres notifications" showBack>
       <MobileCard>
         <div className="notif-setting-item">
           <div>
@@ -36,8 +36,8 @@ export default function NotificationSettings() {
         </div>
         <div className="notif-setting-item">
           <div>
-            <strong><i className="fas fa-route" style={{ color: '#2196F3', marginRight: 8 }}></i>Tournees</strong>
-            <p>Assignation, changements de tournee</p>
+            <strong><i className="fas fa-route" style={{ color: '#2196F3', marginRight: 8 }}></i>Tournées</strong>
+            <p>Assignation, changements de tournée</p>
           </div>
           <label className="toggle-switch">
             <input type="checkbox" checked={settings.tournees} onChange={() => toggle('tournees')} />

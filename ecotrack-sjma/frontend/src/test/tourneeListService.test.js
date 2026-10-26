@@ -64,6 +64,6 @@ describe('tourneeService - lecture/pagination', () => {
       .mockRejectedValueOnce(new Error('all'))
       .mockRejectedValueOnce(new Error('active'));
 
-    await expect(fetchTourneesPageData()).rejects.toThrow('Impossible de charger les donnees des tournees');
+    await expect(fetchTourneesPageData()).rejects.toThrow('Impossible de charger les données des tournées');
   });
 });

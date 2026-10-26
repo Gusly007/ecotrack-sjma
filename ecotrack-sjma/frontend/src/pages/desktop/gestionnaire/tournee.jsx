@@ -14,9 +14,9 @@ import "./tournee.css";
 const STATUS_OPTIONS = [
 	{ value: "TOUS", label: "Tous les statuts" },
 	{ value: "EN_COURS", label: "En cours" },
-	{ value: "PLANIFIEE", label: "Planifiee" },
-	{ value: "TERMINEE", label: "Terminee" },
-	{ value: "ANNULEE", label: "Annulee" },
+	{ value: "PLANIFIEE", label: "Planifiée" },
+	{ value: "TERMINEE", label: "Terminée" },
+	{ value: "ANNULEE", label: "Annulée" },
 ];
 
 function getTodayIsoDate() {
@@ -101,30 +101,30 @@ export default function TourneePage() {
 			{
 				icon: "fa-route",
 				iconColor: "green",
-				label: "Total tournees",
+				label: "Total tournées",
 				value: String(totalApi),
-				change: "Toutes periodes",
+				change: "Toutes périodes",
 			},
 			{
 				icon: "fa-truck",
 				iconColor: "blue",
-				label: "Tournees actives",
+				label: "Tournées actives",
 				value: String(activeApi),
-				change: "Mise a jour temps reel",
+				change: "Mise à jour temps réel",
 			},
 			{
 				icon: "fa-check-circle",
 				iconColor: "orange",
-				label: "Tournees terminees",
+				label: "Tournées terminées",
 				value: String(completed),
 				change: "Historique courant",
 			},
 			{
 				icon: "fa-clock",
 				iconColor: "red",
-				label: "Tournees en retard",
+				label: "Tournées en retard",
 				value: String(delayed),
-				change: delayed > 0 ? "Action requise" : "Rien a signaler",
+				change: delayed > 0 ? "Action requise" : "Rien à signaler",
 				changeType: delayed > 0 ? "down" : "",
 			},
 		];
@@ -271,7 +271,7 @@ export default function TourneePage() {
 	}, [closeCreateModal, createForm, loadStats, showSuccess]);
 
 	if (loading) {
-		return <div className="tournees-page"><i className="fas fa-spinner fa-spin"></i> Chargement des tournees...</div>;
+		return <div className="tournees-page"><i className="fas fa-spinner fa-spin"></i> Chargement des tournées...</div>;
 	}
 
 	const renderModal = () => (
@@ -535,8 +535,8 @@ export default function TourneePage() {
 		<div className="tournees-page">
 			<div className="page-header">
 				<div className="page-title-wrap">
-					<h2>Gestion des tournees</h2>
-					<p>Suivez les tournees actives et consultez l'historique des operations.</p>
+					<h2>Gestion des tournées</h2>
+					<p>Suivez les tournées actives et consultez l'historique des opérations.</p>
 				</div>
 
 				<div className="dashboard-toolbar">
@@ -565,7 +565,7 @@ export default function TourneePage() {
 						disabled={refreshing || loading}
 					>
 						<i className={`fas fa-sync-alt ${refreshing ? "fa-spin" : ""}`}></i>
-						{refreshing ? "Actualisation..." : "Rafraichir"}
+						{refreshing ? "Actualisation..." : "Rafraîchir"}
 					</button>
 
 					{lastUpdated && (
@@ -597,7 +597,7 @@ export default function TourneePage() {
 			<div className="tournees-filters">
 				<input
 					type="text"
-					placeholder="Rechercher par tournee, agent, zone, vehicule..."
+					placeholder="Rechercher par tournée, agent, zone, véhicule..."
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
 				/>
