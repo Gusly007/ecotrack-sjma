@@ -27,7 +27,7 @@ export default function MobileLayout() {
 
   return (
     <div className="mobile-layout">
-      <div className="mobile-content">
+        <div className="citoyen-content">
         <Outlet />
       </div>
       <BottomNav />
