@@ -7,6 +7,9 @@ import MapView, { markerIcons } from '../../../components/mobile/MapView';
 import MobileListItem from '../../../components/mobile/MobileListItem';
 import EmptyState from '../../../components/mobile/EmptyState';
 import { fetchMyTournee, fetchEtapes } from '../../../services/tourneeService';
+import { useAuth } from '../../../context/AuthContext';
+import { getIgnoredEtapes, setEtapeIgnored } from '../../../services/agentTourneeSession';
+import { getAgentSkipMessages } from '../../../constants/agentSkipMessages';
 import './TourneePage.css';
 
 function getFillColor(pct) {
@@ -23,27 +26,43 @@ function getFillIcon(pct) {
 
 export default function TourneePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const agentId = user?.id_utilisateur || user?.id;
+  const messages = getAgentSkipMessages();
   const [tournee, setTournee] = useState(null);
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ignoredIds, setIgnoredIds] = useState([]);
+  const [skipError, setSkipError] = useState('');
 
   useEffect(() => {
+    let active = true;
     const fetch = async () => {
       try {
         const t = await fetchMyTournee();
+        if (!active) return;
         setTournee(t);
         if (t?.id_tournee) {
           const etapesRes = await fetchEtapes(t.id_tournee);
+          if (!active) return;
           setEtapes(etapesRes || []);
+          setIgnoredIds([]);
+          setSkipError('');
+          try {
+            setIgnoredIds(getIgnoredEtapes(agentId, t.id_tournee));
+          } catch {
+            setSkipError(messages.readError);
+          }
         }
       } catch {
-        setTournee(null);
+        if (active) setTournee(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     fetch();
-  }, []);
+    return () => { active = false; };
+  }, [agentId, messages]);
 
   if (loading) {
     return (
@@ -75,8 +94,18 @@ export default function TourneePage() {
       popup: `${e.conteneur_uid || ''} - ${e.zone_nom || ''}`,
     }));
 
-  const nextEtape = etapes.find(e => !e.collectee);
-  const remaining = etapes.filter(e => !e.collectee).slice(1);
+  const pending = etapes.filter(e => !e.collectee && !ignoredIds.includes(String(e.id_etape)));
+  const nextEtape = pending[0];
+  const remaining = pending.slice(1);
+  const ignoredEtapes = etapes.filter(e => !e.collectee && ignoredIds.includes(String(e.id_etape)));
+  const handleResume = (etapeId) => {
+    try {
+      setIgnoredIds(setEtapeIgnored(agentId, tournee.id_tournee, etapeId, false));
+      setSkipError('');
+    } catch {
+      setSkipError(messages.writeError);
+    }
+  };
 
   return (
     <MobileLayout
@@ -89,6 +118,7 @@ export default function TourneePage() {
       }
     >
       <ProgressBar value={collected} max={total} label={`${collected}/${total}`} color="#4CAF50" />
+      {skipError && <p className="tournee-skip-error" role="alert">{skipError}</p>}
 
       {markers.length > 0 && (
         <MapView
@@ -140,6 +170,36 @@ export default function TourneePage() {
             />
           ))}
         </>
+      )}
+
+      {!nextEtape && ignoredEtapes.length > 0 && (
+        <div role="status">
+          <EmptyState icon="fa-forward" title={messages.allIgnored} message={messages.allIgnoredHelp} />
+        </div>
+      )}
+
+      {ignoredEtapes.length > 0 && (
+        <section aria-labelledby="ignored-etapes-title">
+          <h2 id="ignored-etapes-title" className="section-title">{messages.heading}</h2>
+          <p className="ignored-etapes-note">{messages.sessionNote}</p>
+          {ignoredEtapes.map(e => (
+            <MobileListItem
+              key={e.id_etape}
+              number={e.sequence}
+              title={e.uid || e.conteneur_uid || `Conteneur #${e.id_conteneur}`}
+              subtitle={messages.ignored}
+              right={
+                <button
+                  className="etape-resume-btn"
+                  onClick={() => handleResume(e.id_etape)}
+                  aria-label={`${messages.resume} : ${e.uid || e.conteneur_uid || e.id_conteneur}`}
+                >
+                  {messages.resume}
+                </button>
+              }
+            />
+          ))}
+        </section>
       )}
     </MobileLayout>
   );
