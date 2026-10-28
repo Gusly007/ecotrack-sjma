@@ -322,7 +322,7 @@ export default function CitoyenSignaler() {
             ? <><span className="spinner" /> Envoi…</>
             : idConteneur == null && conteneurUid.trim()
               ? <><i className="fas fa-paper-plane"></i> Conteneur à vérifier avant l'envoi</>
-              : <><i className="fas fa-paper-plane"></i> Envoyer le signalement (+10 pts)</>}
+              : <><i className="fas fa-paper-plane"></i> Envoyer le signalement</>}
         </button>
       </form>
     </div>
