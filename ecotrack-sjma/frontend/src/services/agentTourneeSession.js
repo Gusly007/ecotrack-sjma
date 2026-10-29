@@ -1,4 +1,3 @@
-// SCRUM-16 : choix de navigation limités à l'onglet, sans modifier les collectes.
 // Les identifiants d'agent et de tournée isolent les choix sur un appareil partagé.
 function normalizeId(value) {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) <= 0) {
