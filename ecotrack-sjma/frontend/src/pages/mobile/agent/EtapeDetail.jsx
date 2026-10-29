@@ -4,28 +4,46 @@ import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
 import MapView, { markerIcons } from '../../../components/mobile/MapView';
 import { fetchEtapeById } from '../../../services/tourneeService';
+import { useAuth } from '../../../context/AuthContext';
+import { getIgnoredEtapes, setEtapeIgnored } from '../../../services/agentTourneeSession';
 import './EtapeDetail.css';
 
 export default function EtapeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const agentId = user?.id_utilisateur || user?.id;
   const [etape, setEtape] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMap, setShowMap] = useState(false);
+  const [ignoredIds, setIgnoredIds] = useState([]);
+  const [skipError, setSkipError] = useState('');
 
   useEffect(() => {
+    let active = true;
     const load = async () => {
       try {
         const found = await fetchEtapeById(id);
+        if (!active) return;
         setEtape(found || null);
+        setSkipError('');
+        setIgnoredIds([]);
+        if (found) {
+          try {
+            setIgnoredIds(getIgnoredEtapes(agentId, found.id_tournee));
+          } catch {
+            setSkipError('Impossible de retrouver les étapes ignorées dans cet onglet.');
+          }
+        }
       } catch {
-        setEtape(null);
+        if (active) setEtape(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     load();
-  }, [id]);
+    return () => { active = false; };
+  }, [id, agentId]);
 
   if (loading) {
     return (
@@ -48,6 +66,15 @@ export default function EtapeDetail() {
   }
 
   const hasCoords = etape.latitude && etape.longitude;
+  const ignored = !etape.collectee && ignoredIds.includes(String(etape.id_etape));
+  const handleSkip = () => {
+    try {
+      setEtapeIgnored(agentId, etape.id_tournee, etape.id_etape);
+      navigate('/agent/tournee');
+    } catch {
+      setSkipError('Impossible de mémoriser ce choix. Réessayez ; aucune collecte n’a été enregistrée.');
+    }
+  };
   const mapMarkers = hasCoords ? [{
     id: etape.id_etape,
     lat: parseFloat(etape.latitude),
@@ -80,7 +107,7 @@ export default function EtapeDetail() {
       <MobileCard>
         <h4 className="detail-section-title"><i className="fas fa-history" style={{ color: '#FF9800' }}></i> Horaire prévu</h4>
         <div className="detail-row"><span>Heure estimée</span><strong>{etape.heure_estimee || '—'}</strong></div>
-        <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? 'Collecte' : 'En attente'}</strong></div>
+        <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? 'Collecte' : ignored ? 'Ignorée' : 'En attente'}</strong></div>
       </MobileCard>
 
       <button className="gps-nav-btn" onClick={() => hasCoords && setShowMap(v => !v)} style={!hasCoords ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
@@ -99,6 +126,8 @@ export default function EtapeDetail() {
         </div>
       )}
 
+      {skipError && <p role="alert">{skipError}</p>}
+
       <div className="action-buttons-row">
         <button className="action-btn collect" onClick={() => navigate('/agent/scan')}>
           <i className="fas fa-qrcode"></i> Scanner
@@ -106,7 +135,7 @@ export default function EtapeDetail() {
         <button className="action-btn anomaly" onClick={() => navigate('/agent/anomalie/form')}>
           <i className="fas fa-exclamation-triangle"></i> Anomalie
         </button>
-        <button className="action-btn skip" onClick={() => navigate('/agent/tournee')}>
+        <button className="action-btn skip" onClick={handleSkip} disabled={etape.collectee || ignored || String(etape.id_etape) !== id}>
           <i className="fas fa-forward"></i> Passer
         </button>
       </div>

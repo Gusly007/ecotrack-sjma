@@ -7,6 +7,8 @@ import MapView, { markerIcons } from '../../../components/mobile/MapView';
 import MobileListItem from '../../../components/mobile/MobileListItem';
 import EmptyState from '../../../components/mobile/EmptyState';
 import { fetchMyTournee, fetchEtapes } from '../../../services/tourneeService';
+import { useAuth } from '../../../context/AuthContext';
+import { getIgnoredEtapes } from '../../../services/agentTourneeSession';
 import './TourneePage.css';
 
 function getFillColor(pct) {
@@ -23,27 +25,42 @@ function getFillIcon(pct) {
 
 export default function TourneePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const agentId = user?.id_utilisateur || user?.id;
   const [tournee, setTournee] = useState(null);
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ignoredIds, setIgnoredIds] = useState([]);
+  const [skipError, setSkipError] = useState('');
 
   useEffect(() => {
+    let active = true;
     const fetch = async () => {
       try {
         const t = await fetchMyTournee();
+        if (!active) return;
         setTournee(t);
         if (t?.id_tournee) {
           const etapesRes = await fetchEtapes(t.id_tournee);
+          if (!active) return;
           setEtapes(etapesRes || []);
+          setIgnoredIds([]);
+          setSkipError('');
+          try {
+            setIgnoredIds(getIgnoredEtapes(agentId, t.id_tournee));
+          } catch {
+            setSkipError('Impossible de retrouver les étapes ignorées dans cet onglet.');
+          }
         }
       } catch {
-        setTournee(null);
+        if (active) setTournee(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     fetch();
-  }, []);
+    return () => { active = false; };
+  }, [agentId]);
 
   if (loading) {
     return (
@@ -75,8 +92,9 @@ export default function TourneePage() {
       popup: `${e.conteneur_uid || ''} - ${e.zone_nom || ''}`,
     }));
 
-  const nextEtape = etapes.find(e => !e.collectee);
-  const remaining = etapes.filter(e => !e.collectee).slice(1);
+  const pending = etapes.filter(e => !e.collectee && !ignoredIds.includes(String(e.id_etape)));
+  const nextEtape = pending[0];
+  const remaining = pending.slice(1);
 
   return (
     <MobileLayout
@@ -89,6 +107,7 @@ export default function TourneePage() {
       }
     >
       <ProgressBar value={collected} max={total} label={`${collected}/${total}`} color="#4CAF50" />
+      {skipError && <p role="alert">{skipError}</p>}
 
       {markers.length > 0 && (
         <MapView
@@ -140,6 +159,12 @@ export default function TourneePage() {
             />
           ))}
         </>
+      )}
+
+      {!nextEtape && collected < total && (
+        <div role="status">
+          <EmptyState icon="fa-forward" title="Aucun autre conteneur à proposer" />
+        </div>
       )}
     </MobileLayout>
   );
