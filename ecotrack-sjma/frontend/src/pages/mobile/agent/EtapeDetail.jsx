@@ -6,7 +6,6 @@ import MapView, { markerIcons } from '../../../components/mobile/MapView';
 import { fetchEtapeById } from '../../../services/tourneeService';
 import { useAuth } from '../../../context/AuthContext';
 import { getIgnoredEtapes, setEtapeIgnored } from '../../../services/agentTourneeSession';
-import { getAgentSkipMessages } from '../../../constants/agentSkipMessages';
 import './EtapeDetail.css';
 
 export default function EtapeDetail() {
@@ -14,7 +13,6 @@ export default function EtapeDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const agentId = user?.id_utilisateur || user?.id;
-  const messages = getAgentSkipMessages();
   const [etape, setEtape] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMap, setShowMap] = useState(false);
@@ -34,7 +32,7 @@ export default function EtapeDetail() {
           try {
             setIgnoredIds(getIgnoredEtapes(agentId, found.id_tournee));
           } catch {
-            setSkipError(messages.readError);
+            setSkipError('Impossible de retrouver les étapes ignorées dans cet onglet.');
           }
         }
       } catch {
@@ -45,7 +43,7 @@ export default function EtapeDetail() {
     };
     load();
     return () => { active = false; };
-  }, [id, agentId, messages]);
+  }, [id, agentId]);
 
   if (loading) {
     return (
@@ -74,7 +72,7 @@ export default function EtapeDetail() {
       setEtapeIgnored(agentId, etape.id_tournee, etape.id_etape);
       navigate('/agent/tournee');
     } catch {
-      setSkipError(messages.writeError);
+      setSkipError('Impossible de mémoriser ce choix. Réessayez ; aucune collecte n’a été enregistrée.');
     }
   };
   const mapMarkers = hasCoords ? [{
@@ -109,7 +107,7 @@ export default function EtapeDetail() {
       <MobileCard>
         <h4 className="detail-section-title"><i className="fas fa-history" style={{ color: '#FF9800' }}></i> Horaire prévu</h4>
         <div className="detail-row"><span>Heure estimée</span><strong>{etape.heure_estimee || '—'}</strong></div>
-        <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? messages.collected : ignored ? messages.ignored : messages.pending}</strong></div>
+        <div className="detail-row"><span>Statut</span><strong>{etape.collectee ? 'Collecte' : ignored ? 'Ignorée' : 'En attente'}</strong></div>
       </MobileCard>
 
       <button className="gps-nav-btn" onClick={() => hasCoords && setShowMap(v => !v)} style={!hasCoords ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
@@ -128,7 +126,7 @@ export default function EtapeDetail() {
         </div>
       )}
 
-      {skipError && <p className="etape-skip-error" role="alert">{skipError}</p>}
+      {skipError && <p role="alert">{skipError}</p>}
 
       <div className="action-buttons-row">
         <button className="action-btn collect" onClick={() => navigate('/agent/scan')}>
@@ -138,7 +136,7 @@ export default function EtapeDetail() {
           <i className="fas fa-exclamation-triangle"></i> Anomalie
         </button>
         <button className="action-btn skip" onClick={handleSkip} disabled={etape.collectee || ignored || String(etape.id_etape) !== id}>
-          <i className="fas fa-forward" aria-hidden="true"></i> {ignored ? messages.ignored : messages.skip}
+          <i className="fas fa-forward"></i> Passer
         </button>
       </div>
     </MobileLayout>

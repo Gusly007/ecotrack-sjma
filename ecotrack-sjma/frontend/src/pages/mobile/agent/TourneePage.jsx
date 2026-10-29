@@ -8,8 +8,7 @@ import MobileListItem from '../../../components/mobile/MobileListItem';
 import EmptyState from '../../../components/mobile/EmptyState';
 import { fetchMyTournee, fetchEtapes } from '../../../services/tourneeService';
 import { useAuth } from '../../../context/AuthContext';
-import { getIgnoredEtapes, setEtapeIgnored } from '../../../services/agentTourneeSession';
-import { getAgentSkipMessages } from '../../../constants/agentSkipMessages';
+import { getIgnoredEtapes } from '../../../services/agentTourneeSession';
 import './TourneePage.css';
 
 function getFillColor(pct) {
@@ -28,7 +27,6 @@ export default function TourneePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const agentId = user?.id_utilisateur || user?.id;
-  const messages = getAgentSkipMessages();
   const [tournee, setTournee] = useState(null);
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +49,7 @@ export default function TourneePage() {
           try {
             setIgnoredIds(getIgnoredEtapes(agentId, t.id_tournee));
           } catch {
-            setSkipError(messages.readError);
+            setSkipError('Impossible de retrouver les étapes ignorées dans cet onglet.');
           }
         }
       } catch {
@@ -62,7 +60,7 @@ export default function TourneePage() {
     };
     fetch();
     return () => { active = false; };
-  }, [agentId, messages]);
+  }, [agentId]);
 
   if (loading) {
     return (
@@ -97,15 +95,6 @@ export default function TourneePage() {
   const pending = etapes.filter(e => !e.collectee && !ignoredIds.includes(String(e.id_etape)));
   const nextEtape = pending[0];
   const remaining = pending.slice(1);
-  const ignoredEtapes = etapes.filter(e => !e.collectee && ignoredIds.includes(String(e.id_etape)));
-  const handleResume = (etapeId) => {
-    try {
-      setIgnoredIds(setEtapeIgnored(agentId, tournee.id_tournee, etapeId, false));
-      setSkipError('');
-    } catch {
-      setSkipError(messages.writeError);
-    }
-  };
 
   return (
     <MobileLayout
@@ -118,7 +107,7 @@ export default function TourneePage() {
       }
     >
       <ProgressBar value={collected} max={total} label={`${collected}/${total}`} color="#4CAF50" />
-      {skipError && <p className="tournee-skip-error" role="alert">{skipError}</p>}
+      {skipError && <p role="alert">{skipError}</p>}
 
       {markers.length > 0 && (
         <MapView
@@ -172,34 +161,10 @@ export default function TourneePage() {
         </>
       )}
 
-      {!nextEtape && ignoredEtapes.length > 0 && (
+      {!nextEtape && collected < total && (
         <div role="status">
-          <EmptyState icon="fa-forward" title={messages.allIgnored} message={messages.allIgnoredHelp} />
+          <EmptyState icon="fa-forward" title="Aucun autre conteneur à proposer" />
         </div>
-      )}
-
-      {ignoredEtapes.length > 0 && (
-        <section aria-labelledby="ignored-etapes-title">
-          <h2 id="ignored-etapes-title" className="section-title">{messages.heading}</h2>
-          <p className="ignored-etapes-note">{messages.sessionNote}</p>
-          {ignoredEtapes.map(e => (
-            <MobileListItem
-              key={e.id_etape}
-              number={e.sequence}
-              title={e.uid || e.conteneur_uid || `Conteneur #${e.id_conteneur}`}
-              subtitle={messages.ignored}
-              right={
-                <button
-                  className="etape-resume-btn"
-                  onClick={() => handleResume(e.id_etape)}
-                  aria-label={`${messages.resume} : ${e.uid || e.conteneur_uid || e.id_conteneur}`}
-                >
-                  {messages.resume}
-                </button>
-              }
-            />
-          ))}
-        </section>
       )}
     </MobileLayout>
   );

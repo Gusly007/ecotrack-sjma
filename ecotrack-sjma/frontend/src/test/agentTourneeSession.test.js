@@ -5,15 +5,13 @@ beforeEach(() => sessionStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 describe('navigation des étapes ignorées', () => {
-  it('normalise les identifiants API et permet de reprendre une étape', () => {
+  it('normalise les identifiants API et mémorise plusieurs étapes sans doublon', () => {
     expect(getIgnoredEtapes(7, 42)).toEqual([]);
     setEtapeIgnored(7, 42, 1);
     setEtapeIgnored('7', '42', '1');
     setEtapeIgnored(7, 42, 2);
     expect(getIgnoredEtapes(7, 42)).toEqual(['1', '2']);
-    expect(setEtapeIgnored(7, 42, 1, false)).toEqual(['2']);
-    expect(setEtapeIgnored(7, 42, 2, false)).toEqual([]);
-    expect(sessionStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(1);
   });
 
   it.each([undefined, null, '', 0, -1, '1.2', 'abc', Number.MAX_SAFE_INTEGER + 1])(

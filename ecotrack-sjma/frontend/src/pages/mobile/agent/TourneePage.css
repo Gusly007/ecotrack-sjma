@@ -74,17 +74,3 @@
 .btn-primary-mobile:active {
   opacity: 0.9;
 }
-
-.ignored-etapes-note { color: #555; font-size: 0.85rem; margin-bottom: 12px; }
-.tournee-skip-error { color: #a32222; margin: 12px 0; }
-.etape-resume-btn {
-  border: 1px solid #555;
-  border-radius: 8px;
-  background: #fff;
-  color: #333;
-  padding: 8px;
-  min-height: 44px;
-  max-width: 140px;
-  cursor: pointer;
-}
-.etape-resume-btn:focus-visible { outline: 3px solid #1565c0; outline-offset: 3px; }

@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import EtapeDetail from '../pages/mobile/agent/EtapeDetail';
@@ -41,7 +41,6 @@ function renderTournee(path = '/agent/tournee') {
 beforeEach(() => {
   sessionStorage.clear();
   vi.clearAllMocks();
-  document.documentElement.lang = 'fr';
   mocks.user = { id_utilisateur: 7, role: 'AGENT' };
   mocks.tournee = { id_tournee: 42, statut: 'EN_COURS' };
   mocks.etapes = [1, 2, 3].map(id => ({
@@ -65,7 +64,8 @@ describe('SCRUM-16 - passer une étape', () => {
     await user.click(await screen.findByRole('button', { name: 'Passer' }));
     await screen.findByText('Prochain conteneur');
     expect(document.querySelector('.next-etape-card')).toHaveTextContent('CNT-2');
-    expect(within(screen.getByRole('region', { name: 'Étapes ignorées' })).getByText('CNT-1')).toBeInTheDocument();
+    expect(screen.queryByText('CNT-1')).not.toBeInTheDocument();
+    expect(screen.getByText('CNT-3')).toBeInTheDocument();
     expect(screen.getByText('0/3')).toBeInTheDocument();
     expect(mocks.recordCollecte).not.toHaveBeenCalled();
     expect(mocks.changeStatut).not.toHaveBeenCalled();
@@ -88,23 +88,27 @@ describe('SCRUM-16 - passer une étape', () => {
     expect(mocks.etapes[1].collectee).toBe(false);
   });
 
-  it('permet de reprendre au clavier la dernière étape ignorée sans terminer la tournée', async () => {
-    mocks.etapes = mocks.etapes.slice(0, 1);
+  it('avance après chaque passage puis ne propose plus de conteneur sans terminer la tournée', async () => {
     const user = userEvent.setup();
-    renderTournee('/agent/tournee/etape/1');
+    const page = renderTournee('/agent/tournee/etape/1');
+    for (const nextId of [2, 3]) {
+      await user.click(await screen.findByRole('button', { name: 'Passer' }));
+      await screen.findByText('Prochain conteneur');
+      expect(document.querySelector('.next-etape-card')).toHaveTextContent(`CNT-${nextId}`);
+      await user.click(screen.getByText(`CNT-${nextId}`));
+    }
     await user.click(await screen.findByRole('button', { name: 'Passer' }));
     expect(await screen.findByText('Aucun autre conteneur à proposer')).toBeInTheDocument();
     expect(screen.queryByText('Prochain conteneur')).not.toBeInTheDocument();
-    expect(screen.getByText('0/1')).toBeInTheDocument();
+    expect(screen.getByText('0/3')).toBeInTheDocument();
     expect(mocks.recordCollecte).not.toHaveBeenCalled();
     expect(mocks.changeStatut).not.toHaveBeenCalled();
-
-    const resume = screen.getByRole('button', { name: 'Reprendre cette étape : CNT-1' });
-    resume.focus();
-    await user.keyboard('{Enter}');
-    expect(document.querySelector('.next-etape-card')).toHaveTextContent('CNT-1');
-    expect(screen.queryByRole('region', { name: 'Étapes ignorées' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(mocks.tournee.statut).toBe('EN_COURS');
+    expect(mocks.etapes.every(etape => !etape.collectee)).toBe(true);
+    page.unmount();
+    renderTournee();
+    expect(await screen.findByText('Aucun autre conteneur à proposer')).toBeInTheDocument();
+    expect(screen.queryByText('Prochain conteneur')).not.toBeInTheDocument();
   });
 
   it('isole les étapes ignorées par agent et par tournée', async () => {
@@ -129,21 +133,21 @@ describe('SCRUM-16 - passer une étape', () => {
     await screen.findByText('Prochain conteneur');
     expect(document.querySelector('.next-etape-card')).toHaveTextContent('CNT-2');
     expect(screen.getByText('1/3')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Étapes ignorées' })).not.toBeInTheDocument();
+    expect(screen.queryByText('CNT-1')).not.toBeInTheDocument();
   });
 
   it('désactive Passer sur une étape collectée', async () => {
     mocks.etapes[0].collectee = true;
     renderTournee('/agent/tournee/etape/1');
     expect(await screen.findByRole('button', { name: 'Passer' })).toBeDisabled();
-    expect(screen.getByText('Collectée')).toBeInTheDocument();
+    expect(screen.getByText('Collecte')).toBeInTheDocument();
   });
 
   it('affiche le statut ignoré à la réouverture du détail', async () => {
     setEtapeIgnored(7, 42, 1);
     renderTournee('/agent/tournee/etape/1');
-    expect(await screen.findByRole('button', { name: 'Ignorée' })).toBeDisabled();
-    expect(screen.getAllByText('Ignorée')).toHaveLength(2);
+    expect(await screen.findByRole('button', { name: 'Passer' })).toBeDisabled();
+    expect(screen.getByText('Ignorée')).toBeInTheDocument();
   });
 
   it('reste sur le détail avec une erreur visible si la mémorisation échoue', async () => {
@@ -164,24 +168,4 @@ describe('SCRUM-16 - passer une étape', () => {
     expect(document.querySelector('.next-etape-card')).toHaveTextContent('CNT-1');
   });
 
-  it('conserve une étape ignorée si sa reprise ne peut pas être mémorisée', async () => {
-    setEtapeIgnored(7, 42, 1);
-    const user = userEvent.setup();
-    renderTournee();
-    const resume = await screen.findByRole('button', { name: 'Reprendre cette étape : CNT-1' });
-    vi.spyOn(Object.getPrototypeOf(sessionStorage), 'removeItem').mockImplementation(() => { throw new Error('storage unavailable'); });
-    await user.click(resume);
-    expect(screen.getByRole('alert')).toHaveTextContent('Impossible de mémoriser ce choix');
-    expect(document.querySelector('.next-etape-card')).toHaveTextContent('CNT-2');
-    expect(resume).toBeInTheDocument();
-  });
-
-  it('fournit les nouveaux libellés en anglais lorsque la page utilise cette langue', async () => {
-    document.documentElement.lang = 'en';
-    const user = userEvent.setup();
-    renderTournee('/agent/tournee/etape/1');
-    await user.click(await screen.findByRole('button', { name: 'Skip' }));
-    expect(await screen.findByRole('region', { name: 'Skipped stops' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Resume this stop : CNT-1' })).toBeInTheDocument();
-  });
 });

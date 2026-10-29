@@ -19,12 +19,9 @@ export function getIgnoredEtapes(agentId, tourneeId) {
   return [...new Set(ids.map(normalizeId))];
 }
 
-export function setEtapeIgnored(agentId, tourneeId, etapeId, ignored = true) {
+export function setEtapeIgnored(agentId, tourneeId, etapeId) {
   const id = normalizeId(etapeId);
-  const ids = getIgnoredEtapes(agentId, tourneeId).filter(value => value !== id);
-  if (ignored) ids.push(id);
-  const key = storageKey(agentId, tourneeId);
-  if (ids.length) sessionStorage.setItem(key, JSON.stringify(ids));
-  else sessionStorage.removeItem(key);
+  const ids = [...new Set([...getIgnoredEtapes(agentId, tourneeId), id])];
+  sessionStorage.setItem(storageKey(agentId, tourneeId), JSON.stringify(ids));
   return ids;
 }
