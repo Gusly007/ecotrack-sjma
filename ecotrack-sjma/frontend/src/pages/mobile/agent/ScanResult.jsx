@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
+import Alert from '../../../components/common/Alert';
 import { containerService } from '../../../services/containerService';
 import { fetchMyTournee, recordCollecte } from '../../../services/tourneeService';
 
@@ -15,14 +16,24 @@ export default function ScanResult() {
   const [collected, setCollected] = useState(false);
   const [tourneeTerminee, setTourneeTerminee] = useState(false);
   const [tourneeId, setTourneeId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetch = async () => {
+      setLoading(true);
+      setTourneeId(null);
+      setError('');
       try {
         const res = await containerService.getByUid(decodeURIComponent(uid));
         setContainer(res);
-        const t = await fetchMyTournee();
-        if (t?.id_tournee) setTourneeId(t.id_tournee);
+        try {
+          const t = await fetchMyTournee();
+          if (t?.id_tournee) setTourneeId(t.id_tournee);
+        } catch (err) {
+          if (err.response?.status !== 404) {
+            setError('Impossible de vérifier la tournée active. Veuillez réessayer.');
+          }
+        }
       } catch {
         setContainer(null);
       } finally {
@@ -34,6 +45,7 @@ export default function ScanResult() {
 
   const handleCollecte = async () => {
     if (!tourneeId || !container) return;
+    setError('');
     setCollecting(true);
     try {
       const result = await recordCollecte(tourneeId, {
@@ -43,7 +55,7 @@ export default function ScanResult() {
       setTourneeTerminee(result?.tournee_terminee === true);
       setCollected(true);
     } catch (err) {
-      console.error('Collecte error:', err);
+      setError(err.response?.data?.message || 'Impossible d’enregistrer la collecte. Veuillez réessayer.');
     } finally {
       setCollecting(false);
     }
@@ -146,7 +158,17 @@ export default function ScanResult() {
         </div>
       </div>
 
-      <button className="btn-primary-mobile btn-success" onClick={handleCollecte} disabled={collecting}>
+      {(error || !tourneeId) && (
+        <div id="collecte-error" role="alert">
+          <Alert type="error" message={error || 'Aucune tournée active. La collecte ne peut pas être validée.'} />
+        </div>
+      )}
+      <button
+        className="btn-primary-mobile btn-success"
+        onClick={handleCollecte}
+        disabled={collecting || !tourneeId}
+        aria-describedby={error || !tourneeId ? 'collecte-error' : undefined}
+      >
         {collecting
           ? <><i className="fas fa-spinner fa-spin"></i> Enregistrement...</>
           : <><i className="fas fa-check"></i> Valider la collecte (+10 pts)</>
