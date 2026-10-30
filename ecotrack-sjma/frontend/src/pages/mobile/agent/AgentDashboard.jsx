@@ -33,6 +33,11 @@ export default function AgentDashboard() {
 
   const prenom = user?.prenom || 'Agent';
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const rawHeureDepart = tournee?.heure_debut_prevue || tournee?.heure_debut;
+  const heureDepart = rawHeureDepart ? String(rawHeureDepart).slice(0, 5) : '—';
+  const totalEtapes = Number(tournee?.nb_etapes || tournee?.total_etapes) || 0;
+  const etapesCollectees = Number(tournee?.etapes_collectees) || 0;
+  const progression = totalEtapes > 0 ? Math.round((etapesCollectees / totalEtapes) * 100) : 0;
 
   const headerRight = (
     <div style={{ display: 'flex', gap: 4 }}>
@@ -74,7 +79,7 @@ export default function AgentDashboard() {
                 <span>Distance</span>
               </div>
               <div className="summary-item">
-                <strong>{tournee.heure_debut || '—'}</strong>
+                <strong>{heureDepart}</strong>
                 <span>Depart</span>
               </div>
               <div className="summary-item">
@@ -100,7 +105,7 @@ export default function AgentDashboard() {
                 <span>Collectes</span>
               </div>
               <div className="route-stat">
-                <strong>{tournee.nb_etapes ? Math.round(((tournee.etapes_collectees || 0) / tournee.nb_etapes) * 100) : 0}%</strong>
+                <strong>{progression}%</strong>
                 <span>Progression</span>
               </div>
               <div className="route-stat">
