@@ -98,11 +98,11 @@ describe('CollecteService.recordCollecte', () => {
     expect(mockCollecteRepo.recordCollecte).not.toHaveBeenCalled();
   });
 
-  it('devrait lever 400 si agent non assigné', async () => {
+  it('devrait lever 403 si agent non assigné', async () => {
     mockTourneeRepo.findById.mockResolvedValue(tourneeEnCours);
 
     await expect(service.recordCollecte(1, validData, 99)).rejects.toMatchObject({
-      statusCode: 400,
+      statusCode: 403,
       message: expect.stringContaining('assigné')
     });
   });
@@ -134,16 +134,11 @@ describe('CollecteService.recordCollecte', () => {
     expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalled();
   });
 
-  it('devrait autoriser si agentId est null (pas de vérification)', async () => {
-    mockTourneeRepo.findById.mockResolvedValue(tourneeEnCours);
-    mockCollecteRepo.recordCollecte.mockResolvedValue({ id_collecte: 1 });
-    mockCollecteRepo.getTourneeProgress.mockResolvedValue({
-      total_etapes: '5',
-      etapes_collectees: '1'
-    });
-
-    const result = await service.recordCollecte(1, validData, null);
-    expect(result.collecte).toEqual({ id_collecte: 1 });
+  it.each([null, undefined, NaN, 0, -1, 99])('refuse une collecte sans affectation valide (%s)', async (agentId) => {
+    mockTourneeRepo.findById.mockResolvedValue({ ...tourneeEnCours, statut: 'PLANIFIEE' });
+    await expect(service.recordCollecte(1, validData, agentId)).rejects.toMatchObject({ statusCode: 403 });
+    expect(mockCollecteRepo.recordCollecte).not.toHaveBeenCalled();
+    expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalled();
   });
 });
 
@@ -155,7 +150,7 @@ describe('CollecteService.reportAnomalie', () => {
   };
 
   it('devrait signaler une anomalie pour une tournée EN_COURS', async () => {
-    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'EN_COURS' });
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'EN_COURS', id_agent: 10 });
     mockCollecteRepo.reportAnomalie.mockResolvedValue({ id_signalement: 1 });
 
     const result = await service.reportAnomalie(1, validData, 10);
@@ -166,7 +161,7 @@ describe('CollecteService.reportAnomalie', () => {
   });
 
   it('devrait signaler pour une tournée PLANIFIEE', async () => {
-    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'PLANIFIEE' });
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'PLANIFIEE', id_agent: 10 });
     mockCollecteRepo.reportAnomalie.mockResolvedValue({ id_signalement: 2 });
 
     const result = await service.reportAnomalie(1, validData, 10);
@@ -182,7 +177,7 @@ describe('CollecteService.reportAnomalie', () => {
   });
 
   it('devrait lever 400 si tournée TERMINEE', async () => {
-    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'TERMINEE' });
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'TERMINEE', id_agent: 10 });
 
     await expect(service.reportAnomalie(1, validData, 10)).rejects.toMatchObject({
       statusCode: 400,
@@ -191,6 +186,16 @@ describe('CollecteService.reportAnomalie', () => {
   });
 });
 
+describe('SCRUM-9 — affectation des anomalies', () => {
+  it.each([null, undefined, NaN, 0, -1, 99])('refuse une anomalie sans affectation valide (%s)', async (agentId) => {
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, statut: 'PLANIFIEE', id_agent: 10 });
+    await expect(service.reportAnomalie(1, {
+      id_conteneur: 1, type_anomalie: 'CONTENEUR_ENDOMMAGE', description: 'Couvercle cassé'
+    }, agentId)).rejects.toMatchObject({ statusCode: 403 });
+    expect(mockCollecteRepo.reportAnomalie).not.toHaveBeenCalled();
+    expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalled();
+  });
+});
 describe('CollecteService.getCollectesByTournee', () => {
   it('devrait retourner les collectes si la tournée existe', async () => {
     mockTourneeRepo.exists.mockResolvedValue(true);

@@ -139,6 +139,7 @@ describe('Mobile Agent endpoints — integration', () => {
       const res = await request(app)
         .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
+        .set('x-user-role', 'AGENT')
         .send({
           type_anomalie: 'CONTENEUR_INACCESSIBLE',
           description: 'test',
@@ -152,6 +153,7 @@ describe('Mobile Agent endpoints — integration', () => {
       const res = await request(app)
         .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
+        .set('x-user-role', 'AGENT')
         .send({
           id_conteneur: 3,
           type_anomalie: 'AUTRE',
@@ -165,6 +167,7 @@ describe('Mobile Agent endpoints — integration', () => {
       const res1 = await request(app)
         .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
+        .set('x-user-role', 'AGENT')
         .send({
           id_conteneur: 3,
           type_anomalie: 'CONTENEUR_PLEIN',
@@ -175,6 +178,7 @@ describe('Mobile Agent endpoints — integration', () => {
       const res2 = await request(app)
         .post('/api/V1/routes/tournees/12/anomalie')
         .set('x-user-id', '5')
+        .set('x-user-role', 'AGENT')
         .send({
           id_conteneur: 3,
           type_anomalie: 'MAUVAISE_ODEUR',
@@ -202,14 +206,15 @@ describe('Mobile Agent endpoints — integration', () => {
     it('accepte le query param period', async () => {
       const res = await request(app)
         .get('/api/V1/routes/stats/agent?period=semaine')
-        .set('x-user-id', '5');
+        .set('x-user-id', '5')
+        .set('x-user-role', 'AGENT');
 
       expect(res.status).toBe(200);
       expect(res.body.data.period).toBe('semaine');
     });
 
     it('renvoie 400 sans x-user-id', async () => {
-      const res = await request(app).get('/api/V1/routes/stats/agent');
+      const res = await request(app).get('/api/V1/routes/stats/agent').set('x-user-role', 'AGENT');
       expect(res.status).toBe(400);
     });
   });
