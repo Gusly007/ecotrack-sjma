@@ -39,6 +39,9 @@ services:
     environment:
       GATEWAY_PORT: 3000
       USERS_SERVICE_URL: http://service-users:3010
+      ROUTES_SERVICE_URL: http://service-routes:3012
+      NOTIFICATION_SERVICE_URL: http://service-notification-gestionnaire-admin:3016
+      JWT_SECRET: ${JWT_SECRET}
       GATEWAY_RATE_WINDOW_MS: ${GATEWAY_RATE_WINDOW_MS:-60000}
       GATEWAY_RATE_MAX: ${GATEWAY_RATE_MAX:-100}
       NODE_ENV: production
@@ -46,6 +49,8 @@ services:
       - "3000:3000"
     depends_on:
       service-users:
+        condition: service_healthy
+      service-routes:
         condition: service_healthy
     networks:
       - ecotrack
@@ -139,6 +144,75 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - ecotrack
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  service-routes:
+    build:
+      context: ./services/service-routes
+      dockerfile: Dockerfile
+    environment:
+      APP_PORT: 3012
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NOTIFICATION_SERVICE_URL: http://service-notification-gestionnaire-admin:3016
+      JWT_SECRET: ${JWT_SECRET}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-localhost:9092}
+      NODE_ENV: production
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      service-notification-gestionnaire-admin:
+        condition: service_healthy
+    networks:
+      - ecotrack
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  service-notification-gestionnaire-admin:
+    build:
+      context: ./services/service-notification-gestionnaire-admin
+      dockerfile: Dockerfile
+    environment:
+      APP_PORT: 3016
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-localhost:9092}
+      NODE_ENV: production
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    networks:
+      - ecotrack
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.cjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 # ============================================================================
 # RÉSEAU
