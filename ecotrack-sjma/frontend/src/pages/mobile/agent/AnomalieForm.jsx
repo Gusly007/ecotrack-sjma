@@ -22,7 +22,8 @@ export default function AnomalieForm() {
   const { showSuccess, showError } = useAlert();
   const { position } = useGeolocation();
   const [tourneeId, setTourneeId]       = useState(null);
-  const [uidInput, setUidInput]         = useState(searchParams.get('uid') || '');
+  const [initialUid] = useState(() => searchParams.get('uid') || '');
+  const [uidInput, setUidInput]         = useState(initialUid);
   const [container, setContainer]       = useState(null);
   const [uidError, setUidError]         = useState('');
   const [form, setForm] = useState({
@@ -40,9 +41,8 @@ export default function AnomalieForm() {
 
   // Auto-fetch container if uid passed via URL
   useEffect(() => {
-    const uid = searchParams.get('uid');
-    if (uid) lookupContainer(uid);
-  }, []);
+    if (initialUid) lookupContainer(initialUid);
+  }, [initialUid]);
 
   const lookupContainer = async (uid) => {
     if (!uid.trim()) { setContainer(null); setUidError(''); return; }

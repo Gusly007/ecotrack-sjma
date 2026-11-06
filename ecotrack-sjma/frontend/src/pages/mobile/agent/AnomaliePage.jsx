@@ -16,14 +16,12 @@ export default function AnomaliePage() {
   const navigate = useNavigate();
   const [anomalies, setAnomalies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tourneeId, setTourneeId] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
       try {
         const t = await fetchMyTournee();
         if (t?.id_tournee) {
-          setTourneeId(t.id_tournee);
           const anomRes = await fetchAnomalies(t.id_tournee);
           setAnomalies(anomRes || []);
         }
