@@ -2,11 +2,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { JSDOM } from 'jsdom';
 import { describe, expect, it, vi } from 'vitest';
 
 const frontend = new URL('../../', import.meta.url);
-const inlineScript = (file) => readFileSync(new URL(file, frontend), 'utf8')
-  .match(/<script>([\s\S]*?)<\/script>/)[1];
+function inlineScript(file) {
+  const html = readFileSync(new URL(file, frontend), 'utf8');
+  const script = JSDOM.fragment(html).querySelector('script:not([src])');
+  if (!script) throw new Error(`Script de redirection introuvable dans ${file}`);
+  return script.textContent;
+}
 
 describe('SCRUM-12 — rechargement de la connexion sur un hébergement statique', () => {
   it('ne publie aucune page statique qui masque la route React /login', () => {
