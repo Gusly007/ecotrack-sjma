@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
 import { fetchAgentStats } from '../../../services/tourneeService';
@@ -23,9 +24,16 @@ export default function StatsPage() {
 
   useEffect(() => { loadStats(activeTab); }, [activeTab]);
 
+  const historyAccess = (
+    <MobileCard>
+      <Link to="/agent/historique">Historique des tournées</Link>
+    </MobileCard>
+  );
+
   if (loading) {
     return (
       <MobileLayout title="Mes Statistiques">
+        {historyAccess}
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#4CAF50' }}></i>
         </div>
@@ -35,6 +43,7 @@ export default function StatsPage() {
 
   return (
     <MobileLayout title="Mes Statistiques">
+      {historyAccess}
       <div className="tabs-inline">
         {[
           { key: 'jour',    label: "Aujourd'hui" },
