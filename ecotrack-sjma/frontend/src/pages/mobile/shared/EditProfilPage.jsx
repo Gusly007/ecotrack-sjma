@@ -135,21 +135,23 @@ export default function EditProfilPage({ basePath = '/agent' }) {
       </div>
 
       {/* Section — Supprimer mon compte */}
-      <div className="edit-section-block edit-section-danger">
-        <h3 className="edit-section-heading" style={{ color: '#f44336' }}>
-          <i className="fas fa-trash"></i> Supprimer mon compte
-        </h3>
-        <p className="edit-section-desc">
-          Suppression permanente avec délai de grâce de 30 jours. Vos données seront anonymisées.
-        </p>
-        <button
-          className="btn-danger-mobile"
-          onClick={() => setShowDeleteModal(true)}
-          style={{ width: '100%' }}
-        >
-          <i className="fas fa-trash-alt"></i> Demander la suppression
-        </button>
-      </div>
+      {(user?.role || user?.role_par_defaut) === 'CITOYEN' && (
+        <div className="edit-section-block edit-section-danger">
+          <h3 className="edit-section-heading" style={{ color: '#f44336' }}>
+            <i className="fas fa-trash"></i> Supprimer mon compte
+          </h3>
+          <p className="edit-section-desc">
+            Suppression permanente avec délai de grâce de 30 jours. Vos données seront anonymisées.
+          </p>
+          <button
+            className="btn-danger-mobile"
+            onClick={() => setShowDeleteModal(true)}
+            style={{ width: '100%' }}
+          >
+            <i className="fas fa-trash-alt"></i> Demander la suppression
+          </button>
+        </div>
+      )}
 
       {/* Modal confirmation suppression */}
       {showDeleteModal && (
