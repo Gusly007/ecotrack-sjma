@@ -163,26 +163,39 @@ FROM generate_series(1, 500) AS i;
 -- ============================================================================
 
 INSERT INTO NOTIFICATION (type, titre, corps, est_lu, date_creation, id_utilisateur)
-SELECT 
-    CASE (random() * 3)::int
+SELECT
+    CASE pick.k
         WHEN 0 THEN 'ALERTE'
         WHEN 1 THEN 'TOURNEE'
         WHEN 2 THEN 'BADGE'
         ELSE 'SYSTEME'
     END,
-    CASE (random() * 3)::int
+    CASE pick.k
         WHEN 0 THEN 'Nouvelle alerte capteur'
-        WHEN 1 THEN 'Tournee planifiee'
-        WHEN 2 THEN 'Badge debloque'
-        ELSE 'Mise a jour systeme'
+        WHEN 1 THEN 'Tournée planifiée'
+        WHEN 2 THEN 'Badge débloqué'
+        ELSE 'Mise à jour système'
     END,
-    'Notification automatique pour test de performance',
+    CASE pick.k
+        WHEN 0 THEN 'Un capteur signale un dépassement de seuil sur un conteneur.'
+        WHEN 1 THEN 'Une nouvelle tournée vient d''être planifiée.'
+        WHEN 2 THEN 'Vous avez débloqué un nouveau badge.'
+        ELSE 'Une mise à jour de la plateforme a été appliquée.'
+    END,
     random() < 0.7,
     NOW() - ((random() * 14)::int || ' days')::interval,
-    u.id_utilisateur
-FROM UTILISATEUR u
-CROSS JOIN generate_series(1, 3) AS n
-WHERE u.est_active = true;
+    pick.id_utilisateur
+FROM (
+    SELECT
+        u.id_utilisateur,
+        CASE
+            WHEN u.role_par_defaut IN ('CITOYEN', 'AGENT') THEN (random() * 3)::int
+            ELSE (ARRAY[0, 1, 3])[1 + (random() * 2)::int]
+        END AS k
+    FROM UTILISATEUR u
+    CROSS JOIN generate_series(1, 3) AS n
+    WHERE u.est_active = true
+) AS pick;
 
 -- ============================================================================
 -- 5. HISTORIQUE STATUT POUR CONTENEURS
