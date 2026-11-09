@@ -7,7 +7,7 @@ import {
   updateTournee,
   updateTourneeStatut,
 } from "../../../services/tourneeService";
-import { getErrorMessage } from "../../../utils/formatters";
+import { formatTourneeCode, getErrorMessage } from "../../../utils/formatters";
 
 const ALL_STATUT_OPTIONS = [
   { value: "PLANIFIEE", label: "Planifiée" },
@@ -154,7 +154,7 @@ export default function TourneeEditModal({ tourneeId, isOpen, onClose, onSuccess
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={tourneeId ? `Modifier — T-${tourneeId}` : "Modifier la tournée"}
+      title={tournee ? `Modifier — ${formatTourneeCode(tournee)}` : "Modifier la tournée"}
       headerIcon="fa-pen"
       headerColor="#2196F3"
       size="lg"

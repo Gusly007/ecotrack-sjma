@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pagination } from "../../common";
+import { formatTourneeCode } from "../../../utils/formatters";
 
 function normalizeAgent(tournee) {
   const total = Number(tournee.total_etapes || 0);
@@ -9,7 +10,7 @@ function normalizeAgent(tournee) {
 
   return {
     id_tournee: tournee.id_tournee,
-    code: tournee.code || `T-${tournee.id_tournee}`,
+    code: formatTourneeCode(tournee),
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigné",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
     totalEtapes: total,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchActiveTournees } from "../../../services/tourneeService";
 import { Pagination } from "../../common";
+import { formatTourneeCode } from "../../../utils/formatters";
 
 function computeHeureFin(heureDebut, dureePrevueMin) {
   if (!heureDebut || !dureePrevueMin) return null;
@@ -38,7 +39,7 @@ function normalizeActiveTournee(tournee) {
     : null;
 
   return {
-    id: tournee.code || `T-${tournee.id_tournee}`,
+    id: formatTourneeCode(tournee),
     rawId: tournee.id_tournee,
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigné",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
