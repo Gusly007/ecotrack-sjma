@@ -107,6 +107,11 @@ export const deleteUser = asyncHandler(async (req, res) => {
   if (Number.isNaN(targetId)) {
     return res.status(400).json({ error: 'Invalid user id' });
   }
+  if (targetId === extractUserId(req)) {
+    return res.status(403).json({
+      error: 'Un administrateur ne peut pas supprimer son propre compte : cette suppression doit être effectuée par un autre administrateur.'
+    });
+  }
   await userService.deleteUser(targetId);
   res.json({ message: 'User deleted successfully' });
 });

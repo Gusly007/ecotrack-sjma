@@ -18,6 +18,7 @@ jest.mock('../../src/config/rateLimit.js', () => ({
 jest.mock('../../src/services/userService.js', () => ({
   __esModule: true,
   requestAccountDeletion: jest.fn(),
+  deleteUser: jest.fn(),
 }));
 
 jest.mock('../../src/services/gdprService.js', () => ({
@@ -71,6 +72,23 @@ describe('self-deletion is reserved to citizens', () => {
       const calls = userService.requestAccountDeletion.mock.calls.length
         + gdprService.requestAccountDeletion.mock.calls.length;
       expect(calls).toBe(1);
+    });
+  });
+
+  describe('DELETE /users/:id (admin user management)', () => {
+    it('refuses an administrator targeting their own account', async () => {
+      const res = await request(app).delete('/users/42').set('x-test-role', 'ADMIN');
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/autre administrateur/);
+      expect(userService.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it('still lets an administrator delete another account', async () => {
+      const res = await request(app).delete('/users/7').set('x-test-role', 'ADMIN');
+
+      expect(res.status).toBe(200);
+      expect(userService.deleteUser).toHaveBeenCalledWith(7);
     });
   });
 });
