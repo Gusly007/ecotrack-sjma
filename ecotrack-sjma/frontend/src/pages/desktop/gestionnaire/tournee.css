@@ -480,7 +480,7 @@
   line-height: 1.3;
 }
 
-/* Badge "EN RETARD" affiché en complément du badge de statut.
+/* Badge "Fin prévue dépassée" affiché en complément du badge de statut.
    Ne remplace pas le statut métier (PLANIFIEE/EN_COURS/TERMINEE) — il s'ajoute. */
 .tournee-retard-badge {
   margin-left: 6px;
