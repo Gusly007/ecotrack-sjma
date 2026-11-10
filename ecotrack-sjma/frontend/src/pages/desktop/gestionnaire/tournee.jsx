@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAutoRefresh } from "../../../hooks";
 import { formatDuration, getErrorMessage } from "../../../utils/formatters";
+import { buildInitialCreateForm, getDefaultHeureDebut, isDepartPasse } from "../../../utils/heureDepart";
 import { Alert, Modal, StatCard, useAlert } from "../../../components/common";
 import ToutesTourneesTable from "../../../components/desktop/gestionnaire/ToutesTourneesTable";
 import {
@@ -19,21 +20,15 @@ const STATUS_OPTIONS = [
 	{ value: "ANNULEE", label: "Annulée" },
 ];
 
-function getTodayIsoDate() {
-	return new Date().toISOString().slice(0, 10);
-}
-
-
-const INITIAL_FORM = {
-	date_tournee: getTodayIsoDate(),
-	heure_debut_prevue: "07:30", // défaut métier (depuis 3.9.0)
+const buildInitialForm = () => ({
+	...buildInitialCreateForm(),
 	id_zone: "",
 	id_agent: "",
 	id_vehicule: "",
 	id_type: "",
 	seuil_remplissage: "70",
 	algorithme: "2opt",
-};
+});
 
 export default function TourneePage() {
 	const { alert, showSuccess, showError, clearAlert } = useAlert();
@@ -59,7 +54,7 @@ export default function TourneePage() {
 		vehicles: [],
 		types: [],
 	});
-	const [createForm, setCreateForm] = useState(INITIAL_FORM);
+	const [createForm, setCreateForm] = useState(buildInitialForm);
 
 	const loadStats = useCallback(async (isRefresh = false) => {
 		try {
@@ -154,7 +149,7 @@ export default function TourneePage() {
 	const openCreateModal = useCallback(async () => {
 		clearAlert();
 		setModalOpen(true);
-		setCreateForm(INITIAL_FORM);
+		setCreateForm(buildInitialForm());
 		setPreviewData(null);
 		setPreviewError("");
 		await loadCreationOptions();
@@ -165,16 +160,20 @@ export default function TourneePage() {
 		setCreateError("");
 		setPreviewError("");
 		setPreviewData(null);
-		setCreateForm(INITIAL_FORM);
+		setCreateForm(buildInitialForm());
 	}, []);
 
 	const handleFieldChange = useCallback((event) => {
 		const { name, value } = event.target;
 		setPreviewError("");
-		setCreateForm((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setCreateForm((prev) => {
+			const next = { ...prev, [name]: value };
+			// A time the user typed is kept; only the untouched default follows the date.
+			if (name === "date_tournee" && prev.heure_debut_prevue === getDefaultHeureDebut(prev.date_tournee)) {
+				next.heure_debut_prevue = getDefaultHeureDebut(value);
+			}
+			return next;
+		});
 	}, []);
 
 	// --- Prévisualisation automatique avec debounce ---
@@ -203,7 +202,7 @@ export default function TourneePage() {
 
 				const payload = {
 					date_tournee: createForm.date_tournee,
-					heure_debut_prevue: createForm.heure_debut_prevue || "07:30",
+					heure_debut_prevue: createForm.heure_debut_prevue || getDefaultHeureDebut(createForm.date_tournee),
 					id_zone: Number(createForm.id_zone),
 					id_agent: Number(createForm.id_agent),
 					id_vehicule: Number(createForm.id_vehicule) || null,
@@ -245,7 +244,7 @@ export default function TourneePage() {
 
 			const payload = {
 				date_tournee: createForm.date_tournee,
-				heure_debut_prevue: createForm.heure_debut_prevue || "07:30",
+				heure_debut_prevue: createForm.heure_debut_prevue || getDefaultHeureDebut(createForm.date_tournee),
 				id_zone: Number(createForm.id_zone),
 				id_agent: Number(createForm.id_agent),
 				id_vehicule: Number(createForm.id_vehicule) || null,
@@ -315,6 +314,11 @@ export default function TourneePage() {
 						<small className="tournee-modal-hint">
 							La tournée sera marquée « en retard » si elle dépasse cette heure + la durée prévue.
 						</small>
+						{isDepartPasse(createForm.date_tournee, createForm.heure_debut_prevue) && (
+							<p className="tournee-modal-warning" role="alert">
+								Heure de départ déjà passée : choisissez un créneau à venir.
+							</p>
+						)}
 					</div>
 
 					<div className="tournee-modal-field">

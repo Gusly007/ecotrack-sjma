@@ -178,7 +178,7 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
                         className="status-pill orange tournee-retard-badge"
                         title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
                       >
-                        ⚠ EN RETARD
+                        ⚠ Fin prévue dépassée
                       </span>
                     )}
                   </td>
