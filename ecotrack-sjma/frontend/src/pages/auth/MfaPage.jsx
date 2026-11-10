@@ -49,8 +49,6 @@ export default function MfaPage() {
   }, [navigate, searchParams]);
 
   const finalizeLogin = (response) => {
-    console.log('[MfaPage] Données reçues pour finalisation:', response);
-    
     // Gestion flexible de la structure de réponse
     // Si le service a déjà extrait .data, on utilise response. Sinon response.data
     const data = response?.token ? response : (response?.data?.token ? response.data : response);
@@ -59,7 +57,8 @@ export default function MfaPage() {
     const refreshToken = data?.refreshToken;
     
     if (!token) {
-      console.error('[MfaPage] Erreur : Aucun jeton (token) trouvé dans la réponse. Vérifiez authService.js côté frontend.', data);
+      // Pas de jeton dans la réponse : on n'affiche pas le contenu brut
+      // (qui pourrait contenir des données sensibles) et on remonte l'erreur.
       setError('Erreur d\'authentification : Jeton de session manquant. Veuillez contacter le support.');
       setLoading(false);
       return;
@@ -87,7 +86,6 @@ export default function MfaPage() {
       localStorage.removeItem('mfa_user_id');
       localStorage.removeItem('mfa_setup');
       
-      console.log('[MfaPage] Login finalized. Redirecting to dashboard...');
       const role = userData.role;
       const path = role === 'ADMIN' ? '/admin' : role === 'GESTIONNAIRE' ? '/gestionnaire' : role === 'AGENT' ? '/agent' : '/citoyen';
       const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');

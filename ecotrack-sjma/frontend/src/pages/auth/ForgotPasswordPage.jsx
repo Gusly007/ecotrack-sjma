@@ -31,13 +31,11 @@ const ForgotPasswordPage = () => {
 
     try {
       await forgotPassword(email);
+      // Réponse identique côté backend que l'email existe ou non :
+      // on ne peut pas (et ne doit pas) distinguer les deux cas ici.
       setSuccess(true);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setError('Cet email n\'existe pas. Veuillez vérifier ou contacter l\'administrateur.');
-      } else {
-        setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi');
-      }
+      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi');
     } finally {
       setLoading(false);
     }

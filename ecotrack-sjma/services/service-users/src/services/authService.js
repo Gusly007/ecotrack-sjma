@@ -5,6 +5,7 @@ import * as auditService from './auditService.js';
 import * as sessionService from './sessionService.js';
 import { sendPasswordResetEmail, sendAdminCreatedUserEmail, sendCitoyenActivationEmail } from './emailService.js';
 import env from '../config/env.js';
+import logger from '../utils/logger.js';
 import crypto from 'crypto';
 
 // Code numérique à 6 chiffres (000000-999999) — facile à taper depuis un email
@@ -210,13 +211,43 @@ export const storeMfaSetupSecret = async (userId, secret) => {
 };
 
 /**
- * Demander la réinitialisation du mot de passe
+ * Message unique renvoyé pour TOUS les cas de /auth/forgot-password.
+ * Le même texte part que l'email existe ou non : un attaquant ne peut pas
+ * distinguer un compte réel d'un compte inexistant (anti-énumération).
+ */
+export const FORGOT_PASSWORD_GENERIC_MESSAGE =
+  'Si un compte est associé à cette adresse, un lien de réinitialisation a été envoyé.';
+
+/**
+ * Le resetToken ne doit JAMAIS sortir de l'API hors d'un environnement de test
+ * explicitement isolé. `NODE_ENV=test` seul ne suffit pas (Jest tourne en test,
+ * mais aussi toute stack de préprod). On exige en plus un opt-in explicite,
+ * absent de docker-compose / .env de prod, et jamais défini automatiquement.
+ */
+const isTokenPreviewAllowed = () => {
+  const isTestEnv = env.nodeEnv === 'test';
+  const optedIn = process.env.ALLOW_RESET_TOKEN_PREVIEW === 'true';
+  const isProdLike = env.nodeEnv === 'production' || env.nodeEnv === 'staging';
+  return isTestEnv && optedIn && !isProdLike;
+};
+
+/**
+ * Demander la réinitialisation du mot de passe.
+ *
+ * Anti-énumération : la réponse est identique (même corps, même statut 200)
+ * que l'email corresponde à un compte ou non. Un email inconnu n'écrit rien en
+ * base et n'envoie rien, mais renvoie exactement le même message.
  */
 export const forgotPassword = async (email, { from } = {}) => {
+  const genericResponse = { message: FORGOT_PASSWORD_GENERIC_MESSAGE };
+
   try {
     const user = await AuthRepository.findUserByEmail(email);
+
     if (!user) {
-      throw Object.assign(new Error('Aucun compte trouvé avec cet email. Veuillez vérifier ou contacter l\'administrateur.'), { status: 404 });
+      // Aucun compte : on ne signale rien. Le hash n'est pas calculé, rien
+      // n'est écrit en base. Le message reste strictement identique.
+      return genericResponse;
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -227,20 +258,20 @@ export const forgotPassword = async (email, { from } = {}) => {
     // `from === 'citoyen'` aiguille le lien email vers /citoyen/reset-password
     // (page isolée du scope mobile, redirige vers /citoyen/login après succès).
     const emailResult = await sendPasswordResetEmail(email, resetToken, { from });
-    
-    const response = { 
-      message: 'Un lien de réinitialisation a été envoyé à votre email.'
-    };
-    
-    if (emailResult.previewUrl) {
-      response.previewUrl = emailResult.previewUrl;
-      response.resetToken = resetToken;
+
+    // Aperçu Ethereal : le lien de preview reste utile en local, mais ne doit
+    // jamais exposé le resetToken hors d'un environnement explicitement isolé.
+    if (isTokenPreviewAllowed() && emailResult?.previewUrl) {
+      return { ...genericResponse, previewUrl: emailResult.previewUrl, resetToken };
     }
-    
-    return response;
+
+    return genericResponse;
   } catch (error) {
-    console.error('Error in forgotPassword:', error);
-    throw error;
+    // Toute erreur interne (SMTP down, DB) est journalisée côté serveur mais
+    // traduite en réponse générique : le message d'erreur ne doit pas devenir
+    // un oracle d'énumération (ex: "email en échec car compte inactif").
+    logger.error({ err: error?.message, code: error?.code }, 'Error in forgotPassword');
+    return genericResponse;
   }
 };
 
