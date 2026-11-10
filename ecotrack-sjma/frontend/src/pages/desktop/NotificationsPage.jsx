@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { PRIORITY_CONFIG } from '../../constants/notificationPriority';
 import './NotificationsPage.css';
 
 const TYPE_LABELS = {
@@ -30,13 +31,6 @@ const TYPE_COLORS = {
   ADMIN_PERFORMANCE:{ bg: '#e3f2fd', color: '#1565c0' },
   ADMIN_SEUIL:      { bg: '#e0f2f1', color: '#00695c' },
   ADMIN_ML:         { bg: '#ede7f6', color: '#4527a0' },
-};
-
-const PRIORITY_CONFIG = {
-  1: { label: 'Urgent',  className: 'prio-urgent' },
-  2: { label: 'Haute',   className: 'prio-haute' },
-  3: { label: 'Normale', className: 'prio-normale' },
-  4: { label: 'Basse',   className: 'prio-basse' },
 };
 
 const PAGE_SIZE = 20;
