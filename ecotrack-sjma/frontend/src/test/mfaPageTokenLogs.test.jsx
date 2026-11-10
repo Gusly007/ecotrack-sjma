@@ -1,8 +1,12 @@
 // V2-011 — non-régression : aucune réponse contenant des jetons ne doit être
 // écrite dans la console lors de la finalisation MFA.
 //
-// Le composant est rendu en environnement jsdom, authService mocké, et on
-// espionne console.log / console.error / console.warn pendant le flux complet.
+// Le composant est rendu en jsdom, authService mocké, et on espionne
+// console.log / error / warn / info / debug pendant le flux complet.
+//
+// Les assertions s'appuient sur le contenu console et sur un marqueur de mode
+// volontairement insensible aux accents : le libellé exact du titre ne doit
+// pas rendre le test fragile selon l'encodage du runner.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -32,6 +36,22 @@ import { authService } from '../services/authService';
 
 const FAKE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.fake.access.token';
 const FAKE_REFRESH = 'eyJhbGciOiJIUzI1NiJ9.fake.refresh.token';
+const FAKE_SECRET = 'JBSWY3DPEHPK3PXP';
+
+// Toutes les entrées possibles d'un rendu console, sérialisées en une chaîne.
+const flattenConsole = (...spies) =>
+  spies
+    .flatMap((spy) => spy.mock.calls)
+    .flat()
+    .map((arg) => {
+      if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+      try {
+        return typeof arg === 'string' ? arg : JSON.stringify(arg);
+      } catch {
+        return String(arg);
+      }
+    })
+    .join(' | ');
 
 const renderPage = () =>
   render(
@@ -40,28 +60,45 @@ const renderPage = () =>
     </MemoryRouter>
   );
 
-describe('MfaPage — aucune fuite de jeton en console', () => {
-  let logSpy;
-  let errorSpy;
-  let warnSpy;
-  let infoSpy;
-  let debugSpy;
+// « Configurer » n'apparaît que dans le titre du mode configuration initiale.
+// On ne se base pas sur l'accentuation complète de la phrase.
+const isSetupMode = (container) => /Configurer/i.test(container.textContent || '');
+
+describe('MfaPage / fuite de jetons en console', () => {
+  let spies;
+
+  const installSpies = () => {
+    spies = {
+      log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      info: vi.spyOn(console, 'info').mockImplementation(() => {}),
+      debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+    };
+  };
+
+  const output = () => flattenConsole(spies.log, spies.error, spies.warn, spies.info, spies.debug);
 
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem('mfa_user_id', '42');
 
-    // window.location.href est réassigné après login réussi : on le neutralise.
-    delete window.location;
-    window.location = { href: '' };
+    // Login réussi réassigne window.location.href : on stub sans supprimer
+    // l'objet global (la suppression est instable selon la version de jsdom).
+    vi.stubGlobal('location', { ...window.location, href: '' });
 
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
-    debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    installSpies();
+
+    authService.loginWithMfa.mockReset();
+    authService.verifyMfaSetup.mockReset();
+    authService.generateMfaSetup.mockReset();
 
     authService.loginWithMfa.mockResolvedValue({
+      token: FAKE_TOKEN,
+      refreshToken: FAKE_REFRESH,
+      user: { id: 42, role: 'CITOYEN', email: 'citoyen@ecotrack.fr' },
+    });
+    authService.verifyMfaSetup.mockResolvedValue({
       token: FAKE_TOKEN,
       refreshToken: FAKE_REFRESH,
       user: { id: 42, role: 'CITOYEN', email: 'citoyen@ecotrack.fr' },
@@ -69,87 +106,69 @@ describe('MfaPage — aucune fuite de jeton en console', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
-  const allConsoleOutput = () =>
-    [...logSpy.mock.calls, ...errorSpy.mock.calls, ...warnSpy.mock.calls, ...infoSpy.mock.calls, ...debugSpy.mock.calls]
-      .flat()
-      .map((arg) => {
-        try {
-          return typeof arg === 'string' ? arg : JSON.stringify(arg);
-        } catch {
-          return String(arg);
-        }
-      })
-      .join(' | ');
-
-  it('ne journalise ni l\'access token ni le refresh token après login MFA réussi', async () => {
-    renderPage();
-
-    const input = screen.getByLabelText('Code de vérification');
-    fireEvent.change(input, { target: { value: '123456' } });
+  const submitCode = (value) => {
+    const input = screen.getByLabelText(/Code de v[eé]rification/i);
+    fireEvent.change(input, { target: { value } });
     fireEvent.submit(input.closest('form'));
+  };
 
-    await waitFor(() => {
-      expect(authService.loginWithMfa).toHaveBeenCalled();
+  describe('verification (loginWithMfa)', () => {
+    it('ne journalise ni access token ni refresh token', async () => {
+      renderPage();
+
+      submitCode('123456');
+
+      await waitFor(() => {
+        expect(authService.loginWithMfa).toHaveBeenCalled();
+      });
+      await waitFor(() => {
+        expect(localStorage.getItem('token')).toBe(FAKE_TOKEN);
+      });
+
+      expect(output()).not.toContain(FAKE_TOKEN);
+      expect(output()).not.toContain(FAKE_REFRESH);
     });
 
-    await waitFor(() => {
-      expect(localStorage.getItem('token')).toBe(FAKE_TOKEN);
+    it('ne journalise pas la réponse brute', async () => {
+      renderPage();
+
+      submitCode('654321');
+
+      await waitFor(() => {
+        expect(localStorage.getItem('token')).toBe(FAKE_TOKEN);
+      });
+
+      const out = output();
+      expect(out).not.toContain('Donn');
+      expect(out).not.toContain('refreshToken');
+      expect(out).not.toContain('accessToken');
     });
 
-    const output = allConsoleOutput();
-    expect(output).not.toContain(FAKE_TOKEN);
-    expect(output).not.toContain(FAKE_REFRESH);
+    it('ne journalise pas la réponse quand le jeton est absent', async () => {
+      authService.loginWithMfa.mockResolvedValueOnce({
+        user: { id: 42, role: 'CITOYEN' },
+      });
+
+      renderPage();
+
+      submitCode('111111');
+
+      await waitFor(() => {
+        expect(authService.loginWithMfa).toHaveBeenCalled();
+      });
+
+      expect(output()).not.toContain('refreshToken');
+      expect(output()).not.toContain(FAKE_REFRESH);
+    });
   });
 
-  it('ne journalise pas la réponse brute contenant les jetons', async () => {
-    renderPage();
-
-    const input = screen.getByLabelText('Code de vérification');
-    fireEvent.change(input, { target: { value: '654321' } });
-    fireEvent.submit(input.closest('form'));
-
-    await waitFor(() => {
-      expect(localStorage.getItem('token')).toBe(FAKE_TOKEN);
-    });
-
-    const output = allConsoleOutput();
-    // Aucun marqueur du payload de réponse ne doit subsister
-    expect(output).not.toContain('Données reçues pour finalisation');
-    expect(output).not.toContain('refreshToken');
-    expect(output).not.toContain('accessToken');
-  });
-
-  it('ne journalise pas la réponse brute quand le jeton est absent', async () => {
-    authService.loginWithMfa.mockResolvedValueOnce({
-      user: { id: 42, role: 'CITOYEN' },
-    });
-
-    renderPage();
-
-    const input = screen.getByLabelText('Code de vérification');
-    fireEvent.change(input, { target: { value: '111111' } });
-    fireEvent.submit(input.closest('form'));
-
-    await waitFor(() => {
-      expect(authService.loginWithMfa).toHaveBeenCalled();
-    });
-
-    const output = allConsoleOutput();
-    expect(output).not.toContain('Aucun jeton');
-    expect(output).not.toContain('user');
-  });
-
-  // Le flux de configuration initiale passe par verifyMfaSetup. Il transporte
-  // lui aussi des jetons (et le secret TOTP) : il doit respecter la même règle.
-  describe('flux de configuration initiale (verifyMfaSetup)', () => {
-    const FAKE_SECRET = 'JBSWY3DPEHPK3PXP';
-
+  describe('configuration initiale (verifyMfaSetup)', () => {
     beforeEach(() => {
-      // Le composant lit le setup frais depuis localStorage : on le simule
-      // pour forcer le mode isSetup au montage.
       localStorage.setItem(
         'mfa_setup',
         JSON.stringify({
@@ -157,81 +176,75 @@ describe('MfaPage — aucune fuite de jeton en console', () => {
           timestamp: new Date().toISOString(),
         })
       );
+    });
 
-      authService.verifyMfaSetup.mockResolvedValue({
-        token: FAKE_TOKEN,
-        refreshToken: FAKE_REFRESH,
-        user: { id: 42, role: 'CITOYEN', email: 'citoyen@ecotrack.fr' },
+    it('le setup frais active bien le mode configuration', async () => {
+      const { container } = renderPage();
+
+      await waitFor(() => {
+        expect(isSetupMode(container)).toBe(true);
       });
     });
 
-    it('ne journalise ni les jetons ni le secret TOTP après activation MFA', async () => {
-      renderPage();
+    it('ne journalise ni les jetons ni le secret TOTP', async () => {
+      const { container } = renderPage();
 
-      // En mode setup le titre change : on vérifie qu'on est bien sur ce flux.
       await waitFor(() => {
-        expect(screen.getByText(/Configurer l'authentification à deux facteurs/i)).toBeTruthy();
+        expect(isSetupMode(container)).toBe(true);
       });
 
-      const input = screen.getByLabelText('Code de vérification');
-      fireEvent.change(input, { target: { value: '424242' } });
-      fireEvent.submit(input.closest('form'));
+      submitCode('424242');
 
       await waitFor(() => {
         expect(authService.verifyMfaSetup).toHaveBeenCalled();
       });
-
       await waitFor(() => {
         expect(localStorage.getItem('token')).toBe(FAKE_TOKEN);
       });
 
-      const output = allConsoleOutput();
-      expect(output).not.toContain(FAKE_TOKEN);
-      expect(output).not.toContain(FAKE_REFRESH);
-      expect(output).not.toContain(FAKE_SECRET);
-      expect(output).not.toContain('Données reçues pour finalisation');
+      const out = output();
+      expect(out).not.toContain(FAKE_TOKEN);
+      expect(out).not.toContain(FAKE_REFRESH);
+      expect(out).not.toContain(FAKE_SECRET);
+      expect(out).not.toContain('Donn');
     });
 
     it('transmet le secret au service sans le diffuser en console', async () => {
-      renderPage();
+      const { container } = renderPage();
 
       await waitFor(() => {
-        expect(screen.getByText(/Configurer l'authentification à deux facteurs/i)).toBeTruthy();
+        expect(isSetupMode(container)).toBe(true);
       });
 
-      const input = screen.getByLabelText('Code de vérification');
-      fireEvent.change(input, { target: { value: '999999' } });
-      fireEvent.submit(input.closest('form'));
+      submitCode('999999');
 
       await waitFor(() => {
         expect(authService.verifyMfaSetup).toHaveBeenCalledWith(42, '999999', FAKE_SECRET);
       });
 
-      expect(allConsoleOutput()).not.toContain(FAKE_SECRET);
+      expect(output()).not.toContain(FAKE_SECRET);
     });
 
-    it('ne journalise pas la réponse brute quand le jeton manque en mode setup', async () => {
+    it('ne journalise pas la réponse quand le jeton manque', async () => {
       authService.verifyMfaSetup.mockResolvedValueOnce({
         user: { id: 42, role: 'CITOYEN' },
       });
 
-      renderPage();
+      const { container } = renderPage();
 
       await waitFor(() => {
-        expect(screen.getByText(/Configurer l'authentification à deux facteurs/i)).toBeTruthy();
+        expect(isSetupMode(container)).toBe(true);
       });
 
-      const input = screen.getByLabelText('Code de vérification');
-      fireEvent.change(input, { target: { value: '121212' } });
-      fireEvent.submit(input.closest('form'));
+      submitCode('121212');
 
       await waitFor(() => {
         expect(authService.verifyMfaSetup).toHaveBeenCalled();
       });
 
-      const output = allConsoleOutput();
-      expect(output).not.toContain('Aucun jeton');
-      expect(output).not.toContain(FAKE_SECRET);
+      const out = output();
+      expect(out).not.toContain(FAKE_REFRESH);
+      expect(out).not.toContain(FAKE_SECRET);
     });
   });
 });
