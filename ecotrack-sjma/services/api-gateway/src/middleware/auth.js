@@ -8,6 +8,14 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer_en_production';
 
 // Routes publiques qui ne nécessitent pas d'authentification
+//
+// /api/V1/health/all, /api/V1/metrics/status, /api/V1/alerts,
+// /api/V1/dashboard/stats, /api/V1/analytics et /api/V1/iot/sensors/status
+// étaient listés ici, donc accessibles SANS AUCUN jeton — alors qu'ils
+// alimentent l'écran d'ensemble /admin (services, espace DB, utilisateurs
+// actifs). Ils sont retirés de cette liste : ils passent désormais par le
+// contrôle JWT, qui renvoie 401 sans token. La restriction par rôle est
+// appliquée côté service consommateur (requireRole), pas ici.
 const publicRoutes = [
   { path: '/auth/login', methods: ['POST'] },
   { path: '/auth/login/mfa', methods: ['POST'] },
@@ -24,11 +32,6 @@ const publicRoutes = [
   { path: '/api-docs', methods: ['GET'] },
   { path: '/docs/', methods: ['GET'] }, // Swagger docs
   { path: '/metrics', methods: ['GET'] }, // Prometheus metrics
-  { path: '/api/V1/metrics/status', methods: ['GET'] }, // Frontend metrics
-  { path: '/api/V1/analytics', methods: ['GET'] }, // Analytics (public for now)
-  { path: '/api/V1/health/all', methods: ['GET'] }, // All services health
-  { path: '/api/V1/alerts', methods: ['GET'] }, // Alerts for monitoring
-  { path: '/api/V1/dashboard/stats', methods: ['GET'] }, // Dashboard stats
   { path: '/api/V1/consent', methods: ['POST'] }, // Consentement RGPD
   { path: '/api/V1/cookies/consent', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }, // Consentement cookies RGPD
   { path: '/avatars', methods: ['GET'] }, // Avatars publiques
@@ -37,12 +40,42 @@ const publicRoutes = [
 ];
 
 /**
+ * Routes qui exigent une authentification ET un rôle d'administration.
+ * Le gateway valide le JWT (jwtValidationMiddleware) puis applique requireRole,
+ * de sorte qu'un AGENT ou CITOYEN connecté ne puisse pas lire les données
+ * d'exploitation même avec un token valide.
+ */
+export const ADMIN_MONITORING_ROUTES = [
+  '/api/V1/health/all',
+  '/api/V1/metrics/status',
+  '/api/V1/alerts',
+  '/api/V1/dashboard/stats',
+  '/api/V1/analytics',
+  '/api/V1/iot/sensors/status',
+];
+
+// Rôles autorisés à consulter le monitoring d'exploitation (décision D2 :
+// écrans partagés GESTIONNAIRE / ADMIN).
+export const ADMIN_MONITORING_ROLES = ['ADMIN', 'GESTIONNAIRE'];
+
+/**
  * Vérifie si une route est publique
  */
 const normalizePath = (path = '') => {
   if (!path) return '/';
   const normalized = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
   return normalized || '/';
+};
+
+/**
+ * Vrai si la route fait partie des endpoints de monitoring du dashboard admin.
+ * Exposé pour les tests et pour un éventuel montage ciblé de requireRole.
+ */
+export const isAdminMonitoringRoute = (reqPath) => {
+  const path = normalizePath(reqPath);
+  return ADMIN_MONITORING_ROUTES.some(
+    (route) => path === normalizePath(route) || path.startsWith(`${normalizePath(route)}/`)
+  );
 };
 
 const isPublicRoute = (reqPath, reqMethod) => {
@@ -104,7 +137,20 @@ export const jwtValidationMiddleware = (req, res, next) => {
     // Ajouter un header pour forward l'info aux services
     req.headers['x-user-id'] = req.user.id;
     req.headers['x-user-role'] = req.user.role;
-    
+
+    // les endpoints de monitoring du dashboard admin exigent un rôle
+    // d'exploitation. Un token CITOYEN ou AGENT valide ne doit pas suffire à
+    // lire l'état des services, l'espace DB ou les statistiques d'ensemble.
+    if (isAdminMonitoringRoute(req.path)) {
+      const allowed = ADMIN_MONITORING_ROLES.includes(req.user.role);
+      if (!allowed) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `Accès refusé. Rôles requis: ${ADMIN_MONITORING_ROLES.join(', ')}`
+        });
+      }
+    }
+
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
