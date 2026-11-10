@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../hooks';
 import api from '../../services/api';
@@ -42,7 +42,15 @@ export default function DesktopLayout({ children }) {
     year: 'numeric'
   });
 
-  const pageTitle = isAdmin ? 'Administration' : (gestionnaireTitleByPath[location.pathname] || 'Tableau de bord');
+  const getGestionnaireTitle = (pathname) => {
+    if (gestionnaireTitleByPath[pathname]) return gestionnaireTitleByPath[pathname];
+    if (matchPath('/gestionnaire/signalements/:id', pathname)) return 'Signalement';
+    return 'Tableau de bord';
+  };
+
+  const pageTitle = location.pathname === '/profile'
+    ? 'Mon compte'
+    : isAdmin ? 'Administration' : getGestionnaireTitle(location.pathname);
   const userName = user?.prenom || user?.name || (isAdmin ? 'Admin' : 'Gestionnaire');
   const userLabel = isAdmin ? 'Administrateur' : 'Gestionnaire';
 
