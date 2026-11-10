@@ -56,3 +56,16 @@ export const authorizeRole = (roles) => {
         next();
     }
 }
+
+export const STAFF_SELF_DELETION_FORBIDDEN =
+    "Seuls les comptes citoyens peuvent demander leur propre suppression. La suppression d'un compte du personnel (agent, gestionnaire, administrateur) est effectuée par un administrateur.";
+
+export const forbidStaffSelfDeletion = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (req.user.role !== 'CITOYEN') {
+        return res.status(403).json({ error: STAFF_SELF_DELETION_FORBIDDEN });
+    }
+    next();
+}

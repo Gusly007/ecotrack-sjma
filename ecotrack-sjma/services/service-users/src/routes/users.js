@@ -1,6 +1,6 @@
 import express from 'express';
 import * as userController from '../controllers/userController.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole, forbidStaffSelfDeletion } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permissions.js';
 import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
@@ -373,7 +373,7 @@ router.get('/agents', userController.listAgents);
  *         description: Permission denied
  */
 router.get('/me/export', userController.exportMyData);
-router.delete('/me', userController.requestAccountDeletion);
+router.delete('/me', forbidStaffSelfDeletion, userController.requestAccountDeletion);
 
 // ============================================
 // Routes d'administration (manager/admin)
