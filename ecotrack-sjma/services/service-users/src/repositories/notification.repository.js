@@ -1,6 +1,16 @@
 // Repository: accès aux données notifications
 import pool from '../config/database.js';
 
+// Same rule as TYPE_ROLE_MAP in service-notification; stored rows can contradict it.
+const VISIBLE_TO_RECIPIENT = `(
+  NOTIFICATION.type NOT IN ('BADGE', 'DEFI')
+  OR EXISTS (
+    SELECT 1 FROM UTILISATEUR u
+    WHERE u.id_utilisateur = NOTIFICATION.id_utilisateur
+      AND u.role_par_defaut IN ('CITOYEN', 'AGENT')
+  )
+)`;
+
 export const NotificationRepository = {
   async createNotification(userId, title, message, type = 'SYSTEME') {
     const result = await pool.query(
@@ -14,7 +24,7 @@ export const NotificationRepository = {
   async getUserNotifications(userId, limit = 50) {
     const result = await pool.query(
       `SELECT * FROM NOTIFICATION
-       WHERE id_utilisateur = $1
+       WHERE id_utilisateur = $1 AND ${VISIBLE_TO_RECIPIENT}
        ORDER BY date_creation DESC
        LIMIT $2`,
       [userId, limit]
@@ -30,7 +40,7 @@ export const NotificationRepository = {
   },
   async getUnreadCount(userId) {
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM NOTIFICATION WHERE id_utilisateur = $1 AND est_lu = false',
+      `SELECT COUNT(*) as count FROM NOTIFICATION WHERE id_utilisateur = $1 AND est_lu = false AND ${VISIBLE_TO_RECIPIENT}`,
       [userId]
     );
     return parseInt(result.rows[0].count);

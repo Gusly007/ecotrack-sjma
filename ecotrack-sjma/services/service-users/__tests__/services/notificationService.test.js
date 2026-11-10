@@ -68,7 +68,7 @@ describe('Notification Service', () => {
       const result = await getUnreadCount(9);
 
       expect(pool.query).toHaveBeenCalledWith(
-        'SELECT COUNT(*) as count FROM NOTIFICATION WHERE id_utilisateur = $1 AND est_lu = false',
+        expect.stringContaining('SELECT COUNT(*) as count FROM NOTIFICATION WHERE id_utilisateur = $1 AND est_lu = false'),
         [9]
       );
       expect(result).toBe(7);
