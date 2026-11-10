@@ -78,7 +78,7 @@ describe('Affichage du flag est_en_retard (3.9.0)', () => {
 
       render(<ToutesTourneesTable statusFilter="TOUS" searchTerm="" pageSize={12} />);
 
-      await waitFor(() => expect(screen.getByText('T-1')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText('Tournée #1')).toBeInTheDocument());
 
       // Tournée 1 (EN_COURS + retard) -> badge visible
       const badges = screen.getAllByText('⚠ Fin prévue dépassée');
@@ -116,7 +116,7 @@ describe('Affichage du flag est_en_retard (3.9.0)', () => {
 
       render(<ToutesTourneesTable statusFilter="TOUS" searchTerm="" pageSize={12} />);
 
-      await waitFor(() => expect(screen.getByText('T-99')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText('Tournée #99')).toBeInTheDocument());
 
       expect(screen.getByText('En cours')).toBeInTheDocument();
       expect(screen.queryByText(/Fin prévue dépassée/)).not.toBeInTheDocument();

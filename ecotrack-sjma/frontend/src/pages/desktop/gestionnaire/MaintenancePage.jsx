@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, useAlert } from "../../../components/common";
 import { signalementService } from "../../../services/signalementService";
 import { fetchAgentsForAssignment } from "../../../services/tourneeService";
-import { formatDate, getErrorMessage } from "../../../utils/formatters";
+import { formatConteneurUid, formatDate, getErrorMessage } from "../../../utils/formatters";
 import "./MaintenancePage.css";
 
 const SEVERITY_ORDER = {
@@ -24,7 +24,7 @@ function normalizeIntervention(item) {
     statut: statutRaw,
     date: item.created_at || item.date_creation,
     description: item.description || item.commentaire || "Aucun détail",
-    conteneur: item.id_conteneur ? `CONT-${item.id_conteneur}` : "-",
+    conteneur: formatConteneurUid(item),
     assigneA: item.assigne_a || item.technicien || "Non assigné",
   };
 }
