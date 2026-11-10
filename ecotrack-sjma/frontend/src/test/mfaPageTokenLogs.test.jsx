@@ -153,7 +153,6 @@ describe('MfaPage — aucune fuite de jeton en console', () => {
       localStorage.setItem(
         'mfa_setup',
         JSON.stringify({
-          secret: FAKE_SECRET,
           qrCodeUrl: 'data:image/png;base64,AAAA',
           timestamp: new Date().toISOString(),
         })
