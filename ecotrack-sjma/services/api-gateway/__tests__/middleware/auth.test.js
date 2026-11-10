@@ -9,7 +9,8 @@ jest.unstable_mockModule('jsonwebtoken', () => ({
   verify: mockVerify
 }));
 
-const { jwtValidationMiddleware, requireRole } = await import('../../src/middleware/auth.js');
+const { jwtValidationMiddleware, requireRole, isAdminMonitoringRoute, ADMIN_MONITORING_ROUTES } =
+  await import('../../src/middleware/auth.js');
 
 describe('Auth Middleware', () => {
   let req;
@@ -232,6 +233,110 @@ describe('Auth Middleware', () => {
       const middleware = requireRole('ADMIN', 'GESTIONNAIRE', 'AGENT');
       middleware(req, res, next);
       
+      expect(next).toHaveBeenCalled();
+    });
+  });
+
+  // ces six endpoints alimentent l'écran d'ensemble /admin. Ils
+  // étaient listés dans publicRoutes et donc accessibles sans le moindre
+  // jeton. Ils doivent désormais exiger une authentification.
+  describe('endpoints de monitoring admin (V2-004)', () => {
+    const MONITORING_PATHS = [
+      '/api/V1/health/all',
+      '/api/V1/metrics/status',
+      '/api/V1/alerts',
+      '/api/V1/dashboard/stats',
+      '/api/V1/analytics',
+      '/api/V1/iot/sensors/status',
+    ];
+
+    it.each(MONITORING_PATHS)('refuse sans token : %s', (path) => {
+      req.path = path;
+      req.method = 'GET';
+      req.headers = {};
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Unauthorized',
+        message: 'Token JWT manquant',
+      });
+    });
+
+    it.each(MONITORING_PATHS)('accepte un ADMIN authentifié : %s', (path) => {
+      req.path = path;
+      req.method = 'GET';
+      req.headers = { authorization: 'Bearer valid_token' };
+      mockVerify.mockReturnValue({ userId: 1, role: 'ADMIN' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.headers['x-user-role']).toBe('ADMIN');
+    });
+
+    it.each(MONITORING_PATHS)('accepte un GESTIONNAIRE authentifié : %s', (path) => {
+      req.path = path;
+      req.method = 'GET';
+      req.headers = { authorization: 'Bearer valid_token' };
+      mockVerify.mockReturnValue({ userId: 2, role: 'GESTIONNAIRE' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+    });
+
+    it.each(MONITORING_PATHS)('refuse un AGENT authentifié : %s', (path) => {
+      req.path = path;
+      req.method = 'GET';
+      req.headers = { authorization: 'Bearer valid_token' };
+      mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Forbidden',
+        message: 'Accès refusé. Rôles requis: ADMIN, GESTIONNAIRE',
+      });
+    });
+
+    it.each(MONITORING_PATHS)('refuse un CITOYEN authentifié : %s', (path) => {
+      req.path = path;
+      req.method = 'GET';
+      req.headers = { authorization: 'Bearer valid_token' };
+      mockVerify.mockReturnValue({ userId: 4, role: 'CITOYEN' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it('expose la liste des routes surveillées', () => {
+      expect(ADMIN_MONITORING_ROUTES).toEqual(MONITORING_PATHS);
+    });
+
+    it('isAdminMonitoringRoute reconnaît les sous-chemins', () => {
+      expect(isAdminMonitoringRoute('/api/V1/analytics/overview')).toBe(true);
+      expect(isAdminMonitoringRoute('/api/V1/analytics')).toBe(true);
+      expect(isAdminMonitoringRoute('/api/V1/analyticsXYZ')).toBe(false);
+      expect(isAdminMonitoringRoute('/api/V1/users/profile')).toBe(false);
+    });
+
+    it('laisse les autres routes protégées inchangées pour un AGENT', () => {
+      req.path = '/api/V1/routes/tournees';
+      req.method = 'GET';
+      req.headers = { authorization: 'Bearer valid_token' };
+      mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      // Hors monitoring, le gateway ne filtre pas le rôle : il laisse passer,
+      // le service consommateur applique ses propres permissions.
       expect(next).toHaveBeenCalled();
     });
   });
