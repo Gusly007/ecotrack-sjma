@@ -117,91 +117,91 @@ function App() {
           <Route path="/legal" element={<LegalPage />} />
           {/* Desktop Routes (Admin & Gestionnaire) */}
           <Route path="/admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <AdminDashboard />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <UsersPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users/create" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <CreateUserPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users/:id" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <UserDetailPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/roles" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <RolesPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/zones" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <ZonesPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/conteneurs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <ConteneursPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/signalements" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <SignalementsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/signalements/:id" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <SignalementDetailPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/alerts" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <AlertsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <LogsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/monitoring" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <MonitoringPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/config" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole="ADMIN">
               <RoleBasedLayout>
                 <ConfigurationPage />
               </RoleBasedLayout>
@@ -232,77 +232,77 @@ function App() {
           <Route path="/scan/result/:uid" element={<ProtectedRoute><SharedScanResult /></ProtectedRoute>} />
           {/* Routes Gestionnaire */}
           <Route path="/gestionnaire" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <GestionnaireDashboard />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/tournees" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <GestionnaireTourneePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/suivi" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <SuiviTempsReelPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/zones" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <ZonesPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/conteneurs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <ConteneursPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/signalements" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <SignalementsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/signalements/:id" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <SignalementDetailPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/kpis" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <GestionnaireKpisPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/rapports" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <RapportsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/maintenance" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <MaintenancePage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/*" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <NotFoundPage homePath="/gestionnaire" inLayout />
               </RoleBasedLayout>
@@ -310,22 +310,31 @@ function App() {
           } />
 
           <Route path="/admin/notifications" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['ADMIN', 'GESTIONNAIRE']}>
               <RoleBasedLayout>
                 <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
           <Route path="/gestionnaire/notifications" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <DesktopNotificationsPage />
               </RoleBasedLayout>
             </ProtectedRoute>
           } />
 
+          {/* V2-004 : /profile est le profil « desktop » partagé. Chaque rôle
+              doit consulter SON profil, sur sa propre route :
+                - CITOYEN       → ce profil desktop (pas de /citoyen/profil ici :
+                                  la route mobile est gardée par CitoyenProtectedRoute)
+                - GESTIONNAIRE  → ce profil desktop
+                - ADMIN         → ce profil desktop
+                - AGENT         → /agent/profil (ProfilPage basePath="/agent")
+              L'AGENT est donc exclu ici pour ne pas lui offrir deux profils
+              concurrents ; il est redirigé vers la page 403. */}
           <Route path="/profile" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['CITOYEN', 'GESTIONNAIRE', 'ADMIN']}>
               <RoleBasedLayout>
                 <ProfilePage />
               </RoleBasedLayout>
