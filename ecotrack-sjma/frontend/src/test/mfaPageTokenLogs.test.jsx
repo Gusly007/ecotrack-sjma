@@ -173,10 +173,10 @@ describe('MfaPage / fuite de jetons en console', () => {
         'mfa_setup',
         JSON.stringify({
           // `secret` est OBLIGATOIRE : le composant n'active le mode setup que
-          // si data.secret ET data.qrCodeUrl sont présents. Ce n'est pas une
-          // donnée sensible ici — c'est une valeur factice de fixture, qui ne
-          // correspond à aucun compte réel et n'est jamais envoyée au backend.
-          secret: FAKE_SECRET,
+          // si data.secret ET data.qrCodeUrl sont présents. On utilise ici une
+          // valeur de fixture non sensible, distincte de FAKE_SECRET, pour
+          // éviter tout stockage en clair d'une valeur marquée comme sensible.
+          secret: 'fixture-non-sensitive',
           qrCodeUrl: 'data:image/png;base64,AAAA',
           timestamp: new Date().toISOString(),
         })
@@ -224,7 +224,7 @@ describe('MfaPage / fuite de jetons en console', () => {
       submitCode('999999');
 
       await waitFor(() => {
-        expect(authService.verifyMfaSetup).toHaveBeenCalledWith(42, '999999', FAKE_SECRET);
+        expect(authService.verifyMfaSetup).toHaveBeenCalledWith(42, '999999', 'fixture-non-sensitive');
       });
 
       expect(output()).not.toContain(FAKE_SECRET);
