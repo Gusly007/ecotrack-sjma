@@ -210,6 +210,8 @@ export default function DesktopLayout({ children }) {
                       ? location.pathname === item.path ? 'active' : ''
                       : location.pathname.startsWith(item.path) ? 'active' : ''
                   }
+                  aria-label={item.label}
+                  title={sidebarOpen ? undefined : item.label}
                 >
                   <i className={`fas ${item.icon}`}></i>
                   <span>{item.label}</span>
@@ -226,8 +228,10 @@ export default function DesktopLayout({ children }) {
             className="menu-toggle"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title={sidebarOpen ? 'Réduire le menu' : 'Ouvrir le menu'}
+            aria-label={sidebarOpen ? 'Réduire le menu' : 'Ouvrir le menu'}
+            aria-expanded={sidebarOpen}
           >
-            <i className={`fas ${sidebarOpen ? 'fa-chevron-left' : 'fa-bars'}`}></i>
+            <i className="fas fa-bars"></i>
           </button>
           
           <h1>{pageTitle}</h1>
@@ -297,7 +301,7 @@ export default function DesktopLayout({ children }) {
               <i className={`fas ${isAdmin ? 'fa-user-shield' : 'fa-user-circle'}`}></i>
               <span>{userName} ({userLabel})</span>
             </div>
-            <button className="logout-btn" onClick={handleLogout}>
+            <button className="logout-btn" onClick={handleLogout} title="Se déconnecter" aria-label="Se déconnecter">
               <i className="fas fa-sign-out-alt"></i>
             </button>
           </div>
