@@ -172,6 +172,11 @@ describe('MfaPage / fuite de jetons en console', () => {
       localStorage.setItem(
         'mfa_setup',
         JSON.stringify({
+          // `secret` est OBLIGATOIRE : le composant n'active le mode setup que
+          // si data.secret ET data.qrCodeUrl sont présents. Ce n'est pas une
+          // donnée sensible ici — c'est une valeur factice de fixture, qui ne
+          // correspond à aucun compte réel et n'est jamais envoyée au backend.
+          secret: FAKE_SECRET,
           qrCodeUrl: 'data:image/png;base64,AAAA',
           timestamp: new Date().toISOString(),
         })
