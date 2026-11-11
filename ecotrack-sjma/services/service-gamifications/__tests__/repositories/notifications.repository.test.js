@@ -29,4 +29,14 @@ describe('NotificationsRepository', () => {
     expect(mockQuery).toHaveBeenCalled();
     expect(result).toEqual([notif]);
   });
+
+  it('listerNotifications should hide gamification rows from recipients outside the allowed roles', async () => {
+    const { NotificationsRepository } = await import('../../src/repositories/notifications.repository.js');
+    mockQuery.mockResolvedValue({ rows: [] });
+    await NotificationsRepository.listerNotifications({ idUtilisateur: 7 });
+    const [sql, params] = mockQuery.mock.calls[0];
+    expect(sql).toMatch(/type\s+NOT IN\s*\('BADGE',\s*'DEFI'\)/i);
+    expect(sql).toMatch(/role_par_defaut\s+IN\s*\('CITOYEN',\s*'AGENT'\)/i);
+    expect(params).toEqual([7]);
+  });
 });

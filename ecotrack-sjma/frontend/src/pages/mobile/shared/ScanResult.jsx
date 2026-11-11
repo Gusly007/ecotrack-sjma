@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import MobileLayout from '../../../components/mobile/MobileLayout';
 import MobileCard from '../../../components/mobile/MobileCard';
@@ -15,6 +15,11 @@ function extractUid(rawUid) {
   }
   return decoded;
 }
+
+const STAFF_CONTENEURS_PATH = {
+  GESTIONNAIRE: '/gestionnaire/conteneurs',
+  ADMIN: '/admin/conteneurs',
+};
 
 export default function ScanResult() {
   const { uid: rawUid } = useParams();
@@ -112,6 +117,11 @@ export default function ScanResult() {
         >
           <i className="fas fa-exclamation-triangle"></i> Signaler un problème
         </button>
+      )}
+      {STAFF_CONTENEURS_PATH[role] && (
+        <Link className="scan-result-link" to={STAFF_CONTENEURS_PATH[role]}>
+          <i className="fas fa-eye"></i> Voir le conteneur
+        </Link>
       )}
     </MobileLayout>
   );

@@ -19,6 +19,19 @@ export function formatDuration(minutes) {
   return `${h}h ${String(m).padStart(2, "0")}min`;
 }
 
+export function formatTourneeCode(tournee) {
+  if (tournee?.code) return tournee.code;
+  if (tournee?.id_tournee != null) return `Tournée #${tournee.id_tournee}`;
+  return "-";
+}
+
+export function formatConteneurUid(item) {
+  const uid = item?.conteneur_uid || item?.uid_conteneur;
+  if (uid) return uid;
+  if (item?.id_conteneur != null) return `Conteneur #${item.id_conteneur}`;
+  return "-";
+}
+
 export function getErrorMessage(error, fallback = "Une erreur est survenue.") {
   return (
     error?.response?.data?.message

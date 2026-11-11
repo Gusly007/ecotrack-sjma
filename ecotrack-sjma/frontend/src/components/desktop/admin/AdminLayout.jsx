@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { ModalConfirmation } from '../../common';
-import { useNotifications } from '../../../hooks';
+import { useNotifications } from '../../../context/NotificationContext';
 import Sidebar from './Sidebar';
 import './AdminLayout.css';
 

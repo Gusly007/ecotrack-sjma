@@ -149,6 +149,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  /* Sticky keeps the banner in the flow, so the page can scroll content out from under it. */
+  .cookie-banner-container {
+    position: sticky;
+  }
+
   .cookie-banner {
     flex-direction: column;
     padding: 16px;
