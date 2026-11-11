@@ -4,6 +4,7 @@ import { Pagination } from "../../common";
 import Modal from "../../common/Modal";
 import DetailView from "../../common/DetailView";
 import TourneeEditModal from "./TourneeEditModal";
+import { formatTourneeCode } from "../../../utils/formatters";
 
 function computeHeureFin(heureDebut, dureePrevueMin) {
   if (!heureDebut || !dureePrevueMin) return null;
@@ -53,7 +54,7 @@ function normalizeTournee(tournee) {
 
   return {
     id: tournee.id_tournee,
-    code: `T-${tournee.id_tournee}`,
+    code: formatTourneeCode(tournee),
     dateTournee: tournee.date_tournee ? new Date(tournee.date_tournee).toLocaleDateString("fr-FR") : "-",
     agent: `${tournee.agent_prenom || ""} ${tournee.agent_nom || ""}`.trim() || "Agent non assigné",
     zone: tournee.zone_nom || tournee.zone_code || "Zone inconnue",
@@ -178,7 +179,7 @@ export default function ToutesTourneesTable({ statusFilter = "TOUS", searchTerm 
                         className="status-pill orange tournee-retard-badge"
                         title="L'heure prévue de fin est dépassée et la tournée n'est pas terminée"
                       >
-                        ⚠ EN RETARD
+                        ⚠ Fin prévue dépassée
                       </span>
                     )}
                   </td>

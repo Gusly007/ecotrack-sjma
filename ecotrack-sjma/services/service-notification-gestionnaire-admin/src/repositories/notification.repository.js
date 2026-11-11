@@ -27,6 +27,18 @@ const TYPE_ROLE_MAP = {
 
 const VALID_TYPES = Object.keys(TYPE_ROLE_MAP);
 const ADMIN_TYPES = ['ADMIN_ALERTE', 'ADMIN_SERVICE', 'ADMIN_SEUIL', 'ADMIN_ML', 'ADMIN_SECURITE', 'ADMIN_PERFORMANCE', 'ADMIN_IOT'];
+const GAMIFICATION_TYPES = ['BADGE', 'DEFI'];
+const sqlList = (values) => values.map((value) => `'${value}'`).join(', ');
+
+// Rows already stored can contradict TYPE_ROLE_MAP, so reads enforce the BADGE rule too.
+const VISIBLE_TO_RECIPIENT = `(
+  notification.type NOT IN (${sqlList(GAMIFICATION_TYPES)})
+  OR EXISTS (
+    SELECT 1 FROM utilisateur u
+    WHERE u.id_utilisateur = notification.id_utilisateur
+      AND u.role_par_defaut IN (${sqlList(TYPE_ROLE_MAP.BADGE)})
+  )
+)`;
 
 class NotificationRepository {
   // ─────────────────────────────────────────────────────────────
@@ -298,7 +310,7 @@ class NotificationRepository {
    */
   async getUnreadCount(id_utilisateur) {
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM notification WHERE id_utilisateur = $1 AND est_lu = FALSE',
+      `SELECT COUNT(*) as count FROM notification WHERE id_utilisateur = $1 AND est_lu = FALSE AND ${VISIBLE_TO_RECIPIENT}`,
       [id_utilisateur]
     );
     return parseInt(result.rows[0].count, 10);
@@ -326,13 +338,13 @@ class NotificationRepository {
     const offset = (page - 1) * limit;
 
     const countResult = await pool.query(
-      'SELECT COUNT(*) as total FROM notification WHERE id_utilisateur = $1',
+      `SELECT COUNT(*) as total FROM notification WHERE id_utilisateur = $1 AND ${VISIBLE_TO_RECIPIENT}`,
       [id_utilisateur]
     );
 
     const dataResult = await pool.query(
       `SELECT * FROM notification
-       WHERE id_utilisateur = $1
+       WHERE id_utilisateur = $1 AND ${VISIBLE_TO_RECIPIENT}
        ORDER BY date_creation DESC
        LIMIT $2 OFFSET $3`,
       [id_utilisateur, limit, offset]
@@ -375,7 +387,7 @@ class NotificationRepository {
   async getAdminNotifications(filters) {
     const { id_utilisateur, type, priorite, est_lu, categorie, page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
-    const conditions = ['id_utilisateur = $1'];
+    const conditions = ['id_utilisateur = $1', VISIBLE_TO_RECIPIENT];
     const params = [id_utilisateur];
     let paramIndex = 2;
 

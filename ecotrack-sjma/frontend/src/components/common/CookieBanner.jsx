@@ -1,12 +1,63 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import './CookieBanner.css';
 
+const CONSENT_KEY = 'cookieConsent';
+
+const readConsent = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CONSENT_KEY));
+  } catch {
+    return null;
+  }
+};
+
+const writeConsent = (consent) => {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(consent));
+  } catch (error) {
+    console.warn('Cookie consent not stored locally:', error);
+  }
+};
+
+const getSessionId = () => {
+  const generatedId = `session_${Date.now()}`;
+  try {
+    const sessionId = sessionStorage.getItem('sessionId') || generatedId;
+    sessionStorage.setItem('sessionId', sessionId);
+    return sessionId;
+  } catch {
+    return generatedId;
+  }
+};
+
+const sendConsent = async (consent) => {
+  try {
+    await api.post('/api/V1/cookies/consent', {
+      session_id: consent.sessionId,
+      consent_status: consent.status,
+      cookies_accepted: consent.cookies
+    });
+    writeConsent({ ...consent, pending: false });
+  } catch (error) {
+    console.warn('Cookie consent not sent, retrying on next load:', error);
+  }
+};
+
 export default function CookieBanner() {
   const [showBanner, setShowBanner] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const retryStarted = useRef(false);
 
   useEffect(() => {
+    const storedConsent = readConsent();
+    if (storedConsent) {
+      if (storedConsent.pending && !retryStarted.current) {
+        retryStarted.current = true;
+        sendConsent(storedConsent);
+      }
+      return;
+    }
+
     const checkConsent = async () => {
       try {
         const sessionId = sessionStorage.getItem('sessionId');
@@ -30,25 +81,11 @@ export default function CookieBanner() {
     checkConsent();
   }, []);
 
-  const saveCookieConsent = async (consentData, consentStatus) => {
-    setLoading(true);
-    try {
-      const sessionId = sessionStorage.getItem('sessionId') || `session_${Date.now()}`;
-      sessionStorage.setItem('sessionId', sessionId);
-
-      await api.post('/api/V1/cookies/consent', {
-        session_id: sessionId,
-        consent_status: consentStatus,
-        cookies_accepted: consentData
-      });
-
-      setShowBanner(false);
-    } catch (error) {
-      console.error('Failed to save cookie consent:', error);
-      setShowBanner(false);
-    } finally {
-      setLoading(false);
-    }
+  const saveCookieConsent = (cookies, status) => {
+    const consent = { sessionId: getSessionId(), status, cookies, pending: true };
+    writeConsent(consent);
+    setShowBanner(false);
+    sendConsent(consent);
   };
 
   const handleAcceptAll = () =>
@@ -74,14 +111,12 @@ export default function CookieBanner() {
             <button
               className="cookie-btn cookie-btn-reject"
               onClick={handleRejectAll}
-              disabled={loading}
             >
               Refuser tout
             </button>
             <button
               className="cookie-btn cookie-btn-accept"
               onClick={handleAcceptAll}
-              disabled={loading}
             >
               Accepter tout
             </button>

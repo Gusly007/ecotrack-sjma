@@ -1,6 +1,6 @@
 import express from 'express';
 import * as gdprService from '../services/gdprService.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, forbidStaffSelfDeletion } from '../middleware/auth.js';
 import { publicLimiter } from '../config/rateLimit.js';
 import logger from '../utils/logger.js';
 
@@ -86,7 +86,7 @@ router.get('/me/export', publicLimiter, authenticateToken, async (req, res) => {
  *       500:
  *         description: Request failed
  */
-router.post('/me/delete', publicLimiter, authenticateToken, async (req, res) => {
+router.post('/me/delete', publicLimiter, authenticateToken, forbidStaffSelfDeletion, async (req, res) => {
   try {
     const { password } = req.body;
     

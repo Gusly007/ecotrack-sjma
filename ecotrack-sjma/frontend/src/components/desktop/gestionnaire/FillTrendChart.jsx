@@ -16,10 +16,19 @@ function formatDateLabel(dateValue) {
   return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 }
 
-function barColor(level) {
-  if (level >= 80) return 'linear-gradient(180deg, #ef4444 0%, #b91c1c 100%)';
-  if (level >= 50) return 'linear-gradient(180deg, #f59e0b 0%, #d97706 100%)';
-  return 'linear-gradient(180deg, #22c55e 0%, #15803d 100%)';
+const WARNING_LEVEL = 50;
+const DANGER_LEVEL = 80;
+
+const LEGEND = [
+  { tone: 'ok', label: `Moins de ${WARNING_LEVEL} %` },
+  { tone: 'warning', label: `De ${WARNING_LEVEL} % à moins de ${DANGER_LEVEL} %` },
+  { tone: 'danger', label: `${DANGER_LEVEL} % et plus` },
+];
+
+function fillTone(level) {
+  if (level >= DANGER_LEVEL) return 'danger';
+  if (level >= WARNING_LEVEL) return 'warning';
+  return 'ok';
 }
 
 export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refreshKey = 0 }) {
@@ -102,26 +111,35 @@ export default function FillTrendChart({ days = 30, pageSize = PAGE_SIZE, refres
         <>
           <div className="ftc-avg-row">
             <span className="ftc-avg-label">Moyenne sur la page</span>
-            <span
-              className={`ftc-avg-badge ${
-                avgLevel >= 80 ? 'danger' : avgLevel >= 50 ? 'warning' : 'ok'
-              }`}
-            >
+            <span className={`ftc-avg-badge ${fillTone(avgLevel)}`}>
               {avgLevel.toFixed(1)}%
             </span>
           </div>
 
+          <div className="ftc-legend-row">
+            <ul className="ftc-legend" aria-label="Seuils de couleur">
+              {LEGEND.map(({ tone, label }) => (
+                <li key={tone}>
+                  <span className={`ftc-swatch ftc-bar--${tone}`} aria-hidden="true" />
+                  {label}
+                </li>
+              ))}
+            </ul>
+            <span className="ftc-legend-note">Couleur selon la valeur exacte, visible au survol d’une barre.</span>
+          </div>
+
           <div className="ftc-chart">
             {paginated.map((point, index) => (
-              <div className="ftc-col" key={`${point.dateLabel}-${index}`} title={`${point.measurementCount} mesure(s)`}>
+              <div
+                className="ftc-col"
+                key={`${point.dateLabel}-${index}`}
+                title={`${point.level.toFixed(2)} % · ${point.measurementCount} mesure(s)`}
+              >
                 <div className="ftc-value">{point.level.toFixed(0)}%</div>
                 <div className="ftc-bar-wrap">
                   <div
-                    className="ftc-bar"
-                    style={{
-                      height: `${Math.max(4, point.level)}%`,
-                      background: barColor(point.level),
-                    }}
+                    className={`ftc-bar ftc-bar--${fillTone(point.level)}`}
+                    style={{ height: `${Math.max(4, point.level)}%` }}
                   />
                 </div>
                 <div className="ftc-label">{point.dateLabel}</div>

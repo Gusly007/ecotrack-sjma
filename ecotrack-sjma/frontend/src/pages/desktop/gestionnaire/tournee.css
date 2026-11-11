@@ -428,7 +428,7 @@
 
 .tournee-modal-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -480,7 +480,7 @@
   line-height: 1.3;
 }
 
-/* Badge "EN RETARD" affiché en complément du badge de statut.
+/* Badge "Fin prévue dépassée" affiché en complément du badge de statut.
    Ne remplace pas le statut métier (PLANIFIEE/EN_COURS/TERMINEE) — il s'ajoute. */
 .tournee-retard-badge {
   margin-left: 6px;
@@ -628,6 +628,13 @@
   gap: 10px;
   padding-top: 6px;
   border-top: 1px solid #eceff1;
+  position: sticky;
+  /* -20px offsets the 20px padding of .modal-body (Modal.css) so the bar covers it. */
+  bottom: -20px;
+  margin-bottom: -20px;
+  padding-bottom: 20px;
+  background: #fff;
+  z-index: 1;
 }
 
 .btn-primary,

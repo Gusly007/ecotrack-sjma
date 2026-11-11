@@ -43,3 +43,19 @@
   color: #888;
   margin-top: 2px;
 }
+
+.scan-result-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px;
+  background: #fff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+}

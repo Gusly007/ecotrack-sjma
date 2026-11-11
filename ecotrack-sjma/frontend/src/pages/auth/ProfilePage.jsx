@@ -293,12 +293,14 @@ export default function ProfilePage() {
             >
               <i className="fas fa-download"></i> Données
             </button>
-            <button
-              className={`tab-button danger ${activeTab === 'delete' ? 'active' : ''}`}
-              onClick={() => setActiveTab('delete')}
-            >
-              <i className="fas fa-trash"></i> Supprimer
-            </button>
+            {role === 'CITOYEN' && (
+              <button
+                className={`tab-button danger ${activeTab === 'delete' ? 'active' : ''}`}
+                onClick={() => setActiveTab('delete')}
+              >
+                <i className="fas fa-trash"></i> Supprimer
+              </button>
+            )}
           </div>
 
           {/* Error/Success Messages */}
