@@ -105,7 +105,6 @@ function App() {
     <AuthProvider>
       <NotificationProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <CookieBanner />
         <Suspense fallback={<div style={{ display: 'none' }} aria-hidden="true" />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -369,6 +368,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </Suspense>
+        <CookieBanner />
       </BrowserRouter>
       </NotificationProvider>
     </AuthProvider>

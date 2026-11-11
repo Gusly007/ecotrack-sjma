@@ -11,6 +11,12 @@
   font-family: inherit;
 }
 
+/* index.css gives the auth-form .btn-primary/.btn-secondary width: 100% */
+.btn.btn-primary,
+.btn.btn-secondary {
+  width: auto;
+}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

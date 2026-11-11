@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../hooks';
+import { useNotifications } from '../../context/NotificationContext';
+import { PRIORITY_CONFIG } from '../../constants/notificationPriority';
 import api from '../../services/api';
 import './DesktopLayout.css';
 import { ADMIN_MENU, GESTIONNAIRE_MENU } from './menuData';
@@ -10,13 +11,12 @@ export default function DesktopLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [notificationsCount, setNotificationsCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  const { unreadCount: wsUnreadCount } = useNotifications();
+  const { unreadCount: wsUnreadCount, refresh: refreshUnreadCount } = useNotifications();
   const role = user?.role || user?.role_par_defaut;
   const isAdmin = role === 'ADMIN';
   const menuItems = isAdmin ? ADMIN_MENU : GESTIONNAIRE_MENU;
@@ -42,13 +42,20 @@ export default function DesktopLayout({ children }) {
     year: 'numeric'
   });
 
-  const pageTitle = isAdmin ? 'Administration' : (gestionnaireTitleByPath[location.pathname] || 'Tableau de bord');
+  const getGestionnaireTitle = (pathname) => {
+    if (gestionnaireTitleByPath[pathname]) return gestionnaireTitleByPath[pathname];
+    if (matchPath('/gestionnaire/signalements/:id', pathname)) return 'Signalement';
+    return 'Tableau de bord';
+  };
+
+  const pageTitle = location.pathname === '/profile'
+    ? 'Mon compte'
+    : isAdmin ? 'Administration' : getGestionnaireTitle(location.pathname);
   const userName = user?.prenom || user?.name || (isAdmin ? 'Admin' : 'Gestionnaire');
   const userLabel = isAdmin ? 'Administrateur' : 'Gestionnaire';
 
   const notificationConfig = useMemo(() => ({
     listPath: isAdmin ? '/api/V1/admin/notifications' : '/api/V1/notifications/list',
-    countPath: isAdmin ? '/api/V1/admin/notifications/stats' : '/api/V1/notifications/unread/count',
     markReadPath: (id) => isAdmin ? `/api/V1/admin/notifications/${id}/read` : `/api/V1/notifications/${id}/read`,
     markAllReadPath: isAdmin ? '/api/V1/admin/notifications/read-all' : '/api/V1/notifications/read-all',
     itemLabel: isAdmin ? 'Notifications admin' : 'Notifications gestionnaire',
@@ -60,10 +67,7 @@ export default function DesktopLayout({ children }) {
     setNotificationsLoading(true);
 
     try {
-      const [listResponse, countResponse] = await Promise.all([
-        api.get(notificationConfig.listPath, { params: { page: 1, limit: 100 } }),
-        api.get(notificationConfig.countPath),
-      ]);
+      const listResponse = await api.get(notificationConfig.listPath, { params: { page: 1, limit: 100 } });
 
       const listPayload = listResponse?.data?.data ?? listResponse?.data ?? [];
       const listItems = Array.isArray(listPayload)
@@ -72,18 +76,11 @@ export default function DesktopLayout({ children }) {
           ? listPayload.data
           : [];
 
-      const countPayload = countResponse?.data ?? {};
-      const countValue = isAdmin
-        ? Number(countPayload?.totals?.non_lues ?? countPayload?.non_lues ?? countPayload?.unread_count ?? 0)
-        : Number(countPayload?.unread_count ?? countPayload?.count ?? 0);
-
       if (!signal.active) return;
       setNotifications(listItems);
-      setNotificationsCount(Number.isFinite(countValue) ? countValue : 0);
     } catch (error) {
       if (!signal.active) return;
       setNotifications([]);
-      setNotificationsCount(0);
       console.warn('Impossible de charger les notifications', error);
     } finally {
       if (signal.active) {
@@ -95,7 +92,6 @@ export default function DesktopLayout({ children }) {
   useEffect(() => {
     if (!user) {
       setNotifications([]);
-      setNotificationsCount(0);
       return;
     }
 
@@ -109,7 +105,7 @@ export default function DesktopLayout({ children }) {
       signal.active = false;
       window.removeEventListener('notifications-refresh', onRefresh);
     };
-  }, [user, isAdmin, notificationConfig.countPath, notificationConfig.listPath]);
+  }, [user, isAdmin, notificationConfig.listPath]);
 
   const formatNotificationPreview = (notification) => {
     if (!notification) return '';
@@ -118,8 +114,9 @@ export default function DesktopLayout({ children }) {
 
   const formatNotificationMeta = (notification) => {
     const pieces = [];
-    if (notification?.priorite !== undefined && notification?.priorite !== null) {
-      pieces.push(`Priorité ${notification.priorite}`);
+    const priority = PRIORITY_CONFIG[notification?.priorite];
+    if (priority) {
+      pieces.push(priority.label);
     }
     if (notification?.categorie) {
       pieces.push(notification.categorie);
@@ -142,7 +139,7 @@ export default function DesktopLayout({ children }) {
   const handleMarkAllAsRead = async () => {
     try {
       await api.patch(notificationConfig.markAllReadPath);
-      await loadNotifications({ active: true });
+      await Promise.all([loadNotifications({ active: true }), refreshUnreadCount()]);
     } catch (error) {
       console.warn('Impossible de marquer toutes les notifications comme lues', error);
     }
@@ -156,7 +153,7 @@ export default function DesktopLayout({ children }) {
 
     try {
       await api.patch(notificationConfig.markReadPath(notification.id_notification));
-      await loadNotifications({ active: true });
+      await Promise.all([loadNotifications({ active: true }), refreshUnreadCount()]);
     } catch (error) {
       console.warn('Impossible de marquer la notification comme lue', error);
       navigateToNotifications();
@@ -202,6 +199,8 @@ export default function DesktopLayout({ children }) {
                       ? location.pathname === item.path ? 'active' : ''
                       : location.pathname.startsWith(item.path) ? 'active' : ''
                   }
+                  aria-label={item.label}
+                  title={sidebarOpen ? undefined : item.label}
                 >
                   <i className={`fas ${item.icon}`}></i>
                   <span>{item.label}</span>
@@ -218,8 +217,10 @@ export default function DesktopLayout({ children }) {
             className="menu-toggle"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title={sidebarOpen ? 'Réduire le menu' : 'Ouvrir le menu'}
+            aria-label={sidebarOpen ? 'Réduire le menu' : 'Ouvrir le menu'}
+            aria-expanded={sidebarOpen}
           >
-            <i className={`fas ${sidebarOpen ? 'fa-chevron-left' : 'fa-bars'}`}></i>
+            <i className="fas fa-bars"></i>
           </button>
           
           <h1>{pageTitle}</h1>
@@ -289,7 +290,7 @@ export default function DesktopLayout({ children }) {
               <i className={`fas ${isAdmin ? 'fa-user-shield' : 'fa-user-circle'}`}></i>
               <span>{userName} ({userLabel})</span>
             </div>
-            <button className="logout-btn" onClick={handleLogout}>
+            <button className="logout-btn" onClick={handleLogout} title="Se déconnecter" aria-label="Se déconnecter">
               <i className="fas fa-sign-out-alt"></i>
             </button>
           </div>
