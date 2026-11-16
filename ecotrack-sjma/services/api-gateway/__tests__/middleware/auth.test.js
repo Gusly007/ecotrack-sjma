@@ -339,5 +339,77 @@ describe('Auth Middleware', () => {
       // le service consommateur applique ses propres permissions.
       expect(next).toHaveBeenCalled();
     });
+
+    // Le routeur Express est insensible a la casse par defaut
+    // (`case sensitive routing = false`) : /api/v1/health/all est bien servi.
+    // Le controle de role doit donc reconnaitre ces variantes, sinon elles
+    const CASE_VARIANTS = (path) => [
+      path.toLowerCase(),
+      path.toUpperCase(),
+      path.replace('/api/V1/', '/api/v1/'),
+      path.replace('/api/V1/', '/API/V1/'),
+      path.replace('/api/V1/', '/Api/V1/'),
+    ];
+
+    it.each(MONITORING_PATHS.flatMap(CASE_VARIANTS))(
+      'isAdminMonitoringRoute reconnait la variante de casse : %s',
+      (path) => {
+        expect(isAdminMonitoringRoute(path)).toBe(true);
+      },
+    );
+
+    it.each(MONITORING_PATHS.flatMap(CASE_VARIANTS))(
+      'refuse un AGENT sur la variante de casse : %s',
+      (path) => {
+        req.path = path;
+        req.method = 'GET';
+        req.headers = { authorization: 'Bearer valid_token' };
+        mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+
+        jwtValidationMiddleware(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+      },
+    );
+
+    it.each(MONITORING_PATHS.flatMap(CASE_VARIANTS))(
+      'refuse un CITOYEN sur la variante de casse : %s',
+      (path) => {
+        req.path = path;
+        req.method = 'GET';
+        req.headers = { authorization: 'Bearer valid_token' };
+        mockVerify.mockReturnValue({ userId: 4, role: 'CITOYEN' });
+
+        jwtValidationMiddleware(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+      },
+    );
+
+    it.each(MONITORING_PATHS.flatMap(CASE_VARIANTS))(
+      'accepte un GESTIONNAIRE sur la variante de casse : %s',
+      (path) => {
+        req.path = path;
+        req.method = 'GET';
+        req.headers = { authorization: 'Bearer valid_token' };
+        mockVerify.mockReturnValue({ userId: 2, role: 'GESTIONNAIRE' });
+
+        jwtValidationMiddleware(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+      },
+    );
+
+    it('reconnait les sous-chemins quelle que soit la casse', () => {
+      expect(isAdminMonitoringRoute('/api/v1/analytics/overview')).toBe(true);
+      expect(isAdminMonitoringRoute('/API/V1/ANALYTICS/OVERVIEW')).toBe(true);
+    });
+
+    it('ne confond pas un chemin different avec une route de monitoring', () => {
+      expect(isAdminMonitoringRoute('/api/V1/analyticsXYZ')).toBe(false);
+      expect(isAdminMonitoringRoute('/api/v1/users/profile')).toBe(false);
+    });
   });
 });

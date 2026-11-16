@@ -70,12 +70,18 @@ const normalizePath = (path = '') => {
 /**
  * Vrai si la route fait partie des endpoints de monitoring du dashboard admin.
  * Exposé pour les tests et pour un éventuel montage ciblé de requireRole.
+ *
+ * La comparaison est insensible à la casse, comme le routeur Express (qui
+ * utilise par défaut `case sensitive routing = false`). Sans cela, une requête
+ * `/api/v1/health/all` serait servie par la route `/api/V1/health/all` tout en
+ * échappant au contrôle de rôle : un AGENT ou un CITOYEN lirait le monitoring.
  */
 export const isAdminMonitoringRoute = (reqPath) => {
-  const path = normalizePath(reqPath);
-  return ADMIN_MONITORING_ROUTES.some(
-    (route) => path === normalizePath(route) || path.startsWith(`${normalizePath(route)}/`)
-  );
+  const path = normalizePath(reqPath).toLowerCase();
+  return ADMIN_MONITORING_ROUTES.some((route) => {
+    const normalized = normalizePath(route).toLowerCase();
+    return path === normalized || path.startsWith(`${normalized}/`);
+  });
 };
 
 const isPublicRoute = (reqPath, reqMethod) => {
