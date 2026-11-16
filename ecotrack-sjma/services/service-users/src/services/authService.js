@@ -250,14 +250,18 @@ export const forgotPassword = async (email, { from } = {}) => {
       return genericResponse;
     }
 
+    // On utilise l'adresse réellement enregistrée : la recherche est
+    // insensible à la casse, mais le token et l'email doivent porter la casse
+    // d'origine du compte (c'est cette valeur qui sera comparée au reset).
+    const recipientEmail = user.email;
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000);
 
-    await AuthRepository.createPasswordResetToken(email, resetToken, expiresAt);
+    await AuthRepository.createPasswordResetToken(recipientEmail, resetToken, expiresAt);
 
     // `from === 'citoyen'` aiguille le lien email vers /citoyen/reset-password
     // (page isolée du scope mobile, redirige vers /citoyen/login après succès).
-    const emailResult = await sendPasswordResetEmail(email, resetToken, { from });
+    const emailResult = await sendPasswordResetEmail(recipientEmail, resetToken, { from });
 
     // Aperçu Ethereal : le lien de preview reste utile en local, mais ne doit
     // jamais exposé le resetToken hors d'un environnement explicitement isolé.

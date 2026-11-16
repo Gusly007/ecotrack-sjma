@@ -160,7 +160,11 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   // citoyen, le lien email pointe vers /citoyen/reset-password (page isolée
   // qui redirige vers /citoyen/login). Sinon comportement upstream inchangé.
   try {
-    const result = await authService.forgotPassword(email.trim().toLowerCase(), { from });
+    // Pas de toLowerCase() ici : les adresses sont stockées telles que saisies
+    // à l'inscription. La recherche insensible à la casse est faite dans
+    // AuthRepository.findUserByEmail, qui renvoie l'adresse réellement
+    // enregistrée (utilisée ensuite pour le token et l'envoi du courriel).
+    const result = await authService.forgotPassword(email.trim(), { from });
     return res.json(result);
   } catch (err) {
     // Filet de sécurité : même en cas d'erreur non gérée, la réponse HTTP reste

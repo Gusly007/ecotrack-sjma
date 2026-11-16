@@ -42,6 +42,26 @@ describe('AuthRepository', () => {
     spy.mockRestore();
   });
 
+  it('findUserByEmail compare sans tenir compte de la casse', async () => {
+    pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 42, email: 'Camille.Dupont@example.org' }] });
+
+    const row = await AuthRepository.findUserByEmail('camille.dupont@example.org');
+
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain('LOWER(email) = LOWER($1)');
+    expect(params).toEqual(['camille.dupont@example.org']);
+    expect(row).toEqual({ id_utilisateur: 42, email: 'Camille.Dupont@example.org' });
+  });
+
+  it('findUserByEmail supprime les espaces autour de la saisie', async () => {
+    pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 42 }] });
+
+    await AuthRepository.findUserByEmail('  Camille.Dupont@example.org  ');
+
+    const [, params] = pool.query.mock.calls[0];
+    expect(params).toEqual(['Camille.Dupont@example.org']);
+  });
+
   it('findUserById returns first row', async () => {
     pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 9 }] });
 

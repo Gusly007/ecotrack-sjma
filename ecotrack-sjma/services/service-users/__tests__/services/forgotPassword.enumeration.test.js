@@ -99,6 +99,73 @@ describe('authService.forgotPassword — anti-énumération', () => {
   });
 });
 
+describe('authService.forgotPassword - compatibilite des adresses a casse mixte', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv, NODE_ENV: 'test' };
+    delete process.env.ALLOW_RESET_TOKEN_PREVIEW;
+    mockEmailService.sendPasswordResetEmail.mockResolvedValue({ success: true });
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  // Les adresses sont stockees telles que saisies a l'inscription : un compte
+  // cree avec Camille.Dupont@example.org doit pouvoir demander un reset en
+  // saisissant camille.dupont@example.org (ou toute autre casse).
+  test('envoie le courriel quand la casse saisie differe de celle du compte', async () => {
+    const { forgotPassword } = loadService();
+    mockRepository.findUserByEmail.mockResolvedValueOnce({
+      id_utilisateur: 42,
+      email: 'Camille.Dupont@example.org',
+    });
+
+    const result = await forgotPassword('camille.dupont@example.org');
+
+    expect(result).toEqual({ message: GENERIC });
+    expect(mockRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
+    expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+  });
+
+  test("utilise l'adresse reellement enregistree pour le token et l'envoi", async () => {
+    const { forgotPassword } = loadService();
+    mockRepository.findUserByEmail.mockResolvedValueOnce({
+      id_utilisateur: 42,
+      email: 'Camille.Dupont@example.org',
+    });
+
+    await forgotPassword('CAMILLE.DUPONT@EXAMPLE.ORG');
+
+    const tokenArgs = mockRepository.createPasswordResetToken.mock.calls[0];
+    const emailArgs = mockEmailService.sendPasswordResetEmail.mock.calls[0];
+
+    expect(tokenArgs[0]).toBe('Camille.Dupont@example.org');
+    expect(emailArgs[0]).toBe('Camille.Dupont@example.org');
+    expect(typeof tokenArgs[1]).toBe('string');
+    expect(tokenArgs[1].length).toBeGreaterThan(20);
+  });
+
+  test('garde la meme reponse publique pour une casse existante ou inconnue', async () => {
+    const { forgotPassword } = loadService();
+
+    mockRepository.findUserByEmail.mockResolvedValueOnce({
+      id_utilisateur: 42,
+      email: 'Camille.Dupont@example.org',
+    });
+    const known = await forgotPassword('camille.dupont@example.org');
+
+    mockRepository.findUserByEmail.mockResolvedValueOnce(null);
+    const unknown = await forgotPassword('personne@example.org');
+
+    expect(known).toEqual({ message: GENERIC });
+    expect(unknown).toEqual({ message: GENERIC });
+    expect(JSON.stringify(known)).toBe(JSON.stringify(unknown));
+  });
+});
+
 describe('authService.forgotPassword — fuite de resetToken', () => {
   const originalEnv = process.env;
 
