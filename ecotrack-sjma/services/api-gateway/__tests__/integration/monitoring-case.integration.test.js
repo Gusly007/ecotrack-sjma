@@ -1,6 +1,7 @@
 import { jest, describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 // Le contrôle de rôle du gateway (V2-004) doit couvrir les mêmes chemins que
 // le routeur Express. Express est insensible à la casse par défaut
@@ -47,7 +48,17 @@ beforeAll(async () => {
   // Reproduit le montage réel : un `app.use(jwt)` global (le middleware reçoit
   // donc le chemin complet) puis les routes de monitoring déclarées avec leur
   // casse d'origine, servies par le routeur insensible à la casse d'Express.
+  // Le rate limit reproduit celui du gateway réel (globalRateLimit), comme le
+  // exige la règle CodeQL « Missing rate limiting » sur une route autorisée.
   const app = express();
+  app.use(
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: 1000,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
   app.use(jwtValidationMiddleware);
 
   for (const route of MONITORING_PATHS) {
