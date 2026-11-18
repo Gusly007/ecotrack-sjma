@@ -27,13 +27,12 @@ export default function CitoyenForgotPassword() {
     setError('');
     try {
       await api.post('/auth/forgot-password', { email: cleanEmail, from: 'citoyen' });
+      // Le backend répond toujours 200 avec le même message, que l'email
+      // existe ou non. On affiche donc systématiquement l'écran de succès :
+      // distinguer les cas ici réintroduirait l'énumération côté client.
       setSuccess(true);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setError("Aucun compte citoyen trouvé avec cet email.");
-      } else {
-        setError(safeErrorMessage(err, "Erreur lors de l'envoi"));
-      }
+      setError(safeErrorMessage(err, "Erreur lors de l'envoi"));
     } finally {
       setLoading(false);
     }
