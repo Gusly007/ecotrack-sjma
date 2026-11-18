@@ -1,6 +1,8 @@
 /**
  * Middleware RBAC pour service-routes
  */
+const ApiError = require('../utils/api-error');
+
 const rolePermissions = {
     CITOYEN: [
         // Lecture publique des prochaines collectes (feed home citoyen).
@@ -89,4 +91,14 @@ const requirePermissions = (permissions) => {
     };
 };
 
-module.exports = { requirePermission, requirePermissions, hasPermission };
+const assertTourneeAccess = (tournee, user) => {
+    if (['ADMIN', 'GESTIONNAIRE'].includes(user?.role)) return;
+
+    const agentId = Number(user?.id);
+    if (user?.role !== 'AGENT' || !Number.isSafeInteger(agentId) || agentId <= 0
+        || tournee.id_agent !== agentId) {
+        throw new ApiError(403, 'Vous n\'êtes pas assigné à cette tournée');
+    }
+};
+
+module.exports = { requirePermission, requirePermissions, hasPermission, assertTourneeAccess };

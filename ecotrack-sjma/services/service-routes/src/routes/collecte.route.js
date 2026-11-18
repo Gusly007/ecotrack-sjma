@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { requirePermission } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -41,7 +42,7 @@ const router = require('express').Router();
  *       404:
  *         description: Tournée introuvable
  */
-router.post('/tournees/:id/collecte', (req, res, next) => req.controllers.collecte.recordCollecte(req, res, next));
+router.post('/tournees/:id/collecte', requirePermission('tournee:update'), (req, res, next) => req.controllers.collecte.recordCollecte(req, res, next));
 
 /**
  * @swagger
@@ -79,7 +80,7 @@ router.post('/tournees/:id/collecte', (req, res, next) => req.controllers.collec
  *       404:
  *         description: Tournée introuvable
  */
-router.post('/tournees/:id/anomalie', (req, res, next) => req.controllers.collecte.reportAnomalie(req, res, next));
+router.post('/tournees/:id/anomalie', requirePermission('tournee:update'), (req, res, next) => req.controllers.collecte.reportAnomalie(req, res, next));
 
 /**
  * @swagger
@@ -98,7 +99,7 @@ router.post('/tournees/:id/anomalie', (req, res, next) => req.controllers.collec
  *       404:
  *         description: Tournée introuvable
  */
-router.get('/tournees/:id/collectes', (req, res, next) => req.controllers.collecte.getCollectesByTournee(req, res, next));
+router.get('/tournees/:id/collectes', requirePermission('tournee:read'), (req, res, next) => req.controllers.collecte.getCollectesByTournee(req, res, next));
 
 /**
  * @swagger
@@ -115,6 +116,6 @@ router.get('/tournees/:id/collectes', (req, res, next) => req.controllers.collec
  *       200:
  *         description: Liste des anomalies
  */
-router.get('/tournees/:id/anomalies', (req, res, next) => req.controllers.collecte.getAnomaliesByTournee(req, res, next));
+router.get('/tournees/:id/anomalies', requirePermission('tournee:read'), (req, res, next) => req.controllers.collecte.getAnomaliesByTournee(req, res, next));
 
 module.exports = router;

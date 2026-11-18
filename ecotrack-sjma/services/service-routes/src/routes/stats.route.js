@@ -62,7 +62,6 @@ router.get('/stats/kpis', requirePermission('tournee:read'), (req, res, next) =>
  *       400:
  *         description: Identifiant agent manquant
  */
-router.get('/stats/agent', (req, res, next) => req.controllers.stats.getAgentStats(req, res, next));
 
 /**
  * @swagger
