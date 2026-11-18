@@ -23,26 +23,27 @@ export const AuthRepository = {
   },
   async findUserByEmail(email) {
     try {
-      // Les adresses sont enregistrées telles que saisies à l'inscription
-      // (l'index unique uk_utilisateur_email est sensible à la casse). On
-      // compare donc sans tenir compte de la casse pour retrouver le compte
-      // quand l'utilisateur ressaisit son adresse différemment. `id_utilisateur`
-      // tranche de façon déterministe si deux comptes ne diffèrent que par la
-      // casse.
       const result = await pool.query(
         `SELECT id_utilisateur, email, prenom, nom, password_hash, role_par_defaut, points,
                 est_active, deleted_at, avatar_url, avatar_thumbnail, avatar_mini
-         FROM UTILISATEUR
-         WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL
-         ORDER BY id_utilisateur
-         LIMIT 1`,
-        [email.trim()]
+         FROM UTILISATEUR WHERE email = $1 AND deleted_at IS NULL`,
+        [email]
       );
       return result.rows[0];
     } catch (error) {
       console.error('Error in findUserByEmail:', error);
       throw error;
     }
+  },
+  async findUniqueUserByEmailIgnoreCase(email) {
+    const result = await pool.query(
+      `SELECT id_utilisateur, email FROM UTILISATEUR
+       WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL
+       LIMIT 2`,
+      [email]
+    );
+    // Une collision de casse ne doit jamais sélectionner arbitrairement un compte.
+    return result.rows.length === 1 ? result.rows[0] : undefined;
   },
   async findUserById(userId) {
     const result = await pool.query(

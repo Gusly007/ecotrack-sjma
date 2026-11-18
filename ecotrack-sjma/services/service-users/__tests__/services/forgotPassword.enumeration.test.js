@@ -7,6 +7,7 @@
 
 const mockRepository = {
   findUserByEmail: jest.fn(),
+  findUniqueUserByEmailIgnoreCase: jest.fn(),
   createPasswordResetToken: jest.fn(),
 };
 
@@ -44,7 +45,7 @@ describe('authService.forgotPassword — anti-énumération', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env = { ...originalEnv, NODE_ENV: 'test' };
     delete process.env.ALLOW_RESET_TOKEN_PREVIEW;
     mockEmailService.sendPasswordResetEmail.mockResolvedValue({ success: true });
@@ -103,7 +104,7 @@ describe('authService.forgotPassword - compatibilite des adresses a casse mixte'
   const originalEnv = process.env;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env = { ...originalEnv, NODE_ENV: 'test' };
     delete process.env.ALLOW_RESET_TOKEN_PREVIEW;
     mockEmailService.sendPasswordResetEmail.mockResolvedValue({ success: true });
@@ -115,10 +116,10 @@ describe('authService.forgotPassword - compatibilite des adresses a casse mixte'
 
   // Les adresses sont stockees telles que saisies a l'inscription : un compte
   // cree avec Camille.Dupont@example.org doit pouvoir demander un reset en
-  // saisissant camille.dupont@example.org (ou toute autre casse).
+  // saisissant camille.dupont@example.org si la correspondance est unique.
   test('envoie le courriel quand la casse saisie differe de celle du compte', async () => {
     const { forgotPassword } = loadService();
-    mockRepository.findUserByEmail.mockResolvedValueOnce({
+    mockRepository.findUniqueUserByEmailIgnoreCase.mockResolvedValueOnce({
       id_utilisateur: 42,
       email: 'Camille.Dupont@example.org',
     });
@@ -132,7 +133,7 @@ describe('authService.forgotPassword - compatibilite des adresses a casse mixte'
 
   test("utilise l'adresse reellement enregistree pour le token et l'envoi", async () => {
     const { forgotPassword } = loadService();
-    mockRepository.findUserByEmail.mockResolvedValueOnce({
+    mockRepository.findUniqueUserByEmailIgnoreCase.mockResolvedValueOnce({
       id_utilisateur: 42,
       email: 'Camille.Dupont@example.org',
     });
@@ -151,7 +152,7 @@ describe('authService.forgotPassword - compatibilite des adresses a casse mixte'
   test('garde la meme reponse publique pour une casse existante ou inconnue', async () => {
     const { forgotPassword } = loadService();
 
-    mockRepository.findUserByEmail.mockResolvedValueOnce({
+    mockRepository.findUniqueUserByEmailIgnoreCase.mockResolvedValueOnce({
       id_utilisateur: 42,
       email: 'Camille.Dupont@example.org',
     });
@@ -164,13 +165,45 @@ describe('authService.forgotPassword - compatibilite des adresses a casse mixte'
     expect(unknown).toEqual({ message: GENERIC });
     expect(JSON.stringify(known)).toBe(JSON.stringify(unknown));
   });
+
+  test.each(['Camille.Dupont@example.org', 'camille.dupont@example.org'])(
+    'privilégie le compte exact %s même si une autre casse existe', async (email) => {
+      const { forgotPassword } = loadService();
+      mockRepository.findUserByEmail.mockResolvedValueOnce({ email });
+
+      await expect(forgotPassword(`  ${email}  `)).resolves.toEqual({ message: GENERIC });
+
+      expect(mockRepository.findUserByEmail).toHaveBeenCalledWith(email);
+      expect(mockRepository.findUniqueUserByEmailIgnoreCase).not.toHaveBeenCalled();
+      expect(mockRepository.createPasswordResetToken).toHaveBeenCalledWith(
+        email, expect.any(String), expect.any(Date)
+      );
+      expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        email, expect.any(String), { from: undefined }
+      );
+    }
+  );
+
+  test('une casse ambiguë conserve la réponse générique sans token ni courriel', async () => {
+    const { forgotPassword } = loadService();
+    mockRepository.findUserByEmail.mockResolvedValueOnce(undefined);
+    mockRepository.findUniqueUserByEmailIgnoreCase.mockResolvedValueOnce(undefined);
+
+    await expect(forgotPassword('CAMILLE.DUPONT@EXAMPLE.ORG'))
+      .resolves.toEqual({ message: GENERIC });
+
+    expect(mockRepository.findUniqueUserByEmailIgnoreCase)
+      .toHaveBeenCalledWith('CAMILLE.DUPONT@EXAMPLE.ORG');
+    expect(mockRepository.createPasswordResetToken).not.toHaveBeenCalled();
+    expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
 });
 
 describe('authService.forgotPassword — fuite de resetToken', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env = { ...originalEnv };
     mockRepository.findUserByEmail.mockResolvedValue({
       id_utilisateur: 1,

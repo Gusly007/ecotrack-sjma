@@ -42,24 +42,42 @@ describe('AuthRepository', () => {
     spy.mockRestore();
   });
 
-  it('findUserByEmail compare sans tenir compte de la casse', async () => {
+  it('findUserByEmail conserve la correspondance exacte pour la connexion', async () => {
     pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 42, email: 'Camille.Dupont@example.org' }] });
 
-    const row = await AuthRepository.findUserByEmail('camille.dupont@example.org');
+    const row = await AuthRepository.findUserByEmail('Camille.Dupont@example.org');
 
     const [sql, params] = pool.query.mock.calls[0];
-    expect(sql).toContain('LOWER(email) = LOWER($1)');
-    expect(params).toEqual(['camille.dupont@example.org']);
+    expect(sql).toContain('WHERE email = $1 AND deleted_at IS NULL');
+    expect(sql).not.toContain('LOWER');
+    expect(params).toEqual(['Camille.Dupont@example.org']);
     expect(row).toEqual({ id_utilisateur: 42, email: 'Camille.Dupont@example.org' });
   });
 
-  it('findUserByEmail supprime les espaces autour de la saisie', async () => {
-    pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 42 }] });
+  it('retrouve une unique adresse sans distinction de casse pour le reset', async () => {
+    const account = { id_utilisateur: 42, email: 'Camille.Dupont@example.org' };
+    pool.query.mockResolvedValue({ rows: [account] });
 
-    await AuthRepository.findUserByEmail('  Camille.Dupont@example.org  ');
+    await expect(AuthRepository.findUniqueUserByEmailIgnoreCase('camille.dupont@example.org'))
+      .resolves.toEqual(account);
 
-    const [, params] = pool.query.mock.calls[0];
-    expect(params).toEqual(['Camille.Dupont@example.org']);
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain('LOWER(email) = LOWER($1) AND deleted_at IS NULL');
+    expect(sql).toContain('LIMIT 2');
+    expect(params).toEqual(['camille.dupont@example.org']);
+  });
+
+  it.each([
+    { rows: [] },
+    { rows: [
+      { id_utilisateur: 1, email: 'Camille.Dupont@example.org' },
+      { id_utilisateur: 2, email: 'camille.dupont@example.org' },
+    ] },
+  ])('ne sélectionne aucun compte si la recherche est vide ou ambiguë (%j)', async ({ rows }) => {
+    pool.query.mockResolvedValue({ rows });
+
+    await expect(AuthRepository.findUniqueUserByEmailIgnoreCase('CAMILLE.DUPONT@EXAMPLE.ORG'))
+      .resolves.toBeUndefined();
   });
 
   it('findUserById returns first row', async () => {

@@ -19,6 +19,7 @@ jest.mock('../../src/repositories/auth.repository.js', () => ({
   __esModule: true,
   AuthRepository: {
     findUserByEmail: jest.fn(),
+    findUniqueUserByEmailIgnoreCase: jest.fn(),
     createPasswordResetToken: jest.fn(),
     findUserByIdWithMfa: jest.fn(),
     updateUserMfaSetupSecret: jest.fn(),
@@ -69,7 +70,7 @@ describe('POST /auth/forgot-password — anti-énumération (HTTP)', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env = { ...originalEnv, NODE_ENV: 'production' };
     delete process.env.ALLOW_RESET_TOKEN_PREVIEW;
     sendPasswordResetEmail.mockResolvedValue({
@@ -164,5 +165,20 @@ describe('POST /auth/forgot-password — anti-énumération (HTTP)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: GENERIC });
+  });
+
+  it('une recherche ambiguë reste un succès générique sans écriture ni envoi', async () => {
+    AuthRepository.findUserByEmail.mockResolvedValueOnce(undefined);
+    AuthRepository.findUniqueUserByEmailIgnoreCase.mockResolvedValueOnce(undefined);
+
+    const res = await request(app).post('/auth/forgot-password')
+      .send({ email: 'CAMILLE.DUPONT@EXAMPLE.ORG' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ message: GENERIC });
+    expect(AuthRepository.findUniqueUserByEmailIgnoreCase)
+      .toHaveBeenCalledWith('CAMILLE.DUPONT@EXAMPLE.ORG');
+    expect(AuthRepository.createPasswordResetToken).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 });
