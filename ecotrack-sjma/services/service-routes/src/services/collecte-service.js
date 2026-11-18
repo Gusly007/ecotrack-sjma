@@ -1,6 +1,7 @@
 const { validateSchema, collecteSchema } = require('../validators/collecte.validator');
 const { validateSchema: validateTournee, anomalieSchema } = require('../validators/tournee.validator');
 const ApiError = require('../utils/api-error');
+const { assertTourneeAccess } = require('../middleware/rbac');
 const { notifyAllStaff } = require('../utils/notifyStaff');
 
 class CollecteService {
@@ -112,17 +113,21 @@ class CollecteService {
     return anomalie;
   }
 
-  async getCollectesByTournee(tourneeId) {
-    if (!(await this.tourneeRepo.exists(tourneeId))) {
+  async getCollectesByTournee(tourneeId, user) {
+    const tournee = await this.tourneeRepo.findById(tourneeId);
+    if (!tournee) {
       throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
     }
+    assertTourneeAccess(tournee, user);
     return this.collecteRepo.findByTournee(tourneeId);
   }
 
-  async getAnomaliesByTournee(tourneeId) {
-    if (!(await this.tourneeRepo.exists(tourneeId))) {
+  async getAnomaliesByTournee(tourneeId, user) {
+    const tournee = await this.tourneeRepo.findById(tourneeId);
+    if (!tournee) {
       throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
     }
+    assertTourneeAccess(tournee, user);
     return this.collecteRepo.findAnomaliesByTournee(tourneeId);
   }
 }

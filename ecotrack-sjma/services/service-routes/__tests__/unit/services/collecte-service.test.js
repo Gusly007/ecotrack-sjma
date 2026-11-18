@@ -198,32 +198,32 @@ describe('SCRUM-9 — affectation des anomalies', () => {
 });
 describe('CollecteService.getCollectesByTournee', () => {
   it('devrait retourner les collectes si la tournée existe', async () => {
-    mockTourneeRepo.exists.mockResolvedValue(true);
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     mockCollecteRepo.findByTournee.mockResolvedValue([{ id_collecte: 1 }]);
 
-    const result = await service.getCollectesByTournee(1);
+    const result = await service.getCollectesByTournee(1, { id: 5, role: 'AGENT' });
     expect(result).toEqual([{ id_collecte: 1 }]);
   });
 
   it('devrait lever 404 si tournée inexistante', async () => {
-    mockTourneeRepo.exists.mockResolvedValue(false);
+    mockTourneeRepo.findById.mockResolvedValue(null);
 
-    await expect(service.getCollectesByTournee(99)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.getCollectesByTournee(99, { id: 5, role: 'AGENT' })).rejects.toMatchObject({ statusCode: 404 });
   });
 });
 
 describe('CollecteService.getAnomaliesByTournee', () => {
   it('devrait retourner les anomalies si la tournée existe', async () => {
-    mockTourneeRepo.exists.mockResolvedValue(true);
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     mockCollecteRepo.findAnomaliesByTournee.mockResolvedValue([{ id_signalement: 1 }]);
 
-    const result = await service.getAnomaliesByTournee(1);
+    const result = await service.getAnomaliesByTournee(1, { id: 5, role: 'AGENT' });
     expect(result).toEqual([{ id_signalement: 1 }]);
   });
 
   it('devrait lever 404 si tournée inexistante', async () => {
-    mockTourneeRepo.exists.mockResolvedValue(false);
+    mockTourneeRepo.findById.mockResolvedValue(null);
 
-    await expect(service.getAnomaliesByTournee(99)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.getAnomaliesByTournee(99, { id: 5, role: 'AGENT' })).rejects.toMatchObject({ statusCode: 404 });
   });
 });

@@ -123,44 +123,48 @@ describe('TourneeService.getAgentTodayTournee', () => {
 
 describe('TourneeService.updateTournee', () => {
   it('devrait mettre à jour si tournée existante', async () => {
-    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1 });
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     const updated = { id_tournee: 1, distance_prevue_km: 10 };
     mockTourneeRepo.update.mockResolvedValue(updated);
 
-    const result = await service.updateTournee(1, { distance_prevue_km: 10 });
+    const result = await service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' });
     expect(result).toEqual(updated);
   });
 
   it('devrait lever 404 si tournée introuvable au premier findById', async () => {
     mockTourneeRepo.findById.mockResolvedValue(null);
 
-    await expect(service.updateTournee(99, { distance_prevue_km: 10 })).rejects.toMatchObject({
+    await expect(service.updateTournee(99, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' })).rejects.toMatchObject({
       statusCode: 404
     });
   });
 
   it('devrait lever 404 si update retourne null', async () => {
-    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1 });
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     mockTourneeRepo.update.mockResolvedValue(null);
 
-    await expect(service.updateTournee(1, { distance_prevue_km: 10 })).rejects.toMatchObject({
+    await expect(service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' })).rejects.toMatchObject({
       statusCode: 404
     });
   });
 });
 
 describe('TourneeService.updateStatut', () => {
+  beforeEach(() => {
+    mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
+  });
+
   it('devrait mettre à jour le statut avec une valeur valide', async () => {
     const result = { id_tournee: 1, statut: 'EN_COURS' };
     mockTourneeRepo.updateStatut.mockResolvedValue(result);
 
-    const returned = await service.updateStatut(1, { statut: 'EN_COURS' });
+    const returned = await service.updateStatut(1, { statut: 'EN_COURS' }, { id: 5, role: 'AGENT' });
     expect(mockTourneeRepo.updateStatut).toHaveBeenCalledWith(1, 'EN_COURS');
     expect(returned).toEqual(result);
   });
 
   it('devrait rejeter un statut invalide', async () => {
-    await expect(service.updateStatut(1, { statut: 'INVALID' })).rejects.toThrow();
+    await expect(service.updateStatut(1, { statut: 'INVALID' }, { id: 5, role: 'AGENT' })).rejects.toThrow();
   });
 });
 

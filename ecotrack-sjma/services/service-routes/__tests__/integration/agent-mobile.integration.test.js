@@ -4,6 +4,16 @@ const tourneeRoutes = require('../../src/routes/tournee.route');
 const collecteRoutes = require('../../src/routes/collecte.route');
 const statsRoutes = require('../../src/routes/stats.route');
 const { anomalieSchema, validateSchema } = require('../../src/validators/tournee.validator');
+const TourneeController = require('../../src/controllers/tournee-controller');
+const CollecteController = require('../../src/controllers/collecte-controller');
+const TourneeService = require('../../src/services/tournee-service');
+const CollecteService = require('../../src/services/collecte-service');
+const rateLimit = require('express-rate-limit');
+
+jest.mock('../../src/services/cacheService', () => ({
+  del: jest.fn(),
+  invalidatePattern: jest.fn(),
+}));
 
 /**
  * Tests d'intégration des endpoints utilisés par le mobile agent.
@@ -266,5 +276,106 @@ describe('SCRUM-9 — autorisations des opérations Agent', () => {
   it('expose une seule route GET /stats/agent', () => {
     const routes = statsRoutes.stack.filter(layer => layer.route?.path === '/stats/agent' && layer.route.methods.get);
     expect(routes).toHaveLength(1);
+  });
+});
+
+describe('SCRUM-9 — accès aux tournées selon leur affectation', () => {
+  let app;
+  let tourneeRepo;
+  let collecteRepo;
+  let authenticatedUser;
+  const endpoints = [
+    ['patch', '/tournees/12', { distance_prevue_km: 10 }, 'update'],
+    ['patch', '/tournees/12/statut', { statut: 'ANNULEE' }, 'updateStatut'],
+    ['get', '/tournees/12/collectes', {}, 'findByTournee'],
+    ['get', '/tournees/12/anomalies', {}, 'findAnomaliesByTournee'],
+  ];
+
+  beforeEach(() => {
+    authenticatedUser = undefined;
+    tourneeRepo = {
+      findById: jest.fn().mockResolvedValue({ id_tournee: 12, id_agent: 5, statut: 'PLANIFIEE' }),
+      exists: jest.fn().mockResolvedValue(true),
+      update: jest.fn().mockResolvedValue({ id_tournee: 12, distance_prevue_km: 10 }),
+      updateStatut: jest.fn().mockResolvedValue({ id_tournee: 12, statut: 'ANNULEE' }),
+    };
+    collecteRepo = {
+      findByTournee: jest.fn().mockResolvedValue([{ id_collecte: 1 }]),
+      findAnomaliesByTournee: jest.fn().mockResolvedValue([{ id_signalement: 1 }]),
+    };
+    const controllers = {
+      tournee: new TourneeController(new TourneeService(tourneeRepo, collecteRepo)),
+      collecte: new CollecteController(new CollecteService(collecteRepo, tourneeRepo)),
+    };
+    app = express();
+    app.use(rateLimit({ windowMs: 60000, limit: 1000 }));
+    app.use(express.json());
+    app.use((req, res, next) => {
+      req.user = authenticatedUser;
+      req.controllers = controllers;
+      next();
+    });
+    app.use(tourneeRoutes, collecteRoutes);
+    app.use((err, req, res, next) => {
+      if (res.headersSent) return next(err);
+      res.status(err.statusCode || 500).json({ message: err.message });
+    });
+  });
+
+  describe.each(endpoints)('%s %s', (method, url, body, repositoryMethod) => {
+    it.each([
+      ['AGENT', '5', 200],
+      ['AGENT', '6', 403],
+      ['AGENT', '', 403],
+      ['AGENT', 'invalid', 403],
+      ['AGENT', '0', 403],
+      ['AGENT', '-1', 403],
+      ['GESTIONNAIRE', '7', 200],
+      ['ADMIN', '8', 200],
+      ['CITOYEN', '9', 403],
+    ])('contrôle le rôle %s et l’identité %s', async (role, id, expectedStatus) => {
+      const response = await request(app)[method](url)
+        .set('x-user-role', role).set('x-user-id', id).send(body);
+      expect(response.status).toBe(expectedStatus);
+      const operation = tourneeRepo[repositoryMethod] || collecteRepo[repositoryMethod];
+      expect(operation).toHaveBeenCalledTimes(expectedStatus === 200 ? 1 : 0);
+      if (expectedStatus === 403) {
+        expect(tourneeRepo.update).not.toHaveBeenCalled();
+        expect(tourneeRepo.updateStatut).not.toHaveBeenCalled();
+        expect(collecteRepo.findByTournee).not.toHaveBeenCalled();
+        expect(collecteRepo.findAnomaliesByTournee).not.toHaveBeenCalled();
+      }
+    });
+
+    it('utilise req.user lorsqu’une identité authentifiée est déjà présente', async () => {
+      authenticatedUser = { id: 6, role: 'AGENT' };
+      const response = await request(app)[method](url)
+        .set('x-user-role', 'ADMIN').set('x-user-id', '5').send(body);
+      expect(response.status).toBe(403);
+      expect(tourneeRepo[repositoryMethod] || collecteRepo[repositoryMethod]).not.toHaveBeenCalled();
+    });
+
+    it('renvoie 404 pour une tournée inexistante', async () => {
+      tourneeRepo.findById.mockResolvedValue(null);
+      tourneeRepo.exists.mockResolvedValue(false);
+      const response = await request(app)[method](url)
+        .set('x-user-role', 'AGENT').set('x-user-id', '5').send(body);
+      expect(response.status).toBe(404);
+      expect(tourneeRepo[repositoryMethod] || collecteRepo[repositoryMethod]).not.toHaveBeenCalled();
+    });
+  });
+
+  it.each(['EN_COURS', 'TERMINEE'])('refuse le statut %s au gestionnaire', async (statut) => {
+    const response = await request(app).patch('/tournees/12/statut')
+      .set('x-user-role', 'GESTIONNAIRE').set('x-user-id', '7').send({ statut });
+    expect(response.status).toBe(403);
+    expect(tourneeRepo.updateStatut).not.toHaveBeenCalled();
+  });
+
+  it.each(['AGENT', 'ADMIN'])('autorise %s à terminer une tournée accessible', async (role) => {
+    const response = await request(app).patch('/tournees/12/statut')
+      .set('x-user-role', role).set('x-user-id', '5').send({ statut: 'TERMINEE' });
+    expect(response.status).toBe(200);
+    expect(tourneeRepo.updateStatut).toHaveBeenCalledWith('12', 'TERMINEE');
   });
 });
