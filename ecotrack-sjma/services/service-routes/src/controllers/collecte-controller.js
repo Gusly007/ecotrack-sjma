@@ -38,7 +38,7 @@ class CollecteController {
   async getCollectesByTournee(req, res, next) {
     try {
       const { id } = req.params;
-      const collectes = await this.service.getCollectesByTournee(id);
+      const collectes = await this.service.getCollectesByTournee(id, req.user);
       return res.status(200).json(ApiResponse.success(collectes));
     } catch (err) {
       next(err);
@@ -48,7 +48,7 @@ class CollecteController {
   async getAnomaliesByTournee(req, res, next) {
     try {
       const { id } = req.params;
-      const anomalies = await this.service.getAnomaliesByTournee(id);
+      const anomalies = await this.service.getAnomaliesByTournee(id, req.user);
       return res.status(200).json(ApiResponse.success(anomalies));
     } catch (err) {
       next(err);

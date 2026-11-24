@@ -1,5 +1,4 @@
 const ApiResponse = require('../utils/api-response');
-const ApiError = require('../utils/api-error');
 
 class TourneeController {
   constructor(tourneeService, db) {
@@ -97,7 +96,7 @@ class TourneeController {
   async update(req, res, next) {
     try {
       const { id } = req.params;
-      const updated = await this.service.updateTournee(id, req.body);
+      const updated = await this.service.updateTournee(id, req.body, req.user);
       return res.status(200).json(ApiResponse.success(updated, 'Tournée mise à jour'));
     } catch (err) {
       next(err);
@@ -107,14 +106,7 @@ class TourneeController {
   async updateStatut(req, res, next) {
     try {
       const { id } = req.params;
-      const { statut } = req.body;
-      const role = String(req.user?.role || '').toUpperCase();
-
-      if (role === 'GESTIONNAIRE' && statut !== 'ANNULEE') {
-        throw ApiError.forbidden('Un gestionnaire ne peut qu\'annuler une tournée');
-      }
-
-      const result = await this.service.updateStatut(id, req.body);
+      const result = await this.service.updateStatut(id, req.body, req.user);
       return res.status(200).json(ApiResponse.success(result, 'Statut mis à jour'));
     } catch (err) {
       next(err);

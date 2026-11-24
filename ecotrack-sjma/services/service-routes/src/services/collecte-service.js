@@ -1,6 +1,7 @@
 const { validateSchema, collecteSchema } = require('../validators/collecte.validator');
 const { validateSchema: validateTournee, anomalieSchema } = require('../validators/tournee.validator');
 const ApiError = require('../utils/api-error');
+const { assertTourneeAccess } = require('./tournee-access');
 const { notifyAllStaff } = require('../utils/notifyStaff');
 
 class CollecteService {
@@ -26,8 +27,8 @@ class CollecteService {
     if (!tournee) throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
 
     // Vérifier que l'agent est bien assigné à cette tournée
-    if (agentId && tournee.id_agent !== agentId) {
-      throw ApiError.badRequest('Vous n\'êtes pas assigné à cette tournée');
+    if (!Number.isSafeInteger(agentId) || agentId <= 0 || tournee.id_agent !== agentId) {
+      throw new ApiError(403, 'Vous n\'êtes pas assigné à cette tournée');
     }
 
     // Auto-transition PLANIFIEE -> EN_COURS à la 1re collecte
@@ -74,6 +75,9 @@ class CollecteService {
 
     const tournee = await this.tourneeRepo.findById(tourneeId);
     if (!tournee) throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
+    if (!Number.isSafeInteger(agentId) || agentId <= 0 || tournee.id_agent !== agentId) {
+      throw new ApiError(403, 'Vous n\'êtes pas assigné à cette tournée');
+    }
     if (!['EN_COURS', 'PLANIFIEE'].includes(tournee.statut)) {
       throw ApiError.badRequest('Anomalie signalable uniquement pour une tournée EN_COURS ou PLANIFIEE');
     }
@@ -109,17 +113,21 @@ class CollecteService {
     return anomalie;
   }
 
-  async getCollectesByTournee(tourneeId) {
-    if (!(await this.tourneeRepo.exists(tourneeId))) {
+  async getCollectesByTournee(tourneeId, user) {
+    const tournee = await this.tourneeRepo.findById(tourneeId);
+    if (!tournee) {
       throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
     }
+    assertTourneeAccess(tournee, user);
     return this.collecteRepo.findByTournee(tourneeId);
   }
 
-  async getAnomaliesByTournee(tourneeId) {
-    if (!(await this.tourneeRepo.exists(tourneeId))) {
+  async getAnomaliesByTournee(tourneeId, user) {
+    const tournee = await this.tourneeRepo.findById(tourneeId);
+    if (!tournee) {
       throw ApiError.notFound(`Tournée ${tourneeId} introuvable`);
     }
+    assertTourneeAccess(tournee, user);
     return this.collecteRepo.findAnomaliesByTournee(tourneeId);
   }
 }

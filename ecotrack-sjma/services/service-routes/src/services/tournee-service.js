@@ -1,6 +1,7 @@
 const { validateSchema, createTourneeSchema, updateTourneeSchema, updateStatutSchema, optimizeSchema } = require('../validators/tournee.validator');
 const { optimizeRoute, estimateDuration, FUEL_CONSUMPTION_PER_100KM } = require('./optimization-service');
 const ApiError = require('../utils/api-error');
+const { assertCanManageTournee } = require('./tournee-access');
 const cacheService = require('./cacheService');
 const { emitWsForUser } = require('../utils/notifyStaff');
 
@@ -101,7 +102,8 @@ class TourneeService {
     return { ...tournee, etapes };
   }
 
-  async updateTournee(id, data) {
+  async updateTournee(id, data, user) {
+    assertCanManageTournee(user);
     const tournee = await this.tourneeRepo.findById(id);
     if (!tournee) throw ApiError.notFound(`Tournée ${id} introuvable`);
     const validated = validateSchema(updateTourneeSchema, data);
@@ -118,8 +120,14 @@ class TourneeService {
     return updated;
   }
 
-  async updateStatut(id, data) {
+  async updateStatut(id, data, user) {
+    assertCanManageTournee(user);
+    const tournee = await this.tourneeRepo.findById(id);
+    if (!tournee) throw ApiError.notFound(`Tournée ${id} introuvable`);
     const validated = validateSchema(updateStatutSchema, data);
+    if (user.role === 'GESTIONNAIRE' && validated.statut !== 'ANNULEE') {
+      throw new ApiError(403, 'Un gestionnaire ne peut qu\'annuler une tournée');
+    }
     const result = await this.tourneeRepo.updateStatut(id, validated.statut);
 
     await cacheService.del(`tournee:${id}`);

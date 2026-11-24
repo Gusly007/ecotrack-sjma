@@ -101,7 +101,7 @@ export default function TourneePage() {
       title="Tournée en cours"
       showBack
       rightAction={
-        <button className="mobile-header-action" onClick={() => navigate('/agent/tournee/terminer')}>
+        <button className="mobile-header-action" aria-label="Voir le bilan de la tournée" onClick={() => navigate('/agent/tournee/terminer')}>
           <i className="fas fa-flag-checkered"></i>
         </button>
       }

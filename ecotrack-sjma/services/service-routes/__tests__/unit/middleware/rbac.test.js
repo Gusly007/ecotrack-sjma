@@ -3,7 +3,7 @@
  * Tests des permissions RBAC pour service-routes
  */
 
-const { requirePermission, requirePermissions, hasPermission } = require('../../../src/middleware/rbac');
+const { requirePermission, hasPermission } = require('../../../src/middleware/rbac');
 
 describe('RBAC Middleware - Service Routes (Tournées)', () => {
   let mockReq, mockRes, mockNext;
@@ -44,8 +44,9 @@ describe('RBAC Middleware - Service Routes (Tournées)', () => {
         expect(hasPermission('AGENT', 'tournee:read')).toBe(true);
       });
 
-      it('devrait avoir tournee:update', () => {
-        expect(hasPermission('AGENT', 'tournee:update')).toBe(true);
+      it('peut enregistrer une collecte mais pas modifier une tournée', () => {
+        expect(hasPermission('AGENT', 'collecte:create')).toBe(true);
+        expect(hasPermission('AGENT', 'tournee:update')).toBe(false);
       });
 
       it('ne devrait pas avoir tournee:create', () => {
@@ -245,13 +246,14 @@ describe('RBAC Middleware - Service Routes (Tournées)', () => {
         expect(mockRes.status).toHaveBeenCalledWith(403);
       });
 
-      it('devrait autoriser AGENT sur PATCH /tournees/:id', () => {
+      it('devrait refuser AGENT sur PATCH /tournees/:id', () => {
         mockReq = { user: { role: 'AGENT' } };
         
         const middleware = requirePermission('tournee:update');
         middleware(mockReq, mockRes, mockNext);
         
-        expect(mockNext).toHaveBeenCalled();
+        expect(mockRes.status).toHaveBeenCalledWith(403);
+        expect(mockNext).not.toHaveBeenCalled();
       });
 
       it('devrait autoriser GESTIONNAIRE sur PATCH /tournees/:id', () => {
@@ -294,13 +296,14 @@ describe('RBAC Middleware - Service Routes (Tournées)', () => {
     });
 
     describe('Statut - PATCH /tournees/:id/statut', () => {
-      it('devrait autoriser AGENT sur PATCH /tournees/:id/statut', () => {
+      it('devrait refuser AGENT sur PATCH /tournees/:id/statut', () => {
         mockReq = { user: { role: 'AGENT' } };
         
         const middleware = requirePermission('tournee:update');
         middleware(mockReq, mockRes, mockNext);
         
-        expect(mockNext).toHaveBeenCalled();
+        expect(mockRes.status).toHaveBeenCalledWith(403);
+        expect(mockNext).not.toHaveBeenCalled();
       });
 
       it('ne devrait pas autoriser CITOYEN sur PATCH /tournees/:id/statut', () => {
@@ -422,8 +425,8 @@ describe('RBAC Middleware - Service Routes (Tournées)', () => {
       { method: 'POST', path: '/optimize', permission: 'tournee:read', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },
       { method: 'POST', path: '/tournees', permission: 'tournee:create', rolesAutorises: ['GESTIONNAIRE', 'ADMIN'] },
       { method: 'GET', path: '/tournees/:id', permission: 'tournee:read', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },
-      { method: 'PATCH', path: '/tournees/:id', permission: 'tournee:update', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },
-      { method: 'PATCH', path: '/tournees/:id/statut', permission: 'tournee:update', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },
+      { method: 'PATCH', path: '/tournees/:id', permission: 'tournee:update', rolesAutorises: ['GESTIONNAIRE', 'ADMIN'] },
+      { method: 'PATCH', path: '/tournees/:id/statut', permission: 'tournee:update', rolesAutorises: ['GESTIONNAIRE', 'ADMIN'] },
       { method: 'DELETE', path: '/tournees/:id', permission: 'tournee:delete', rolesAutorises: ['GESTIONNAIRE', 'ADMIN'] },
       { method: 'GET', path: '/tournees/:id/etapes', permission: 'tournee:read', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },
       { method: 'GET', path: '/tournees/:id/progress', permission: 'tournee:read', rolesAutorises: ['AGENT', 'GESTIONNAIRE', 'ADMIN'] },

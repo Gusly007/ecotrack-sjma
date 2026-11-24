@@ -111,11 +111,6 @@ export async function fetchProgress(tourneeId) {
   return unwrap(response.data);
 }
 
-export async function changeStatut(tourneeId, statut) {
-  const response = await api.patch(`/api/V1/routes/tournees/${tourneeId}/statut`, { statut });
-  return unwrap(response.data);
-}
-
 export async function recordCollecte(tourneeId, data) {
   const response = await api.post(`/api/V1/routes/tournees/${tourneeId}/collecte`, data);
   return unwrap(response.data);

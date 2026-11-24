@@ -1,6 +1,7 @@
 /**
  * Middleware RBAC pour service-routes
  */
+
 const rolePermissions = {
     CITOYEN: [
         // Lecture publique des prochaines collectes (feed home citoyen).
@@ -8,7 +9,7 @@ const rolePermissions = {
     ],
     AGENT: [
         'tournee:read',
-        'tournee:update',
+        'collecte:create',
         'collecte:read'
     ],
     GESTIONNAIRE: [
@@ -16,6 +17,7 @@ const rolePermissions = {
         'tournee:read',
         'tournee:update',
         'tournee:delete',
+        'collecte:create',
         'collecte:read'
     ],
     ADMIN: ['*']
