@@ -122,19 +122,25 @@ describe('TourneeService.getAgentTodayTournee', () => {
 });
 
 describe('TourneeService.updateTournee', () => {
+  it('refuse la modification par l’agent affecté avant toute écriture', async () => {
+    await expect(service.updateTournee(1, { id_agent: 8 }, { id: 5, role: 'AGENT' }))
+      .rejects.toMatchObject({ statusCode: 403 });
+    expect(mockTourneeRepo.update).not.toHaveBeenCalled();
+  });
+
   it('devrait mettre à jour si tournée existante', async () => {
     mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     const updated = { id_tournee: 1, distance_prevue_km: 10 };
     mockTourneeRepo.update.mockResolvedValue(updated);
 
-    const result = await service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' });
+    const result = await service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'ADMIN' });
     expect(result).toEqual(updated);
   });
 
   it('devrait lever 404 si tournée introuvable au premier findById', async () => {
     mockTourneeRepo.findById.mockResolvedValue(null);
 
-    await expect(service.updateTournee(99, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' })).rejects.toMatchObject({
+    await expect(service.updateTournee(99, { distance_prevue_km: 10 }, { id: 5, role: 'ADMIN' })).rejects.toMatchObject({
       statusCode: 404
     });
   });
@@ -143,13 +149,19 @@ describe('TourneeService.updateTournee', () => {
     mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
     mockTourneeRepo.update.mockResolvedValue(null);
 
-    await expect(service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'AGENT' })).rejects.toMatchObject({
+    await expect(service.updateTournee(1, { distance_prevue_km: 10 }, { id: 5, role: 'ADMIN' })).rejects.toMatchObject({
       statusCode: 404
     });
   });
 });
 
 describe('TourneeService.updateStatut', () => {
+  it('refuse la clôture manuelle par l’agent affecté', async () => {
+    await expect(service.updateStatut(1, { statut: 'TERMINEE' }, { id: 5, role: 'AGENT' }))
+      .rejects.toMatchObject({ statusCode: 403 });
+    expect(mockTourneeRepo.updateStatut).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     mockTourneeRepo.findById.mockResolvedValue({ id_tournee: 1, id_agent: 5 });
   });
@@ -158,13 +170,13 @@ describe('TourneeService.updateStatut', () => {
     const result = { id_tournee: 1, statut: 'EN_COURS' };
     mockTourneeRepo.updateStatut.mockResolvedValue(result);
 
-    const returned = await service.updateStatut(1, { statut: 'EN_COURS' }, { id: 5, role: 'AGENT' });
+    const returned = await service.updateStatut(1, { statut: 'EN_COURS' }, { id: 5, role: 'ADMIN' });
     expect(mockTourneeRepo.updateStatut).toHaveBeenCalledWith(1, 'EN_COURS');
     expect(returned).toEqual(result);
   });
 
   it('devrait rejeter un statut invalide', async () => {
-    await expect(service.updateStatut(1, { statut: 'INVALID' }, { id: 5, role: 'AGENT' })).rejects.toThrow();
+    await expect(service.updateStatut(1, { statut: 'INVALID' }, { id: 5, role: 'ADMIN' })).rejects.toThrow();
   });
 });
 

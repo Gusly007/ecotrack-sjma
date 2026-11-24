@@ -1,7 +1,6 @@
 /**
  * Middleware RBAC pour service-routes
  */
-const ApiError = require('../utils/api-error');
 
 const rolePermissions = {
     CITOYEN: [
@@ -10,7 +9,7 @@ const rolePermissions = {
     ],
     AGENT: [
         'tournee:read',
-        'tournee:update',
+        'collecte:create',
         'collecte:read'
     ],
     GESTIONNAIRE: [
@@ -18,6 +17,7 @@ const rolePermissions = {
         'tournee:read',
         'tournee:update',
         'tournee:delete',
+        'collecte:create',
         'collecte:read'
     ],
     ADMIN: ['*']
@@ -91,14 +91,4 @@ const requirePermissions = (permissions) => {
     };
 };
 
-const assertTourneeAccess = (tournee, user) => {
-    if (['ADMIN', 'GESTIONNAIRE'].includes(user?.role)) return;
-
-    const agentId = Number(user?.id);
-    if (user?.role !== 'AGENT' || !Number.isSafeInteger(agentId) || agentId <= 0
-        || tournee.id_agent !== agentId) {
-        throw new ApiError(403, 'Vous n\'êtes pas assigné à cette tournée');
-    }
-};
-
-module.exports = { requirePermission, requirePermissions, hasPermission, assertTourneeAccess };
+module.exports = { requirePermission, requirePermissions, hasPermission };

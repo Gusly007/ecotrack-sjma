@@ -1,7 +1,7 @@
 const { validateSchema, collecteSchema } = require('../validators/collecte.validator');
 const { validateSchema: validateTournee, anomalieSchema } = require('../validators/tournee.validator');
 const ApiError = require('../utils/api-error');
-const { assertTourneeAccess } = require('../middleware/rbac');
+const { assertTourneeAccess } = require('./tournee-access');
 const { notifyAllStaff } = require('../utils/notifyStaff');
 
 class CollecteService {

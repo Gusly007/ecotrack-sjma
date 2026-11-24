@@ -42,7 +42,7 @@ const { requirePermission } = require('../middleware/rbac');
  *       404:
  *         description: Tournée introuvable
  */
-router.post('/tournees/:id/collecte', requirePermission('tournee:update'), (req, res, next) => req.controllers.collecte.recordCollecte(req, res, next));
+router.post('/tournees/:id/collecte', requirePermission('collecte:create'), (req, res, next) => req.controllers.collecte.recordCollecte(req, res, next));
 
 /**
  * @swagger
@@ -80,7 +80,7 @@ router.post('/tournees/:id/collecte', requirePermission('tournee:update'), (req,
  *       404:
  *         description: Tournée introuvable
  */
-router.post('/tournees/:id/anomalie', requirePermission('tournee:update'), (req, res, next) => req.controllers.collecte.reportAnomalie(req, res, next));
+router.post('/tournees/:id/anomalie', requirePermission('collecte:create'), (req, res, next) => req.controllers.collecte.reportAnomalie(req, res, next));
 
 /**
  * @swagger

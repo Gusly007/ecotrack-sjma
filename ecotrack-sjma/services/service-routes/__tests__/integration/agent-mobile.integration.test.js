@@ -324,7 +324,7 @@ describe('SCRUM-9 — accès aux tournées selon leur affectation', () => {
 
   describe.each(endpoints)('%s %s', (method, url, body, repositoryMethod) => {
     it.each([
-      ['AGENT', '5', 200],
+      ['AGENT', '5', method === 'get' ? 200 : 403],
       ['AGENT', '6', 403],
       ['AGENT', '', 403],
       ['AGENT', 'invalid', 403],
@@ -359,7 +359,7 @@ describe('SCRUM-9 — accès aux tournées selon leur affectation', () => {
       tourneeRepo.findById.mockResolvedValue(null);
       tourneeRepo.exists.mockResolvedValue(false);
       const response = await request(app)[method](url)
-        .set('x-user-role', 'AGENT').set('x-user-id', '5').send(body);
+        .set('x-user-role', 'ADMIN').set('x-user-id', '5').send(body);
       expect(response.status).toBe(404);
       expect(tourneeRepo[repositoryMethod] || collecteRepo[repositoryMethod]).not.toHaveBeenCalled();
     });
@@ -372,9 +372,25 @@ describe('SCRUM-9 — accès aux tournées selon leur affectation', () => {
     expect(tourneeRepo.updateStatut).not.toHaveBeenCalled();
   });
 
-  it.each(['AGENT', 'ADMIN'])('autorise %s à terminer une tournée accessible', async (role) => {
+  it.each(['PLANIFIEE', 'EN_COURS', 'TERMINEE', 'ANNULEE'])(
+    'refuse le changement manuel vers %s même à l’agent affecté', async (statut) => {
+      const response = await request(app).patch('/tournees/12/statut')
+        .set('x-user-role', 'AGENT').set('x-user-id', '5').send({ statut });
+      expect(response.status).toBe(403);
+      expect(tourneeRepo.updateStatut).not.toHaveBeenCalled();
+    }
+  );
+
+  it('refuse la réaffectation de sa propre tournée par un agent', async () => {
+    const response = await request(app).patch('/tournees/12')
+      .set('x-user-role', 'AGENT').set('x-user-id', '5').send({ id_agent: 6 });
+    expect(response.status).toBe(403);
+    expect(tourneeRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('autorise ADMIN à terminer une tournée', async () => {
     const response = await request(app).patch('/tournees/12/statut')
-      .set('x-user-role', role).set('x-user-id', '5').send({ statut: 'TERMINEE' });
+      .set('x-user-role', 'ADMIN').set('x-user-id', '5').send({ statut: 'TERMINEE' });
     expect(response.status).toBe(200);
     expect(tourneeRepo.updateStatut).toHaveBeenCalledWith('12', 'TERMINEE');
   });

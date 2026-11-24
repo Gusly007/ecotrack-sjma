@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import TerminerTournee from '../pages/mobile/agent/TerminerTournee';
 import ScanResult from '../pages/mobile/agent/ScanResult';
 import { containerService } from '../services/containerService';
 import { fetchMyTournee, recordCollecte } from '../services/tourneeService';
@@ -25,7 +26,7 @@ function renderScanResult() {
       <Routes>
         <Route path="/agent/scan/result/:uid" element={<ScanResult />} />
         <Route path="/agent/tournee" element={<p>Tournée de l’agent</p>} />
-        <Route path="/agent/tournee/terminer" element={<p>Fin de tournée</p>} />
+        <Route path="/agent/tournee/terminer" element={<TerminerTournee />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -147,9 +148,12 @@ describe('SCRUM-17 — validation de collecte', () => {
     fireEvent.click(pendingButton);
     expect(recordCollecte).toHaveBeenCalledOnce();
 
-    await act(async () => resolveCollecte({ tournee_terminee: true }));
+    await act(async () => resolveCollecte({ tournee_terminee: true, progression: { total: 3, collectees: 3 } }));
     fireEvent.click(screen.getByRole('button', { name: /Tous les conteneurs collectés/ }));
-    expect(screen.getByText('Fin de tournée')).toBeInTheDocument();
+    expect(screen.getByText('TERMINEE')).toBeInTheDocument();
+    expect(screen.getByText('3/3')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Terminer' })).not.toBeInTheDocument();
+    expect(fetchMyTournee).toHaveBeenCalledOnce();
   });
 
   it('préserve l’écran de conteneur introuvable', async () => {

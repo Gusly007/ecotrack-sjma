@@ -14,21 +14,24 @@ export default function ScanResult() {
   const [quantite, setQuantite] = useState('45');
   const [collecting, setCollecting] = useState(false);
   const [collected, setCollected] = useState(false);
-  const [tourneeTerminee, setTourneeTerminee] = useState(false);
-  const [tourneeId, setTourneeId] = useState(null);
+  const [bilan, setBilan] = useState(null);
+  const [tournee, setTournee] = useState(null);
+  const tourneeId = tournee?.id_tournee;
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      setTourneeId(null);
+      setTournee(null);
+      setBilan(null);
+      setCollected(false);
       setError('');
       try {
         const res = await containerService.getByUid(decodeURIComponent(uid));
         setContainer(res);
         try {
           const t = await fetchMyTournee();
-          if (t?.id_tournee) setTourneeId(t.id_tournee);
+          setTournee(t);
         } catch (err) {
           if (err.response?.status !== 404) {
             setError('Impossible de vérifier la tournée active. Veuillez réessayer.');
@@ -52,7 +55,13 @@ export default function ScanResult() {
         id_conteneur: container.id_conteneur,
         quantite_kg: parseFloat(quantite) || 0,
       });
-      setTourneeTerminee(result?.tournee_terminee === true);
+      if (result?.tournee_terminee) {
+        const { id_tournee, code, zone_nom, vehicule, distance_reelle_km, duree_reelle_min } = tournee;
+        setBilan({
+          tournee: { id_tournee, code, zone_nom, vehicule, distance_reelle_km, duree_reelle_min, statut: 'TERMINEE' },
+          progress: { total_etapes: result.progression.total, etapes_collectees: result.progression.collectees },
+        });
+      }
       setCollected(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Impossible d’enregistrer la collecte. Veuillez réessayer.');
@@ -85,9 +94,9 @@ export default function ScanResult() {
           <div className="detail-row"><span>Poids</span><strong>{quantite} kg</strong></div>
           <div className="detail-row"><span>Heure</span><strong>{new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</strong></div>
         </MobileCard>
-        {tourneeTerminee ? (
-          <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee/terminer')} style={{ background: '#4CAF50' }}>
-            <i className="fas fa-flag-checkered"></i> Tous les conteneurs collectés — Terminer la tournée
+        {bilan ? (
+          <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee/terminer', { state: { bilan } })} style={{ background: '#4CAF50' }}>
+            <i className="fas fa-flag-checkered"></i> Tous les conteneurs collectés — Voir le bilan
           </button>
         ) : (
           <button className="btn-primary-mobile" onClick={() => navigate('/agent/tournee')}>
