@@ -12,7 +12,12 @@ const publicPaths = [
   '/auth/register',
   '/auth/citoyen/register',
   '/auth/citoyen/verify-code',
+  // Les routes /auth/mfa/* et /auth/login/mfa ne sont plus "publiques au sens
+  // large" : elles exigent désormais un jeton pré-MFA (V2-002), mais ce n'est
+  // pas un access token — elles le valident elles-mêmes via requireMfaToken.
   '/auth/mfa/complete-setup',
+  '/auth/mfa/regenerate',
+  '/auth/login/mfa',
   '/health',
   '/avatars'
 ];

@@ -64,14 +64,10 @@ const LoginPage = () => {
 
       // Si MFA requis
       if (result?.requiresMFA) {
-        const userId = Number(result.userId);
-        localStorage.setItem('mfa_user_id', userId);
-
-        console.log('MFA required for user:', userId, 'requiresSetup:', result?.requiresSetup);
-        // Si MFA setup requis (première fois), rediriger vers setup sans stocker le secret
+        // plus de userId exposé, la preuve de mot de passe est le
+        // jeton pré-MFA déjà stocké par authService.login (valable 5 min).
         if (result?.requiresSetup && result?.mfaSetup?.secret) {
-          // Stocker uniquement userId temporairement (pour récup après redirect)
-          // Note: les données sensibles sont récupérées via API sur la page MFA
+          // Les données sensibles sont récupérées via API sur la page MFA
           sessionStorage.setItem('mfa_pending_setup', 'true');
           navigate('/auth/mfa?setup=true');
           return;

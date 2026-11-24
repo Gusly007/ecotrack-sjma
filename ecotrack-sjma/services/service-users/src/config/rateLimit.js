@@ -22,6 +22,28 @@ const shouldSkipRateLimit = (req) => {
 };
 
 /**
+ * le bypass de développement ne s'applique PLUS aux routes MFA ni au
+ * login. En NODE_ENV=development, la limite de 5 tentatives par 15 min était
+ * désactivée : un code TOTP à 6 chiffres restait brute-forçable en local, où
+ * l'admin a justement l'id 1. Ces routes passent maintenant par le limiteur
+ * durci ci-dessous, actif quel que soit l'environnement.
+ */
+const MFA_PROTECTED_PATHS = [
+  '/auth/login',
+  '/auth/login/mfa',
+  '/auth/mfa/complete-setup',
+  '/auth/mfa/regenerate',
+  '/auth/mfa/verify',
+];
+
+const isMfaProtectedPath = (req) => {
+  const path = (req.path || req.url || '').split('?')[0];
+  return MFA_PROTECTED_PATHS.some((p) => path === p || path.endsWith(p));
+};
+
+const shouldSkipMfaRateLimit = (req) => isMfaProtectedPath(req) ? false : shouldSkipRateLimit(req);
+
+/**
  * Rate limiter pour les endpoints publics (100 req/min)
  */
 export const publicLimiter = rateLimit({
@@ -41,7 +63,7 @@ export const loginLimiter = rateLimit({
   max: env.rateLimit?.loginMaxAttempts ?? 5,
   message: 'Too many login attempts, please try again later',
   skipSuccessfulRequests: true,
-  skip: shouldSkipRateLimit
+  skip: shouldSkipMfaRateLimit
 });
 
 /**

@@ -4,6 +4,14 @@ import * as sessionService from '../services/sessionService.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 import * as auditService from '../services/auditService.js';
 
+/**
+ * l'identité de l'utilisateur vient EXCLUSIVEMENT du jeton pré-MFA
+ * posé par `requireMfaToken` (req.mfaUser.id), jamais de `req.body.userId`.
+ * Un userId séquentiel fourni par le client permettait de régénérer le secret
+ * TOTP de n'importe quel compte sans connaître son mot de passe.
+ */
+const getPreMfaUserId = (req) => req.mfaUser?.id ?? null;
+
 export const setup = async (req, res, next) => {
   try {
     const userId = req.user?.id;
@@ -38,68 +46,77 @@ export const disable = async (req, res, next) => {
 
 export const completeSetupAndLogin = async (req, res, next) => {
   try {
-    const { userId, code } = req.body;
-    if (!userId || !code) return res.status(400).json({ error: 'userId et code requis' });
+    const userId = getPreMfaUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Jeton MFA requis' });
+
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'code requis' });
+
     const user = await authService.getUserById(userId);
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
     const { AuthRepository } = await import('../repositories/auth.repository.js');
     const userWithSecret = await AuthRepository.findUserByIdWithMfa(userId);
     const setupSecret = String(userWithSecret?.mfa_setup_secret || '').trim();
     if (!setupSecret) return res.status(400).json({ error: 'Setup MFA non initialisé' });
+
     if (!mfaService.verifyTotp(String(code), setupSecret)) {
       return res.status(401).json({ error: 'Code MFA invalide' });
     }
+
     await mfaService.enableMfa(userId, setupSecret);
     const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
     const refreshToken = generateRefreshToken(user.id_utilisateur);
     await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);
-    res.json({ 
-      message: 'MFA activé et connexion réussie', 
+
+    try {
+      await auditService.logLoginAttempt(user.email, true, req.ip);
+    } catch (_) { /* audit best-effort */ }
+
+    res.json({
+      message: 'MFA activé et connexion réussie',
       token: accessToken,
-      accessToken: accessToken, 
+      accessToken: accessToken,
       refreshToken,
-      user: { id: user.id_utilisateur, email: user.email, prenom: user.prenom, role: user.role_par_defaut } 
+      user: { id: user.id_utilisateur, email: user.email, prenom: user.prenom, role: user.role_par_defaut }
     });
   } catch (err) { next(err); }
 };
 
 export const loginWithMfa = async (req, res, next) => {
   try {
-    const { userId, code } = req.body;
-    if (!userId || !code) return res.status(400).json({ error: 'userId et code requis' });
+    const userId = getPreMfaUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Jeton MFA requis' });
+
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'code requis' });
+
     const user = await authService.getUserById(userId);
     if (!user || !user.mfa_enabled) return res.status(400).json({ error: 'MFA non activé' });
 
     const verification = await mfaService.verifyMfaCode(code, user);
-    
+
     if (!verification.valid) {
-      // Si le code échoue, regenerate automatiquement le QR code (compte supprimé de l'app mobile)
-      const newSetup = await mfaService.generateMfaSetup(userId, user.email);
-      await mfaService.saveSetupSecret(userId, newSetup.secret);
-      return res.status(401).json({ 
-        error: 'Code MFA invalide - nouveau QR code généré',
-        requiresSetup: true,
-        newMfaSetup: {
-          secret: newSetup.secret,
-          qrCodeUrl: newSetup.qrCodeUrl
-        }
-      });
+      // V2-002 : plus AUCUNE régénération de secret ni retour de secret sur
+      // échec. L'ancien comportement remplaçait le secret MFA de la victime et
+      // renvoyait le nouveau dans la réponse 401.
+      return res.status(401).json({ error: 'Code MFA invalide' });
     }
-    
+
     const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
     const refreshToken = generateRefreshToken(user.id_utilisateur);
     await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);
 
-    // Audit du login réussi via MFA
     try {
       await auditService.logLoginAttempt(user.email, true, req.ip);
-    } catch (_) {}
+    } catch (_) { /* audit best-effort */ }
 
-    res.json({ 
+    res.json({
       message: 'Login successful',
-      token: accessToken,        // Clé standard pour le frontend
-      accessToken: accessToken,  // Compatibilité ascendante
+      token: accessToken,
+      accessToken: accessToken,
       refreshToken,
+      usedBackupCode: verification.usedBackupCode || false,
       user: { id: user.id_utilisateur, email: user.email, prenom: user.prenom, role: user.role_par_defaut }
     });
   } catch (err) { next(err); }

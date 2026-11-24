@@ -53,49 +53,29 @@ export const generateMfaSetup = async (userId, email) => {
  * @returns {boolean}
  */
 export const verifyTotp = (token, secret) => {
+  // plus AUCUN log du code reçu ni du secret attendu. L'ancienne
+  // version imprimait « Expected/Received token » dans les logs applicatifs,
+  // ce qui exposait des secrets TOTP à toute personne ayant accès aux logs.
   if (!token || !secret) {
-    console.log('[TOTP] Missing token or secret');
     return false;
   }
-  
+
   // Nettoyer le token (enlever espaces)
   const cleanToken = token.toString().replace(/\s/g, '');
-  
-  // Vérifier le format (6 chiffres)
+
+  // Seuls les codes à 6 chiffres sont des TOTP valides.
   if (!/^\d{6}$/.test(cleanToken)) {
-    console.log('[TOTP] Invalid token format:', cleanToken);
     return false;
   }
-  
-  // Test avec différentes fenêtres pour améliorer la tolérance au décalage horaire
-  const windows = [4, 3, 2, 1, 0];
-  
-  for (const window of windows) {
-    const result = speakeasy.totp.verify({
-      secret,
-      encoding: 'base32',
-      token: cleanToken,
-      window
-    });
-    
-    if (result) {
-      console.log('[TOTP] Code valid with window:', window);
-      return true;
-    }
-  }
-  
-  // Debug: afficher l'heure serveur et générer un code pour comparaison
-  const serverTime = Math.floor(Date.now() / 1000);
-  const expectedToken = speakeasy.totp({
+
+  // Fenêtre de ±1 pas (±30 s) : tolère un léger décalage d'horloge sans
+  // élargir inutilement la surface de rejeu.
+  return speakeasy.totp.verify({
     secret,
     encoding: 'base32',
-    time: serverTime
+    token: cleanToken,
+    window: 1
   });
-  console.log('[TOTP] Code invalid. Server time:', new Date(serverTime * 1000).toISOString());
-  console.log('[TOTP] Expected token at server time:', expectedToken);
-  console.log('[TOTP] Received token:', cleanToken);
-  
-  return false;
 };
 
 /**
