@@ -47,10 +47,10 @@ export default function CitoyenForgotPassword() {
               <div className="success-icon">
                 <i className="fas fa-envelope"></i>
               </div>
-              <h2 style={{ color: '#fff', marginBottom: '12px' }}>Email envoyé !</h2>
+              <h2 style={{ color: '#fff', marginBottom: '12px' }}>Demande envoyée</h2>
               <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '24px' }}>
-                Un lien de réinitialisation a été envoyé à votre adresse email.
-                Cliquez dessus pour choisir un nouveau mot de passe.
+                Si un compte est associé à cette adresse, un lien de réinitialisation a été envoyé.
+                Vérifiez votre boîte mail et cliquez sur le lien pour choisir un nouveau mot de passe.
               </p>
               <button className="btn-primary" onClick={() => navigate('/citoyen/login')}>
                 <i className="fas fa-arrow-left"></i>

@@ -50,9 +50,9 @@ const ForgotPasswordPage = () => {
               <div className="success-icon">
                 <i className="fas fa-envelope"></i>
               </div>
-              <h2 style={{color: '#fff', marginBottom: '12px'}}>Email envoyé !</h2>
+              <h2 style={{color: '#fff', marginBottom: '12px'}}>Demande envoyée</h2>
               <p style={{color: 'rgba(255,255,255,0.7)', marginBottom: '24px'}}>
-                Un lien de réinitialisation a été envoyé à votre adresse email.
+                Si un compte est associé à cette adresse, un lien de réinitialisation a été envoyé.
               </p>
               <button 
                 className="btn-primary"
