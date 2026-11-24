@@ -164,11 +164,13 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     // à l'inscription. La recherche insensible à la casse est faite dans
     // AuthRepository.findUserByEmail, qui renvoie l'adresse réellement
     // enregistrée (utilisée ensuite pour le token et l'envoi du courriel).
-    const result = await authService.forgotPassword(email.trim(), { from });
+    // Pas de trim() non plus : le service normalise l'adresse lui-même, pour
+    // qu'un appel direct au service reste cohérent avec l'appel HTTP.
+    const result = await authService.forgotPassword(email, { from });
     return res.json(result);
   } catch (err) {
     // Filet de sécurité : même en cas d'erreur non gérée, la réponse HTTP reste
-    // identique à celle d'un email existant. Le détail part dans les logs serveur.
+    // identique à celle d'une adresse connue. Le détail part dans les logs serveur.
     logger.error({ err: err?.message }, 'forgotPassword controller fallback');
     return res.json({ message: authService.FORGOT_PASSWORD_GENERIC_MESSAGE });
   }

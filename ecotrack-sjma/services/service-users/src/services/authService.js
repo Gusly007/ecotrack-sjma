@@ -223,6 +223,9 @@ export const FORGOT_PASSWORD_GENERIC_MESSAGE =
  * explicitement isolé. `NODE_ENV=test` seul ne suffit pas (Jest tourne en test,
  * mais aussi toute stack de préprod). On exige en plus un opt-in explicite,
  * absent de docker-compose / .env de prod, et jamais défini automatiquement.
+ *
+ * `!isProdLike` est redondant avec `isTestEnv` (test n'est ni production ni
+ * staging) : gardé comme garde-fou explicite si `isTestEnv` venait à s'élargir.
  */
 const isTokenPreviewAllowed = () => {
   const isTestEnv = env.nodeEnv === 'test';
@@ -232,24 +235,60 @@ const isTokenPreviewAllowed = () => {
 };
 
 /**
+ * Plancher de latence de /auth/forgot-password.
+ *
+ * Le corps de réponse est identique quel que soit le compte, mais le TEMPS de
+ * réponse trahissait encore son existence : un email connu déclenche une
+ * écriture en base + un envoi SMTP, un email inconnu seulement deux lectures.
+ * On ne renvoie donc la réponse qu'après un délai fixe, que le travail soit
+ * terminé ou non.
+ *
+ * 2000 ms couvre largement le cas nominal (DB + SMTP rapide) et reste sous le
+ * timeout client. Un SMTP plus lent que ce plancher n'est plus attendu du tout
+ * (voir le fire-and-forget ci-dessous), donc son temps n'apparaît jamais.
+ */
+const FORGOT_PASSWORD_MIN_DURATION_MS = 2000;
+
+const waitFor = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
  * Demander la réinitialisation du mot de passe.
  *
- * Anti-énumération : la réponse est identique (même corps, même statut 200)
- * que l'email corresponde à un compte ou non. Un email inconnu n'écrit rien en
- * base et n'envoie rien, mais renvoie exactement le même message.
+ * Anti-énumération sur deux canaux :
+ *  - le corps et le statut sont identiques (200 + message générique) ;
+ *  - le délai de réponse est constant (plancher fixe), donc il ne dépend pas de
+ *    l'existence du compte ni de la latence SMTP.
+ *
+ * En mode aperçu de test, on attend réellement l'envoi pour pouvoir renvoyer
+ * le previewUrl / resetToken. Dans tous les autres cas, écriture du jeton et
+ * envoi s'exécutent en arrière-plan : la réponse part sans les attendre.
+ *
+ * Le fire-and-forget suppose que le process n'est pas arrêté dès la réponse.
+ * Sur Cloud Run, service-users est déployé avec `--min-instances=0` et sans
+ * `--no-cpu-throttling` : le CPU est coupé après la réponse. Il faut donc soit
+ * ajouter `--no-cpu-throttling` au déploiement, soit déporter l'envoi dans une
+ * file (Kafka est déjà en place). Tant que ce n'est pas fait, l'écriture du
+ * jeton peut être retardée ou perdue sur cette plateforme.
  */
 export const forgotPassword = async (email, { from } = {}) => {
   const genericResponse = { message: FORGOT_PASSWORD_GENERIC_MESSAGE };
+  const startedAt = Date.now();
+
+  const finish = async (payload = genericResponse) => {
+    const elapsed = Date.now() - startedAt;
+    const remaining = FORGOT_PASSWORD_MIN_DURATION_MS - elapsed;
+    if (remaining > 0) await waitFor(remaining);
+    return payload;
+  };
 
   try {
-    const address = email.trim();
+    const address = typeof email === 'string' ? email.trim() : '';
     const user = await AuthRepository.findUserByEmail(address)
       ?? await AuthRepository.findUniqueUserByEmailIgnoreCase(address);
 
     if (!user) {
-      // Aucun compte unique : on ne signale rien. Le hash n'est pas calculé, rien
-      // n'est écrit en base. Le message reste strictement identique.
-      return genericResponse;
+      // Aucun compte unique : on ne signale rien et on n'écrit rien.
+      return finish();
     }
 
     // Même après une recherche sans distinction de casse, le token et le
@@ -258,25 +297,34 @@ export const forgotPassword = async (email, { from } = {}) => {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000);
 
-    await AuthRepository.createPasswordResetToken(recipientEmail, resetToken, expiresAt);
+    const issueAndSend = async () => {
+      await AuthRepository.createPasswordResetToken(recipientEmail, resetToken, expiresAt);
+      // `from === 'citoyen'` aiguille le lien email vers /citoyen/reset-password
+      // (page isolée du scope mobile, redirige vers /citoyen/login après succès).
+      return sendPasswordResetEmail(recipientEmail, resetToken, { from });
+    };
 
-    // `from === 'citoyen'` aiguille le lien email vers /citoyen/reset-password
-    // (page isolée du scope mobile, redirige vers /citoyen/login après succès).
-    const emailResult = await sendPasswordResetEmail(recipientEmail, resetToken, { from });
-
-    // Aperçu Ethereal : le lien de preview reste utile en local, mais ne doit
-    // jamais exposé le resetToken hors d'un environnement explicitement isolé.
-    if (isTokenPreviewAllowed() && emailResult?.previewUrl) {
-      return { ...genericResponse, previewUrl: emailResult.previewUrl, resetToken };
+    // Aperçu Ethereal : seul cas où l'on attend, pour pouvoir renvoyer le lien.
+    if (isTokenPreviewAllowed()) {
+      const emailResult = await issueAndSend();
+      if (emailResult?.previewUrl) {
+        return finish({ ...genericResponse, previewUrl: emailResult.previewUrl, resetToken });
+      }
+      return finish();
     }
 
-    return genericResponse;
+    // Chemin nominal : le travail continue après la réponse, son échec est
+    // journalisé côté serveur uniquement.
+    issueAndSend().catch((err) => {
+      logger.error({ err: err?.message }, 'forgotPassword: envoi en arrière-plan échoué');
+    });
+
+    return finish();
   } catch (error) {
-    // Toute erreur interne (SMTP down, DB) est journalisée côté serveur mais
-    // traduite en réponse générique : le message d'erreur ne doit pas devenir
-    // un oracle d'énumération (ex: "email en échec car compte inactif").
+    // Toute erreur interne (SMTP, DB) reste une réponse générique : le message
+    // d'erreur ne doit pas devenir un oracle d'énumération.
     logger.error({ err: error?.message, code: error?.code }, 'Error in forgotPassword');
-    return genericResponse;
+    return finish();
   }
 };
 
