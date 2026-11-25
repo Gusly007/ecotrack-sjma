@@ -92,11 +92,37 @@ export const AuthRepository = {
     const result = await pool.query(
       `UPDATE UTILISATEUR 
        SET mfa_setup_secret = $1, mfa_setup_secret_created_at = NOW()
-       WHERE id_utilisateur = $2
+       WHERE id_utilisateur = $2 AND mfa_enabled IS NOT TRUE AND deleted_at IS NULL
        RETURNING id_utilisateur`,
       [secret, userId]
     );
+    if (!result.rowCount) {
+      throw Object.assign(new Error('Configuration MFA indisponible.'), { status: 400 });
+    }
     return result.rows[0];
+  },
+
+  async activatePendingMfa(userId, pendingSecret, backupCodes) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR
+       SET mfa_enabled = TRUE, totp_secret = mfa_setup_secret, backup_codes = $3,
+           mfa_setup_secret = NULL, mfa_setup_secret_created_at = NULL
+       WHERE id_utilisateur = $1 AND mfa_enabled IS NOT TRUE
+         AND mfa_setup_secret = $2 AND deleted_at IS NULL`,
+      [userId, pendingSecret, JSON.stringify(backupCodes)]
+    );
+    return result.rowCount === 1;
+  },
+
+  async consumeMfaBackupCode(userId, code) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR
+       SET backup_codes = (backup_codes::jsonb - $2::text)::text
+       WHERE id_utilisateur = $1 AND mfa_enabled IS TRUE AND deleted_at IS NULL
+         AND backup_codes::jsonb ? $2::text`,
+      [userId, code]
+    );
+    return result.rowCount === 1;
   },
 
   async findUserByIdWithMfa(userId) {

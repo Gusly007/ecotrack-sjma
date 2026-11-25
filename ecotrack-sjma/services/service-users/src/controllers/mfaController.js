@@ -30,6 +30,9 @@ export const verify = async (req, res, next) => {
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     const { secret, token } = req.body;
     if (!secret || !token) return res.status(400).json({ error: 'Secret et token requis' });
+    if (!mfaService.verifyTotp(String(token), secret)) {
+      return res.status(401).json({ error: 'Code MFA invalide' });
+    }
     const result = await mfaService.enableMfa(userId, secret);
     res.json({ message: 'MFA activé', backupCodes: result.backupCodes });
   } catch (err) { next(err); }
@@ -55,9 +58,7 @@ export const completeSetupAndLogin = async (req, res, next) => {
     const user = await authService.getUserById(userId);
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
 
-    const { AuthRepository } = await import('../repositories/auth.repository.js');
-    const userWithSecret = await AuthRepository.findUserByIdWithMfa(userId);
-    const setupSecret = String(userWithSecret?.mfa_setup_secret || '').trim();
+    const setupSecret = user.mfa_setup_secret;
     if (!setupSecret) return res.status(400).json({ error: 'Setup MFA non initialisé' });
 
     if (!mfaService.verifyTotp(String(code), setupSecret)) {

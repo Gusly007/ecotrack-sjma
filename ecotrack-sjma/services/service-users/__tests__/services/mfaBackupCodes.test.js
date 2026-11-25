@@ -4,7 +4,7 @@
 //    toujours après utilisation d'un code de secours).
 
 const mockRepository = {
-  updateMfaSettings: jest.fn(),
+  consumeMfaBackupCode: jest.fn(),
 };
 jest.mock('../../src/repositories/auth.repository.js', () => ({
   __esModule: true,
@@ -21,30 +21,21 @@ const totp = () => speakeasy.totp({ secret, encoding: 'base32' });
 
 describe('verifyMfaCode / codes de secours', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockRepository.updateMfaSettings.mockResolvedValue(undefined);
+    mockRepository.consumeMfaBackupCode.mockReset();
   });
 
   it('accepte un code de secours puis le refuse au second usage', async () => {
-    let user = {
+    const user = {
       id_utilisateur: 7,
       mfa_enabled: true,
       totp_secret: secret,
       backup_codes: JSON.stringify(['AAAA1111', 'BBBB2222']),
     };
 
-    const first = await verifyMfaCode('AAAA1111', user);
+    mockRepository.consumeMfaBackupCode.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const first = await verifyMfaCode('aaaa1111', user);
     expect(first).toEqual({ valid: true, usedBackupCode: true });
-    // L'écriture ne doit toucher que backup_codes.
-    expect(mockRepository.updateMfaSettings).toHaveBeenCalledWith(7, {
-      backup_codes: JSON.stringify(['BBBB2222']),
-    });
-    const [, settings] = mockRepository.updateMfaSettings.mock.calls[0];
-    expect(settings).not.toHaveProperty('mfa_enabled');
-    expect(settings).not.toHaveProperty('totp_secret');
-
-    // L'état client reflète la consommation : le même code est désormais refusé.
-    user = { ...user, backup_codes: settings.backup_codes };
+    expect(mockRepository.consumeMfaBackupCode).toHaveBeenCalledWith(7, 'AAAA1111');
     const second = await verifyMfaCode('AAAA1111', user);
     expect(second).toEqual({ valid: false, usedBackupCode: false });
   });
@@ -57,13 +48,10 @@ describe('verifyMfaCode / codes de secours', () => {
       backup_codes: JSON.stringify(['CCCC3333']),
     };
 
-    // Utiliser le code de secours ne modifie pas le secret TOTP en base...
-    await verifyMfaCode('CCCC3333', user);
-    const [, settings] = mockRepository.updateMfaSettings.mock.calls[0];
-    expect(settings.totp_secret).toBeUndefined();
-
-    // ...et le TOTP courant reste valide pour l'utilisateur.
+    mockRepository.consumeMfaBackupCode.mockResolvedValueOnce(true);
+    expect(await verifyMfaCode('CCCC3333', user)).toEqual({ valid: true, usedBackupCode: true });
     const totpResult = await verifyMfaCode(totp(), user);
     expect(totpResult).toEqual({ valid: true, usedBackupCode: false });
+    expect(mockRepository.consumeMfaBackupCode).toHaveBeenCalledTimes(1);
   });
 });

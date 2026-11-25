@@ -191,6 +191,9 @@ describe('V2-002 / jeton pré-MFA', () => {
     });
 
     it('/auth/mfa/complete-setup active le MFA et délivre une session', async () => {
+      mockRepository.findUserByIdWithMfa.mockResolvedValueOnce({
+        ...agentUser, mfa_enabled: false, mfa_setup_secret: 'SECRETBASE32',
+      });
       const token = generateMfaToken(7, MFA_PURPOSES.SETUP);
       const res = await request(app)
         .post('/auth/mfa/complete-setup')
@@ -203,6 +206,15 @@ describe('V2-002 / jeton pré-MFA', () => {
       //  les codes de secours doivent être renvoyés une fois à
       // l'activation pour que l'utilisateur puisse les conserver.
       expect(res.body.backupCodes).toEqual(['AAAA1111']);
+    });
+
+    it('ne délivre ni session ni codes si la configuration a déjà été consommée', async () => {
+      mfaService.enableMfa.mockRejectedValueOnce(Object.assign(new Error('Configuration terminée'), { status: 400 }));
+      const res = await request(app).post('/auth/mfa/complete-setup')
+        .set('X-MFA-Token', generateMfaToken(7, MFA_PURPOSES.SETUP))
+        .send({ code: '123456' });
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: 'Configuration terminée' });
     });
   });
 
