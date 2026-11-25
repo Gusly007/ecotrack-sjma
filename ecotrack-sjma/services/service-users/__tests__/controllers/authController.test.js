@@ -29,7 +29,7 @@ describe('Auth Controller', () => {
     });
 
     describe('register', () => {
-        it('should register a user and return tokens', async () => {
+        it('should register a user without issuing tokens', async () => {
             const req = mockRequest({ email: 'test@example.com', nom: 'Test', prenom: 'test', password: 'password' });
             const res = mockResponse();
             const serviceResult = { user: { id_utilisateur: 5 } };
