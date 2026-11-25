@@ -87,6 +87,18 @@ describe('RBAC Middleware - Service Routes (Tournées)', () => {
     });
   });
 
+  describe('hasPermission - Signalements (SCRUM-7)', () => {
+    it('réserve signalement:update à GESTIONNAIRE et ADMIN', () => {
+      expect(hasPermission('GESTIONNAIRE', 'signalement:update')).toBe(true);
+      expect(hasPermission('ADMIN', 'signalement:update')).toBe(true);
+    });
+
+    it('refuse signalement:update à CITOYEN et AGENT', () => {
+      expect(hasPermission('CITOYEN', 'signalement:update')).toBe(false);
+      expect(hasPermission('AGENT', 'signalement:update')).toBe(false);
+    });
+  });
+
   describe('requirePermission - Endpoints Tournées', () => {
     describe('Lecture - GET /tournees', () => {
       it('ne devrait pas autoriser CITOYEN sur GET /tournees', () => {
