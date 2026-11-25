@@ -2,6 +2,7 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import crypto from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
+import logger from '../utils/logger.js';
 
 /**
  * Génère le QR code pour un secret TOTP existant
@@ -54,7 +55,6 @@ export const generateMfaSetup = async (userId, email) => {
  */
 export const verifyTotp = (token, secret) => {
   if (!token || !secret) {
-    console.log('[TOTP] Missing token or secret');
     return false;
   }
   
@@ -63,39 +63,26 @@ export const verifyTotp = (token, secret) => {
   
   // Vérifier le format (6 chiffres)
   if (!/^\d{6}$/.test(cleanToken)) {
-    console.log('[TOTP] Invalid token format:', cleanToken);
     return false;
   }
   
-  // Test avec différentes fenêtres pour améliorer la tolérance au décalage horaire
-  const windows = [4, 3, 2, 1, 0];
-  
-  for (const window of windows) {
-    const result = speakeasy.totp.verify({
-      secret,
-      encoding: 'base32',
-      token: cleanToken,
-      window
-    });
-    
-    if (result) {
-      console.log('[TOTP] Code valid with window:', window);
-      return true;
-    }
-  }
-  
-  // Debug: afficher l'heure serveur et générer un code pour comparaison
-  const serverTime = Math.floor(Date.now() / 1000);
-  const expectedToken = speakeasy.totp({
+  // Tolérance volontairement bornée à ±1 pas de 30 s (3 codes acceptés au
+  // total) : au-delà, la probabilité de deviner un code augmente sans gain
+  // réel pour le décalage d'horloge des téléphones.
+  const result = speakeasy.totp.verify({
     secret,
     encoding: 'base32',
-    time: serverTime
+    token: cleanToken,
+    window: 1
   });
-  console.log('[TOTP] Code invalid. Server time:', new Date(serverTime * 1000).toISOString());
-  console.log('[TOTP] Expected token at server time:', expectedToken);
-  console.log('[TOTP] Received token:', cleanToken);
-  
-  return false;
+
+  if (!result) {
+    // Jamais de code (attendu, reçu, fenêtre) dans les logs : un code TOTP
+    // reste valide ~30 s et suffirait à prendre un compte.
+    logger.warn('[TOTP] Code invalide');
+  }
+
+  return result;
 };
 
 /**
