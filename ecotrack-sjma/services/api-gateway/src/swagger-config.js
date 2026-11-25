@@ -221,10 +221,11 @@ Obtenez un token via \`POST /auth/login\`
     '/auth/register': {
       post: {
         tags: ['Authentication'],
-        summary: 'Créer un nouveau compte utilisateur',
-        description: 'Inscription d\'un nouvel utilisateur avec validation des données',
+        summary: 'Créer un compte utilisateur (ADMIN uniquement)',
+        description: 'Création de compte par un administrateur, tous rôles. L\'inscription publique des citoyens passe par /auth/citoyen/register.',
         operationId: 'register',
         servers: [{ url: 'http://localhost:3000' }],
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -247,6 +248,8 @@ Obtenez un token via \`POST /auth/login\`
         responses: {
           201: { description: 'Compte créé avec succès' },
           400: { description: 'Données invalides' },
+          401: { description: 'Jeton manquant' },
+          403: { description: 'Appelant non ADMIN' },
           409: { description: 'Email déjà utilisé' }
         }
       }

@@ -9,7 +9,6 @@ const publicPaths = [
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/activate',
-  '/auth/register',
   '/auth/citoyen/register',
   '/auth/citoyen/verify-code',
   '/auth/mfa/complete-setup',
@@ -41,7 +40,7 @@ export const authenticateToken  = (req, res, next) => {
     }
 }
 
-/** 
+/**
  * Verifier le role de l'utilisateur
  */
 export const authorizeRole = (roles) => {

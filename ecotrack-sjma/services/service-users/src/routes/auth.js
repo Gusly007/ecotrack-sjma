@@ -2,7 +2,7 @@ import express from 'express';
 import * as authController from '../controllers/authController.js';
 import * as authService from '../services/authService.js';
 import * as mfaService from '../services/mfaService.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 import { publicLimiter, loginLimiter, passwordResetLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
 import * as mfaController from '../controllers/mfaController.js';
@@ -244,9 +244,11 @@ const logoutSchema = {
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Inscrire un nouvel utilisateur
- *     description: Crée un nouveau compte utilisateur et retourne les tokens JWT
+ *     summary: Créer un compte utilisateur (ADMIN uniquement)
+ *     description: Crée un compte de n'importe quel rôle. Réservé à l'administrateur ; ne retourne pas de tokens. L'inscription publique des citoyens passe par /auth/citoyen/register.
  *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -268,6 +270,10 @@ const logoutSchema = {
  *               $ref: '#/components/schemas/ValidationError'
  *             example:
  *               error: "Password must be at least 6 characters"
+ *       401:
+ *         description: Jeton manquant
+ *       403:
+ *         description: Jeton invalide ou appelant non ADMIN
  *       409:
  *         description: Email déjà utilisé
  *         content:
@@ -277,7 +283,8 @@ const logoutSchema = {
  *             example:
  *               error: "Email already in use"
  */
-router.post('/register', publicLimiter, validate(registerSchema), authController.register);
+// Réservé à l'ADMIN (SCRUM-5) : le gateway authentifie, ici on autorise.
+router.post('/register', authenticateToken, authorizeRole(['ADMIN']), validate(registerSchema), authController.register);
 
 // ====================================================================
 // Routes self-registration citoyen — flow code-email isolé du register

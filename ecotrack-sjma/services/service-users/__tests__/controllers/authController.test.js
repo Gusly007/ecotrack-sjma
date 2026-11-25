@@ -32,16 +32,17 @@ describe('Auth Controller', () => {
         it('should register a user and return tokens', async () => {
             const req = mockRequest({ email: 'test@example.com', nom: 'Test', prenom: 'test', password: 'password' });
             const res = mockResponse();
-            const serviceResult = { accessToken: 'access', refreshToken: 'refresh', user: {} };
+            const serviceResult = { user: { id_utilisateur: 5 } };
             authService.registerUser.mockResolvedValue(serviceResult);
 
             await register(req, res, mockNext);
 
             expect(authService.registerUser).toHaveBeenCalledWith('test@example.com', 'Test', 'test', 'password', undefined);
             expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                token: 'access',
-            }));
+            const body = res.json.mock.calls[0][0];
+            expect(body.user).toEqual({ id_utilisateur: 5 });
+            expect(body.token).toBeUndefined();
+            expect(body.refreshToken).toBeUndefined();
         });
     });
 
