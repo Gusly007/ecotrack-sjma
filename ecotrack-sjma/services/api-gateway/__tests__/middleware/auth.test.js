@@ -85,7 +85,7 @@ describe('Auth Middleware', () => {
 
       // service-iot lit x-user-role : le gateway doit le renseigner sur cette route
       req.headers.authorization = 'Bearer valid_token';
-      mockVerify.mockReturnValue({ userId: 7, role: 'GESTIONNAIRE' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 7, role: 'GESTIONNAIRE' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -151,6 +151,7 @@ describe('Auth Middleware', () => {
     it('should add user info to request and call next for valid token', () => {
       req.headers.authorization = 'Bearer valid_token';
       const decodedToken = {
+        type: 'access',
         userId: 123,
         role: 'CITOYEN',
         email: 'test@example.com'
@@ -173,6 +174,7 @@ describe('Auth Middleware', () => {
     it('should handle token with id instead of userId', () => {
       req.headers.authorization = 'Bearer valid_token';
       const decodedToken = {
+        type: 'access',
         id: 456,
         role: 'ADMIN'
       };
@@ -183,12 +185,39 @@ describe('Auth Middleware', () => {
       expect(req.user.id).toBe(456);
       expect(req.headers['x-user-id']).toBe(456);
     });
+
+    it('rejette un jeton pré-MFA (type: mfa) sur une route protégée (V2-002)', () => {
+      req.path = '/api/V1/users/profile';
+      req.method = 'GET';
+      req.headers.authorization = 'Bearer mfa_token';
+      // Le jeton pré-MFA est signé avec le même secret ; seul le claim type
+      // le distingue d'une session. Il ne doit jamais valider une requête.
+      mockVerify.mockReturnValue({ type: 'mfa', id: 7, purpose: 'mfa_login' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+
+    it('accepte une session ouverte après MFA (type: access)', () => {
+      req.path = '/api/V1/users/profile';
+      req.method = 'GET';
+      req.headers.authorization = 'Bearer access_token';
+      mockVerify.mockReturnValue({ type: 'access', id: 7, role: 'AGENT' });
+
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
   });
 
   describe('requireRole', () => {
     beforeEach(() => {
       req.headers.authorization = 'Bearer valid_token';
       mockVerify.mockReturnValue({
+        type: 'access',
         userId: 123,
         role: 'CITOYEN'
       });
@@ -278,7 +307,7 @@ describe('Auth Middleware', () => {
       req.path = path;
       req.method = 'GET';
       req.headers = { authorization: 'Bearer valid_token' };
-      mockVerify.mockReturnValue({ userId: 1, role: 'ADMIN' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 1, role: 'ADMIN' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -290,7 +319,7 @@ describe('Auth Middleware', () => {
       req.path = path;
       req.method = 'GET';
       req.headers = { authorization: 'Bearer valid_token' };
-      mockVerify.mockReturnValue({ userId: 2, role: 'GESTIONNAIRE' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 2, role: 'GESTIONNAIRE' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -301,7 +330,7 @@ describe('Auth Middleware', () => {
       req.path = path;
       req.method = 'GET';
       req.headers = { authorization: 'Bearer valid_token' };
-      mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 3, role: 'AGENT' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -317,7 +346,7 @@ describe('Auth Middleware', () => {
       req.path = path;
       req.method = 'GET';
       req.headers = { authorization: 'Bearer valid_token' };
-      mockVerify.mockReturnValue({ userId: 4, role: 'CITOYEN' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 4, role: 'CITOYEN' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -340,7 +369,7 @@ describe('Auth Middleware', () => {
       req.path = '/api/V1/routes/tournees';
       req.method = 'GET';
       req.headers = { authorization: 'Bearer valid_token' };
-      mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+      mockVerify.mockReturnValue({ type: 'access', userId: 3, role: 'AGENT' });
 
       jwtValidationMiddleware(req, res, next);
 
@@ -373,7 +402,7 @@ describe('Auth Middleware', () => {
         req.path = path;
         req.method = 'GET';
         req.headers = { authorization: 'Bearer valid_token' };
-        mockVerify.mockReturnValue({ userId: 3, role: 'AGENT' });
+        mockVerify.mockReturnValue({ type: 'access', userId: 3, role: 'AGENT' });
 
         jwtValidationMiddleware(req, res, next);
 
@@ -388,7 +417,7 @@ describe('Auth Middleware', () => {
         req.path = path;
         req.method = 'GET';
         req.headers = { authorization: 'Bearer valid_token' };
-        mockVerify.mockReturnValue({ userId: 4, role: 'CITOYEN' });
+        mockVerify.mockReturnValue({ type: 'access', userId: 4, role: 'CITOYEN' });
 
         jwtValidationMiddleware(req, res, next);
 
@@ -403,7 +432,7 @@ describe('Auth Middleware', () => {
         req.path = path;
         req.method = 'GET';
         req.headers = { authorization: 'Bearer valid_token' };
-        mockVerify.mockReturnValue({ userId: 2, role: 'GESTIONNAIRE' });
+        mockVerify.mockReturnValue({ type: 'access', userId: 2, role: 'GESTIONNAIRE' });
 
         jwtValidationMiddleware(req, res, next);
 

@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 const TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
+const MFA_TOKEN_KEY = 'mfa_token';
 
 export const authService = {
   async login(email, password) {
@@ -16,11 +17,14 @@ export const authService = {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(MFA_TOKEN_KEY);
 
-      const userId = response.data?.userId || response.data?.user?.id;
-      if (userId) {
-        localStorage.setItem('mfa_user_id', String(userId));
-      }
+      //  le backend n'expose plus de userId exploitable. `mfa_user_id`
+      // est supprimé pour qu'aucun ancien identifiant ne subsiste.
+      localStorage.removeItem('mfa_user_id');
+
+      // Jeton pré-MFA : seule preuve acceptée par /auth/mfa/* et /auth/login/mfa.
+      this.setMfaToken(response.data?.mfaToken);
 
       // Stocker le setup avec un timestamp pour vérifier l'expiration
       if (response.data?.mfaSetup?.secret) {
@@ -33,7 +37,8 @@ export const authService = {
       return {
         requiresMFA: true,
         requiresSetup: response.data?.requiresSetup || false,
-        userId,
+        // userId n'est plus fourni par l'API (V2-002) : la preuve de mot de
+        // passe est le jeton pré-MFA, déjà stocké ci-dessus.
         email: response.data?.email,
         mfaSetup: response.data?.mfaSetup || null,
         // role expose par le backend (cf. authController) pour permettre aux
@@ -65,6 +70,7 @@ export const authService = {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(MFA_TOKEN_KEY);
     }
   },
 
@@ -134,18 +140,42 @@ export const authService = {
     return role === 'GESTIONNAIRE' || role === 'ADMIN';
   },
 
-  async generateMfaSetup(userId) {
-    const response = await api.post('/auth/mfa/regenerate', { userId });
+  // V2-002 : les routes /auth/mfa/* n'acceptent plus un userId fourni par le
+  // client. Elles exigent le jeton pré-MFA remis par /auth/login (stocké sous
+  // 'mfa_token', valable 5 min), transmis dans l'en-tête X-MFA-Token.
+  getMfaToken() {
+    return localStorage.getItem(MFA_TOKEN_KEY);
+  },
+
+  setMfaToken(token) {
+    if (token) localStorage.setItem(MFA_TOKEN_KEY, token);
+    else localStorage.removeItem(MFA_TOKEN_KEY);
+  },
+
+  async generateMfaSetup() {
+    const response = await api.post(
+      '/auth/mfa/regenerate',
+      {},
+      { headers: { 'X-MFA-Token': this.getMfaToken() || '' } }
+    );
     return response.data;
   },
 
-  async verifyMfaSetup(userId, code, secret) {
-    const response = await api.post('/auth/mfa/complete-setup', { userId, code, secret });
+  async verifyMfaSetup(code) {
+    const response = await api.post(
+      '/auth/mfa/complete-setup',
+      { code },
+      { headers: { 'X-MFA-Token': this.getMfaToken() || '' } }
+    );
     return response.data;
   },
 
-  async loginWithMfa(userId, code) {
-    const response = await api.post('/auth/login/mfa', { userId, code });
+  async loginWithMfa(code) {
+    const response = await api.post(
+      '/auth/login/mfa',
+      { code },
+      { headers: { 'X-MFA-Token': this.getMfaToken() || '' } }
+    );
     return response.data;
   },
 };

@@ -34,14 +34,21 @@ export const publicLimiter = rateLimit({
 });
 
 /**
- * Rate limiter strict pour login (5 tentatives/15 min)
+ * Le limiteur strict (login + routes MFA) N'A AUCUNE exemption de
+ * développement. En NODE_ENV=development, la limite était désactivée : un code
+ * TOTP à 6 chiffres restait brute-forçable en local, où l'admin a justement
+ * l'id 1. Ce limiteur s'applique donc tel quel, quel que soit l'environnement.
+ *
+ * Note : le routeur auth est monté sous `/auth`, mais ce limiteur est appliqué
+ * par requête, pas par préfixe de chemin — `skip` est une simple fonction
+ * `false`, aucune comparaison de `req.path` (relatif au routeur) n'est faite.
  */
 export const loginLimiter = rateLimit({
   windowMs: env.rateLimit?.loginWindowMs ?? 15 * 60 * 1000,
   max: env.rateLimit?.loginMaxAttempts ?? 5,
   message: 'Too many login attempts, please try again later',
   skipSuccessfulRequests: true,
-  skip: shouldSkipRateLimit
+  skip: () => false
 });
 
 /**

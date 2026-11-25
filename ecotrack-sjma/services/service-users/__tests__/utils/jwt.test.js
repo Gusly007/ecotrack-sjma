@@ -74,5 +74,22 @@ describe('JWT Utils', () => {
     it('devrait lancer une erreur pour un token vide', () => {
       expect(() => verifyToken('')).toThrow('Invalid or expired token');
     });
+
+    it('refuse un jeton pré-MFA (type: mfa) même signé avec le bon secret', () => {
+      // le jeton pré-MFA partage le secret des access tokens ; il ne
+      // doit jamais être accepté comme session par verifyToken.
+      const mfaToken = jwt.sign(
+        { id: 7, type: 'mfa', purpose: 'mfa_login' },
+        process.env.JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      expect(() => verifyToken(mfaToken)).toThrow('Invalid or expired token');
+    });
+
+    it('accepte une session ouverte après MFA (type: access)', () => {
+      const token = generateToken(7, 'AGENT');
+      const decoded = verifyToken(token);
+      expect(decoded).toMatchObject({ id: 7, type: 'access' });
+    });
   });
 });

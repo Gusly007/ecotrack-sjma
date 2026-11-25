@@ -48,11 +48,22 @@ export const generateRefreshToken = (userId) => {
  * @throws {Error} - Si le token est invalide ou expiré.
  */
 export const verifyAccessToken = (token) => {
+    let decoded;
     try {
-        return jwt.verify(token, env.jwt.secret);
+        decoded = jwt.verify(token, env.jwt.secret);
     } catch (err) {
         throw new Error('Invalid or expired token');
     }
+
+    // le secret de signature est partagé avec le jeton pré-MFA
+    // (type: 'mfa'). Sans ce contrôle, ce jeton court-circuiterait la seconde
+    // étape de connexion et ouvrirait une session sans MFA. Seul un jeton
+    // `type: 'access'` (émis après vérification complète) est accepté ici.
+    if (!decoded || decoded.type !== 'access') {
+        throw new Error('Invalid or expired token');
+    }
+
+    return decoded;
 };
 
 export const verifyRefreshToken = (token) => {

@@ -60,8 +60,8 @@ const CitoyenLogin = () => {
       }
 
       if (result?.requiresMFA) {
-        const userId = Number(result.userId);
-        localStorage.setItem('mfa_user_id', userId);
+        // la preuve de mot de passe est le jeton pré-MFA déjà stocké
+        // par authService.login ; plus aucun userId n'est conservé.
         if (result?.requiresSetup && result?.mfaSetup?.secret) {
           sessionStorage.setItem('mfa_pending_setup', 'true');
           navigate('/auth/mfa?setup=true');

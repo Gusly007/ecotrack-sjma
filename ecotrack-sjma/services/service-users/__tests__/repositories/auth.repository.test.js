@@ -103,4 +103,29 @@ describe('AuthRepository', () => {
     await expect(AuthRepository.updatePassword('u@test.com', 'hash')).resolves.toEqual({ id_utilisateur: 3 });
     await expect(AuthRepository.deletePasswordResetToken('tok')).resolves.toBeUndefined();
   });
+
+  it('updateMfaSettings n\'écrit que les colonnes fournies (backup_codes seul)', async () => {
+    pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 5 }] });
+
+    await AuthRepository.updateMfaSettings(5, { backup_codes: '["AAAA1111"]' });
+
+    const [sql, params] = pool.query.mock.calls[0];
+    // Ne doit pas écraser mfa_enabled/totp_secret à NULL.
+    expect(sql).toContain('backup_codes = $1');
+    expect(sql).not.toContain('mfa_enabled');
+    expect(sql).not.toContain('totp_secret');
+    expect(params).toEqual(['["AAAA1111"]', 5]);
+  });
+
+  it('updateMfaSettings écrit les trois colonnes quand elles sont toutes fournies', async () => {
+    pool.query.mockResolvedValue({ rows: [{ id_utilisateur: 5 }] });
+
+    await AuthRepository.updateMfaSettings(5, { mfa_enabled: true, totp_secret: 'S', backup_codes: '[]' });
+
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain('mfa_enabled = $1');
+    expect(sql).toContain('totp_secret = $2');
+    expect(sql).toContain('backup_codes = $3');
+    expect(params).toEqual([true, 'S', '[]', 5]);
+  });
 });

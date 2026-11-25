@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import * as authService from '../services/authService.js';
 import * as userService from '../services/userService.js';
+import { generateMfaToken, MFA_PURPOSES } from '../utils/mfaToken.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -35,67 +36,32 @@ export const login = asyncHandler(async (req, res) => {
 
   const result = await authService.loginUser(email, password, req.ip);
 
-  // Si MFA requis
-  if (result.requiresMFA) {
-    try {
-      const userId = result.userId;
-      const user = await authService.getUserById(userId);
-      
-      // Si MFA déjà activé, pas de setup nécessaire (juste vérification)
-      if (user.mfa_enabled) {
-        console.log('[MFA] MFA déjà activé, vérification simple');
-        result.requiresSetup = false;
-      } else {
-        // MFA pas encore activé, générer le setup
-        console.log('[MFA] MFA non activé, génération setup');
-        let setup;
-        const setupSecret = user.mfa_setup_secret;
-        const setupCreatedAt = user.mfa_setup_secret_created_at;
-        const now = new Date();
-        const setupAge = setupCreatedAt ? (now - new Date(setupCreatedAt)) / 1000 : Infinity;
-        
-        if (setupSecret && setupAge < 600) {
-          // Secret existe et n'est pas expiré, réutiliser
-          console.log('[MFA] Reusing existing setup secret, age:', setupAge, 's');
-          const { generateQrCode } = await import('../services/mfaService.js');
-          const qrCodeUrl = await generateQrCode(setupSecret, user.email);
-          setup = { secret: setupSecret, qrCodeUrl };
-        } else {
-          // Générer un nouveau secret
-          const { generateMfaSetup } = await import('../services/mfaService.js');
-          setup = await generateMfaSetup(userId, user.email);
-          
-          // Stocker le secret en attente
-          await authService.storeMfaSetupSecret(userId, setup.secret);
-          console.log('[MFA] Generated new setup secret');
-        }
-        
-        result.mfaSetup = {
-          secret: setup.secret,
-          qrCodeUrl: setup.qrCodeUrl,
-          message: 'Veuillez scanner le QR code avec Google Authenticator'
-        };
-        result.requiresSetup = true;
-      }
-    } catch (mfaErr) {
-      console.error('MFA auto-setup failed:', mfaErr.message);
-    }
-  }
-
-  res.json({
+  // le client ne reçoit plus de `userId` exploitable. Une preuve que
+  // le mot de passe a bien été vérifié est émise à la place : un jeton court
+  // (5 min) que seules les routes /auth/mfa/* acceptent. Sans ce jeton, elles
+  // répondent 401 — c'est ce qui ferme la prise de contrôle par userId.
+  const responseBody = {
     message: 'Login successful',
     token: result.accessToken,
     refreshToken: result.refreshToken,
     user: result.user,
-    userId: result.userId,
     email: result.user?.email,
-    // role expose dans les deux branches (MFA via result.role, sans MFA via result.user)
-    // pour permettre au frontend de filtrer le scope citoyen vs personnel avant MFA.
+    // role exposé dans les deux branches (MFA via result.role, sans MFA via
+    // result.user) pour permettre au frontend de filtrer le scope citoyen.
     role: result.role || result.user?.role_par_defaut || null,
     requiresMFA: result.requiresMFA || false,
     requiresSetup: result.requiresSetup || false,
-    mfaSetup: result.mfaSetup || null
-  });
+  };
+
+  if (result.requiresMFA) {
+    responseBody.mfaToken = generateMfaToken(
+      result.userId,
+      result.requiresSetup ? MFA_PURPOSES.SETUP : MFA_PURPOSES.LOGIN
+    );
+    responseBody.mfaSetup = result.requiresSetup ? result.mfaSetup : null;
+  }
+
+  res.json(responseBody);
 });
 
 /**

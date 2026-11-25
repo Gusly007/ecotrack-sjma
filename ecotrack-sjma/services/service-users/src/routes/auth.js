@@ -3,6 +3,7 @@ import * as authController from '../controllers/authController.js';
 import * as authService from '../services/authService.js';
 import * as mfaService from '../services/mfaService.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { requireMfaToken, MFA_PURPOSES } from '../utils/mfaToken.js';
 import { publicLimiter, loginLimiter, passwordResetLimiter } from '../config/rateLimit.js';
 import * as sessionController from '../controllers/sessionController.js';
 import * as mfaController from '../controllers/mfaController.js';
@@ -30,9 +31,13 @@ const loginSchema = {
 
 const mfaLoginSchema = {
 	body: z.object({
-		userId: z.union([z.number(), z.string()]),
-		code: z.string().length(6)
-	})
+		// le champ accepte soit un code TOTP à 6 chiffres, soit un code
+		// de secours à 8 caractères (le parcours de récupération en produit).
+		code: z.string().trim().regex(/^(\d{6}|[A-Za-z0-9]{8})$/, 'Code MFA invalide'),
+		// Conservé optionnel le temps que les anciens clients soient déployés :
+		// il n'est plus lu pour identifier l'utilisateur (le jeton pré-MFA prime).
+		userId: z.union([z.number(), z.string()]).optional()
+	}).passthrough()
 };
 
 const refreshSchema = {
@@ -632,8 +637,18 @@ router.post('/mfa/verify', authenticateToken, mfaController.verify);
  * /auth/mfa/complete-setup:
  *   post:
  *     summary: Compléter le setup MFA et se connecter
- *     description: Active le MFA et génère les tokens JWT
+ *     description: >
+ *       Active le MFA et génère les tokens JWT. L'identité vient du jeton pré-MFA
+ *       (`X-MFA-Token`, purpose `mfa_setup`) délivré par /auth/login ; aucun
+ *       `userId` n'est accepté.
  *     tags: [Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-MFA-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Jeton pré-MFA de purpose `mfa_setup`
  *     requestBody:
  *       required: true
  *       content:
@@ -641,26 +656,18 @@ router.post('/mfa/verify', authenticateToken, mfaController.verify);
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - code
- *               - secret
  *             properties:
- *               userId:
- *                 type: integer
- *                 description: ID utilisateur
  *               code:
  *                 type: string
- *                 description: Code TOTP
- *               secret:
- *                 type: string
- *                 description: Secret TOTP
+ *                 description: Code TOTP à 6 chiffres
  *     responses:
  *       200:
  *         description: MFA activé et connexion réussie
- *       400:
- *         description: Code invalide
+ *       401:
+ *         description: Jeton MFA manquant/invalide ou code MFA invalide
  */
-router.post('/mfa/complete-setup', mfaController.completeSetupAndLogin);
+router.post('/mfa/complete-setup', loginLimiter, requireMfaToken(MFA_PURPOSES.SETUP), mfaController.completeSetupAndLogin);
 
 /**
  * @swagger
@@ -684,33 +691,40 @@ router.post('/mfa/disable', authenticateToken, mfaController.disable);
  * /auth/mfa/regenerate:
  *   post:
  *     summary: Régénérer le QR code MFA
- *     description: Génère un nouveau secret MFA sans authentification (pour recover après perte device)
+ *     description: >
+ *       Génère un nouveau secret MFA pour le porteur du jeton pré-MFA (récupération
+ *       après perte de l'appareil). Le jeton est obtenu à l'étape /auth/login et
+ *       transmis dans l'en-tête `X-MFA-Token`. Aucun `userId` n'est accepté.
  *     tags: [Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-MFA-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Jeton pré-MFA de purpose `mfa_setup`
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - userId
- *             properties:
- *               userId:
- *                 type: integer
  *     responses:
  *       200:
  *         description: Nouveau QR code généré
- *       400:
- *         description: Paramètres invalides
+ *       401:
+ *         description: Jeton MFA manquant ou invalide
  */
-router.post('/mfa/regenerate', async (req, res, next) => {
+router.post('/mfa/regenerate', loginLimiter, requireMfaToken(MFA_PURPOSES.SETUP), async (req, res, next) => {
   try {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'userId requis' });
-    
+    // V2-002 : l'identité vient du jeton pré-MFA, plus de `req.body.userId`.
+    // L'ancienne version régénérait le secret de n'importe quel compte à partir
+    // d'un ID séquentiel, sans mot de passe : c'était le parcours d'attaque.
+    const userId = req.mfaUser.id;
+
     const user = await authService.getUserById(userId);
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    
+
     const newSetup = await mfaService.generateMfaSetup(userId, user.email);
     await mfaService.saveSetupSecret(userId, newSetup.secret);
     res.json({ secret: newSetup.secret, qrCodeUrl: newSetup.qrCodeUrl });
@@ -722,8 +736,18 @@ router.post('/mfa/regenerate', async (req, res, next) => {
  * /auth/login/mfa:
  *   post:
  *     summary: Connexion avec MFA
- *     description: Valide le code MFA et génère les tokens JWT
+ *     description: >
+ *       Valide le code MFA et génère les tokens JWT. L'identité vient du jeton
+ *       pré-MFA (`X-MFA-Token`, purpose `mfa_login`) délivré par /auth/login ;
+ *       le corps ne doit pas fournir de `userId`.
  *     tags: [Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-MFA-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Jeton pré-MFA de purpose `mfa_login`
  *     requestBody:
  *       required: true
  *       content:
@@ -731,15 +755,11 @@ router.post('/mfa/regenerate', async (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - code
  *             properties:
- *               userId:
- *                 type: integer
- *                 description: ID utilisateur (reçu de /auth/login)
  *               code:
  *                 type: string
- *                 description: Code TOTP ou code de secours
+ *                 description: Code TOTP à 6 chiffres ou code de secours à 8 caractères
  *     responses:
  *       200:
  *         description: Connexion réussie
@@ -747,39 +767,9 @@ router.post('/mfa/regenerate', async (req, res, next) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
- *       400:
- *         description: Code invalide
  *       401:
- *         description: Non authentifié
+ *         description: Jeton MFA manquant/invalide ou code MFA invalide
  */
-router.post('/login/mfa', loginLimiter, validate(mfaLoginSchema), mfaController.loginWithMfa);
+router.post('/login/mfa', loginLimiter, requireMfaToken(MFA_PURPOSES.LOGIN), validate(mfaLoginSchema), mfaController.loginWithMfa);
 
-/**
- * @swagger
- * /auth/mfa/complete-setup:
- *   post:
- *     summary: Compléter le setup MFA et se connecter
- *     description: Valide le premier code TOTP et active le MFA
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - userId
- *               - code
- *             properties:
- *               userId:
- *                 type: integer
- *               code:
- *                 type: string
- *                 description: Code TOTP à 6 chiffres
- *     responses:
- *       200:
- *         description: MFA activé et connexion réussie
- *       401:
- *         description: Code invalide
- */
 export default router;

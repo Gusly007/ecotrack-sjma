@@ -92,11 +92,37 @@ export const AuthRepository = {
     const result = await pool.query(
       `UPDATE UTILISATEUR 
        SET mfa_setup_secret = $1, mfa_setup_secret_created_at = NOW()
-       WHERE id_utilisateur = $2
+       WHERE id_utilisateur = $2 AND mfa_enabled IS NOT TRUE AND deleted_at IS NULL
        RETURNING id_utilisateur`,
       [secret, userId]
     );
+    if (!result.rowCount) {
+      throw Object.assign(new Error('Configuration MFA indisponible.'), { status: 400 });
+    }
     return result.rows[0];
+  },
+
+  async activatePendingMfa(userId, pendingSecret, backupCodes) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR
+       SET mfa_enabled = TRUE, totp_secret = mfa_setup_secret, backup_codes = $3,
+           mfa_setup_secret = NULL, mfa_setup_secret_created_at = NULL
+       WHERE id_utilisateur = $1 AND mfa_enabled IS NOT TRUE
+         AND mfa_setup_secret = $2 AND deleted_at IS NULL`,
+      [userId, pendingSecret, JSON.stringify(backupCodes)]
+    );
+    return result.rowCount === 1;
+  },
+
+  async consumeMfaBackupCode(userId, code) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR
+       SET backup_codes = (backup_codes::jsonb - $2::text)::text
+       WHERE id_utilisateur = $1 AND mfa_enabled IS TRUE AND deleted_at IS NULL
+         AND backup_codes::jsonb ? $2::text`,
+      [userId, code]
+    );
+    return result.rowCount === 1;
   },
 
   async findUserByIdWithMfa(userId) {
@@ -114,12 +140,34 @@ export const AuthRepository = {
   async updateMfaSettings(userId, settings) {
     const { mfa_enabled, totp_secret, backup_codes } = settings;
 
+    // n'écrire que les colonnes réellement fournies. Auparavant,
+    // l'UPDATE réécrivait mfa_enabled et totp_secret à NULL quand l'appelant ne
+    // passait que backup_codes (consommation d'un code de secours), ce qui
+    // désactivait le MFA et cassait la connexion TOTP ensuite.
+    const columns = [];
+    const values = [];
+    if (mfa_enabled !== undefined) {
+      columns.push(`mfa_enabled = $${columns.length + 1}`);
+      values.push(mfa_enabled);
+    }
+    if (totp_secret !== undefined) {
+      columns.push(`totp_secret = $${columns.length + 1}`);
+      values.push(totp_secret);
+    }
+    if (backup_codes !== undefined) {
+      columns.push(`backup_codes = $${columns.length + 1}`);
+      values.push(backup_codes);
+    }
+    if (columns.length === 0) {
+      return undefined;
+    }
+
     const result = await pool.query(
       `UPDATE UTILISATEUR
-       SET mfa_enabled = $1, totp_secret = $2, backup_codes = $3
-       WHERE id_utilisateur = $4
+       SET ${columns.join(', ')}
+       WHERE id_utilisateur = $${columns.length + 1}
        RETURNING id_utilisateur`,
-      [mfa_enabled, totp_secret, backup_codes, userId]
+      [...values, userId]
     );
     return result.rows[0];
   },

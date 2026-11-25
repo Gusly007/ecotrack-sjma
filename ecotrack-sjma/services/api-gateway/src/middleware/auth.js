@@ -133,7 +133,17 @@ export const jwtValidationMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
+    // le jeton pré-MFA (type: 'mfa') est signé avec le même secret que
+    // les access tokens. On exige explicitement `type === 'access'` pour qu'il
+    // ne puisse pas être utilisé comme session sur une route protégée.
+    if (!decoded || decoded.type !== 'access') {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Token invalide'
+      });
+    }
+
     // Ajouter les infos utilisateur à la requête
     req.user = {
       id: decoded.userId || decoded.id,
