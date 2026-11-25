@@ -1,5 +1,9 @@
+const { randomUUID } = require('node:crypto');
 const request = require('supertest');
 const { default: app } = require('../../src/index');
+const { default: pool } = require('../../src/config/database.js');
+const { default: env } = require('../../src/config/env.js');
+const emailService = require('../../src/services/emailService.js');
 const { generateToken } = require('../../src/utils/jwt.js');
 
 describe('Users Service Auth Routes Integration', () => {
@@ -27,10 +31,32 @@ describe('Users Service Auth Routes Integration', () => {
   });
 
   describe('POST /auth/register', () => {
-    const adminToken = `Bearer ${generateToken(1, 'ADMIN')}`;
+    let adminToken;
+    let client;
+
+    beforeEach(async () => {
+      jest.spyOn(env.jwt, 'secret', 'get').mockReturnValue(randomUUID());
+      adminToken = `Bearer ${generateToken(1, 'ADMIN')}`;
+      jest.spyOn(emailService, 'sendAdminCreatedUserEmail').mockResolvedValue();
+      client = await pool.connect();
+      await client.query('BEGIN');
+      jest.spyOn(pool, 'query').mockImplementation(client.query.bind(client));
+    });
+
+    afterEach(async () => {
+      jest.restoreAllMocks();
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+        } finally {
+          client.release();
+          client = undefined;
+        }
+      }
+    });
 
     it('should register with valid data (201)', async () => {
-      const email = `newuser+${Date.now()}@example.com`;
+      const email = `newuser+${randomUUID()}@example.invalid`;
       const res = await request(app)
         .post('/auth/register')
         .set('Authorization', adminToken)
@@ -50,7 +76,7 @@ describe('Users Service Auth Routes Integration', () => {
     });
 
     it('should reject duplicate email (409)', async () => {
-      const email = `dup+${Date.now()}@example.com`;
+      const email = `dup+${randomUUID()}@example.invalid`;
       const payload = {
         email,
         nom: 'Dupont',

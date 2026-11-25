@@ -29,8 +29,10 @@ jest.mock('../../src/config/rateLimit.js', () => {
   };
 });
 
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import request from 'supertest';
+import env from '../../src/config/env.js';
 import authRoutes from '../../src/routes/auth.js';
 import * as authService from '../../src/services/authService.js';
 import { generateToken } from '../../src/utils/jwt.js';
@@ -48,6 +50,12 @@ const body = {
 };
 
 describe('POST /auth/register (SCRUM-5)', () => {
+  beforeAll(() => {
+    jest.spyOn(env.jwt, 'secret', 'get').mockReturnValue(randomUUID());
+  });
+
+  afterAll(() => jest.restoreAllMocks());
+
   beforeEach(() => {
     jest.clearAllMocks();
     authService.registerUser.mockResolvedValue({
