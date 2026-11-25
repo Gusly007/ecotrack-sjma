@@ -2,6 +2,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import * as authService from '../services/authService.js';
 import * as userService from '../services/userService.js';
 import { generateMfaToken, MFA_PURPOSES } from '../utils/mfaToken.js';
+import logger from '../utils/logger.js';
 
 /**
  * POST /auth/registre  
@@ -151,19 +152,37 @@ export const getProfileWithStats = asyncHandler(async (req, res) => {
 
 /**
  * POST /auth/forgot-password
+ *
+ * Anti-énumération : renvoie toujours 200 avec le même message, que l'email
+ * corresponde à un compte ou non. Le service ne lève plus d'erreur 404 pour un
+ * email inconnu, mais on neutralise aussi le cas où une erreur interne
+ * remonterait avec un statut 4xx (errorHandler la propagerait telle quelle).
  */
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email, from } = req.body;
 
-  if (!email) {
+  if (!email || typeof email !== 'string' || !email.trim()) {
     return res.status(400).json({ error: 'Email requis' });
   }
 
   // `from` ('citoyen' | undefined) — quand la requête vient du flow mobile
   // citoyen, le lien email pointe vers /citoyen/reset-password (page isolée
   // qui redirige vers /citoyen/login). Sinon comportement upstream inchangé.
-  const result = await authService.forgotPassword(email, { from });
-  res.json(result);
+  try {
+    // Pas de toLowerCase() ici : les adresses sont stockées telles que saisies
+    // à l'inscription. La recherche insensible à la casse est faite dans
+    // AuthRepository.findUserByEmail, qui renvoie l'adresse réellement
+    // enregistrée (utilisée ensuite pour le token et l'envoi du courriel).
+    // Pas de trim() non plus : le service normalise l'adresse lui-même, pour
+    // qu'un appel direct au service reste cohérent avec l'appel HTTP.
+    const result = await authService.forgotPassword(email, { from });
+    return res.json(result);
+  } catch (err) {
+    // Filet de sécurité : même en cas d'erreur non gérée, la réponse HTTP reste
+    // identique à celle d'une adresse connue. Le détail part dans les logs serveur.
+    logger.error({ err: err?.message }, 'forgotPassword controller fallback');
+    return res.json({ message: authService.FORGOT_PASSWORD_GENERIC_MESSAGE });
+  }
 });
 
 /**

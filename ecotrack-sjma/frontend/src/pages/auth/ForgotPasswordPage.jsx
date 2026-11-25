@@ -31,13 +31,11 @@ const ForgotPasswordPage = () => {
 
     try {
       await forgotPassword(email);
+      // Réponse identique côté backend que l'email existe ou non :
+      // on ne peut pas (et ne doit pas) distinguer les deux cas ici.
       setSuccess(true);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setError('Cet email n\'existe pas. Veuillez vérifier ou contacter l\'administrateur.');
-      } else {
-        setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi');
-      }
+      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'envoi');
     } finally {
       setLoading(false);
     }
@@ -52,9 +50,9 @@ const ForgotPasswordPage = () => {
               <div className="success-icon">
                 <i className="fas fa-envelope"></i>
               </div>
-              <h2 style={{color: '#fff', marginBottom: '12px'}}>Email envoyé !</h2>
+              <h2 style={{color: '#fff', marginBottom: '12px'}}>Demande envoyée</h2>
               <p style={{color: 'rgba(255,255,255,0.7)', marginBottom: '24px'}}>
-                Un lien de réinitialisation a été envoyé à votre adresse email.
+                Si un compte est associé à cette adresse, un lien de réinitialisation a été envoyé.
               </p>
               <button 
                 className="btn-primary"

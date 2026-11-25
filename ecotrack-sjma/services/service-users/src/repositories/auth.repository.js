@@ -35,6 +35,16 @@ export const AuthRepository = {
       throw error;
     }
   },
+  async findUniqueUserByEmailIgnoreCase(email) {
+    const result = await pool.query(
+      `SELECT id_utilisateur, email FROM UTILISATEUR
+       WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL
+       LIMIT 2`,
+      [email]
+    );
+    // Une collision de casse ne doit jamais sélectionner arbitrairement un compte.
+    return result.rows.length === 1 ? result.rows[0] : undefined;
+  },
   async findUserById(userId) {
     const result = await pool.query(
       'SELECT id_utilisateur, email, prenom, role_par_defaut, points, deleted_at FROM UTILISATEUR WHERE id_utilisateur = $1 AND deleted_at IS NULL',

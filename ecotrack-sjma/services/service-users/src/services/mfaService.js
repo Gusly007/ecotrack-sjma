@@ -2,6 +2,7 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import crypto from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
+import logger from '../utils/logger.js';
 
 /**
  * Génère le QR code pour un secret TOTP existant
@@ -67,15 +68,23 @@ export const verifyTotp = (token, secret) => {
   if (!/^\d{6}$/.test(cleanToken)) {
     return false;
   }
-
-  // Fenêtre de ±1 pas (±30 s) : tolère un léger décalage d'horloge sans
-  // élargir inutilement la surface de rejeu.
-  return speakeasy.totp.verify({
+  // Tolérance volontairement bornée à ±1 pas de 30 s (3 codes acceptés au
+  // total) : au-delà, la probabilité de deviner un code augmente sans gain
+  // réel pour le décalage d'horloge des téléphones.
+  const result = speakeasy.totp.verify({
     secret,
     encoding: 'base32',
     token: cleanToken,
     window: 1
   });
+
+  if (!result) {
+    // Jamais de code (attendu, reçu, fenêtre) dans les logs : un code TOTP
+    // reste valide ~30 s et suffirait à prendre un compte.
+    logger.warn('[TOTP] Code invalide');
+  }
+
+  return result;
 };
 
 /**
