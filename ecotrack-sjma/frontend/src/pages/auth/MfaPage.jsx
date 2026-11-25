@@ -4,58 +4,73 @@ import { authService } from '../../services/authService';
 import { useAlert } from '../../hooks/useAlert';
 import Footer from '../../components/layout/Footer';
 
+// Étape 2 de la connexion, après vérification du mot de passe.
+//
+//  l'identité ne vient plus d'un `userId` en clair (il permettait de
+// régénérer le secret TOTP de n'importe quel compte). Toutes les requêtes
+// s'appuient sur le jeton pré-MFA remis par /auth/login, valable 5 minutes.
+//
+// La récupération « appareil perdu » passe par un code de secours, plus par la
+// régénération non authentifiée du secret.
 export default function MfaPage() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userId, setUserId] = useState(null);
   const [setupData, setSetupData] = useState(null);
   const [isSetup, setIsSetup] = useState(false);
-  const { showError, showSuccess } = useAlert();
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState(null);
+  const { showError } = useAlert();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const userIdFromStorage = localStorage.getItem('mfa_user_id');
+    const mfaToken = authService.getMfaToken();
     const setupParam = searchParams.get('setup');
     const setupFromStorage = localStorage.getItem('mfa_setup');
-    
+
+    // Sans jeton pré-MFA, aucune étape MFA n'est possible : retour au login.
+    if (!mfaToken) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     // Si on a un setup en storage ET qu'il est frais (moins de 10 min)
     if (setupFromStorage && (setupParam === 'true' || setupParam === null)) {
-      const data = JSON.parse(setupFromStorage);
-      const setupTime = data.timestamp ? new Date(data.timestamp).getTime() : null;
+      let data = null;
+      try {
+        data = JSON.parse(setupFromStorage);
+      } catch {
+        localStorage.removeItem('mfa_setup');
+      }
+
+      const setupTime = data?.timestamp ? new Date(data.timestamp).getTime() : null;
       const now = Date.now();
       // Si pas de timestamp ou expiré (> 10 min)
       const isExpired = !setupTime || (now - setupTime > 10 * 60 * 1000);
-      
+
       if (data?.secret && data?.qrCodeUrl && !isExpired) {
         // Setup frais - mode configuration initiale
         setSetupData(data);
         setIsSetup(true);
-        setUserId(userIdFromStorage);
         return;
-      } else {
-        localStorage.removeItem('mfa_setup');
       }
+
+      localStorage.removeItem('mfa_setup');
     }
-    
-    if (userIdFromStorage) {
-      // Pas de setup frais = mode vérification simple (MFA déjà activé)
-      setUserId(userIdFromStorage);
-      setIsSetup(false); // Toujours false si pas de setup frais
-    } else {
-      navigate('/login');
-    }
+
+    setIsSetup(false);
   }, [navigate, searchParams]);
 
   const finalizeLogin = (response) => {
     // Gestion flexible de la structure de réponse
     // Si le service a déjà extrait .data, on utilise response. Sinon response.data
     const data = response?.token ? response : (response?.data?.token ? response.data : response);
-    
+
     const token = data?.token || data?.accessToken;
     const refreshToken = data?.refreshToken;
-    
+
     if (!token) {
       // Pas de jeton dans la réponse : on n'affiche pas le contenu brut
       // (qui pourrait contenir des données sensibles) et on remonte l'erreur.
@@ -67,9 +82,9 @@ export default function MfaPage() {
     // On enregistre sous 'token' ET 'accessToken' pour être compatible avec tout le projet
     localStorage.setItem('token', token);
     localStorage.setItem('accessToken', token);
-    
+
     if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    
+
     // Si data n'a pas de clé 'user', on vérifie si data lui-même ressemble à un utilisateur
     const rawUser = data?.user || (data?.id ? data : null);
 
@@ -81,15 +96,49 @@ export default function MfaPage() {
         id: rawUser.id || rawUser.id_utilisateur,
         role: rawUser.role || rawUser.role_par_defaut
       };
-      
+
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.removeItem('mfa_user_id');
       localStorage.removeItem('mfa_setup');
-      
+      authService.setMfaToken(null);
+      localStorage.removeItem('mfa_user_id');
+
       const role = userData.role;
       const path = role === 'ADMIN' ? '/admin' : role === 'GESTIONNAIRE' ? '/gestionnaire' : role === 'AGENT' ? '/agent' : '/citoyen';
       const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
       window.location.href = `${base}${path}`;
+    }
+  };
+
+  const submitMfa = async (submittedCode) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isSetup) {
+        const response = await authService.verifyMfaSetup(submittedCode);
+        // V2-002 : les codes de secours ne sont affichés qu'ici, une seule
+        // fois. On les montre avant la redirection pour que l'utilisateur les
+        // conserve, puis on termine la connexion au clic.
+        const codes = response?.backupCodes || response?.data?.backupCodes || [];
+        if (Array.isArray(codes) && codes.length > 0) {
+          setBackupCodes({ codes, response });
+          setLoading(false);
+          return;
+        }
+        finalizeLogin(response);
+      } else {
+        const response = await authService.loginWithMfa(submittedCode);
+        finalizeLogin(response);
+      }
+    } catch (err) {
+      const status = err.response?.status;
+      const message = status === 401 && !err.response?.data?.error
+        ? 'Session expirée, veuillez vous reconnecter.'
+        : (err.response?.data?.error || 'Code invalide');
+      setError(message);
+      showError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,45 +148,69 @@ export default function MfaPage() {
       setError('Veuillez saisir un code à 6 chiffres');
       return;
     }
+    await submitMfa(code);
+  };
 
-    setLoading(true);
-    setError('');
-
-    // S'assurer que le userId est bien un nombre pour le backend
-    const numericUserId = Number(userId);
-
-    try {
-      if (isSetup) {
-        const response = await authService.verifyMfaSetup(numericUserId, code, setupData?.secret);
-        finalizeLogin(response);
-      } else {
-        // Ajout d'une sécurité pour récupérer l'ID directement du storage si le state est vide
-        const idToUse = numericUserId || Number(localStorage.getItem('mfa_user_id'));
-        if (!idToUse) throw new Error("Session expirée, veuillez vous reconnecter.");
-        
-        const response = await authService.loginWithMfa(idToUse, code);
-        finalizeLogin(response);
-      }
-    } catch (err) {
-      const message = err.response?.data?.error || 'Code invalide';
-      setError(message);
-      showError(message);
-    } finally {
-      setLoading(false);
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+    const clean = recoveryCode.trim().toUpperCase();
+    if (!clean) {
+      setError('Veuillez saisir un code de secours');
+      return;
     }
+    await submitMfa(clean);
+  };
+
+  const goToLogin = () => {
+    authService.setMfaToken(null);
+    localStorage.removeItem('mfa_user_id');
+    localStorage.removeItem('mfa_setup');
+    navigate('/login');
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {backupCodes ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+                Codes de secours
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                Notez ces codes maintenant. Ils ne seront plus jamais affichés et
+                permettent de vous connecter si vous perdez votre appareil.
+              </p>
+            </div>
+            <ul className="grid grid-cols-2 gap-2 rounded-md bg-white p-4 ring-1 ring-inset ring-gray-300 font-mono text-center text-sm">
+              {backupCodes.codes.map((c) => (
+                <li key={c} className="py-1 tracking-widest">{c}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => finalizeLogin(backupCodes.response)}
+              className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              J'ai noté mes codes, continuer
+            </button>
+          </div>
+        ) : (
+        <>
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            {isSetup ? 'Configurer l\'authentification à deux facteurs' : 'Authentification à deux facteurs'}
+            {isSetup
+              ? 'Configurer l\'authentification à deux facteurs'
+              : recoveryMode
+                ? 'Utiliser un code de secours'
+                : 'Authentification à deux facteurs'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isSetup 
-              ? 'Scannez ce QR code avec Google Authenticator, puis saisissez le code' 
-              : 'Saisissez le code à 6 chiffres de votre application d\'authentification'}
+            {isSetup
+              ? 'Scannez ce QR code avec Google Authenticator, puis saisissez le code'
+              : recoveryMode
+                ? 'Saisissez l\'un des codes de secours qui vous ont été remis lors de l\'activation'
+                : 'Saisissez le code à 6 chiffres de votre application d\'authentification'}
           </p>
         </div>
 
@@ -148,7 +221,7 @@ export default function MfaPage() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={recoveryMode && !isSetup ? handleRecoverySubmit : handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <p className="text-sm text-red-800">{error}</p>
@@ -157,26 +230,41 @@ export default function MfaPage() {
 
           <div>
             <label htmlFor="code" className="sr-only">
-              Code de vérification
+              {recoveryMode && !isSetup ? 'Code de secours' : 'Code de vérification'}
             </label>
-            <input
-              id="code"
-              name="code"
-              type="text"
-              maxLength="6"
-              required
-              className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 text-center text-2xl tracking-widest"
-              placeholder="000000"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              autoFocus
-            />
+            {recoveryMode && !isSetup ? (
+              <input
+                id="code"
+                name="code"
+                type="text"
+                maxLength="8"
+                required
+                className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset ring-indigo-600 sm:text-sm sm:leading-6 text-center text-2xl tracking-widest uppercase"
+                placeholder="XXXXXXXX"
+                value={recoveryCode}
+                onChange={(e) => setRecoveryCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                autoFocus
+              />
+            ) : (
+              <input
+                id="code"
+                name="code"
+                type="text"
+                maxLength="6"
+                required
+                className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset ring-indigo-600 sm:text-sm sm:leading-6 text-center text-2xl tracking-widest"
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                autoFocus
+              />
+            )}
           </div>
 
           <div>
             <button
               type="submit"
-              disabled={loading || code.length < 6}
+              disabled={loading || (recoveryMode && !isSetup ? !recoveryCode : code.length < 6)}
               className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               {loading ? 'Vérification...' : 'Se connecter'}
@@ -186,44 +274,33 @@ export default function MfaPage() {
           <div className="text-center space-y-2">
             <button
               type="button"
-              onClick={() => {
-                localStorage.removeItem('mfa_user_id');
-                navigate('/login');
-              }}
+              onClick={goToLogin}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
               Retour à la connexion
             </button>
-          {!isSetup && (
+
+            {!isSetup && (
               <div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!userId) {
-                      setError('Session expirée, veuillez vous reconnecter');
-                      return;
-                    }
-                    try {
-                      const res = await authService.generateMfaSetup(Number(userId));
-                      setSetupData({
-                        secret: res.secret,
-                        qrCodeUrl: res.qrCodeUrl
-                      });
-                      setIsSetup(true);
-                      setError('');
-                    } catch (e) {
-                      setError('Erreur: ' + (e.response?.data?.error || e.message));
-                    }
+                  onClick={() => {
+                    setRecoveryMode((v) => !v);
+                    setError('');
                   }}
                   className="text-sm font-medium text-orange-600 hover:text-orange-500 underline"
                 >
-                  J'ai perdu mon appareil - Générer un nouveau QR code
+                  {recoveryMode
+                    ? 'Revenir à l\'application d\'authentification'
+                    : 'J\'ai perdu mon appareil - Utiliser un code de secours'}
                 </button>
               </div>
             )}
           </div>
         </form>
         <Footer />
+        </>
+        )}
       </div>
     </div>
   );

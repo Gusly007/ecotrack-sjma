@@ -136,5 +136,22 @@ describe('Rate limit middleware', () => {
       expect(blockedResponse.blocked).toBe(true);
       expect(blockedResponse.status).toBe(429);
     });
+
+    it('n\'applique pas le bypass de développement (V2-002)', async () => {
+      // Même avec le bypass local activé, le limiteur strict doit bloquer.
+      process.env.RATE_LIMIT_BYPASS_LOCAL = 'true';
+      jest.resetModules();
+      const { loginLimiter: strictLimiter } = await import('../../src/config/rateLimit.js');
+
+      const fail = () => invokeLimiter(strictLimiter, { statusAfterNext: 401 });
+      for (let i = 0; i < 5; i += 1) {
+        expect((await fail()).blocked).toBe(false);
+      }
+      const blocked = await fail();
+      expect(blocked.blocked).toBe(true);
+      expect(blocked.status).toBe(429);
+
+      delete process.env.RATE_LIMIT_BYPASS_LOCAL;
+    });
   });
 });

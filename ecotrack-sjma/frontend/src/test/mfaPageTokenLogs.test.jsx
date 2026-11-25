@@ -18,6 +18,10 @@ vi.mock('../services/authService', () => ({
     verifyMfaSetup: vi.fn(),
     loginWithMfa: vi.fn(),
     generateMfaSetup: vi.fn(),
+    // V2-002 : la page exige un jeton pré-MFA ; sans lui elle redirige vers
+    // /login. On renvoie une valeur truthy pour rester sur la page.
+    getMfaToken: vi.fn(() => 'fake.pre.mfa.token'),
+    setMfaToken: vi.fn(),
   },
 }));
 
@@ -81,7 +85,7 @@ describe('MfaPage / fuite de jetons en console', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('mfa_user_id', '42');
+    localStorage.setItem('mfa_token', 'fake.pre.mfa.token');
 
     // Login réussi réassigne window.location.href : on stub sans supprimer
     // l'objet global (la suppression est instable selon la version de jsdom).
@@ -89,6 +93,7 @@ describe('MfaPage / fuite de jetons en console', () => {
 
     installSpies();
 
+    authService.getMfaToken.mockReturnValue('fake.pre.mfa.token');
     authService.loginWithMfa.mockReset();
     authService.verifyMfaSetup.mockReset();
     authService.generateMfaSetup.mockReset();
@@ -224,7 +229,7 @@ describe('MfaPage / fuite de jetons en console', () => {
       submitCode('999999');
 
       await waitFor(() => {
-        expect(authService.verifyMfaSetup).toHaveBeenCalledWith(42, '999999', 'fixture-non-sensitive');
+        expect(authService.verifyMfaSetup).toHaveBeenCalledWith('999999');
       });
 
       expect(output()).not.toContain(FAKE_SECRET);

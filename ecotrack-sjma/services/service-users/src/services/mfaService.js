@@ -54,18 +54,20 @@ export const generateMfaSetup = async (userId, email) => {
  * @returns {boolean}
  */
 export const verifyTotp = (token, secret) => {
+  // plus AUCUN log du code reçu ni du secret attendu. L'ancienne
+  // version imprimait « Expected/Received token » dans les logs applicatifs,
+  // ce qui exposait des secrets TOTP à toute personne ayant accès aux logs.
   if (!token || !secret) {
     return false;
   }
-  
+
   // Nettoyer le token (enlever espaces)
   const cleanToken = token.toString().replace(/\s/g, '');
-  
-  // Vérifier le format (6 chiffres)
+
+  // Seuls les codes à 6 chiffres sont des TOTP valides.
   if (!/^\d{6}$/.test(cleanToken)) {
     return false;
   }
-  
   // Tolérance volontairement bornée à ±1 pas de 30 s (3 codes acceptés au
   // total) : au-delà, la probabilité de deviner un code augmente sans gain
   // réel pour le décalage d'horloge des téléphones.
@@ -89,7 +91,6 @@ export const verifyTotp = (token, secret) => {
  * Active le MFA pour un utilisateur (le code doit être vérifié avant l'appel)
  * @param {number} userId
  * @param {string} secret
- * @param {string} token - Code de vérification (vérification déjà faite)
  * @returns {Promise<{backupCodes: string[]}>}
  */
 export const enableMfa = async (userId, secret) => {
@@ -98,11 +99,10 @@ export const enableMfa = async (userId, secret) => {
     crypto.randomBytes(4).toString('hex').toUpperCase()
   );
 
-  await AuthRepository.updateMfaSettings(userId, {
-    mfa_enabled: true,
-    totp_secret: secret,
-    backup_codes: JSON.stringify(backupCodes)
-  });
+  const activated = await AuthRepository.activatePendingMfa(userId, secret, backupCodes);
+  if (!activated) {
+    throw Object.assign(new Error('Configuration MFA indisponible ou déjà terminée.'), { status: 400 });
+  }
 
   return { backupCodes };
 };
@@ -141,7 +141,7 @@ export const isMfaEnabled = async (userId) => {
 /**
  * Vérifie un code MFA (TOTP ou code de secours)
  * @param {string} code - Code fourni
- * @param {object} user - Objet utilisateur avec totp_secret et backup_codes
+ * @param {object} user - Utilisateur avec son identifiant et son secret TOTP
  * @returns {Promise<{valid: boolean, usedBackupCode: boolean}>}
  */
 export const verifyMfaCode = async (code, user) => {
@@ -150,18 +150,8 @@ export const verifyMfaCode = async (code, user) => {
     return { valid: true, usedBackupCode: false };
   }
 
-  // Vérifier code de secours
-  const backupCodes = JSON.parse(user.backup_codes || '[]');
-  const codeIndex = backupCodes.indexOf(code.toUpperCase());
-  
-  if (codeIndex !== -1) {
-    // Invalider le code de secours utilisé
-    backupCodes.splice(codeIndex, 1);
-    await AuthRepository.updateMfaSettings(user.id_utilisateur, {
-      backup_codes: JSON.stringify(backupCodes)
-    });
-    return { valid: true, usedBackupCode: true };
-  }
-
-  return { valid: false, usedBackupCode: false };
+  const normalized = String(code).toUpperCase();
+  if (!/^[A-Z0-9]{8}$/.test(normalized)) return { valid: false, usedBackupCode: false };
+  const consumed = await AuthRepository.consumeMfaBackupCode(user.id_utilisateur, normalized);
+  return { valid: consumed, usedBackupCode: consumed };
 };

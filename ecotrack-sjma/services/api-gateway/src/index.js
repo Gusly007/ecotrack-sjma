@@ -287,7 +287,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With', 'X-Session-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With', 'X-Session-Id', 'X-MFA-Token'],
   exposedHeaders: ['Cache-Control', 'Pragma', 'Expires', 'X-Total-Count'],
   maxAge: 86400
 }));

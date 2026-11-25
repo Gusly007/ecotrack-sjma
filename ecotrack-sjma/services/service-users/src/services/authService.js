@@ -107,8 +107,10 @@ export const loginUser = async (email, password, ipAddress = null) => {
       throw error;
     }
 
+    const mfa = await AuthRepository.findUserByIdWithMfa(user.id_utilisateur);
+    if (!mfa) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
     // Si MFA est activé, demander juste le code (pas de setup)
-    if (user.mfa_enabled) {
+    if (mfa.mfa_enabled) {
       await sessionService.limitConcurrentSessions(user.id_utilisateur);
       
       // Audit (best-effort)
@@ -132,8 +134,8 @@ export const loginUser = async (email, password, ipAddress = null) => {
 
     // Si MFA n'est pas activé, générer automatiquement le setup
     // Vérifier si un secret de setup existe déjà et n'est pas expiré (< 10 min)
-    const setupSecret = user.mfa_setup_secret;
-    const setupCreatedAt = user.mfa_setup_secret_created_at;
+    const setupSecret = mfa.mfa_setup_secret;
+    const setupCreatedAt = mfa.mfa_setup_secret_created_at;
     const now = new Date();
     const setupAge = setupCreatedAt ? (now - new Date(setupCreatedAt)) / 1000 : Infinity;
     
