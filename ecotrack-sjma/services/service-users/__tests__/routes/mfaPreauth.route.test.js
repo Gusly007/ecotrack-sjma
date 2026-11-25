@@ -200,6 +200,9 @@ describe('V2-002 / jeton pré-MFA', () => {
       expect(res.status).toBe(200);
       expect(res.body.token).toBeTruthy();
       expect(mfaService.enableMfa).toHaveBeenCalledWith(7, 'SECRETBASE32');
+      //  les codes de secours doivent être renvoyés une fois à
+      // l'activation pour que l'utilisateur puisse les conserver.
+      expect(res.body.backupCodes).toEqual(['AAAA1111']);
     });
   });
 

@@ -20,6 +20,7 @@ export default function MfaPage() {
   const [isSetup, setIsSetup] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState(null);
   const { showError } = useAlert();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -115,6 +116,15 @@ export default function MfaPage() {
     try {
       if (isSetup) {
         const response = await authService.verifyMfaSetup(submittedCode);
+        // V2-002 : les codes de secours ne sont affichés qu'ici, une seule
+        // fois. On les montre avant la redirection pour que l'utilisateur les
+        // conserve, puis on termine la connexion au clic.
+        const codes = response?.backupCodes || response?.data?.backupCodes || [];
+        if (Array.isArray(codes) && codes.length > 0) {
+          setBackupCodes({ codes, response });
+          setLoading(false);
+          return;
+        }
         finalizeLogin(response);
       } else {
         const response = await authService.loginWithMfa(submittedCode);
@@ -161,6 +171,32 @@ export default function MfaPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {backupCodes ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+                Codes de secours
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                Notez ces codes maintenant. Ils ne seront plus jamais affichés et
+                permettent de vous connecter si vous perdez votre appareil.
+              </p>
+            </div>
+            <ul className="grid grid-cols-2 gap-2 rounded-md bg-white p-4 ring-1 ring-inset ring-gray-300 font-mono text-center text-sm">
+              {backupCodes.codes.map((c) => (
+                <li key={c} className="py-1 tracking-widest">{c}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => finalizeLogin(backupCodes.response)}
+              className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              J'ai noté mes codes, continuer
+            </button>
+          </div>
+        ) : (
+        <>
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
             {isSetup
@@ -263,6 +299,8 @@ export default function MfaPage() {
           </div>
         </form>
         <Footer />
+        </>
+        )}
       </div>
     </div>
   );

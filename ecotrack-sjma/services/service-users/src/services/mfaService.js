@@ -145,10 +145,12 @@ export const verifyMfaCode = async (code, user) => {
 
   // Vérifier code de secours
   const backupCodes = JSON.parse(user.backup_codes || '[]');
-  const codeIndex = backupCodes.indexOf(code.toUpperCase());
+  const normalized = String(code).toUpperCase();
+  const codeIndex = backupCodes.indexOf(normalized);
   
   if (codeIndex !== -1) {
-    // Invalider le code de secours utilisé
+    // Invalider le code de secours utilisé — n'écrire QUE backup_codes pour ne
+    // pas réécrire mfa_enabled/totp_secret à NULL (cf. updateMfaSettings).
     backupCodes.splice(codeIndex, 1);
     await AuthRepository.updateMfaSettings(user.id_utilisateur, {
       backup_codes: JSON.stringify(backupCodes)

@@ -64,7 +64,7 @@ export const completeSetupAndLogin = async (req, res, next) => {
       return res.status(401).json({ error: 'Code MFA invalide' });
     }
 
-    await mfaService.enableMfa(userId, setupSecret);
+    const enableResult = await mfaService.enableMfa(userId, setupSecret);
     const accessToken = generateToken(user.id_utilisateur, user.role_par_defaut);
     const refreshToken = generateRefreshToken(user.id_utilisateur);
     await sessionService.storeRefreshToken(user.id_utilisateur, refreshToken);
@@ -78,6 +78,9 @@ export const completeSetupAndLogin = async (req, res, next) => {
       token: accessToken,
       accessToken: accessToken,
       refreshToken,
+      // les codes de secours ne sont affichés qu'une seule fois, à
+      // l'activation. C'est le seul moment où le client peut les conserver.
+      backupCodes: enableResult?.backupCodes || [],
       user: { id: user.id_utilisateur, email: user.email, prenom: user.prenom, role: user.role_par_defaut }
     });
   } catch (err) { next(err); }

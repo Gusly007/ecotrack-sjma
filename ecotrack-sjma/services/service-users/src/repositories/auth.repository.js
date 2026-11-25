@@ -104,12 +104,34 @@ export const AuthRepository = {
   async updateMfaSettings(userId, settings) {
     const { mfa_enabled, totp_secret, backup_codes } = settings;
 
+    // n'écrire que les colonnes réellement fournies. Auparavant,
+    // l'UPDATE réécrivait mfa_enabled et totp_secret à NULL quand l'appelant ne
+    // passait que backup_codes (consommation d'un code de secours), ce qui
+    // désactivait le MFA et cassait la connexion TOTP ensuite.
+    const columns = [];
+    const values = [];
+    if (mfa_enabled !== undefined) {
+      columns.push(`mfa_enabled = $${columns.length + 1}`);
+      values.push(mfa_enabled);
+    }
+    if (totp_secret !== undefined) {
+      columns.push(`totp_secret = $${columns.length + 1}`);
+      values.push(totp_secret);
+    }
+    if (backup_codes !== undefined) {
+      columns.push(`backup_codes = $${columns.length + 1}`);
+      values.push(backup_codes);
+    }
+    if (columns.length === 0) {
+      return undefined;
+    }
+
     const result = await pool.query(
       `UPDATE UTILISATEUR
-       SET mfa_enabled = $1, totp_secret = $2, backup_codes = $3
-       WHERE id_utilisateur = $4
+       SET ${columns.join(', ')}
+       WHERE id_utilisateur = $${columns.length + 1}
        RETURNING id_utilisateur`,
-      [mfa_enabled, totp_secret, backup_codes, userId]
+      [...values, userId]
     );
     return result.rows[0];
   },
