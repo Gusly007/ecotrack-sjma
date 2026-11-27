@@ -26,7 +26,8 @@ const publicRoutes = [
   { path: '/auth/reset-password', methods: ['POST'] },
   { path: '/auth/activate', methods: ['POST'] },
   { path: '/auth/citoyen/register', methods: ['POST'] },
-  { path: '/auth/register', methods: ['POST'] },
+  // /auth/register n'est PAS public : création de comptes réservée à l'ADMIN (SCRUM-5).
+  // L'inscription publique des citoyens passe par /auth/citoyen/register.
   { path: '/health', methods: ['GET'] },
   { path: '/health/detailed', methods: ['GET'] },
   { path: '/api-docs', methods: ['GET'] },

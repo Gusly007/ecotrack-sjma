@@ -57,8 +57,17 @@ describe('Auth Middleware', () => {
       expect(next).toHaveBeenCalledTimes(3);
     });
 
-    it('should skip validation for /auth/register (public route)', () => {
+    it('should require a JWT on /auth/register (admin-only, not public)', () => {
       req.path = '/auth/register';
+      req.method = 'POST';
+      jwtValidationMiddleware(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should keep /auth/citoyen/register public', () => {
+      req.path = '/auth/citoyen/register';
       req.method = 'POST';
       jwtValidationMiddleware(req, res, next);
 

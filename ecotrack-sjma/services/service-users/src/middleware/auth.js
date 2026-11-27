@@ -9,7 +9,6 @@ const publicPaths = [
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/activate',
-  '/auth/register',
   '/auth/citoyen/register',
   '/auth/citoyen/verify-code',
   // Les routes /auth/mfa/* et /auth/login/mfa ne sont plus "publiques au sens
@@ -46,7 +45,7 @@ export const authenticateToken  = (req, res, next) => {
     }
 }
 
-/** 
+/**
  * Verifier le role de l'utilisateur
  */
 export const authorizeRole = (roles) => {

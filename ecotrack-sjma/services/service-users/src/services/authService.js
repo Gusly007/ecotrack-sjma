@@ -38,13 +38,6 @@ export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN
     const hashedPassword = await hashPassword(password);
     // Créer l'utilisateur dans la base de données
     const newUser = await AuthRepository.insertUser(email, nom, prenom, hashedPassword, role);
-    // Générer les tokens JWT
-    const accessToken = generateToken(newUser.id_utilisateur, newUser.role_par_defaut);
-    const refreshToken = generateRefreshToken(newUser.id_utilisateur);
-
-    await sessionService.limitConcurrentSessions(newUser.id_utilisateur);
-    await sessionService.storeRefreshToken(newUser.id_utilisateur, refreshToken);
-
     // Envoyer email de création de compte par admin
     try {
       await sendAdminCreatedUserEmail(email, prenom, nom, role, password);
@@ -59,11 +52,7 @@ export const registerUser = async (email, nom, prenom, password, role = 'CITOYEN
       // ignore audit failures
     }
 
-    return {
-      user: newUser,
-      accessToken,
-      refreshToken
-    };
+    return { user: newUser };
   } catch (err) {
     try {
       await auditService.logAction(null, 'USER_REGISTER_FAILED', 'UTILISATEUR', null);

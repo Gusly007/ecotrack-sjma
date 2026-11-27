@@ -1,5 +1,10 @@
+const { randomUUID } = require('node:crypto');
 const request = require('supertest');
 const { default: app } = require('../../src/index');
+const { default: pool } = require('../../src/config/database.js');
+const { default: env } = require('../../src/config/env.js');
+const emailService = require('../../src/services/emailService.js');
+const { generateToken } = require('../../src/utils/jwt.js');
 
 describe('Users Service Auth Routes Integration', () => {
   describe('POST /auth/login', () => {
@@ -26,28 +31,72 @@ describe('Users Service Auth Routes Integration', () => {
   });
 
   describe('POST /auth/register', () => {
-    it('should register with valid data', async () => {
-      const res = await request(app)
-        .post('/auth/register')
-        .send({
-          email: 'newuser@example.com',
-          mot_de_passe: 'password123',
-          nom_utilisateur: 'NewUser',
-          id_role: 1
-        });
-      expect([201, 400, 500]).toContain(res.status);
+    let adminToken;
+    let client;
+
+    beforeEach(async () => {
+      jest.spyOn(env.jwt, 'secret', 'get').mockReturnValue(randomUUID());
+      adminToken = `Bearer ${generateToken(1, 'ADMIN')}`;
+      jest.spyOn(emailService, 'sendAdminCreatedUserEmail').mockResolvedValue();
+      client = await pool.connect();
+      await client.query('BEGIN');
+      jest.spyOn(pool, 'query').mockImplementation(client.query.bind(client));
     });
 
-    it('should reject duplicate email', async () => {
+    afterEach(async () => {
+      jest.restoreAllMocks();
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+        } finally {
+          client.release();
+          client = undefined;
+        }
+      }
+    });
+
+    it('should register with valid data (201)', async () => {
+      const email = `newuser+${randomUUID()}@example.invalid`;
       const res = await request(app)
         .post('/auth/register')
+        .set('Authorization', adminToken)
         .send({
-          email: 'existing@example.com',
-          mot_de_passe: 'password123',
-          nom_utilisateur: 'User',
-          id_role: 1
+          email,
+          nom: 'Dupont',
+          prenom: 'NewUser',
+          password: 'password123',
+          role: 'CITOYEN',
         });
-      expect([400, 500]).toContain(res.status);
+
+      expect(res.status).toBe(201);
+      expect(res.body.user).toBeDefined();
+      // Le compte appartient à son futur titulaire : pas de session émise.
+      expect(res.body.token).toBeUndefined();
+      expect(res.body.refreshToken).toBeUndefined();
+    });
+
+    it('should reject duplicate email (409)', async () => {
+      const email = `dup+${randomUUID()}@example.invalid`;
+      const payload = {
+        email,
+        nom: 'Dupont',
+        prenom: 'Doublon',
+        password: 'password123',
+        role: 'CITOYEN',
+      };
+
+      const created = await request(app)
+        .post('/auth/register')
+        .set('Authorization', adminToken)
+        .send(payload);
+      expect(created.status).toBe(201);
+
+      const duplicate = await request(app)
+        .post('/auth/register')
+        .set('Authorization', adminToken)
+        .send(payload);
+
+      expect(duplicate.status).toBe(409);
     });
   });
 
