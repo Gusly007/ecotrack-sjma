@@ -178,4 +178,26 @@ export const authService = {
     );
     return response.data;
   },
+
+  // Appareil perdu/supprimé : demande un code de récupération par email, puis
+  // le valide. La validation réinitialise le MFA et renvoie un jeton de setup
+  // (setMfaToken) pour afficher un nouveau QR code.
+  async requestMfaRecovery() {
+    const response = await api.post(
+      '/auth/mfa/recover/request',
+      {},
+      { headers: { 'X-MFA-Token': this.getMfaToken() || '' } }
+    );
+    return response.data;
+  },
+
+  async verifyMfaRecovery(code) {
+    const response = await api.post(
+      '/auth/mfa/recover/verify',
+      { code },
+      { headers: { 'X-MFA-Token': this.getMfaToken() || '' } }
+    );
+    if (response.data?.mfaToken) this.setMfaToken(response.data.mfaToken);
+    return response.data;
+  },
 };
