@@ -18,7 +18,11 @@ const rolePermissions = {
         'tournee:update',
         'tournee:delete',
         'collecte:create',
-        'collecte:read'
+        'collecte:read',
+        // Modifier un signalement (statut, traitement, champs) : personnel de bureau
+        // uniquement (SCRUM-7). Volontairement absent d'AGENT : aucun écran agent ne
+        // modifie un signalement.
+        'signalement:update'
     ],
     ADMIN: ['*']
 };
