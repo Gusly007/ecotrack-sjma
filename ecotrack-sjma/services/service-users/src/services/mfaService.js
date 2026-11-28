@@ -129,6 +129,65 @@ export const saveSetupSecret = async (userId, secret) => {
 };
 
 /**
+ * Régénère un jeu de codes de secours neufs pour un compte MFA déjà activé et
+ * le persiste. Les anciens codes sont remplacés (usage unique, non conservés).
+ * @param {number} userId
+ * @returns {Promise<string[]>} nouveaux codes en clair (à envoyer par email)
+ */
+export const regenerateBackupCodes = async (userId) => {
+  const backupCodes = Array.from({ length: 10 }, () =>
+    crypto.randomBytes(4).toString('hex').toUpperCase()
+  );
+  await AuthRepository.updateMfaSettings(userId, {
+    backup_codes: JSON.stringify(backupCodes)
+  });
+  return backupCodes;
+};
+
+// Durée de validité du code de récupération MFA envoyé par email.
+export const MFA_RECOVERY_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Génère un code de récupération MFA à 6 chiffres, le stocke (avec expiration)
+ * et renvoie le code en clair. Réutilise la table account_activation_codes,
+ * indexée par email : un nouveau code écrase le précédent.
+ *
+ * Si un code valide existe déjà pour cet email, il est RÉUTILISÉ (pas de
+ * nouveau code ni de nouveau mail), pour éviter d'invalider un code déjà reçu
+ * à chaque clic.
+ * @param {string} email
+ * @returns {Promise<{ code: string, reused: boolean }>}
+ */
+export const createRecoveryCode = async (email) => {
+  const existing = await AuthRepository.findActiveActivationByEmail(email);
+  if (existing?.code) {
+    return { code: existing.code, reused: true };
+  }
+
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  const expiresAt = new Date(Date.now() + MFA_RECOVERY_TTL_MS);
+  await AuthRepository.createActivationCode(email, code, expiresAt);
+  return { code, reused: false };
+};
+
+/**
+ * Vérifie et consomme un code de récupération MFA. En cas de succès, le MFA est
+ * réinitialisé (secret TOTP et codes de secours effacés) pour permettre de
+ * rescanner un QR neuf.
+ * @param {number} userId
+ * @param {string} email
+ * @param {string} code
+ * @returns {Promise<boolean>} true si le code était valide (MFA réinitialisé)
+ */
+export const verifyRecoveryCode = async (userId, email, code) => {
+  const row = await AuthRepository.findActivationByEmailAndCode(email, String(code).trim());
+  if (!row) return false;
+  await AuthRepository.deleteActivationByEmail(email);
+  await AuthRepository.resetMfaForRecovery(userId);
+  return true;
+};
+
+/**
  * Vérifie si un utilisateur a le MFA activé
  * @param {number} userId
  * @returns {Promise<boolean>}

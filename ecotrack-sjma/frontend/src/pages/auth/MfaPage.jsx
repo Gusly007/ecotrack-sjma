@@ -20,6 +20,10 @@ export default function MfaPage() {
   const [isSetup, setIsSetup] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState('');
+  const [resetMode, setResetMode] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetInfo, setResetInfo] = useState('');
   const [backupCodes, setBackupCodes] = useState(null);
   const { showError } = useAlert();
   const navigate = useNavigate();
@@ -51,9 +55,19 @@ export default function MfaPage() {
       const isExpired = !setupTime || (now - setupTime > 10 * 60 * 1000);
 
       if (data?.secret && data?.qrCodeUrl && !isExpired) {
-        // Setup frais - mode configuration initiale
-        setSetupData(data);
-        setIsSetup(true);
+        // Le QR doit être celui que le serveur vérifiera. On le régénère côté
+        // serveur (persiste mfa_setup_secret) pour éviter d'afficher un QR
+        // périmé du localStorage, cause de « Code MFA invalide ».
+        (async () => {
+          try {
+            const fresh = await authService.generateMfaSetup();
+            setSetupData({ secret: fresh.secret, qrCodeUrl: fresh.qrCodeUrl });
+          } catch {
+            // Fallback : ancien QR du storage si la régénération échoue.
+            setSetupData(data);
+          }
+          setIsSetup(true);
+        })();
         return;
       }
 
@@ -168,6 +182,73 @@ export default function MfaPage() {
     navigate('/login');
   };
 
+  // Télécharge les codes de secours en fichier .txt (l'utilisateur doit les
+  // conserver ; ils ne seront plus réaffichés).
+  const downloadBackupCodes = (codes) => {
+    const lines = [
+      'EcoTrack — Codes de secours',
+      'Conservez ce fichier en lieu sûr. Chaque code ne sert qu\'une seule fois.',
+      '',
+      ...codes,
+      '',
+      `Généré le ${new Date().toLocaleString()}`,
+    ];
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ecotrack-codes-de-secours.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Appareil supprimé/perdu : demander un code de récupération par email.
+  const handleRequestReset = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await authService.requestMfaRecovery();
+      setResetInfo(res?.message || 'Un code a été envoyé par email.');
+      setResetSent(true);
+    } catch (err) {
+      const message = err.response?.data?.error || 'Impossible d\'envoyer le code de récupération';
+      setError(message);
+      showError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Valider le code reçu par email : réinitialise le MFA puis affiche un QR neuf.
+  const handleConfirmReset = async (e) => {
+    e.preventDefault();
+    const clean = resetCode.trim();
+    if (!/^\d{6}$/.test(clean)) {
+      setError('Saisissez le code à 6 chiffres reçu par email');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await authService.verifyMfaRecovery(clean);
+      // Le MFA est réinitialisé : on régénère un setup (QR) pour rescanner.
+      const setup = await authService.generateMfaSetup();
+      setSetupData({ secret: setup.secret, qrCodeUrl: setup.qrCodeUrl });
+      setIsSetup(true);
+      setResetMode(false);
+      setResetSent(false);
+      setCode('');
+    } catch (err) {
+      const message = err.response?.data?.error || 'Code de récupération invalide ou expiré';
+      setError(message);
+      showError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -187,6 +268,13 @@ export default function MfaPage() {
                 <li key={c} className="py-1 tracking-widest">{c}</li>
               ))}
             </ul>
+            <button
+              type="button"
+              onClick={() => downloadBackupCodes(backupCodes.codes)}
+              className="group relative flex w-full justify-center rounded-md border border-indigo-600 bg-white px-3 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50"
+            >
+              Télécharger les codes (.txt)
+            </button>
             <button
               type="button"
               onClick={() => finalizeLogin(backupCodes.response)}
@@ -214,6 +302,63 @@ export default function MfaPage() {
           </p>
         </div>
 
+        {resetMode && !isSetup && (
+          <div className="space-y-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+            <h3 className="text-base font-semibold text-amber-900">
+              Recevoir un code et rescanner le QR code
+            </h3>
+            {error && <p className="text-sm text-red-700">{error}</p>}
+            {!resetSent ? (
+              <>
+                <p className="text-sm text-amber-800">
+                  Un code à 6 chiffres sera envoyé à l'adresse email de votre compte. Après validation,
+                  un nouveau QR code s'affichera à scanner.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRequestReset}
+                  disabled={loading}
+                  className="w-full rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {loading ? 'Envoi...' : 'Recevoir le code par email'}
+                </button>
+              </>
+            ) : (
+              <form onSubmit={handleConfirmReset} className="space-y-3">
+                <p className="text-sm text-amber-800">
+                  {resetInfo || 'Un code a été envoyé par email.'} Saisissez le code du <strong>dernier</strong> email reçu
+                  (valable 10 minutes, un seul code actif à la fois).
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength="6"
+                  required
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={loading || resetCode.length < 6}
+                  className="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  {loading ? 'Vérification...' : 'Valider et afficher un nouveau QR code'}
+                </button>
+              </form>
+            )}
+            <button
+              type="button"
+              onClick={() => { setResetMode(false); setResetSent(false); setResetInfo(''); setResetCode(''); setError(''); }}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              Annuler
+            </button>
+          </div>
+        )}
+
         {isSetup && setupData && (
           <div className="flex flex-col items-center space-y-4">
             <img src={setupData.qrCodeUrl} alt="QR Code MFA" className="border rounded-md p-2 bg-white" />
@@ -221,6 +366,9 @@ export default function MfaPage() {
           </div>
         )}
 
+        {/* En mode récupération-email, on masque le formulaire principal pour
+            éviter deux champs de code concurrents. */}
+        {!(resetMode && !isSetup) && (
         <form className="mt-8 space-y-6" onSubmit={recoveryMode && !isSetup ? handleRecoverySubmit : handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
@@ -279,25 +427,47 @@ export default function MfaPage() {
             >
               Retour à la connexion
             </button>
-
-            {!isSetup && (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRecoveryMode((v) => !v);
-                    setError('');
-                  }}
-                  className="text-sm font-medium text-orange-600 hover:text-orange-500 underline"
-                >
-                  {recoveryMode
-                    ? 'Revenir à l\'application d\'authentification'
-                    : 'J\'ai perdu mon appareil - Utiliser un code de secours'}
-                </button>
-              </div>
-            )}
           </div>
         </form>
+        )}
+
+        {!isSetup && (
+          <div className="text-center space-y-2">
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryMode((v) => !v);
+                  setResetMode(false);
+                  setError('');
+                }}
+                className="text-sm font-medium text-orange-600 hover:text-orange-500 underline"
+              >
+                {recoveryMode
+                  ? 'Revenir à l\'application d\'authentification'
+                  : 'Utiliser un code de secours'}
+              </button>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setResetMode((v) => !v);
+                  setRecoveryMode(false);
+                  setResetSent(false);
+                  setResetInfo('');
+                  setResetCode('');
+                  setError('');
+                }}
+                className="text-sm font-medium text-amber-700 hover:text-amber-800 underline"
+              >
+                {resetMode
+                  ? 'Annuler la récupération par email'
+                  : 'Recevoir un code et rescanner le QR code'}
+              </button>
+            </div>
+          </div>
+        )}
         <Footer />
         </>
         )}

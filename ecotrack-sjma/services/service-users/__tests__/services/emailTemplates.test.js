@@ -5,6 +5,7 @@ import {
   getAccountStatusHtml,
   getRoleChangeHtml,
   getAccountDeletedHtml,
+  getMfaBackupCodesHtml,
 } from '../../src/services/emailTemplates.js';
 
 describe('emailTemplates', () => {
@@ -58,5 +59,19 @@ describe('emailTemplates', () => {
     expect(html).toContain('Compte supprimé');
     expect(html).toContain('Bonjour Nora');
     expect(html).toContain('irréversible');
+  });
+
+  it('builds MFA backup codes template with every code', () => {
+    const html = getMfaBackupCodesHtml(['AAAA1111', 'BBBB2222'], appUrl);
+
+    expect(html).toContain('codes de secours');
+    expect(html).toContain('AAAA1111');
+    expect(html).toContain('BBBB2222');
+    expect(html).toContain(`${appUrl}/login`);
+  });
+
+  it('émet un template de codes vide sans planter si aucun code', () => {
+    const html = getMfaBackupCodesHtml(undefined, appUrl);
+    expect(html).toContain('codes de secours');
   });
 });

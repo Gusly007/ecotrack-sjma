@@ -76,6 +76,130 @@ const escapeHtml = (text) => {
   return String(text).replace(/[&<>"']/g, (char) => map[char]);
 };
 
+/**
+ * Email contenant un code de récupération MFA à 6 chiffres (appareil perdu).
+ * @param {string} code - code à 6 chiffres
+ * @param {string} appUrl
+ */
+export const getMfaRecoveryCodeHtml = (code, appUrl) => {
+  const escapedCode = escapeHtml(code);
+  const escapedAppUrl = escapeHtml(appUrl);
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <tr>
+                <td style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px;">EcoTrack</h1>
+                  <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0;">Réinitialisation de la double authentification</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 40px 30px;">
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 22px;">Votre code de récupération</h2>
+                  <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Vous avez demandé à réinitialiser votre double authentification (appareil perdu ou supprimé).
+                    Saisissez ce code dans l'application, puis scannez le nouveau QR code affiché.
+                  </p>
+                  <div style="background-color: #fff3cd; padding: 25px; border-radius: 10px; margin: 20px 0; text-align: center; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px;"><strong>Code de récupération</strong></p>
+                    <p style="margin: 0; color: #333333; font-size: 36px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 8px;">${escapedCode}</p>
+                    <p style="margin: 10px 0 0 0; color: #856404; font-size: 13px;">Valable 10 minutes.</p>
+                  </div>
+                  <p style="color: #c0392b; font-size: 14px; margin: 20px 0 0 0;">
+                    Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et changez votre mot de passe.
+                  </p>
+                  ${escapedAppUrl ? `<p style="margin: 24px 0 0 0;"><a href="${escapedAppUrl}/login" style="color: #4CAF50; text-decoration: none;">Ouvrir EcoTrack</a></p>` : ''}
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color: #f8f8f8; padding: 20px 30px; border-radius: 0 0 10px 10px; text-align: center;">
+                  <p style="color: #999999; font-size: 12px; margin: 0;">© 2026 EcoTrack. Tous droits réservés.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Email contenant les codes de secours MFA. Ces codes ne sont valables qu'une
+ * seule fois chacun et permettent de se connecter sans l'application TOTP.
+ * @param {string[]} backupCodes - liste de codes (déjà générés)
+ * @param {string} appUrl
+ */
+export const getMfaBackupCodesHtml = (backupCodes, appUrl) => {
+  const escapedAppUrl = escapeHtml(appUrl);
+  const codes = Array.isArray(backupCodes) ? backupCodes : [];
+  const codesHtml = codes
+    .map((code) => `<li style="margin: 4px 0; color: #333; font-family: 'Courier New', monospace; font-size: 18px; letter-spacing: 2px;">${escapeHtml(code)}</li>`)
+    .join('');
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <tr>
+                <td style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px;">EcoTrack</h1>
+                  <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0;">Codes de secours MFA</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 40px 30px;">
+                  <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 22px;">Vos codes de secours</h2>
+                  <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Conservez ces codes en lieu sûr. Si vous perdez votre appareil d'authentification,
+                    saisissez l'un de ces codes sur la page de connexion (option « J'ai perdu mon appareil »).
+                    Chaque code ne peut être utilisé qu'une seule fois.
+                  </p>
+                  <div style="background-color: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0 0 10px 0; color: #856404; font-size: 16px;"><strong>Codes de secours :</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; list-style: none;">
+                      ${codesHtml}
+                    </ul>
+                  </div>
+                  <p style="color: #c0392b; font-size: 14px; margin: 20px 0 0 0;">
+                    Si vous n'êtes pas à l'origine de cette demande, changez votre mot de passe immédiatement.
+                  </p>
+                  ${escapedAppUrl ? `<p style="margin: 24px 0 0 0;"><a href="${escapedAppUrl}/login" style="color: #4CAF50; text-decoration: none;">Ouvrir EcoTrack</a></p>` : ''}
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color: #f8f8f8; padding: 20px 30px; border-radius: 0 0 10px 10px; text-align: center;">
+                  <p style="color: #999999; font-size: 12px; margin: 0;">
+                    © 2026 EcoTrack. Tous droits réservés.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
 // Template d'activation 6 chiffres pour le flow self-registration citoyen.
 // Isolé de getAdminCreatedUserHtml (qui sert l'onboarding ADMIN-créé avec
 // mot de passe temporaire — destiné à AGENT/GESTIONNAIRE/ADMIN).

@@ -172,6 +172,23 @@ export const AuthRepository = {
     return result.rows[0];
   },
 
+  /**
+   * Réinitialise le MFA pour permettre de rescanner un QR : désactive le MFA,
+   * efface le secret TOTP et les codes de secours. Utilisé par le parcours de
+   * récupération « appareil supprimé » après validation du code email.
+   */
+  async resetMfaForRecovery(userId) {
+    const result = await pool.query(
+      `UPDATE UTILISATEUR
+       SET mfa_enabled = FALSE, totp_secret = NULL, backup_codes = NULL,
+           mfa_setup_secret = NULL, mfa_setup_secret_created_at = NULL
+       WHERE id_utilisateur = $1 AND deleted_at IS NULL
+       RETURNING id_utilisateur`,
+      [userId]
+    );
+    return result.rows[0];
+  },
+
   // ====================================================================
   // Activation citoyen (table account_activation_codes — code 6 chiffres).
   // Une seule ligne par email : un nouveau code écrase le précédent. Le
@@ -196,6 +213,15 @@ export const AuthRepository = {
       `SELECT email, expires_at FROM account_activation_codes
        WHERE email = $1 AND code = $2 AND expires_at > NOW()`,
       [email, code]
+    );
+    return result.rows[0];
+  },
+
+  async findActiveActivationByEmail(email) {
+    const result = await pool.query(
+      `SELECT email, code, expires_at FROM account_activation_codes
+       WHERE email = $1 AND expires_at > NOW()`,
+      [email]
     );
     return result.rows[0];
   },

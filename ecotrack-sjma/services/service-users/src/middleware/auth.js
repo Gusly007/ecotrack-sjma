@@ -17,6 +17,8 @@ const publicPaths = [
   // pas un access token — elles le valident elles-mêmes via requireMfaToken.
   '/auth/mfa/complete-setup',
   '/auth/mfa/regenerate',
+  '/auth/mfa/recover/request',
+  '/auth/mfa/recover/verify',
   '/auth/login/mfa',
   '/health',
   '/avatars'

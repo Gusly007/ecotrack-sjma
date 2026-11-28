@@ -1,7 +1,7 @@
 import env from '../config/env.js';
 import nodemailer from 'nodemailer';
 import sanitizeHtmlLib from 'sanitize-html';
-import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml } from './emailTemplates.js';
+import { getPasswordResetHtml, getWelcomeHtml, getAdminCreatedUserHtml, getAccountStatusHtml, getRoleChangeHtml, getAccountDeletedHtml, getCitoyenActivationCodeHtml, getMfaBackupCodesHtml, getMfaRecoveryCodeHtml } from './emailTemplates.js';
 
 // Logger simple (remplacez par winston ou pino si besoin)
 const logger = {
@@ -167,4 +167,18 @@ export const sendRoleChangeEmail = async (email, prenom, oldRole, newRole) => {
 export const sendAccountDeletedEmail = async (email, prenom) => {
   const html = getAccountDeletedHtml(prenom, env.appUrl);
   return sendEmail(email, 'Votre compte EcoTrack a été supprimé', html);
+};
+
+// Envoie les codes de secours MFA par email à l'utilisateur. Appelé à la
+// création des codes (activation / régénération) et par l'endpoint de renvoi.
+export const sendMfaBackupCodesEmail = async (email, backupCodes) => {
+  const html = getMfaBackupCodesHtml(backupCodes, env.appUrl);
+  return sendEmail(email, 'Vos codes de secours EcoTrack', html);
+};
+
+// Envoie le code de récupération (6 chiffres) pour réinitialiser le MFA quand
+// l'appareil d'authentification a été perdu ou supprimé.
+export const sendMfaRecoveryCodeEmail = async (email, code) => {
+  const html = getMfaRecoveryCodeHtml(code, env.appUrl);
+  return sendEmail(email, 'Code de récupération de la double authentification EcoTrack', html);
 };

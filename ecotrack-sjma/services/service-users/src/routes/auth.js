@@ -681,6 +681,27 @@ router.post('/mfa/disable', authenticateToken, mfaController.disable);
 
 /**
  * @swagger
+ * /auth/mfa/backup-codes/resend:
+ *   post:
+ *     summary: Renvoyer les codes de secours MFA par email
+ *     description: >
+ *       Régénère un jeu de 10 codes de secours et l'envoie par email à
+ *       l'utilisateur authentifié. Les anciens codes sont invalidés.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Nouveaux codes envoyés par email
+ *       400:
+ *         description: MFA non activé
+ *       401:
+ *         description: Non authentifié
+ */
+router.post('/mfa/backup-codes/resend', authenticateToken, mfaController.resendBackupCodes);
+
+/**
+ * @swagger
  * /auth/mfa/regenerate:
  *   post:
  *     summary: Régénérer le QR code MFA
@@ -764,5 +785,65 @@ router.post('/mfa/regenerate', loginLimiter, requireMfaToken(MFA_PURPOSES.SETUP)
  *         description: Jeton MFA manquant/invalide ou code MFA invalide
  */
 router.post('/login/mfa', loginLimiter, requireMfaToken(MFA_PURPOSES.LOGIN), validate(mfaLoginSchema), mfaController.loginWithMfa);
+
+/**
+ * @swagger
+ * /auth/mfa/recover/request:
+ *   post:
+ *     summary: Demander un code de récupération MFA (appareil perdu)
+ *     description: >
+ *       Après le mot de passe (jeton pré-MFA), envoie un code à 6 chiffres par
+ *       email pour réinitialiser la double authentification.
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-MFA-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Jeton pré-MFA de purpose `mfa_login`
+ *     responses:
+ *       200:
+ *         description: Code envoyé (réponse neutre)
+ *       401:
+ *         description: Jeton MFA manquant ou invalide
+ */
+router.post('/mfa/recover/request', loginLimiter, requireMfaToken(MFA_PURPOSES.LOGIN), mfaController.requestRecovery);
+
+/**
+ * @swagger
+ * /auth/mfa/recover/verify:
+ *   post:
+ *     summary: Valider le code de récupération et réinitialiser le MFA
+ *     description: >
+ *       Valide le code reçu par email, réinitialise le MFA et renvoie un jeton
+ *       de setup pour afficher un nouveau QR code.
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-MFA-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Jeton pré-MFA de purpose `mfa_login`
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: Code à 6 chiffres reçu par email
+ *     responses:
+ *       200:
+ *         description: MFA réinitialisé, nouveau jeton de setup
+ *       401:
+ *         description: Code invalide ou expiré
+ */
+router.post('/mfa/recover/verify', loginLimiter, requireMfaToken(MFA_PURPOSES.LOGIN), mfaController.verifyRecovery);
 
 export default router;
